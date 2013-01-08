@@ -1,7 +1,10 @@
-build
-build/*
+# Code::Blocks files
+scorepress-gtk.depend
+scorepress-gtk.layout
 
 # Compiled Object files
+build
+build/*
 *.slo
 *.lo
 *.o
