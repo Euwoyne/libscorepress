@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2012 Dominik Lehmann
+  Copyright (C) 2013 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -416,7 +416,7 @@ void Press::render(Renderer& renderer, const Plate::pNote& note, const Position<
         };
         renderer.stroke();
     }
-    else {Log::warn("Unable to render plate-object.");};
+    else {Log::warn("Unable to render plate-object. (class: Press)");};
     
     // render ties
     for (std::list<Plate::pNote::Tie>::const_iterator i = note.ties.begin(); i != note.ties.end(); ++i)

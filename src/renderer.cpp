@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2012 Dominik Lehmann
+  Copyright (C) 2013 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -46,12 +46,12 @@ using namespace ScorePress;
 // throwing function (general file error)
 void Renderer::mythrow(const char* trns, const std::string& filename) throw(Error)
 {
-    char* msg = new char[strlen(trns) + filename.size() + 1]; // allocate memory
-    sprintf(msg, trns, filename.c_str());               // assemble message
-    std::string s(msg);                                 // convert to string
-    delete[] msg;                                       // delete buffer
-    Log::error((s + " (class: Renderer)").c_str());     // log the error
-    throw Error(s);                                     // throw message
+    char* msg = new char[strlen(trns) + filename.size() + 1];   // allocate memory
+    sprintf(msg, trns, filename.c_str());                       // assemble message
+    std::string s(msg);                                         // convert to string
+    delete[] msg;                                               // delete buffer
+    Log::error((s + " (class: Renderer)").c_str());             // log the error
+    throw Error(s);                                             // throw message
 }
 
 // throwing function (symbol related error)
@@ -71,11 +71,11 @@ void Renderer::mythrow(const char* trns, const std::string& filename, const int 
 {
     char* msg = new char[strlen(trns) + filename.size() +   // allocate memory
                          static_cast<int>(log10(line) + log10(column)) + 3];
-    sprintf(msg, trns, filename.c_str(), line, column); // assemble message
-    std::string s(msg);                                 // convert to string
-    delete[] msg;                                       // delete buffer
-    Log::error((s + " (class: Renderer)").c_str());     // log the error
-    throw Error(s);                                     // throw message
+    sprintf(msg, trns, filename.c_str(), line, column);     // assemble message
+    std::string s(msg);                                     // convert to string
+    delete[] msg;                                           // delete buffer
+    Log::error((s + " (class: Renderer)").c_str());         // log the error
+    throw Error(s);                                         // throw message
 }
 
 // parser for the svg's meta-information (filename only used for error msgs)

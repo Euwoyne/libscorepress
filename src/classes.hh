@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2012 Dominik Lehmann
+  Copyright (C) 2013 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -350,7 +350,7 @@ class Newline : public VoiceObject
     Newline() : indent(0), justify(false), right_margin(0), distance(0), auto_clef(true), auto_key(true), auto_timesig(false), visible(true) {};
     virtual VisibleObject& get_visible() {return *static_cast<VisibleObject*>(NULL);};
     virtual const VisibleObject& get_visible() const {return *static_cast<VisibleObject*>(NULL);};
-    virtual void engrave(EngraverState&) const {};
+    virtual void engrave(EngraverState&) const;
     virtual bool is(classType type) const {return ((type == NEWLINE) || VoiceObject::is(type));};
     virtual classType classtype() const {return NEWLINE;};
     virtual Newline* clone() const {return new Newline(*this);};
@@ -377,6 +377,7 @@ class Pagebreak : public Newline
     ScoreDimension dimension;   // layout information
     
  public:
+    virtual void engrave(EngraverState&) const;
     virtual bool is(classType type) const {return ((type == PAGEBREAK) || Newline::is(type));};
     virtual classType classtype() const {return PAGEBREAK;};
     virtual Pagebreak* clone() const {return new Pagebreak(*this);};

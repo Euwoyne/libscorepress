@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2012 Dominik Lehmann
+  Copyright (C) 2013 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -422,7 +422,6 @@ void Engine::set_resolution(unsigned int hppm, unsigned int vppm)
 void Engine::engrave()
 {
     engraver.engrave(document);
-    plate_dump();
     if (!cursor.ready())
     {
         cursor.set_score(document.scores.front());
@@ -445,8 +444,9 @@ void Engine::render(Renderer& renderer, const Position<mpx_t>& offset)
     };
 }
 
-void Engine::render_cursor(Renderer& renderer, const Position<mpx_t>& offset)
+void Engine::render_cursor(Renderer& /*renderer*/, const Position<mpx_t>& /*offset*/)
 {
+    /*
     Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
                                   (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
     try
@@ -454,9 +454,10 @@ void Engine::render_cursor(Renderer& renderer, const Position<mpx_t>& offset)
         renderer.set_color(0, 0, 0, 255);
         press.render(renderer, cursor, offset + margin_offset);
     }
-    catch (UserCursor::NotValidException e)
+    catch (UserCursor::NotValidException& e)
     {
         Log::error("Invalid UserCursor (class: Engine)");
         cursor.set_score(document.scores.front());
     };
+    */
 }

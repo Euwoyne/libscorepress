@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE symbols SYSTEM "scorepress.symbols.dtd">
+
+<!--
+  ScorePress - Music Engraving Software - Symbol Library
+  Copyright (C) 2013 Dominik Lehmann
+  
+  This work is made available under the terms of the
+  Creative Commons Attribution-ShareAlike 3.0 license,
+  http://creativecommons.org/licenses/by-sa/3.0/.
+-->
+
+<symbols id="ScorePress - Symbol Library">
+    <info>
+        <author>Dominik Lehmann</author>
+        <copyright>Copyright (C) 2012 Dominik Lehmann</copyright>
+        <license>This work is made available under the terms of the Creative Commons Attribution-Share Alike 3.0 (CC BY-SA 3.0) license.</license>
+        <description>This is the default ScorePress Symbol Library.</description>
+    </info>
+    <sprites unit="20">
+        <base>
+            <head type="whole">
+                <path>head_whole</path>
+            </head>
+            <head type="half">
+                <path>head_half</path>
+                <stem>
+                    <x>25</x>
+                    <y>7</y>
+                </stem>
+            </head>
+            <head type="quarter">
+                <path>head_quarter</path>
+                <stem>
+                    <x>25</x>
+                    <y>7</y>
+                </stem>
+            </head>
+            <flag type="note">
+                <path>flag</path>
+                <overlay>flag_overlay</overlay>
+                <distance>18</distance>
+            </flag>
+            <rest type="whole">
+                <path>rest_whole</path>
+                <line>2</line>
+            </rest>
+            <rest type="half">
+                <path>rest_half</path>
+                <anchor>
+                    <x>0</x>
+                    <y>20</y>
+                </anchor>
+                <line>4</line>
+            </rest>
+            <rest type="quarter">
+                <path>rest_quarter</path>
+                <anchor>
+                    <x>0</x>
+                    <y>50</y>
+                </anchor>
+                <line>6</line>
+            </rest>
+            <flag type="rest">
+                <path>flag_rest</path>
+                <restbase>rest_bottom</restbase>
+                <anchor>
+                    <x>0</x>
+                    <y>6</y>
+                </anchor>
+                <line>3</line>
+                <stem>
+                    <top>
+                        <x1>17</x1>
+                        <y1>3</y1>
+                        <x2>19</x2>
+                        <y2>3</y2>
+                    </top>
+                    <bottom>
+                        <x1>0</x1>
+                        <y1>0</y1>
+                        <x2>6</x2>
+                        <y2>0</y2>
+                    </bottom>
+                    <minlen>34</minlen>
+                </stem>
+                <slope>8</slope>
+            </flag>
+            <accidental type="sharp">
+                <path>sharp</path>
+                <anchor>
+                    <x>0</x>
+                    <y>18</y>
+                </anchor>
+                <offset>6</offset>
+            </accidental>
+            <accidental type="natural">
+                <path>natural</path>
+                <anchor>
+                    <x>0</x>
+                    <y>20</y>
+                </anchor>
+                <offset>6</offset>
+            </accidental>
+            <accidental type="flat">
+                <path>flat</path>
+                <anchor>
+                    <x>0</x>
+                    <y>25</y>
+                </anchor>
+                <offset>6</offset>
+            </accidental>
+            <accidental type="double-sharp">
+                <path>double_sharp</path>
+                <anchor>
+                    <x>0</x>
+                    <y>0</y>
+                </anchor>
+                <offset>6</offset>
+            </accidental>
+            <accidental type="double-flat">
+                <path>double_flat</path>
+                <anchor>
+                    <x>0</x>
+                    <y>25</y>
+                </anchor>
+                <offset>6</offset>
+            </accidental>
+            <accidental type="half-sharp">
+                <path>half_sharp</path>
+                <anchor>
+                    <x>0</x>
+                    <y>18</y>
+                </anchor>
+                <offset>6</offset>
+            </accidental>
+            <accidental type="half-flat">
+                <path>half_flat</path>
+                <anchor>
+                    <x>0</x>
+                    <y>25</y>
+                </anchor>
+                <offset>6</offset>
+            </accidental>
+            <brace>
+                <path>brace</path>
+                <anchor>
+                    <x>0</x>
+                    <y>35</y>
+                </anchor>
+                <hmin>200</hmin>
+                <hmax>400</hmax>
+                <low> 0.8</low>
+                <high>0.2</high>
+            </brace>
+            <bracket>
+                <path>bracket</path>
+                <anchor>
+                    <x>0</x>
+                    <y>30</y>
+                </anchor>
+                <line>7</line>
+            </bracket>
+            <dot>
+                <path>dot</path>
+                <anchor>
+                    <x>0</x>
+                    <y>3</y>
+                </anchor>
+                <distance>3</distance>
+                <offset>4</offset>
+            </dot>
+            <articulation type="staccato">
+                <path>dot</path>
+                <anchor>
+                    <x>3</x>
+                    <y>0</y>
+                </anchor>
+                <offset>5</offset>
+                <valuemod>500</valuemod>
+            </articulation>
+            <articulation type="accent">
+                <path>accent</path>
+                <anchor>
+                    <x>15</x>
+                    <y>0</y>
+                </anchor>
+                <offset>5</offset>
+                <volumemod>1500</volumemod>
+            </articulation>
+            <articulation type="tenuto">
+                <path>tenuto</path>
+                <anchor>
+                    <x>12.5</x>
+                    <y>0</y>
+                </anchor>
+                <offset>6</offset>
+                <valuemod>1000</valuemod>
+            </articulation>
+            <articulation type="marcato">
+                <path>marcato</path>
+                <anchor>
+                    <x>9</x>
+                    <y>0</y>
+                </anchor>
+                <offset>5</offset>
+                <valuemod>500</valuemod>
+                <volumemod>1500</volumemod>
+            </articulation>
+            <clef type="treble">
+                <path>gclef</path>
+                <anchor>
+                    <x>0</x>
+                    <y>85</y>
+                </anchor>
+                <basenote>67</basenote>
+                <line>6</line>
+                <keybound>
+                    <sharp>69</sharp>
+                    <flat>65</flat>
+                </keybound>
+            </clef>
+            <clef type="bass">
+                <path>fclef</path>
+                <anchor>
+                    <x>2</x>
+                    <y>20</y>
+                </anchor>
+                <basenote>53</basenote>
+                <line>2</line>
+                <keybound>
+                    <sharp>45</sharp>
+                    <flat>41</flat>
+                </keybound>
+            </clef>
+            <timesig type="digit">
+                <path>timesig0</path>
+                <digit>0</digit>
+                <anchor>
+                    <x>2</x>
+                    <y>2</y>
+                </anchor>
+            </timesig>
+            <timesig type="digit">
+                <path>timesig1</path>
+                <digit>1</digit>
+                <anchor>
+                    <x>3.5</x>
+                    <y>3</y>
+                </anchor>
+            </timesig>
+            <timesig type="digit">
+                <path>timesig2</path>
+                <digit>2</digit>
+                <anchor>
+                    <x>2.5</x>
+                    <y>2</y>
+                </anchor>
+            </timesig>
+            <timesig type="digit">
+                <path>timesig3</path>
+                <digit>3</digit>
+                <anchor>
+                    <x>3.5</x>
+                    <y>2</y>
+                </anchor>
+            </timesig>
+            <timesig type="digit">
+                <path>timesig4</path>
+                <digit>4</digit>
+                <anchor>
+                    <x>1</x>
+                    <y>2</y>
+                </anchor>
+            </timesig>
+            <timesig type="digit">
+                <path>timesig5</path>
+                <digit>5</digit>
+                <anchor>
+                    <x>1</x>
+                    <y>1</y>
+                </anchor>
+            </timesig>
+            <timesig type="digit">
+                <path>timesig6</path>
+                <digit>6</digit>
+                <anchor>
+                    <x>3</x>
+                    <y>2</y>
+                </anchor>
+            </timesig>
+            <timesig type="digit">
+                <path>timesig7</path>
+                <digit>7</digit>
+                <anchor>
+                    <x>1</x>
+                    <y>1</y>
+                </anchor>
+            </timesig>
+            <timesig type="digit">
+                <path>timesig8</path>
+                <digit>8</digit>
+                <anchor>
+                    <x>2</x>
+                    <y>2</y>
+                </anchor>
+            </timesig>
+            <timesig type="digit">
+                <path>timesig9</path>
+                <digit>9</digit>
+                <anchor>
+                    <x>3</x>
+                    <y>2</y>
+                </anchor>
+            </timesig>
+            <timesig type="symbol">
+                <path>timesigC</path>
+                <enum>4</enum>
+                <denom>4</denom>
+                <anchor>
+                    <x>0</x>
+                    <y>1</y>
+                </anchor>
+            </timesig>
+            <timesig type="symbol">
+                <path>allabreve</path>
+                <enum>2</enum>
+                <denom>2</denom>
+                <anchor>
+                    <x>0</x>
+                    <y>1</y>
+                </anchor>
+            </timesig>
+        </base>
+    </sprites>
+</symbols>
+

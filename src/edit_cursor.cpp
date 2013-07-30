@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2012 Dominik Lehmann
+  Copyright (C) 2013 Dominik Lehmann
 
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -191,26 +191,12 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     
     if (mode == NEWLINE) return prepare_voices();
     
-    // initialize cursor
     {
-    cursor->pvoice = &*voice;                       // set on-plate voice
-    cursor->pbegin = voice->notes.begin();          // initialize voice begin
-    cursor->pend   = --voice->notes.end();          // initialize voice end
-    while (cursor->pbegin != voice->notes.end() &&  // calculate correct voice begin
-           cursor->pbegin->is_inserted())           //     (ignoring inserted objects)
-        ++cursor->pbegin;
-    while (cursor->pend != voice->notes.begin() &&  // calculate correct voice end
-           cursor->pend->is_inserted())             //     (ignoring inserted objects)
-        --cursor->pend;
-    
-    cursor->pnote = cursor->pbegin;                 // initialize on-plate note
-    cursor->time  = voice->time;                    // intialize time-stamp...
-    cursor->ntime = voice->time;                    // ...and "ntime"
-    if (cursor->pnote->note.ready())
-        cursor->ntime += get_value(&*cursor->pnote->note);
+    // initialize cursor
+    prepare_plate(*cursor, *voice);
     
     // iterate the line to find the on-plate note
-    while (cursor->pnote != voice->notes.end() && &*cursor->pnote->note != &*cursor->note)
+    while (cursor->pnote != cursor->pend && &*cursor->pnote->note != &*cursor->note)
     {
         do ++cursor->pnote;                             // increment on-plate iterator
         while (   cursor->pnote != voice->notes.end()   // ignore inserted objects
@@ -224,9 +210,17 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     };
     
     // if we did not find the note
-    if (!cursor->empty() && cursor->pnote == voice->notes.end())
+    if (!cursor->empty() && cursor->pnote == cursor->pend)
     {
-        Log::warn("Unable to find current note within the reengraved voice. (class: EditCursor)");
+        if (cursor->note.at_end() || cursor->note->is(Class::NEWLINE))
+        {
+            cursor->time = cursor->ntime;
+            cursor->behind = true;
+        }
+        else  if (&*cursor->pnote->note != &*cursor->note)
+        {
+            Log::warn("Unable to find current note within the reengraved voice. (class: EditCursor)");
+        };
     };
     }
     
@@ -250,19 +244,7 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
         };
         
         // initialize cursor
-        c->pvoice = &*v;                        // set on-plate voice
-        c->pbegin = v->notes.begin();           // initialize voice begin
-        c->pend = --v->notes.end();             // initialize voice end
-        while (c->pbegin != v->notes.end() &&   // calculate correct voice begin
-               c->pbegin->virtual_obj &&        //     (ignoring inserted objects)
-               c->pbegin->virtual_obj->inserted) ++c->pbegin;
-        while (c->pend != v->notes.begin() &&   // calculate correct voice end
-               c->pend->virtual_obj &&          //     (ignoring inserted objects)
-               c->pend->virtual_obj->inserted) --c->pend;
-        
-        c->pnote = c->pbegin;                               // initialize on-plate note...
-        c->time  = c->pvoice->time;                         // intialize time-stamp...
-        c->ntime = c->time + get_value(&*c->pnote->note);   // ...and "ntime"
+        prepare_plate(*c, *v);
         
         // iterate the line to find the on-plate note
         while (c->pnote != v->notes.end() && &*c->pnote->note != &*c->note)
@@ -280,11 +262,19 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
         };
         
         // if we did not find the note
-        if (c->pnote == v->notes.end())
+        if (!c->empty() && c->pnote == c->pend)
         {
-            c = vcursors.erase(c);      // remove the cursor
-            Log::warn("Unable to find given note within the reengraved voice. (class: EditCursor)");
-            continue;
+            if (c->note.at_end() || c->note->is(Class::NEWLINE))
+            {
+                cursor->time = cursor->ntime;
+                c->behind = true;
+            }
+            else if (&*c->pnote->note != &*c->note)
+            {
+                c = vcursors.erase(c);      // remove the cursor
+                Log::warn("Unable to find given note within the reengraved voice. (class: EditCursor)");
+                continue;
+            };
         };
         
         ++c;
@@ -304,16 +294,17 @@ EditCursor::EditCursor(Document& doc, PageSet& pset, const InterfaceParam& _para
 void EditCursor::insert(StaffObject* const object) throw(NotValidException, Cursor::IllegalObjectTypeException)
 {
     if (!ready()) throw NotValidException();
-    if (!cursor->has_prev())                // if the object was inserted at the front...
+    if (   cursor->empty()              // if the voice is empty...
+        || !cursor->has_prev())         // ...or the object was inserted at the front...
     {
-        cursor->note.insert(object);        //    insert the new object
-        --cursor->pvoice->begin;            //    decrement on-plate voice front (needed by "reengrave()")
+        cursor->note.insert(object);            // insert the new object
+        cursor->pvoice->begin = cursor->note;   // set voice begin cursor
     }
-    else                                    // otherwise...
+    else                                // otherwise...
     {
-        cursor->note.insert(object);        //     insert the new object
+        cursor->note.insert(object);            // insert the new object
     };
-    reengrave(INSERT);                      // reengrave the score
+    reengrave(INSERT);                  // reengrave the score
 }
 
 // insert a note
@@ -376,7 +367,7 @@ void EditCursor::insert_newline(const Newline& newline) throw(NotValidException,
     // TODO: check times / break notes
     for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
     {
-        if (cur->has_prev())
+        if (cur->active && cur->has_prev())
         {
             if (!cur->at_end()) cur->note.insert(new Newline(newline));
             else                (++cur->note).insert(new Newline(newline));
@@ -391,7 +382,7 @@ void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Err
 {
     for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
     {
-        if (cur->has_prev())
+        if (cur->active && cur->has_prev())
         {
             if (!cur->at_end()) cur->note.insert(new Newline(/*cur->get_layout()*/));
             else                (++cur->note).insert(new Newline(/*cur->get_layout()*/));
@@ -406,17 +397,17 @@ void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Err
 // remove a note
 void EditCursor::remove() throw(NotValidException)
 {
-    if (!ready()) throw NotValidException();    // check cursor
-    if (at_end()) return;                       // no note at end
-    if (!cursor->has_prev())                    // if the front note is removed...
-        ++cursor->pvoice->begin;                //    increment on-plate voice front (needed by "reengrave()")
+    if (!ready()) throw NotValidException();        // check cursor
+    if (at_end()) return;                           // no note at end
+    if (cursor->pvoice->begin == cursor->note)      // if the front note is removed...
+        ++cursor->pvoice->begin;                    //    increment on-plate voice front (needed by "reengrave()")
     StaffObject* del_note = cursor->note->clone();
     
     // remove note
-    cursor->note.remove();                      // remove the note
+    cursor->note.remove();                          // remove the note
     
     // migrate subvoice and durable objects to next note
-    if (!cursor->note.at_end())                 // if there is a next note
+    if (!cursor->note.at_end())                     // if there is a next note
     {
         // migrate subvoice
         if (   cursor->note->is(Class::NOTEOBJECT)              // if this note can hold a subvoice
@@ -433,12 +424,12 @@ void EditCursor::remove() throw(NotValidException)
         {
             if ((*i)->is(Class::DURABLE) && static_cast<Durable&>(**i).duration > 1)    // for all durables longer than one note
             {
-                tgt.attached.push_back(MovablePtr((*i)->clone()));             // attach cloned instance
+                tgt.attached.push_back(MovablePtr((*i)->clone()));          // attach cloned instance
                 --static_cast<Durable&>(*tgt.attached.back()).duration;     // decrease duration
             };
         };
     };
-    delete del_note;                            // free old note
+    delete del_note;                                // free old note
     
     // reengrave score
     reengrave(REMOVE);

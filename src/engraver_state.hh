@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2012 Dominik Lehmann
+  Copyright (C) 2013 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -151,16 +151,17 @@ class EngraverState
     // engraving methods
     bool engrave_next();                                            // engrave currently referenced object and prepare the next object
     void engrave_beam(const Chord& chord, const StemInfo& info);    // calculate beam end information
-    void add_offset(const mpx_t offset);                            // add the given offset in front of the note to be engraved
     
     // tie control interface
     void add_tieinfo(const TiedHead& thead); // add tie-information for the given tied head
     bool has_tie(const Head& head);          // check, if "head" has got any ties (otherwise "get_tieinfo" fails)
     TieInfo& get_tieinfo(const Head& head);  // get tie-information about the given head
+    void erase_tieinfo(const Head& head);    // erase tie-information (for one head)
     void erase_tieinfo();                    // erase tie-information (for the voice)
     void break_ties();                       // break ties at the object (requires correct gphBox)
     
     // offset and space control interface
+    void add_offset(const mpx_t offset);              // add the given offset in front of the note to be engraved
     void add_distance_after(mpx_t dst, value_t time); // apply additional distance to notes after a given time
     bool has_cluster_space();                         // check, if this chord has been moved yet, due to clustering
     bool has_accidental_space();                      // check, if this chord has been moved yet, due to clustering
@@ -170,6 +171,7 @@ class EngraverState
 inline void     EngraverState::add_tieinfo(const TiedHead& thead)          {tieinfo[&get_voice()][thead.tone].source = &thead; tieinfo[&get_voice()][thead.tone].target = &pnote->ties.back();}
 inline bool     EngraverState::has_tie(const Head& head)                   {return (tieinfo[&get_voice()].find(head.tone) != tieinfo[&get_voice()].end());}
 inline TieInfo& EngraverState::get_tieinfo(const Head& head)               {return tieinfo[&get_voice()][head.tone];}
+inline void     EngraverState::erase_tieinfo(const Head& head)             {tieinfo[&get_voice()].erase(head.tone);}
 inline void     EngraverState::erase_tieinfo()                             {tieinfo[&get_voice()].clear();}
 inline void     EngraverState::break_ties()                                {break_ties(tieinfo[&get_voice()], pnote->gphBox.pos.x, pnote->gphBox.right(), head_height);}
 inline void     EngraverState::add_distance_after(mpx_t dst, value_t time) {pick.add_distance_after(dst, time);}

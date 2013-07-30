@@ -17,30 +17,7 @@
   permissions and limitations under the Licence.
 */
 
-#ifndef SCOREPRESS_UI_HH
-#define SCOREPRESS_UI_HH
+#include "config.hh"
 
-namespace ScorePress
-{
-//  CLASSES
-// ---------
-class UI;   // abstact user-interface base-class
-
-
-//
-//     class UI
-//    ==========
-//
-// This is an abstract user-interface class to be used by external modules
-// and implemented by the GUI-frontend.
-//
-class UI
-{
- public:
-    
-};
-
-} // end namespace
-
-#endif
+const char* libscorepress_datadir = DATADIR;
 

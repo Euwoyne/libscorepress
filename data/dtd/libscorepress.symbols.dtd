@@ -1,0 +1,93 @@
+
+<!--
+  ScorePress - Music Engraving Software - Symbol Library
+  Copyright (C) 2013 Dominik Lehmann
+  
+  This work is made available under the terms of the
+  Creative Commons Attribution-ShareAlike 3.0 license,
+  http://creativecommons.org/licenses/by-sa/3.0/.
+-->
+
+<!ELEMENT symbols           (info?, sprites?)>
+<!ATTLIST symbols id        CDATA                             #REQUIRED>
+
+<!ELEMENT info              (author?, copyright?, license?, description?)>
+<!ELEMENT sprites           (base?, movable?)>
+<!ATTLIST sprites unit      CDATA                             #REQUIRED>
+<!ELEMENT base              (head|flag|rest|accidental|brace|bracket|dot|articulation|clef|timesig)*>
+
+<!ELEMENT author            (#PCDATA)>
+<!ELEMENT copyright         (#PCDATA)>
+<!ELEMENT license           (#PCDATA)>
+<!ELEMENT description       (#PCDATA)>
+
+
+
+<!ELEMENT head              (path, anchor?, stem?)>
+<!ATTLIST head type         (longa|breve|whole|half|quarter)  #REQUIRED>
+<!ELEMENT flag              ((path, overlay?, distance?, anchor?)
+                            |(path, restbase?, anchor?, line?, stem?, slope?))>
+<!ATTLIST flag type         (note|rest)                       #REQUIRED>
+<!ELEMENT rest              (path, anchor?, line?)>
+<!ATTLIST rest type         (longa|breve|whole|half|quarter)  #REQUIRED>
+<!ELEMENT accidental        (path, anchor?, offset?)>
+<!ATTLIST accidental type   (natural|sharp|flat|double-sharp|double-flat|
+                             half-sharp|half-flat|sharp-andahalf|flat-andahalf)
+                                                              #REQUIRED>
+<!ELEMENT brace             (path, anchor?, hmin?, hmax?, low?, high?)>
+<!ELEMENT bracket           (path, anchor?, line?)>
+<!ELEMENT dot               (path, anchor?, distance?, offset?)>
+<!ELEMENT articulation      (path, anchor?, offset?, valuemod?, volumemod?)>
+<!ATTLIST articulation type CDATA                             #REQUIRED>
+<!ELEMENT clef              (path, anchor?, basenote, line?, keybound?)>
+<!ATTLIST clef type         CDATA                             #REQUIRED>
+<!ELEMENT timesig           ((path, digit, anchor?)
+                            |(path, enum, denom, anchor?))>
+<!ATTLIST timesig type      (digit|symbol)                    #REQUIRED>
+
+
+
+<!ELEMENT path              (#PCDATA)>
+<!ELEMENT anchor            (x,y)>
+<!ELEMENT stem              ((x,y)
+                            |(top,bottom,minlen?))>
+<!ELEMENT x                 (#PCDATA)>
+<!ELEMENT y                 (#PCDATA)>
+<!ELEMENT top               (x1,y1,x2,y2)>
+<!ELEMENT bottom            (x1,y1,x2,y2)>
+<!ELEMENT x1                (#PCDATA)>
+<!ELEMENT y1                (#PCDATA)>
+<!ELEMENT x2                (#PCDATA)>
+<!ELEMENT y2                (#PCDATA)>
+<!ELEMENT minlen            (#PCDATA)>
+<!ELEMENT overlay           (#PCDATA)>
+<!ELEMENT distance          (#PCDATA)>
+<!ELEMENT line              (#PCDATA)>
+<!ELEMENT restbase          (#PCDATA)>
+<!ELEMENT slope             (#PCDATA)>
+<!ELEMENT offset            (#PCDATA)>
+<!ELEMENT hmin              (#PCDATA)>
+<!ELEMENT hmax              (#PCDATA)>
+<!ELEMENT low               (#PCDATA)>
+<!ELEMENT high              (#PCDATA)>
+<!ELEMENT valuemod          (#PCDATA)>
+<!ELEMENT volumemod         (#PCDATA)>
+<!ELEMENT basenote          (#PCDATA)>
+<!ELEMENT keybound          (sharp, flat)>
+<!ELEMENT sharp             (#PCDATA)>
+<!ELEMENT flat              (#PCDATA)>
+<!ELEMENT digit             (#PCDATA)>
+<!ELEMENT enum              (#PCDATA)>
+<!ELEMENT denom             (#PCDATA)>
+
+
+
+<!ELEMENT movable           (normal|context)*>
+<!ELEMENT normal            (path, anchor?, offset?)>
+<!ELEMENT context           (path, anchor?, offset?, volume?, tempo?, value?)>
+<!ELEMENT volume            (#PCDATA)>
+<!ATTLIST volume type       (absolute|relative|percent)       #REQUIRED>
+<!ELEMENT tempo             (#PCDATA)>
+<!ATTLIST tempo type        (absolute|relative|percent)       #REQUIRED>
+<!ELEMENT value             (#PCDATA)>
+

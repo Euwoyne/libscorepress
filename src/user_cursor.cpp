@@ -74,20 +74,19 @@ void UserCursor::VoiceCursor::next() throw(InvalidMovement, Error)
     if (!note.at_end())         // calculate end-time
         ntime += get_value(*note);
     
-    // check, if we are at the end
-    if (at_end())           // notice, that this only uses "note" not "pnote"
-    {
-        behind = true;
-        pnote = pend;
-        return;
-    };
-    
-    behind = false;
-    
     // set on-plate note
     while ((&*pnote->note != &*note || pnote->is_inserted()) && pnote != pend)
         ++pnote;
-    if (&*pnote->note != &*note) throw Error("Cannot find next note on-plate.");
+    
+    // check, if we are at the end
+    if (&*pnote->note != &*note)
+    {
+        if (pnote == pend)
+            behind = true;
+        else
+            throw Error("Cannot find next note on-plate.");
+    }
+    else behind = false;
 }
 
 
@@ -99,6 +98,8 @@ bool UserCursor::VoiceCursor::is_simultaneous(const VoiceCursor& cur) const
 {
     if (time != cur.time) return false;                                 // unequal time -> FALSE
     if (at_end() && cur.at_end()) return true;                          // both at end -> TRUE
+    if (empty()) return cur.note->is(Class::NOTEOBJECT);                // empty voices at notes
+    if (cur.empty()) return note->is(Class::NOTEOBJECT);                // empty voices at notes
     if (at_end() || cur.at_end()) return false;                         // only one at end -> FALSE
     if (note->is(Class::NOTEOBJECT) && cur.note->is(Class::NOTEOBJECT)) // equal time/note -> TRUE
         return true;
@@ -108,11 +109,12 @@ bool UserCursor::VoiceCursor::is_simultaneous(const VoiceCursor& cur) const
 // is the given object during this one?
 bool UserCursor::VoiceCursor::is_during(const VoiceCursor& cur) const
 {
-    if (is_simultaneous(cur)) return true;                  // simultaneous -> TRUE
-    if (cur.at_end()) return false;                         // non-simultaneous/at-end -> FALSE
-    if (!cur.note->is(Class::NOTEOBJECT)) return false;     // non-simultaneous/non-note -> FALSE
-    if (time >= cur.time && time < cur.ntime) return true;  // note/during -> TRUE
-    return false;                                           // other -> FALSE
+    //if (is_simultaneous(cur)) return true;                  // simultaneous -> TRUE
+    //if (cur.at_end()) return false;                         // non-simultaneous/at-end -> FALSE
+    //if (!cur.note->is(Class::NOTEOBJECT)) return false;     // non-simultaneous/non-note -> FALSE
+    //if (time >= cur.time && time < cur.ntime) return true;  // note/during -> TRUE
+    //return false;                                           // other -> FALSE
+    return (time == cur.time || (time > cur.time && time < cur.ntime));
 }
 
 // is this object rendered after the given one?
@@ -120,8 +122,11 @@ bool UserCursor::VoiceCursor::is_after(const VoiceCursor& cur) const
 {
     if (time == cur.time)   // rendered in order: newline -> clef -> key -> time-signature -> note
     {
-        if (cur.at_end()) return true;                      // end before everything -> FALSE
-        if (at_end()) return false;                         // end before everything -> TRUE
+        if (at_end() && cur.at_end()) return false;         // both at end -> FALSE
+        if (empty()) return !cur.note->is(Class::NOTEOBJECT);
+        if (cur.empty()) return false;
+        if (cur.at_end()) return true;                      // end before everything -> TRUE
+        if (at_end()) return false;                         // end before everything -> FALSE
         if (note->classtype() == cur.note->classtype() ||   // equal type -> CHECK BEHIND
             (note->is(Class::TIMESIG) && cur.note->is(Class::CUSTOMTIMESIG)) ||
             (note->is(Class::CUSTOMTIMESIG) && cur.note->is(Class::TIMESIG)) ||
@@ -150,8 +155,11 @@ bool UserCursor::VoiceCursor::is_before(const VoiceCursor& cur) const
 {
     if (time == cur.time)   // rendered in order: newline -> clef -> key -> time-signature -> note
     {
-        if (at_end()) return true;                          // end before everything -> FALSE
-        if (cur.at_end()) return false;                     // end before everything -> TRUE
+        if (at_end() && cur.at_end()) return false;         // both at end -> FALSE
+        if (cur.empty()) return !note->is(Class::NOTEOBJECT);
+        if (empty()) return false;
+        if (at_end()) return true;                          // end before everything -> TRUE
+        if (cur.at_end()) return false;                     // end before everything -> FALSE
         if (note->classtype() == cur.note->classtype() ||   // equal type -> CHECK BEHIND
             (note->is(Class::TIMESIG) && cur.note->is(Class::CUSTOMTIMESIG)) ||
             (note->is(Class::CUSTOMTIMESIG) && cur.note->is(Class::TIMESIG)) ||
@@ -201,6 +209,34 @@ std::list<UserCursor::VoiceCursor>::const_iterator UserCursor::find(const Voice&
     return vcursors.end();  // if nothing is found, return invalid
 }
 
+// set "VoiceCursor" plate data ("note" and "layout" must be correct)
+void UserCursor::prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice)
+{
+    newvoice.pbegin = pvoice.notes.begin();                 // initialize on-plate begin
+    newvoice.pend   = pvoice.notes.end();                   // initialize on-plate end
+    if (!pvoice.notes.empty()) --newvoice.pend;             // set end to last note (if one exists)
+    newvoice.pvoice = &pvoice;                              // set voice
+    newvoice.active = true;                                 // set cursor to active
+    newvoice.time = pvoice.time;                            // initialize time
+    while (   newvoice.pbegin != newvoice.pend              // search for correct begin
+           && (   newvoice.pbegin->note != pvoice.begin
+               || newvoice.pbegin->is_inserted()))
+    {
+        if (!newvoice.pbegin->is_inserted())
+            newvoice.time += get_value(*newvoice.pbegin->note);
+        ++newvoice.pbegin;
+    };
+    while (   newvoice.pend != newvoice.pbegin              // search for correct end
+           && newvoice.pend->is_inserted()
+           && newvoice.pend->virtual_obj->object->is(Class::BARLINE))
+        --newvoice.pend;
+    newvoice.ntime = newvoice.time;                         // set ntime
+    newvoice.behind = (newvoice.pend == newvoice.pbegin);   // set behind for empty voices
+    if (newvoice.pbegin != pvoice.notes.end() && !newvoice.pbegin->is_inserted())
+        newvoice.ntime += get_value(*newvoice.pbegin->note);
+    newvoice.pnote = newvoice.pbegin;                       // initialize on-plate note
+}
+
 // set "VoiceCursor" data (helper function for "prepare_voices")
 bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
 {
@@ -225,30 +261,7 @@ bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
         newvoice.layout.reset();
     
     // calculate on-plate data
-    newvoice.pbegin = pvoice.notes.begin();                 // initialize on-plate begin
-    newvoice.pend   = pvoice.notes.end();                   // initialize on-plate end
-    if (!pvoice.notes.empty()) --newvoice.pend;             // set end to last note (if one exists)
-    newvoice.pvoice = &pvoice;                              // set voice
-    newvoice.active = true;                                 // set cursor to active
-    newvoice.time = pvoice.time;                            // initialize time
-    while (   newvoice.pbegin != newvoice.pend              // search for correct begin
-           && (   newvoice.pbegin->note != newvoice.note
-               || newvoice.pbegin->is_inserted()))
-    {
-        if (!newvoice.pbegin->is_inserted())
-            newvoice.time += get_value(*newvoice.pbegin->note);
-        ++newvoice.pbegin;
-    };
-    while (   newvoice.pend != newvoice.pbegin              // search for correct end
-           && newvoice.pend->is_inserted()
-           && newvoice.pend->virtual_obj->object->is(Class::BARLINE))
-        --newvoice.pend;
-    newvoice.ntime = newvoice.time;                         // set ntime
-    newvoice.behind = (newvoice.pend == newvoice.pbegin);   // set behind for empty voices
-    if (newvoice.pbegin != pvoice.notes.end() && !newvoice.pbegin->is_inserted())
-        newvoice.ntime += get_value(*newvoice.pbegin->note);
-    newvoice.pnote = newvoice.pbegin;                       // initialize on-plate note
-    
+    prepare_plate(newvoice, pvoice);
     return true;    // return success
 }
 
@@ -312,43 +325,30 @@ void UserCursor::update_voices()
             continue;               // ignore moved cursor
         
         i->active = true;           // initialize at active state
-        i->behind = false;          // reset behind
         
-        if (i->empty())
-        {
+        if (i->empty())             // an empty voice...
+        {                           // ...is active, if it is simultaneous and can be a child (only noteobjects are parents)
             i->active = ((i->ntime >= cursor->time) && (cursor->empty() || cursor->note->is(Class::NOTEOBJECT)));
-            i->behind = true;
             continue;
         };
         
-        if (!i->is_during(*cursor)) // cursor during the current one is correct (mostly)
-        {
-            while (i->is_after(*cursor))    // move backward if necessary
-            {                               // (set inactive if movement is impossible)
-                if (!(i->active = i->has_prev())) break;
-                i->prev();
-            };
-            
-            if (i->active)
-            {
-                while (i->is_before(*cursor))   // move foreward if necessary
-                {
-                    if (i->at_end())            // if movement is impossible
-                    {
-                        i->active = (i->ntime >= cursor->time); // check, whether we can jump to the cursor (from the end)
-                        break;
-                    };
-                    i->next();
-                };
-            };
-        }                           // cursors during the current one are incorrect, iff they begin after it and have no preceiding one
-        else if (!i->has_prev() && !cursor->behind && !i->is_simultaneous(*cursor))
-            i->active = false;                  // set those inactive
+        while (i->is_after(*cursor))    // move backward if necessary
+        {                               // (set inactive if movement is impossible)
+            if (!(i->active = i->has_prev())) break;
+            i->prev();
+        };
         
-        if (cursor->behind && !i->behind)   // if the current cursor is BEHIND a note
+        if (i->active |= i->is_during(*cursor)) // check, if the voices begin is simultaneous with the cursor
         {
-            if      (i->time == cursor->time)  i->next();           // move behind simultaneous notes
-            else if (i->time == cursor->ntime) i->active = true;    // activate voices beginning directly after the note
+            while (i->is_before(*cursor))       // move foreward if necessary
+            {
+                if (i->at_end())                    // if movement is impossible
+                {
+                    i->active = (i->ntime >= cursor->time); // check, whether we can jump to the cursor (from the end)
+                    break;
+                };
+                i->next();
+            };
         };
     };
 }
@@ -1068,8 +1068,9 @@ void UserCursor::dump() const
     {
         size_t idx = 0;
         for (std::list<Plate::pNote>::const_iterator j = i->pvoice->notes.begin(); j != i->pvoice->notes.end() && j != i->pnote; ++j, ++idx);
-        if (!i->active) std::cout << " ["; else std::cout << " ";
-        std::cout << i->note.index() << "/" << idx << ": ";
+        if (!i->active) std::cout << "["; else std::cout << " ";
+        std::cout << i->note.index() << "/" << idx << ":";
+        if (i->behind) std::cout << "B "; else std::cout << "  ";
         if (i->has_prev()) std::cout << "<"; else std::cout << " ";
         if (i->has_next()) std::cout << "> "; else std::cout << "  ";
         if (i->at_end()) std::cout << "E"; else std::cout << classname(i->note->classtype());

@@ -1,6 +1,13 @@
 # Code::Blocks files
-scorepress-gtk.depend
-scorepress-gtk.layout
+libscorepress.depend
+libscorepress.layout
+
+# Configure Output
+config.status
+*.log
+src/config.hh
+doc/Doxyfile
+Makefile
 
 # Compiled Object files
 build

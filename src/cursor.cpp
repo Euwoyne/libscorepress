@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2011 Dominik Lehmann
+  Copyright (C) 2013 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -211,6 +211,7 @@ void Cursor::remove()
 const_Cursor::const_Cursor() : _staff(NULL), _voice(NULL) {}
 const_Cursor::const_Cursor(const Staff& s) : _staff(&s), _voice(&s), _main(s.notes.begin()) {}
 const_Cursor::const_Cursor(const Staff& s, const SubVoice& v) : _staff(&s), _voice(&v), _sub(v.notes.begin()) {}
+const_Cursor::const_Cursor(const Cursor& c) : _staff(c._staff), _voice(c._voice), _main(c._main), _sub(c._sub) {}
 
 // increment operator; move cursor to the next note (prefix)
 const_Cursor& const_Cursor::operator ++ ()

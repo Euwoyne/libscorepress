@@ -1,14 +1,14 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2012 Dominik Lehmann
+  Copyright (C) 2013 Dominik Lehmann
 
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
   versions of the EUPL (the "Licence");
   You may not use this work except in compliance with the
   Licence.
- 
+  
   Unless required by applicable law or agreed to in
   writing, software distributed under the Licence is
   distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
@@ -42,7 +42,7 @@ void EngraverState::engrave()
 {
     // set "pvoice" corresponding to the current pick
     const Pick::VoiceCursor& cursor = pick.get_cursor();
-    if (cursor.at_end()) {Log::warn("Cursor at end during engraving process!\n"); return;};
+    if (cursor.at_end()) {Log::warn("Cursor at end during engraving process. (class: EngraverState)"); return;};
     
     // get the voice on the plate
     pvoice = pline->get_voice(cursor.voice());  // get the voice
@@ -158,7 +158,7 @@ void EngraverState::engrave()
     if (cursor->is(Class::VISIBLEOBJECT))
     {
         const VisibleObject& visible = cursor->get_visible();
-    
+        
         // apply context modifying movables
         for (MovableList::const_iterator i = visible.attached.begin(); i != visible.attached.end(); ++i)
         {
@@ -207,21 +207,18 @@ void EngraverState::engrave()
     };
     
     // remember engraved symbol
-    if (cursor->is(Class::VISIBLEOBJECT))
+    if (cursor->is(Class::BARLINE))     // barlines will be remembered by all voices
     {
-        if (cursor->is(Class::BARLINE))     // barlines will be remembered by all voices
+        for (std::list<Plate::pVoice>::iterator v = pline->voices.begin(); v != pline->voices.end(); ++v)
         {
-            for (std::list<Plate::pVoice>::iterator v = pline->voices.begin(); v != pline->voices.end(); ++v)
-            {
-                v->context.set_buffer(&pnote->get_note());
-                v->context.set_buffer_xpos(pnote->gphBox.right());
-            };
-        }
-        else
-        {
-            pvoice->context.set_buffer(&pnote->get_note());
-            pvoice->context.set_buffer_xpos(pnote->gphBox.right());
+            v->context.set_buffer(&pnote->get_note());
+            v->context.set_buffer_xpos(pnote->gphBox.right());
         };
+    }
+    else
+    {
+        pvoice->context.set_buffer(&pnote->get_note());
+        pvoice->context.set_buffer_xpos(pnote->gphBox.right());
     };
     
     // check for end of voice
@@ -296,11 +293,11 @@ void EngraverState::apply_offsets()
     {
         // calculate head-height for the current voice
         const mpx_t _head_height = _round(viewport->umtopx_v(pvoice->begin.staff().head_height));
-    
+        
         // iterate the voice
         for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
         {
-            if (it->is_inserted()) continue;
+            if (it->is_inserted() || !it->get_note().is(Class::VISIBLEOBJECT)) continue;
             
             if (it->get_note().get_visible().offset_x)
             {
@@ -556,6 +553,7 @@ void EngraverState::engrave_attachables()
             visible = &it->get_note().get_visible();
             
             // engrave movables
+            if (visible != NULL)
             for (MovableList::const_iterator i = visible->attached.begin(); i != visible->attached.end(); ++i)
             {
                 // append durable
@@ -666,7 +664,7 @@ void EngraverState::engrave_braces()
     std::list<Plate::pVoice>::iterator tvoice;                                 // temporary
     
     // sprites
-    SpriteId brace_sprite = 
+    SpriteId brace_sprite =
                 (pick.get_score().layout.brace_sprite.setid == UNDEFINED
                  || (*sprites)[pick.get_score().layout.brace_sprite.setid].brace == UNDEFINED) ?
                     SpriteId(0, (*sprites)[0].brace) :
@@ -674,7 +672,7 @@ void EngraverState::engrave_braces()
                         SpriteId(pick.get_score().layout.brace_sprite.setid, (*sprites)[pick.get_score().layout.brace_sprite.setid].brace) :
                         pick.get_score().layout.brace_sprite);
     
-    SpriteId bracket_sprite = 
+    SpriteId bracket_sprite =
                 (pick.get_score().layout.bracket_sprite.setid == UNDEFINED
                  || (*sprites)[pick.get_score().layout.bracket_sprite.setid].bracket == UNDEFINED) ?
                     SpriteId(0, (*sprites)[0].bracket) :
@@ -1010,25 +1008,34 @@ bool EngraverState::engrave_next()
     // calculate data for the next note
     pick.next(pnote->gphBox.width);
     
-    // check for newline
-    if (pick.newline() || pick.eos())   // if the next note is in a new line
-    {                                   // or we are at the end of the score
-        create_lineend();               // calculate line-end information
-        if (lineinfo.justify)           // justifiy the line
-            justify_line();
-        apply_offsets();                // apply non-cumulative offsets
-        engrave_stems();                // engrave all the missing stems
-        engrave_attachables();          // engrave all the line's attached objects
-        engrave_braces();               // engrave braces and brackets
-        calculate_gphBox(*pline);       // calculate the graphical boundary box
-        barcnt = pvoice->context.bar(pick.newline_time());
-    } else return true;
+    // quit here, if there's no newline (and no end of score)
+    if (!pick.eos() && !pick.get_cursor()->is(Class::NEWLINE)) return true;
+    
+    const bool pagebreak = (!pick.eos() && pick.get_cursor()->is(Class::PAGEBREAK));
+    
+    // engrave all newlines at once
+    while (!pick.eos() && pick.get_cursor()->is(Class::NEWLINE))
+    {
+        engrave();                      // engrave newline
+        pick.next(pnote->gphBox.width); // goto next note
+    };
+    
+    // finish the line
+    create_lineend();               // calculate line-end information
+    if (lineinfo.justify)           // justifiy the line
+        justify_line();
+    apply_offsets();                // apply non-cumulative offsets
+    engrave_stems();                // engrave all the missing stems
+    engrave_attachables();          // engrave all the line's attached objects
+    engrave_braces();               // engrave braces and brackets
+    calculate_gphBox(*pline);       // calculate the graphical boundary box
+    barcnt = pvoice->context.bar(pick.get_cursor().time);
     
     // exit here, if no newline (below is the code for newline handling)
     if (pick.eos()) return false;
     
     // check for pagebreak
-    if (pick.pagebreak())
+    if (pagebreak)
     {
         if (++page == pageset->pages.end())
         {
@@ -1110,12 +1117,12 @@ void EngraverState::add_offset(const mpx_t offset)
         // iterate through the voice backwards
         for (std::list<Plate::pNote>::reverse_iterator n = i->notes.rbegin(); n != i->notes.rend(); ++n)
         {
-            // if we got a note, which is early enough to be not influenced by the offset
+            // if we got a note, which is early enough to not be influenced by the offset
             if (n->absolutePos.front().x < refpos)
             {
                 if (n->virtual_obj)     // ignore barline
                     if (n->virtual_obj->object->is(Class::BARLINE))
-                        ++n;
+                        continue;
                 
                 if (n != i->notes.rend() && !n->ties.empty())   // do not move broken tie front
                     if (n->ties.front().pos1.x <= n->ties.front().pos2.x)

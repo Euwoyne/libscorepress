@@ -105,20 +105,13 @@
 		<Linker>
 			<Add option="`pkg-config libxml-2.0 --libs`" />
 		</Linker>
-		<Unit filename="Makefile">
-			<Option target="install-shared" />
-			<Option target="static" />
-			<Option target="shared" />
-		</Unit>
-		<Unit filename="doxygen/Doxyfile">
-			<Option compilerVar="doxygen" />
-			<Option compiler="gcc" use="0" buildCommand="doxygen $(FILE)" />
+		<Unit filename="doc/Doxyfile.ac">
 			<Option target="doc" />
 		</Unit>
-		<Unit filename="doxygen/classes.dox">
+		<Unit filename="doc/classes.dox">
 			<Option target="doc" />
 		</Unit>
-		<Unit filename="doxygen/engraver.dox">
+		<Unit filename="doc/engraver.dox">
 			<Option target="doc" />
 		</Unit>
 		<Unit filename="src/classes.cpp">
@@ -131,6 +124,8 @@
 			<Option target="shared" />
 			<Option target="install-shared" />
 		</Unit>
+		<Unit filename="src/config.hh" />
+		<Unit filename="src/config.hh.ac" />
 		<Unit filename="src/context.cpp">
 			<Option target="static" />
 			<Option target="shared" />

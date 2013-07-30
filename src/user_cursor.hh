@@ -41,7 +41,7 @@ class UserCursor;   // cursor, with graphical representation, and simple movemen
 // This cursor class iterates simultaneously the score and the corresponding
 // plate. It has a graphical representation, which can be rendered by a
 // "Press" instance. It can be manipulated by directions and graphical
-// coorinates. (Modification methods implemented in child-class "EditCursor")
+// coorinates. (Modification methods implemented in child-class "EditCursor".)
 //
 class UserCursor
 {
@@ -112,7 +112,8 @@ class UserCursor
     std::list<VoiceCursor>::const_iterator find(const Voice& voice) const;
     
     // set all voice-cursors to the beginning of the current line
-    bool prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice);    // set "VoiceCursor" data (helper)
+    void prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" plate data ("note" and "layout" must be correct)
+    bool prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" data (helper)
     void prepare_voices();
     
     // move the voice-cursors to the corresponding position within the currently referenced voice
@@ -190,10 +191,10 @@ class UserCursor
 };
 
 // inline method implementations
-inline bool UserCursor::VoiceCursor::has_prev() const {return (behind && !pvoice->begin->is(Class::NEWLINE)) || (&*note != &*pvoice->begin);}
+inline bool UserCursor::VoiceCursor::has_prev() const {return (behind && !empty()) || (&*note != &*pvoice->begin);}
 inline bool UserCursor::VoiceCursor::has_next() const {return (note.has_next() && pnote != pend);}
-inline bool UserCursor::VoiceCursor::empty()    const {return pvoice->begin->is(Class::NEWLINE);}
-inline bool UserCursor::VoiceCursor::at_end()   const {return (note.at_end() || note->is(Class::NEWLINE));} // NOTE: only use "note", not "pnote"!
+inline bool UserCursor::VoiceCursor::empty()    const {return pvoice->begin.at_end() || pvoice->begin->is(Class::NEWLINE);}
+inline bool UserCursor::VoiceCursor::at_end()   const {return (behind && (pnote == pend));}
 
 inline const Score&         UserCursor::get_score() const {return score->score;}
 inline const Plate&         UserCursor::get_plate() const {return plateinfo->plate;}

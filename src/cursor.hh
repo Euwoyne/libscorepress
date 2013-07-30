@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2011 Dominik Lehmann
+  Copyright (C) 2013 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -133,6 +133,7 @@ class const_Cursor
     const_Cursor();
     const_Cursor(const Staff& staff);
     const_Cursor(const Staff& staff, const SubVoice& voice);
+    const_Cursor(const Cursor& cursor);
     
     // iterator interface
     inline const StaffObject& operator * () const  // return the Staff-Object the cursor points to

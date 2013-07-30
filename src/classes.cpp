@@ -1,14 +1,14 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2012 Dominik Lehmann
+  Copyright (C) 2013 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
   versions of the EUPL (the "Licence");
   You may not use this work except in compliance with the
   Licence.
- 
+  
   Unless required by applicable law or agreed to in
   writing, software distributed under the Licence is
   distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
@@ -330,7 +330,7 @@ void TimeSig::engrave(EngraverState& engraver, size_t setid) const
         pnote.absolutePos.back() -= anchor; // apply sprite-offset
         
         // center (vertically)
-        pnote.absolutePos.back().y += 
+        pnote.absolutePos.back().y +=
             (time_height > static_cast<mpx_t>((sprites[setid][sprite].height * head_height) / sprites[setid].head_height)) ?
                 (time_height - (sprites[setid][sprite].height * head_height) / sprites[setid].head_height) / 2 :
                  time_height - (sprites[setid][sprite].height * head_height) / sprites[setid].head_height;
@@ -518,6 +518,15 @@ void Barline::engrave(EngraverState& engraver) const
         Log::warn("Barline has illegal style. (class: Barline)");
 }
 
+// engraving method (Newline)
+void Newline::engrave(EngraverState& engraver) const
+{
+    Plate::pNote& pnote = engraver.get_target();
+    pnote.gphBox.pos = pnote.absolutePos.front();
+    pnote.gphBox.width = 0;
+    pnote.gphBox.height = engraver.get_head_height() * (engraver.get_staff().line_count - 1);
+}
+
 // add the given head to the target "pNote" instance (and return true, if a cluster ocurred; for stem correction)
 static bool engrave_head(Head&          head,           // head to be engraved
                      Plate::pNote&      target,         // target pNote instance
@@ -696,7 +705,7 @@ void Chord::engrave(EngraverState& engraver) const
     stem.y   = _round(headsprite.get_real("stem.y") * scale * this->appearance.scale);
     
     // get dot sprite and distance
-    const SpriteInfo& dotsprite = 
+    const SpriteInfo& dotsprite =
         (sprites[pnote.sprite.setid].dot != UNDEFINED) ?
             sprites[pnote.sprite.setid][sprites[pnote.sprite.setid].dot] :
             sprites[pnote.sprite.setid][sprites[pnote.sprite.setid].undefined_symbol];
@@ -1057,7 +1066,7 @@ void Chord::engrave(EngraverState& engraver) const
                         _round(   pnote.absolutePos.begin()->x
                                 + headsprite.width * scale * chord_scale * 500
                                 - (artanchor.x * i->appearance.scale) / 1000.0),
-                        (stem_len >= 0) ?             
+                        (stem_len >= 0) ?
                             // upward stem and far symbol (i.e. on top of the stem)
                             (i->far ? _round(pnote.stem.top
                                            - artsprite.height * scale * chord_scale * i->appearance.scale
@@ -1110,7 +1119,7 @@ void Chord::engrave(EngraverState& engraver) const
         )                                        // then this note has a flag
     {
         // get flag sprite information
-        const SpriteInfo& flagsprite = 
+        const SpriteInfo& flagsprite =
             (sprites[pnote.sprite.setid].flags_note != UNDEFINED) ?
                 sprites[pnote.sprite.setid][sprites[pnote.sprite.setid].flags_note] :
                 sprites[pnote.sprite.setid][sprites[pnote.sprite.setid].undefined_symbol];
@@ -1155,7 +1164,7 @@ void Rest::engrave(EngraverState& engraver) const
     stembottomx1 = _round(restsprite.get_real("stem.bottom.x1") * scale * this->appearance.scale);
     
     // get dot sprite and distance
-    const SpriteInfo& dotsprite = 
+    const SpriteInfo& dotsprite =
         (sprites[pnote.sprite.setid].dot != UNDEFINED) ?
             sprites[pnote.sprite.setid][sprites[pnote.sprite.setid].dot] :
             sprites[pnote.sprite.setid][sprites[pnote.sprite.setid].undefined_symbol];
