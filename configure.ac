@@ -17,6 +17,7 @@ AC_DEFINE([LIBSCOREPRESS_VERSION_PATCH], [5])
 
 # save user flags
 CFLAGS_ORI="$CFLAGS"
+LDFLAGS_ORI="$LDFLAGS"
 LIBS_ORI="$LIBS"
 
 # check commandline arguments
@@ -95,7 +96,7 @@ else
 fi
 
 CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
-LDFLAGS="$LIBS_ORI $LIBXML_LIBS"
+LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
 LIBS="$LIBS_ORI $LIBXML_LIBS"
 AC_CHECK_LIB([xml2], [xmlReaderForFile],, AC_MSG_ERROR([cannot find library 'libxml2']))
 
@@ -124,12 +125,14 @@ AC_TYPE_SIZE_T
 
 # check functions
 CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
-LDFLAGS="$LIBS_ORI $LIBXML_LIBS"
+LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
+LIBS="$LIBS_ORI $LIBXML_LIBS"
 AC_CHECK_FUNC([xmlReaderForFile],, AC_MSG_ERROR([library 'libxml2' does not provide the 'xmlReader' interface]))
 AC_CHECK_FUNC([xmlReaderForMemory],, AC_MSG_ERROR([library 'libxml2' does not provide the 'xmlReader' interface]))
 
 # generate output
 AC_SUBST([CFLAGS],[$CFLAGS_ORI])
+AC_SUBST([LDFLAGS],[$LDFLAGS_ORI])
 AC_SUBST([LIBS],[$LIBS_ORI])
 AC_CONFIG_FILES([Makefile:Makefile.ac])
 AC_OUTPUT()

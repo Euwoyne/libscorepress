@@ -5,7 +5,7 @@ libscorepress.layout
 # Configure Output
 config.status
 *.log
-src/config.hh
+include/scorepress/config.hh
 doc/Doxyfile
 Makefile
 

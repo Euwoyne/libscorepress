@@ -2194,6 +2194,7 @@ $as_echo "#define LIBSCOREPRESS_VERSION_PATCH 5" >>confdefs.h
 
 # save user flags
 CFLAGS_ORI="$CFLAGS"
+LDFLAGS_ORI="$LDFLAGS"
 LIBS_ORI="$LIBS"
 
 # check commandline arguments
@@ -3228,7 +3229,7 @@ else
 fi
 
 CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
-LDFLAGS="$LIBS_ORI $LIBXML_LIBS"
+LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
 LIBS="$LIBS_ORI $LIBXML_LIBS"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmlReaderForFile in -lxml2" >&5
@@ -3915,7 +3916,8 @@ fi
 
 # check functions
 CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
-LDFLAGS="$LIBS_ORI $LIBXML_LIBS"
+LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
+LIBS="$LIBS_ORI $LIBXML_LIBS"
 ac_fn_cxx_check_func "$LINENO" "xmlReaderForFile" "ac_cv_func_xmlReaderForFile"
 if test "x$ac_cv_func_xmlReaderForFile" = xyes; then :
 
@@ -3933,6 +3935,8 @@ fi
 
 # generate output
 CFLAGS=$CFLAGS_ORI
+
+LDFLAGS=$LDFLAGS_ORI
 
 LIBS=$LIBS_ORI
 
