@@ -2169,7 +2169,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-ac_config_headers="$ac_config_headers src/config.hh:src/config.hh.ac"
+ac_config_headers="$ac_config_headers include/scorepress/config.hh:include/scorepress/config.hh.ac"
 
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -4628,7 +4628,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "src/config.hh") CONFIG_HEADERS="$CONFIG_HEADERS src/config.hh:src/config.hh.ac" ;;
+    "include/scorepress/config.hh") CONFIG_HEADERS="$CONFIG_HEADERS include/scorepress/config.hh:include/scorepress/config.hh.ac" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile:Makefile.ac" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

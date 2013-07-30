@@ -4,7 +4,7 @@
 AC_PREREQ([2.69])
 AC_INIT([libscorepress], [0.2.5])
 AC_CONFIG_SRCDIR([src/engraver.cpp])
-AC_CONFIG_HEADERS([src/config.hh:src/config.hh.ac])
+AC_CONFIG_HEADERS([include/scorepress/config.hh:include/scorepress/config.hh.ac])
 AC_LANG([C++])
 
 AC_SUBST([PACKAGE_VERSION_MAIN], [0])

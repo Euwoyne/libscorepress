@@ -52,6 +52,7 @@ datadir     := @datadir@/${PACKAGE_TARNAME}
 distdir     := @PACKAGE_NAME@-@PACKAGE_VERSION@
 
 srcdir      := @srcdir@/src
+headerdir   := @srcdir@/include/${basename}
 datasrc     := @srcdir@/data
 docsrc      := @srcdir@/doc
 doxyfile    := ${docsrc}/Doxyfile
@@ -101,7 +102,7 @@ CONFIGFLAGS := -DDATADIR="\"${datadir}\""
 USER_FLAGS := @CFLAGS@
 USER_LIBS  := @LDFLAGS@ @LIBS@
 
-FLAGS := ${WARNINGS} ${CTRLFLAGS} ${${MODE}} -I${srcdir} ${USER_FLAGS}
+FLAGS := ${WARNINGS} ${CTRLFLAGS} ${${MODE}} -I${headerdir} ${USER_FLAGS}
 LIBS  := ${XMLLIBS} ${USER_LIBS}
 
 SIZECHECK_ON    := -DSIZECHECK -Wno-long-long
@@ -217,7 +218,7 @@ install-data: ${datadir}/dtd ${datadir}/symbol
 
 install-headers: ${includedir}/${basename}
 	@echo "Installing Headers..."
-	@${INSTALL} -t ${includedir}/${basename} ${srcdir}/*.hh
+	@${INSTALL} -t ${includedir}/${basename} ${headerdir}/*.hh
 
 # documentation
 ${doxyfile}: ${doxy_ac}
@@ -399,7 +400,7 @@ clean:
 
 distclean: clean
 	@echo "  Deleting:     configuration..."
-	@-rm -f ${srcdir}/config.hh
+	@-rm -f ${headerdir}/config.hh
 	@-rm -f ${doxyfile}
 	@-rm -f @srcdir@/config.log
 	@-rm -f @srcdir@/config.status
@@ -411,7 +412,7 @@ help:
 # distributions
 dist: ${distdir}
 	cp -RP --preserve=timestamps,links ${distfiles} ${distdir}
-	if test -f ${distdir}/src/config.hh; then rm -f ${distdir}/src/config.hh; fi
+	if test -f ${headerdir}/config.hh; then rm -f ${header}/config.hh; fi
 	if test -f ${distdir}/doc/Doxyfile;  then rm -f ${distdir}/doc/Doxyfile;  fi
 
 dist-gzip: dist
