@@ -37,10 +37,10 @@ AC_ARG_ENABLE([profile],
             [AS_HELP_STRING([--enable-profile], [enable profiling with GProf])],
             [with_profile="$withval"],
             [with_profile="no"])
-AC_ARG_WITH([libxml],
-            [AS_HELP_STRING([--with-libxml], [location of the libxml2 headers [/usr/include/libxml2]])],
-            [with_libxml="$withval"],
-            [with_libxml="auto"])
+AC_ARG_WITH([libxml2],
+            [AS_HELP_STRING([--with-libxml2], [location of the libxml2 headers [/usr/include/libxml2]])],
+            [with_libxml2="$withval"],
+            [with_libxml2="auto"])
 
 AS_IF([test "x$with_sizecheck" != "xno"],
     AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_ON}]),
@@ -82,9 +82,9 @@ if test -z "$LATEX";     then AC_SUBST([LATEX],     [:]) fi
 if test -z "$MAKEINDEX"; then AC_SUBST([MAKEINDEX], [:]) fi
 
 # check libraries
-#   libxml
-if test "x$with_libxml" != "xauto"; then
-    AC_SUBST([LIBXML_CFLAGS], [-I$with_libxml])
+#   libxml2
+if test "x$with_libxml2" != "xauto"; then
+    AC_SUBST([LIBXML_CFLAGS], [-I$with_libxml2])
     AC_SUBST([LIBXML_LIBS], [-lxml2])
 elif test -n "$PKGCONFIG" -a `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; then
     AC_SUBST([LIBXML_CFLAGS], [`\${PKGCONFIG} libxml-2.0 --cflags`])
@@ -93,7 +93,10 @@ else
     AC_SUBST([LIBXML_CFLAGS], [-I/usr/include/libxml2])
     AC_SUBST([LIBXML_LIBS], [-lxml2])
 fi
-CFLAGS="$LIBXML_CFLAGS $CFLAGS_ORI"
+
+CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
+LDFLAGS="$LIBS_ORI $LIBXML_LIBS"
+LIBS="$LIBS_ORI $LIBXML_LIBS"
 AC_CHECK_LIB([xml2], [xmlReaderForFile],, AC_MSG_ERROR([cannot find library 'libxml2']))
 
 # check headers
@@ -110,8 +113,8 @@ AC_CHECK_HEADER([deque],,    AC_MSG_ERROR([Cannot find <deque> header.]))
 AC_CHECK_HEADER([map],,      AC_MSG_ERROR([Cannot find <map> header.]))
 AC_CHECK_HEADER([set],,      AC_MSG_ERROR([Cannot find <set> header.]))
 
-CPPFLAGS="$LIBXML_CFLAGS $CFLAGS_ORI"
-CFLAGS="$LIBXML_CFLAGS $CFLAGS_ORI"
+CPPFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
+CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
 AC_CHECK_HEADER([libxml/xmlreader.h],, AC_MSG_ERROR([Failed to find <xmlreader.h>]))
 
 # check types
@@ -120,7 +123,8 @@ AS_IF([test "x$with_sizecheck" != "xno"],
 AC_TYPE_SIZE_T
 
 # check functions
-CFLAGS="$LIBXML_CFLAGS $CFLAGS_ORI"
+CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
+LDFLAGS="$LIBS_ORI $LIBXML_LIBS"
 AC_CHECK_FUNC([xmlReaderForFile],, AC_MSG_ERROR([library 'libxml2' does not provide the 'xmlReader' interface]))
 AC_CHECK_FUNC([xmlReaderForMemory],, AC_MSG_ERROR([library 'libxml2' does not provide the 'xmlReader' interface]))
 

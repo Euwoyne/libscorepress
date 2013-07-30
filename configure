@@ -693,7 +693,7 @@ enable_doxygen
 enable_fraction_check
 enable_debug
 enable_profile
-with_libxml
+with_libxml2
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1322,7 +1322,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-libxml           location of the libxml2 headers
+  --with-libxml2          location of the libxml2 headers
                           [/usr/include/libxml2]
 
 Some influential environment variables:
@@ -2227,11 +2227,11 @@ else
 fi
 
 
-# Check whether --with-libxml was given.
-if test "${with_libxml+set}" = set; then :
-  withval=$with_libxml; with_libxml="$withval"
+# Check whether --with-libxml2 was given.
+if test "${with_libxml2+set}" = set; then :
+  withval=$with_libxml2; with_libxml2="$withval"
 else
-  with_libxml="auto"
+  with_libxml2="auto"
 fi
 
 
@@ -3209,9 +3209,9 @@ if test -z "$MAKEINDEX"; then MAKEINDEX=:
  fi
 
 # check libraries
-#   libxml
-if test "x$with_libxml" != "xauto"; then
-    LIBXML_CFLAGS=-I$with_libxml
+#   libxml2
+if test "x$with_libxml2" != "xauto"; then
+    LIBXML_CFLAGS=-I$with_libxml2
 
     LIBXML_LIBS=-lxml2
 
@@ -3226,7 +3226,10 @@ else
     LIBXML_LIBS=-lxml2
 
 fi
-CFLAGS="$LIBXML_CFLAGS $CFLAGS_ORI"
+
+CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
+LDFLAGS="$LIBS_ORI $LIBXML_LIBS"
+LIBS="$LIBS_ORI $LIBXML_LIBS"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmlReaderForFile in -lxml2" >&5
 $as_echo_n "checking for xmlReaderForFile in -lxml2... " >&6; }
@@ -3767,8 +3770,8 @@ fi
 
 
 
-CPPFLAGS="$LIBXML_CFLAGS $CFLAGS_ORI"
-CFLAGS="$LIBXML_CFLAGS $CFLAGS_ORI"
+CPPFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
+CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
 ac_fn_cxx_check_header_mongrel "$LINENO" "libxml/xmlreader.h" "ac_cv_header_libxml_xmlreader_h" "$ac_includes_default"
 if test "x$ac_cv_header_libxml_xmlreader_h" = xyes; then :
 
@@ -3911,7 +3914,8 @@ fi
 
 
 # check functions
-CFLAGS="$LIBXML_CFLAGS $CFLAGS_ORI"
+CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
+LDFLAGS="$LIBS_ORI $LIBXML_LIBS"
 ac_fn_cxx_check_func "$LINENO" "xmlReaderForFile" "ac_cv_func_xmlReaderForFile"
 if test "x$ac_cv_func_xmlReaderForFile" = xyes; then :
 
