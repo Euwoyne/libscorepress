@@ -184,28 +184,22 @@ distfiles := @srcdir@/AUTHORS      \
         dist dist-gzip dist-bzip2 dist-zip deb
 
 # compile
-all: shared static
-
-shared: ${builddir}
-	@echo "Making:         ${sofile}"
-	@${MAKE} -s ${builddir}/${sofile}
-
-static: ${builddir}
-	@echo "Making:         ${afile}"
-	@${MAKE} -s ${builddir}/${afile}
+all:    shared static
+shared: ${builddir} ${builddir}/${sofile}
+static: ${builddir} ${builddir}/${afile}
 
 # install
 install:     install-shared install-static install-data install-doc
 install-dev: install-shared install-static install-data install-doc    install-headers
 install-all: install-shared install-static install-data install-alldoc install-headers
 
-install-shared: ${libdir}
+install-shared: ${builddir} ${builddir}/${sofile} ${libdir}
 	@echo "Installing:     ${sofile}"
 	@${INSTALL} ${builddir}/${sofile} ${libdir}
 	@${LN} ${libdir}/${sofile} ${libdir}/${sobase}
 	@${LDCONFIG} ${libdir}
 
-install-static: ${libdir}
+install-static: ${builddir} ${builddir}/${afile} ${libdir}
 	@echo "Installing:     ${afile}"
 	@cp ${builddir}/${afile} ${libdir}/${afile}
 
@@ -437,13 +431,17 @@ ${builddir} ${libdir} ${includedir}/${basename} ${includedir2}/${basename} ${dat
 # TARGET FILES
 #
 
-${builddir}/${sofile}:	${sofiles}
-						echo "  Linking:      ${sofile}..."
-						${CXX} -shared -Wl,-soname,${soname} -lc ${sofiles} -o ${builddir}/${sofile} ${XMLLIBS} ${FLAGS}
+${builddir}/${sofile}:
+						@echo "Making:         ${sofile}"
+						@${MAKE} -s ${sofiles}
+						@echo "  Linking:      ${sofile}..."
+						@${CXX} -shared -Wl,-soname,${soname} -lc ${sofiles} -o ${builddir}/${sofile} ${XMLLIBS} ${FLAGS}
 
-${builddir}/${afile}:	${afiles}
-						echo "  Linking:      ${afile}..."
-						${AR} ${builddir}/${afile} ${afiles}
+${builddir}/${afile}:
+						@echo "Making:         ${afile}"
+						@${MAKE} -s ${afiles}
+						@echo "  Linking:      ${afile}..."
+						@${AR} ${builddir}/${afile} ${afiles}
 
 #
 # OBJECT FILES
