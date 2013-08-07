@@ -1,9 +1,20 @@
 
 /*
-  ScorePress - Music Engraving Software  (libscorepress)
+  ScorePress - Music Engraving Software  (libscorepress-doc)
   Copyright (C) 2013 Dominik Lehmann
   
-  Licensed under the EUPL V.1.1
+  Licensed under the EUPL, Version 1.1 or - as soon they
+  will be approved by the European Commission - subsequent
+  versions of the EUPL (the "Licence");
+  You may not use this work except in compliance with the
+  Licence.
+  
+  Unless required by applicable law or agreed to in
+  writing, software distributed under the Licence is
+  distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
+  CONDITIONS OF ANY KIND, either expressed or implied.
+  See the Licence for the specific language governing
+  permissions and limitations under the Licence.
 */
 
 /*! \file engraver.hh
@@ -13,8 +24,8 @@
 /*! \class ScorePress::Engraver engraver.hh
     \brief %Engraver, converting a \link Score\endlink into displayable \link Plate Plates\endlink.
     
-    This class is used to convert a \link Score score-object\endlink to a set
-    of absolute-positioned sprites, being saved to a Plate. The target \link PageSet pageset\endlink as
+    Converter class using a \link Score score-object\endlink to calculate a set
+    of absolute-positioned sprites saved to a Plate. The target \link PageSet pageset\endlink as
     well as the \link Sprites sprite-library\endlink are given during the construction.
     Internally an instance of Pick is used to calculate the object positions.
 */
@@ -22,8 +33,8 @@
 /*! \var EngraverParam ScorePress::Engraver::parameters
     \brief The engraving parameters.
     
-    These are the parameters influencing the engraving process. Refer to the definition of EngraverParam for a detailed 
-    description of available parameters.
+    Parameters influencing the engraving process. Refer to the definition of
+    EngraverParam for a detailed description of available parameters.
 */
 
 /*! \fn ScorePress::Engraver::Engraver(PageSet& pageset, const Sprites& sprites, const StyleParam& style, const ViewportParam& viewport)
@@ -41,7 +52,7 @@
 /*! \fn void ScorePress::Engraver::set_pageset(PageSet& pageset)
     \brief Set the target pageset.
     
-    This sets the target PageSet instance, to which all created data is written.
+    Set the target PageSet instance, to which all created data is written.
     The value given to the \link Engraver() constructor\endlink will be overwritten.
     
     \param pageset  New target pageset.
@@ -50,7 +61,7 @@
 /*! \fn void ScorePress::Engraver::set_sprites(const Sprites& sprites)
     \brief Set the used collection of sprites.
     
-    Set the collection of sprites used during the engraving process. Before \link engrave() engraving\endlink
+    Sets the collection of sprites used during the engraving process. Before \link engrave() engraving\endlink
     it should be asserted, that the specified sprite collection includes all sprites referenced by the
     \link Document document\endlink or \link Score score\endlink to be engraved.
     
@@ -60,7 +71,7 @@
 /*! \fn void ScorePress::Engraver::set_style(const StyleParam& style)
     \brief Set the default style.
     
-    This sets the style, that is used, if no style is specified with the score that is to be engraved.
+    Sets the style, that is used, if no style is specified with the score that is to be engraved.
     
     \param style  The new default style parameters.
 */
@@ -76,7 +87,7 @@
 /*! \fn void ScorePress::Engraver::engrave(const Score& data, const unsigned int start_page)
     \brief Engraves the given score to the plateset.
     
-    This method creates an instance of Plate for every page of the given score and inserts these
+    Create an instance of Plate for every page of the given score and inserts these
     plates into the target PageSet given to the \link Engraver() constructor \endlink.
     If the pageset already contains plates for this particular score, this data is removed prior
     to the engraving process.
@@ -93,7 +104,7 @@
 /*! \fn void ScorePress::Engraver::engrave(const Document& document)
     \brief Engraves the whole document.
     
-    This method engraves the whole given document, by calling engrave(const Score&, const unsigned int) for each
+    Engrave the whole given document, by calling engrave(const Score&, const unsigned int) for each
     \link Score score-object\endlink contained within the document. This will also set the default values for
     \link Document::PageDimension page-layout\endlink, head-height and stem-width defined by the document (This
     data is used for the scaling of objects bound to the page).

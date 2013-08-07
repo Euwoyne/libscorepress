@@ -1,25 +1,35 @@
 
 /*
-  ScorePress - Music Engraving Software  (libscorepress)
+  ScorePress - Music Engraving Software  (libscorepress-doc)
   Copyright (C) 2013 Dominik Lehmann
   
-  Licensed under the EUPL V.1.1
+  Licensed under the EUPL, Version 1.1 or - as soon they
+  will be approved by the European Commission - subsequent
+  versions of the EUPL (the "Licence");
+  You may not use this work except in compliance with the
+  Licence.
+  
+  Unless required by applicable law or agreed to in
+  writing, software distributed under the Licence is
+  distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
+  CONDITIONS OF ANY KIND, either expressed or implied.
+  See the Licence for the specific language governing
+  permissions and limitations under the Licence.
 */
 
 /*! \file classes.hh
     \brief Main class hierachy modeling a musical score.
     
-    This is the central header file, containing the hierarchy
-    of all classes representing musical objects within a score
-    such as notes, rests, voices, slurs, articulation symbols
-    etc.
+    The central header file, containing the hierarchy of all classes
+    representing musical objects within a score such as notes, rests, voices,
+    slurs, articulation symbols etc.
 */
 
 /*! \class ScorePress::Position classes.hh
     \brief Graphical position (2-dimensional vector).
     
-    A simple vector class template with addition, substraction
-    and scalar multiplication, used to store graphical positions.
+    A simple vector class template with addition, substraction and scalar
+    multiplication, used to store graphical positions.
     
     \tparam T  Type of the coordinates. This type should have defined internal addition and multiplication operators.
 */
@@ -55,7 +65,7 @@
 
 
 /*! \struct ScorePress::Font classes.hh
-    \brief Font structure
+    \brief %Font structure
 */
 
 /*! \var std::string ScorePress::Font::family

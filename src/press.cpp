@@ -8,7 +8,7 @@
   versions of the EUPL (the "Licence");
   You may not use this work except in compliance with the
   Licence.
- 
+  
   Unless required by applicable law or agreed to in
   writing, software distributed under the Licence is
   distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
@@ -229,6 +229,10 @@ void Press::render(Renderer& renderer, const Plate::pAttachable* object, const P
 // rendering method (for on-plate note objects)
 void Press::render(Renderer& renderer, const Plate::pNote& note, const Position<mpx_t> offset, const mpx_t head_height, const mpx_t stem_width)
 {
+    // draw boundaries
+    if (parameters.draw_notebounds) draw_boundaries(renderer, note, offset);
+    
+    // get visible object
     const StaffObject& object = note.get_note();
     if (!object.is(Class::VISIBLEOBJECT)) return;
     const VisibleObject& visible = object.get_visible();
@@ -435,11 +439,6 @@ void Press::render(Renderer& renderer, const Plate::pNote& note, const Position<
         render(renderer, &**i, offset, note.stem.top < note.stem.base, head_height, stem_width);
         if (parameters.draw_attachbounds) draw_boundaries(renderer, **i, offset);
     };
-    
-    if (parameters.draw_notebounds) draw_boundaries(renderer, note, offset);
-    
-    // reset color
-    set_color(renderer, visible.appearance.color);
 }
 
 inline bool abs_less(const double& x, const double& y) {return (((x<0)?-x:x)<((y<0)?-y:y));}

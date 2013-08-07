@@ -8,7 +8,7 @@
   versions of the EUPL (the "Licence");
   You may not use this work except in compliance with the
   Licence.
- 
+  
   Unless required by applicable law or agreed to in
   writing, software distributed under the Licence is
   distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
@@ -161,7 +161,7 @@ void Plate::pNote::add_tieend_offset(mpx_t offset)
 void Plate::pNote::dump() const
 {
     std::cout << "address      " << this << "\n";
-    std::cout << "type         " << classname(type) << "\n";
+    std::cout << "type         " << classname(get_note().classtype()) << "\n";
     std::cout << "sprite       (" << sprite.setid << ", " << sprite.spriteid << ")\n";
     std::cout << "absolutePos ";
     for (PositionList::const_iterator i = absolutePos.begin(); i != absolutePos.end(); ++i)
@@ -241,7 +241,7 @@ void Plate::dump() const
             k = 0;
             for (std::list<Plate::pNote>::const_iterator n = v->notes.begin(); n != v->notes.end(); ++n)
             {
-                std::cout << "        Note " << k++ << " @" << &n->get_note() << "\t" << classname(n->type) << "\t(" << n->sprite.setid << ", " << n->sprite.spriteid << ")";
+                std::cout << "        Note " << k++ << " @" << &n->get_note() << "\t" << classname(n->get_note().classtype()) << "\t(" << n->sprite.setid << ", " << n->sprite.spriteid << ")";
                 if (n->virtual_obj)
                 {
                     std::cout << " [V";

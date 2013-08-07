@@ -31,6 +31,7 @@ const std::string ScorePress::classname(Class::classType type)
 {
     switch (type)
     {
+    case Class::VISIBLEOBJECT: return "VisibleObject";
     case Class::STAFFOBJECT:   return "StaffObject";
     case Class::VOICEOBJECT:   return "VoiceObject";
     case Class::NEWLINE:       return "Newline";
@@ -64,7 +65,7 @@ const std::string ScorePress::classname(Class::classType type)
     case Class::SLUR:          return "Slur";
     case Class::HAIRPIN:       return "Hairpin";
     
-    default: return "Unknown";
+    default:                   return "Unknown";
     };
 }
 
@@ -523,7 +524,7 @@ void Newline::engrave(EngraverState& engraver) const
 {
     Plate::pNote& pnote = engraver.get_target();
     pnote.gphBox.pos = pnote.absolutePos.front();
-    pnote.gphBox.width = 0;
+    pnote.gphBox.width = 1000;
     pnote.gphBox.height = engraver.get_head_height() * (engraver.get_staff().line_count - 1);
 }
 

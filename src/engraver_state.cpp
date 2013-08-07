@@ -144,12 +144,14 @@ void EngraverState::engrave()
     // create on-plate object (set "pnote")
     Position<mpx_t> pos(cursor.pos, cursor.ypos);
     if (cursor->is(Class::NOTEOBJECT)) pos.y += viewport->umtopx_v(pick.staff_offset(static_cast<const NoteObject&>(*cursor).staff_shift));
-    else                               pos.y += viewport->umtopx_v(pick.staff_offset());
+    else                           {   
+                    //std::cout << "StaffOffset: " << viewport->umtopx_v(pick.staff_offset()) << "\tpos: " << pos.y << "\n";
+                    pos.y += viewport->umtopx_v(pick.staff_offset());
+                    };
     pvoice->notes.push_back(Plate::pNote(pos, cursor)); // append the new note to the plate
     pnote = &pvoice->notes.back();                      // get the on-plate note-object
     if (cursor.virtual_obj)                             // set virtual object
         pnote->virtual_obj = Plate::pNote::VirtualPtr(new Plate::pNote::Virtual(*cursor.virtual_obj, cursor.inserted));
-    pnote->type = cursor->classtype();
     
     // engrave object (polymorphically call "StaffObject::engrave")
     pnote->get_note().engrave(*this);
@@ -224,11 +226,15 @@ void EngraverState::engrave()
     // check for end of voice
     if (!cursor.has_next() && cursor.remaining_duration <= 0L)
     {
-        if (!tieinfo[&cursor.voice()].empty())
-            Log::warn("Got tie exceeding the end of the voice. (class: EngraverState)");
-        tieinfo.erase(&cursor.voice());
-        BeamInfoMap::iterator i = beaminfo.find(&*pvoice);
-        if (i != beaminfo.end()) i->second.finish();
+        //if (!cursor->is(Class::NEWLINE) || !static_cast<const Newline&>(*cursor).eov)
+        //    pick.insert_eov();
+        //else
+        {
+            if (!tieinfo[&cursor.voice()].empty())
+                Log::warn("Got tie exceeding the end of the voice. (class: EngraverState)");
+            BeamInfoMap::iterator i = beaminfo.find(&*pvoice);
+            if (i != beaminfo.end()) i->second.finish();
+        };
     };
     
     // insert barline
@@ -1066,27 +1072,35 @@ bool EngraverState::engrave_next()
     // prepare new staff
     for (Plate::pLine::StaffContextMap::iterator ctx = pline->staffctx.begin(); ctx != pline->staffctx.end(); ++ctx)
     {
-        if (ctx->first->is(Class::MAINVOICE) && (pick.get_auto_clef() || pick.get_auto_key() || pick.get_auto_timesig()))
+        try {
+        if (ctx->first->is(Class::MAINVOICE))
         {
+            const Newline& layout  = pick.get_layout(*ctx->first);
             Pick::VoiceCursor vcur = pick.get_cursor(*ctx->first);
             if (vcur.at_end()) continue;
             if (&vcur.voice() != ctx->first) continue;
             if (!vcur->is(Class::CLEF))
             {
-                if (pick.get_auto_clef())
+                if (layout.auto_clef)
                     pick.insert_before(ctx->second.last_clef(), *ctx->first);
             } else ++vcur;
             if (vcur.at_end()) continue;
             if (!vcur->is(Class::KEY))
             {
-                if (pick.get_auto_key())
+                if (layout.auto_key)
                     pick.insert_before(ctx->second.last_key(), *ctx->first);
             } else ++vcur;
             if (vcur.at_end()) continue;
-            if (!vcur->is(Class::TIMESIG) && pick.get_auto_timesig())
+            if (!vcur->is(Class::TIMESIG))
             {
-                pick.insert_before(pvoice->context.last_timesig(), *ctx->first);
+                if (layout.auto_timesig)
+                    pick.insert_before(pvoice->context.last_timesig(), *ctx->first);
             };
+        };
+        }
+        catch (Pick::LineLayout::VoiceNotFoundException& e)
+        {
+            Log::warn("Got main-voice without layout after linebreak. (class EngraverState)");
         };
     };
     

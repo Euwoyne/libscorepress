@@ -8,7 +8,7 @@
   versions of the EUPL (the "Licence");
   You may not use this work except in compliance with the
   Licence.
- 
+  
   Unless required by applicable law or agreed to in
   writing, software distributed under the Licence is
   distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
@@ -266,6 +266,7 @@ void Engine::set_test(Sprites& sprites)
 {
     // setup parameters
     engraver.parameters.force_justification = true;
+    //engraver.parameters.auto_barlines = true;
     press.parameters.scale = 1200;
     //press.parameters.draw_linebounds = true;
     //press.parameters.draw_notebounds = true;
@@ -444,9 +445,8 @@ void Engine::render(Renderer& renderer, const Position<mpx_t>& offset)
     };
 }
 
-void Engine::render_cursor(Renderer& /*renderer*/, const Position<mpx_t>& /*offset*/)
+void Engine::render_cursor(Renderer& renderer, const Position<mpx_t>& offset)
 {
-    /*
     Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
                                   (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
     try
@@ -459,5 +459,4 @@ void Engine::render_cursor(Renderer& /*renderer*/, const Position<mpx_t>& /*offs
         Log::error("Invalid UserCursor (class: Engine)");
         cursor.set_score(document.scores.front());
     };
-    */
 }

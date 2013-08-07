@@ -114,240 +114,281 @@
 		<Unit filename="doc/engraver.dox">
 			<Option target="doc" />
 		</Unit>
-		<Unit filename="src/classes.cpp">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/classes.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/config.hh" />
-		<Unit filename="src/config.hh.ac" />
-		<Unit filename="src/context.cpp">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/context.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/cursor.cpp">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/cursor.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/edit_cursor.cpp">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/edit_cursor.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/engine.cpp">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/engine.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/engrave_info.cpp">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/engrave_info.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/engraver.cpp">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/engraver.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/engraver_state.cpp">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/engraver_state.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/error.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/fraction.cpp">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/fraction.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/log.cpp">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/log.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/meta.hh">
-			<Option target="shared" />
-			<Option target="static" />
+		<Unit filename="doc/undefined.dox">
 			<Option target="doc" />
+		</Unit>
+		<Unit filename="include/scorepress/classes.hh">
+			<Option target="shared" />
+			<Option target="static" />
 			<Option target="install-shared" />
 			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/context.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/cursor.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/edit_cursor.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/engine.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/engrave_info.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/engraver.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/engraver_state.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/error.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/fraction.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/log.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/meta.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/pageset.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/parameters.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/pick.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/plate.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/press.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/refptr.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/renderer.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/score.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/smartptr.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/sprite_id.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/sprites.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/stem_info.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/ui.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/undefined.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/user_cursor.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="src/classes.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/config.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/context.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/cursor.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/edit_cursor.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/engine.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/engrave_info.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/engraver.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/engraver_state.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/fraction.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/log.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="src/main.cpp">
+			<Option target="shared" />
+			<Option target="static" />
 		</Unit>
 		<Unit filename="src/pageset.cpp">
-			<Option target="static" />
 			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/pageset.hh">
 			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/parameters.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
 		</Unit>
 		<Unit filename="src/pick.cpp">
 			<Option target="shared" />
 			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-		</Unit>
-		<Unit filename="src/pick.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
 		</Unit>
 		<Unit filename="src/plate.cpp">
-			<Option target="static" />
 			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/plate.hh">
 			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
 		</Unit>
 		<Unit filename="src/press.cpp">
-			<Option target="static" />
 			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/press.hh">
 			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/refptr.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
 		</Unit>
 		<Unit filename="src/renderer.cpp">
-			<Option target="static" />
 			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/renderer.hh">
 			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
 		</Unit>
 		<Unit filename="src/score.cpp">
-			<Option target="static" />
 			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/score.hh">
 			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/smartptr.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
 		</Unit>
 		<Unit filename="src/sprite_id.cpp">
-			<Option target="static" />
 			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/sprite_id.hh">
 			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
 		</Unit>
 		<Unit filename="src/sprites.cpp">
-			<Option target="static" />
 			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/sprites.hh">
 			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/stem_info.hh">
-			<Option target="install-shared" />
-			<Option target="static" />
-			<Option target="shared" />
-		</Unit>
-		<Unit filename="src/ui.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/undefined.hh">
-			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
 		</Unit>
 		<Unit filename="src/user_cursor.cpp">
-			<Option target="static" />
 			<Option target="shared" />
-			<Option target="install-shared" />
-		</Unit>
-		<Unit filename="src/user_cursor.hh">
 			<Option target="static" />
-			<Option target="shared" />
-			<Option target="install-shared" />
 		</Unit>
 		<Extensions>
 			<code_completion />

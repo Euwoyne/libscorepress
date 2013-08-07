@@ -8,7 +8,7 @@
   versions of the EUPL (the "Licence");
   You may not use this work except in compliance with the
   Licence.
- 
+  
   Unless required by applicable law or agreed to in
   writing, software distributed under the Licence is
   distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
@@ -87,6 +87,8 @@ class Pick
         const Newline& get(const Voice& voice) const throw(VoiceNotFoundException); // get the newline object
         void remove(const Voice& voice);                                            // remove a voice's layout
         void set_first_voice(const Voice& voice) throw(VoiceNotFoundException);     // set the voice for line-properties
+        void swap(LineLayout& a);                                                   // swap contents
+        void clear();                                                               // clear data
     };
     
  public:
@@ -122,6 +124,7 @@ class Pick
     
     const ScoreDimension* _dimension;       // dimension of the score object on the currently engraved page
     LineLayout _layout;                     // layout information for the current line
+    LineLayout _next_layout;                // layout information for the next line (used during newline processing)
     bool       _newline;                    // newline indicator (set during the processing of a newline block)
     bool       _pagebreak;                  // pagebreak indicator (set during the processing of a pagebreak block)
     value_t    _newline_time;               // timestamp of the first newline object (during newline processing)
@@ -149,6 +152,7 @@ class Pick
     void add_distance_after(mpx_t dst, value_t time); // apply additional distance to all notes after a given time
     
     void insert_barline(const Barline::Style& style); // insert a virtual barline object after current object
+    void insert_eov();                                // insert an end-of-voice indicator
     bool insert_before(const StaffObject& obj);       // insert a virtual object (changes current cursor)
     bool insert_before(const StaffObject& obj,        // insert a virtual object (into given voice)
                        const Voice& voice);
@@ -169,15 +173,11 @@ class Pick
           mpx_t           get_indent()                const; // return the indentation of the current line
           bool            get_justify()               const; // return the width justification for the current line
           mpx_t           get_right_margin()          const; // return the distance from the right border of the score object
-          bool            get_auto_clef()             const; // return the auto-clef property for the current staff
-          bool            get_auto_key()              const; // return the auto-key property for the current staff
-          bool            get_auto_timesig()          const; // return the auto-timesig property for the current staff
-          bool            get_visible()               const; // return the visibility property for the current voice
-          bool            get_visible(const Voice& v) const; // return the visibility property for the given voice
-    const LineLayout&     layout()                    const; // return the layout information for the current line
+    const LineLayout&     get_layout()                const; // return the layout information for the current line
+    const Newline&        get_layout(const Voice& v)  const; // return the layout of the given voice
           bool            newline()                   const; // check if the cursor got past a newline (now pointing to the next line)
           bool            pagebreak()                 const; // check if the cursor got past a pagebreak
-          value_t         newline_time()              const; // return the timestamp of the first newline in the cluster
+          //value_t         newline_time()              const; // return the timestamp of the first newline in the cluster
     const Score&          get_score()                 const; // return the score object which is to be engraved
 };
 
@@ -189,21 +189,20 @@ inline const StaffObject& Pick::VoiceCursor::operator * () const
 inline const StaffObject* Pick::VoiceCursor::operator -> () const
             {return (!!virtual_obj ? &*virtual_obj : const_Cursor::operator ->());}
 
+inline void Pick::LineLayout::swap(LineLayout& a) {std::swap(data, a.data); std::swap(first_voice, a.first_voice);}
+inline void Pick::LineLayout::clear()             {data.clear();}
+
 inline const Pick::VoiceCursor& Pick::get_cursor()                const {return cursors.back();}
 inline       bool               Pick::eos()                       const {return cursors.empty();}
 inline const ScoreDimension&    Pick::get_dimension()             const {return *_dimension;}
 inline       mpx_t              Pick::get_indent()                const {return viewport->umtopx_h(_layout.get().indent);}
 inline       bool               Pick::get_justify()               const {return _layout.get().justify;}
 inline       mpx_t              Pick::get_right_margin()          const {return viewport->umtopx_h(_layout.get().right_margin);}
-inline       bool               Pick::get_auto_clef()             const {return _layout.get(cursors.back().voice()).auto_clef;}
-inline       bool               Pick::get_auto_key()              const {return _layout.get(cursors.back().voice()).auto_key;}
-inline       bool               Pick::get_auto_timesig()          const {return _layout.get(cursors.back().voice()).auto_timesig;}
-inline       bool               Pick::get_visible()               const {return _layout.get(cursors.back().voice()).visible;}
-inline       bool               Pick::get_visible(const Voice& v) const {return _layout.get(v).visible;}
-inline const Pick::LineLayout&  Pick::layout()                    const {return _layout;}
+inline const Pick::LineLayout&  Pick::get_layout()                const {return _layout;}
+inline const Newline&           Pick::get_layout(const Voice& v)  const {return _layout.get(v);}
 inline       bool               Pick::newline()                   const {return _newline;}
 inline       bool               Pick::pagebreak()                 const {return _pagebreak;}
-inline       value_t            Pick::newline_time()              const {return _newline_time;}
+//inline       value_t            Pick::newline_time()              const {return _newline_time;}
 inline const Score&             Pick::get_score()                 const {return *score;}
 
 } // end namespace

@@ -8,7 +8,7 @@
   versions of the EUPL (the "Licence");
   You may not use this work except in compliance with the
   Licence.
- 
+  
   Unless required by applicable law or agreed to in
   writing, software distributed under the Licence is
   distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
@@ -17,6 +17,7 @@
   permissions and limitations under the Licence.
 */
 
+#include <iostream>
 #include <cmath>        // pow
 #include "pick.hh"      // Pick, const_Cursor, Sprites, List, [score classes]
 #include "log.hh"       // Log
@@ -44,14 +45,14 @@ Pick::VoiceCursor::VoiceCursor() : const_Cursor(), pos(0), npos(0), ypos(0), tim
 // associate a voice with its newline object
 void Pick::LineLayout::set(const Voice& voice, const Newline& layout)
 {
-        data[&voice] = &layout;
+    data[&voice] = &layout;
 }
 
 // check, if the voice has a newline object
 bool Pick::LineLayout::exist(const Voice& voice) const
 {
-        std::map<const Voice*, const Newline*>::const_iterator i = data.find(&voice);
-        return (i != data.end() && i->second);
+    std::map<const Voice*, const Newline*>::const_iterator i = data.find(&voice);
+    return (i != data.end() && i->second);
 }
 
 // get arbitrary newline object (for line-properties)
@@ -335,7 +336,7 @@ mpx_t Pick::width(const Sprites& spr, const StaffObject* obj, const mpx_t height
         return out;
     };
     
-    return 0;   // return zero width for unidentifiable objects
+    return 0;   // return zero width for non-graphical objects
 }
 
 // caluclate the width specified by the value of the note
@@ -590,14 +591,14 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         
         // copy new line layout
         const Pagebreak& obj = static_cast<const Pagebreak&>(*nextNote);
-        _dimension = &obj.dimension;        // set new score dimension
-        _layout.set(nextNote.voice(), obj); // set new line layout
-        _layout.set_first_voice(nextNote.voice());
+        _dimension = &obj.dimension;                    // set new score dimension
+        _next_layout.set(nextNote.voice(), obj);        // set new line layout
+        _next_layout.set_first_voice(nextNote.voice());
         
         // reset "pos" and add newline-distance to "ypos"
         nextNote.pos = viewport->umtopx_h(param->min_distance + obj.indent);
         nextNote.ypos = viewport->umtopx_v(obj.distance);
-        if (param->newline_time_reset || !_layout.get(nextNote.voice()).visible)
+        if (param->newline_time_reset || !obj.visible)
             nextNote.ntime = _newline_time;
         
         if (!(++nextNote).at_end()) calculate_npos(nextNote);
@@ -626,16 +627,19 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         
         // copy new line layout
         const Newline& obj = static_cast<const Newline&>(*nextNote);
-        _layout.set(nextNote.voice(), obj); // set new line layout
-        _layout.set_first_voice(nextNote.voice());
+        _next_layout.set(nextNote.voice(), obj);        // set new line layout
+        _next_layout.set_first_voice(nextNote.voice());
         
-        // reset "pos" and add newline-distance to "ypos"
-        nextNote.pos = viewport->umtopx_h(param->min_distance + obj.indent);
-        nextNote.ypos += _line_height;
-        if (param->newline_time_reset || !_layout.get(nextNote.voice()).visible)
-            nextNote.ntime = _newline_time;
-        
-        if (!(++nextNote).at_end()) calculate_npos(nextNote);
+        if (!(++nextNote).at_end())     // if there is a next note
+        {
+            // reset "pos" and add newline-distance to "ypos"
+            nextNote.pos = viewport->umtopx_h(param->min_distance + obj.indent);
+            nextNote.ypos += _line_height;
+            if (param->newline_time_reset || !obj.visible)
+                nextNote.ntime = _newline_time;
+            
+            calculate_npos(nextNote);
+        };
     }
     
     // every other object
@@ -660,13 +664,13 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
 // prepare next note to be engraved
 void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
 {
-    //if (_newline) _newline_time = -1L;  // reset newline-time
-    //_newline = false;                   // reset newline and pagebreak indicators
-    //_pagebreak = false;
     if (cursors.empty())
     {
         if (next_cursors.empty()) return;   // if there is no next note, abort
-        swap(cursors, next_cursors);        // swap to the next line's content
+        std::swap(cursors, next_cursors);   // swap to the next line's cursors
+        _layout.swap(_next_layout);         //                     and layout
+        next_cursors.clear();               // erase next line cursors
+        _next_layout.clear();               //             and layout
         _newline = false;                   // we're out of the newline
         _pagebreak = false;                 //          and the pagebreak block
     };
@@ -674,86 +678,24 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
     VoiceCursor& nextNote = cursors.back(); // get the object which is to be engraved next
     
     // calculate note position
-    /*
-    if (nextNote->is(Class::PAGEBREAK))     // if we got a pagebreak
+    if (nextNote->is(Class::NEWLINE))       // if we got a newline/pagebreak
     {
-        const Pagebreak& obj = static_cast<const Pagebreak&>(*nextNote);
-        value_t now = 0;
-        
-        _dimension = &obj.dimension;        // set new score dimension
-        _layout.set(nextNote.voice(), obj); // set new line layout
-        _layout.set_first_voice(nextNote.voice());
-        
-        // calculate current time
-        for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-        {
-            if (i->time > now) now = i->time;
-        };
-        
-        // reset "pos" and add newline-distance to "ypos" for each voice
-        std::list<VoiceCursor> oldcursors = cursors;
-        cursors.clear();
-        for (std::list<VoiceCursor>::iterator i = oldcursors.begin(); i != oldcursors.end(); ++i)
-        {
-            if (i->time > now) now = i->time;
-            i->pos = viewport->umtopx_h(param->min_distance + obj.indent);
-            i->ypos = viewport->umtopx_v(obj.distance);
-            if (param->newline_time_reset || !_layout.get(i->voice()).visible) i->ntime = now;
-            if ((*i)->is(Class::NEWLINE)) _layout.set(i->voice(), static_cast<const Newline&>(**i));
-            else Log::warn("Got non-newline object during pagebreak. (class: Pick)");
-            insert_next(*i);
-        };
-        
-        for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-        {
-            calculate_npos(*i);
-        };
-        
-        _newline_time = now;    // save newline time
-        _newline = true;        // report newline to engraver
-        _pagebreak = true;      // report pagebreak to engraver
-        return;
+        if (engravedNote->is(Class::NEWLINE))
+            nextNote.pos = engravedNote.pos;
+        else if (engravedNote->is(Class::BARLINE))
+            nextNote.pos = engravedNote.npos - viewport->umtopx_h(param->barline_distance);
+        else if (engravedNote.npos - engravedNote.pos - w < viewport->umtopx_h(param->min_distance))
+            nextNote.pos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
+        else
+            nextNote.pos = engravedNote.npos;
+        nextNote.npos = nextNote.pos;
     }
-    else*/ if (nextNote->is(Class::NEWLINE))    // if we got a newline
+    else if (engravedNote->is(Class::NEWLINE))
     {
-        /*
-        const Newline& obj = *static_cast<const Newline*>(&*nextNote);
-        value_t now = 0;
-        mpx_t lineheight = viewport->umtopx_v(line_height());
-        
-        // copy new line layout
-        _layout.set(nextNote.voice(), obj); // set new line layout
-        _layout.set_first_voice(nextNote.voice());
-        
-        // calculate current time
-        for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-        {
-            if (i->time > now) now = i->time;
-        };
-        
-        // reset "pos" and add newline-distance to "ypos" for each voice
-        std::list<VoiceCursor> oldcursors = cursors;
-        cursors.clear();
-        for (std::list<VoiceCursor>::iterator i = oldcursors.begin(); i != oldcursors.end(); ++i)
-        {
-            i->pos = viewport->umtopx_h(param->min_distance + obj.indent);
-            i->ypos += lineheight;
-            if (param->newline_time_reset || !_layout.get(i->voice()).visible) i->ntime = now;
-            if ((*i)->is(Class::NEWLINE)) _layout.set(i->voice(), static_cast<const Newline&>(**i));
-            else Log::warn("Got non-newline object during linebreak. (class: Pick)");
-            insert_next(*i);
-        };
-        
-        for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-        {
-            calculate_npos(*i);
-        };
-        
-        _newline_time = now;    // save newline time
-        _newline = true;        // report newline to engraver
-        return;
-        */
-        nextNote.pos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
+        if (nextNote->is(Class::NOTEOBJECT))
+            nextNote.pos += viewport->umtopx_h(param->barline_distance);
+        else
+            nextNote.pos += viewport->umtopx_h(param->min_distance);
     }
     else if (nextNote->classtype() == engravedNote->classtype() && !engravedNote->is(Class::NOTEOBJECT)
                                                                 && !engravedNote->is(Class::TIMESIG))
@@ -776,7 +718,7 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
     {
         nextNote.pos = engravedNote.npos;       // the next notes are rendered right behind it
     }
-    else if (!engravedNote->is(Class::NEWLINE))    // in any other case, if we are not in front of a line
+    else //if (!engravedNote->is(Class::NEWLINE))    // in any other case, if we are not in front of a line
     {
         // assume the position to be the previously estimated one
         nextNote.pos = engravedNote.npos;
@@ -799,7 +741,8 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
     };
     
     // calculate estimated position of the following note
-    calculate_npos(nextNote);
+    if (!nextNote->is(Class::NEWLINE))
+        calculate_npos(nextNote);
     
     // correct the width of shorter non-note-objects (compared to simultaneous non-note-objects)
     if (nextNote->classtype() == engravedNote->classtype() && !engravedNote->is(Class::NOTEOBJECT)
@@ -902,6 +845,18 @@ void Pick::insert_barline(const Barline::Style& style)
     barline.inserted = true;
     barline.remaining_duration = -1;
     insert(barline);
+}
+
+// insert an end-of-voice indicator
+void Pick::insert_eov()
+{
+    if (cursors.empty()) return;
+    VoiceCursor eov(cursors.back());
+    eov.time = eov.ntime;
+    //eov.virtual_obj = StaffObjectPtr(new Newline(true));
+    eov.inserted = true;
+    eov.remaining_duration = -1;
+    //insert(eov);
 }
 
 // insert a virtual object (changes current cursor)
