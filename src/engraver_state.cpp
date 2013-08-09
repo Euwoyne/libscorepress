@@ -224,21 +224,26 @@ void EngraverState::engrave()
     };
     
     // check for end of voice
-    if (!cursor.has_next() && cursor.remaining_duration <= 0L)
+    if (   !cursor.has_next()          && cursor.remaining_duration <= 0L
+        && !cursor->is(Class::NEWLINE) && pick.eov())
     {
-        //if (!cursor->is(Class::NEWLINE) || !static_cast<const Newline&>(*cursor).eov)
-        //    pick.insert_eov();
-        //else
-        {
-            if (!tieinfo[&cursor.voice()].empty())
-                Log::warn("Got tie exceeding the end of the voice. (class: EngraverState)");
-            BeamInfoMap::iterator i = beaminfo.find(&*pvoice);
-            if (i != beaminfo.end()) i->second.finish();
-        };
-    };
+        // check dangling ties
+        if (!tieinfo[&cursor.voice()].empty())
+            Log::warn("Got tie exceeding the end of the voice. (class: EngraverState)");
+        BeamInfoMap::iterator i = beaminfo.find(&*pvoice);
+        if (i != beaminfo.end()) i->second.finish();
+        
+        // add end-of-voice indicator object
+        pvoice->notes.push_back(Plate::pNote(pos, cursor));
+        pvoice->notes.back().note.to_end();
+        pvoice->notes.back().gphBox.pos.x = pnote->gphBox.right() + 2 * viewport->umtopx_h(param->min_distance);
+        pvoice->notes.back().gphBox.pos.y = pnote->absolutePos.front().y;
+        pvoice->notes.back().gphBox.width = 1000;
+        pvoice->notes.back().gphBox.height = head_height * (cursor.staff().line_count - 1);
+    }
     
     // insert barline
-    if (param->auto_barlines && pvoice->context.beat(cursor.ntime) == 0L && barcnt < pvoice->context.bar(cursor.ntime))
+    else if (param->auto_barlines && pvoice->context.beat(cursor.ntime) == 0L && barcnt < pvoice->context.bar(cursor.ntime))
     {
         barcnt = pvoice->context.bar(cursor.ntime); // set bar counter
         pick.insert_barline(Barline::singlebar);    // insert barline to be engraved
@@ -248,42 +253,18 @@ void EngraverState::engrave()
 // calculate line-end information/line's rightmost border (see "Plate::pLine::line_end")
 void EngraverState::create_lineend()
 {
-    mpx_t voice_end = 0;    // voice end position
-    
     // iterate through the voices
     for (std::list<Plate::pVoice>::iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
     {
         if (voice->notes.empty()) continue; // check if voice contains notes
-        
-        if (!voice->context.has_buffer())   // check, if object exists
-        {
-            Log::warn("Unable to get last object of the previous line for barline engraving. (class: EngraverState)");
-            continue;
-        };
-        
-        // calculate barline position
-        const StaffObject* object = voice->context.get_buffer();    // get object
-        voice_end = voice->context.get_buffer_xpos();               // use last object position
-        
-        // calculate estimated position of the following note
-        const mpx_t note_width = Pick::width(*sprites,              // the note's graphical width
-                                              object,
-                                              viewport->umtopx_v(voice->begin.staff().head_height));
-        
-        const mpx_t distance = (object->is(Class::NOTEOBJECT)) ?    // the note's value-related width
-                                   Pick::value_width(static_cast<const NoteObject*>(&*object)->value(), *param, *viewport) :
-                                   0;
-        
-        // if we have considerable value-related width, use this instead of graphical width
-        if (distance > note_width) voice_end += distance - note_width;
-        
         // set furthest voice-end as staff/line-end
-        if (pline->line_end < voice_end) pline->line_end = voice_end;
+        if (pline->line_end < voice->notes.back().gphBox.right())
+            pline->line_end = voice->notes.back().gphBox.right();
     };
     
+    // break unfinished ties
     for (std::list<Plate::pVoice>::iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
     {
-        // check for ties, which are to end here
         break_ties(tieinfo[&voice->begin.voice()],
                    pline->line_end,
                    pick.eos() ? 0 : pick.get_indent(),
@@ -303,7 +284,7 @@ void EngraverState::apply_offsets()
         // iterate the voice
         for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
         {
-            if (it->is_inserted() || !it->get_note().is(Class::VISIBLEOBJECT)) continue;
+            if (it->at_end() || it->is_inserted() || !it->get_note().is(Class::VISIBLEOBJECT)) continue;
             
             if (it->get_note().get_visible().offset_x)
             {
@@ -488,7 +469,7 @@ void EngraverState::engrave_stems()
         beam_it = voice->notes.begin();
         for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
         {
-            if (it->get_note().is(Class::NOTEOBJECT))
+            if (!it->at_end() && it->get_note().is(Class::NOTEOBJECT))
             {
                 time += static_cast<const NoteObject&>(it->get_note()).value();
                 if (it->get_note().is(Class::CHORD))
@@ -542,7 +523,7 @@ void EngraverState::engrave_attachables()
         for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
         {
             // ignore inserted notes
-            if (it->is_inserted()) continue;
+            if (it->at_end() || it->is_inserted()) continue;
             
             // check durables
             for (std::list<DurableInfo>::iterator i = durableinfo.begin(); i != durableinfo.end();)
@@ -1017,11 +998,29 @@ bool EngraverState::engrave_next()
     // quit here, if there's no newline (and no end of score)
     if (!pick.eos() && !pick.get_cursor()->is(Class::NEWLINE)) return true;
     
-    const bool pagebreak = (!pick.eos() && pick.get_cursor()->is(Class::PAGEBREAK));
+    const bool newline   = !pick.eos() && pick.get_cursor()->is(Class::NEWLINE);
+    const bool pagebreak = !pick.eos() && pick.get_cursor()->is(Class::PAGEBREAK);
     
     // engrave all newlines at once
     while (!pick.eos() && pick.get_cursor()->is(Class::NEWLINE))
     {
+        // insert automatic clef, key and time signature
+        if (pick.get_cursor().is_main())
+        {
+            Pick::VoiceCursor vcur(pick.get_cursor());
+            const Newline& layout = static_cast<const Newline&>(*vcur);
+            const Plate::pLine::StaffContextMap::const_iterator ctx = pline->staffctx.find(&vcur.staff());
+            if (vcur.has_next())                            ++vcur;
+            if (!vcur.at_end() && vcur->is(Class::CLEF))    ++vcur;
+            else if (   layout.auto_clef
+                     && ctx != pline->staffctx.end())       pick.insert(ctx->second.last_clef());
+            if (!vcur.at_end() && vcur->is(Class::KEY))     ++vcur;
+            else if (   layout.auto_key
+                     && ctx != pline->staffctx.end())       pick.insert(ctx->second.last_key());
+            if (!vcur.at_end() && vcur->is(Class::TIMESIG)) ++vcur;
+            else if (   layout.auto_timesig)                pick.insert(pvoice->context.last_timesig());
+        };
+        
         engrave();                      // engrave newline
         pick.next(pnote->gphBox.width); // goto next note
     };
@@ -1038,7 +1037,7 @@ bool EngraverState::engrave_next()
     barcnt = pvoice->context.bar(pick.get_cursor().time);
     
     // exit here, if no newline (below is the code for newline handling)
-    if (pick.eos()) return false;
+    if (!newline) return false;
     
     // check for pagebreak
     if (pagebreak)
@@ -1069,46 +1068,11 @@ bool EngraverState::engrave_next()
     lineinfo.justify = pick.get_justify();
     lineinfo.right_margin = pick.get_right_margin();
     
-    // prepare new staff
-    for (Plate::pLine::StaffContextMap::iterator ctx = pline->staffctx.begin(); ctx != pline->staffctx.end(); ++ctx)
-    {
-        try {
-        if (ctx->first->is(Class::MAINVOICE))
-        {
-            const Newline& layout  = pick.get_layout(*ctx->first);
-            Pick::VoiceCursor vcur = pick.get_cursor(*ctx->first);
-            if (vcur.at_end()) continue;
-            if (&vcur.voice() != ctx->first) continue;
-            if (!vcur->is(Class::CLEF))
-            {
-                if (layout.auto_clef)
-                    pick.insert_before(ctx->second.last_clef(), *ctx->first);
-            } else ++vcur;
-            if (vcur.at_end()) continue;
-            if (!vcur->is(Class::KEY))
-            {
-                if (layout.auto_key)
-                    pick.insert_before(ctx->second.last_key(), *ctx->first);
-            } else ++vcur;
-            if (vcur.at_end()) continue;
-            if (!vcur->is(Class::TIMESIG))
-            {
-                if (layout.auto_timesig)
-                    pick.insert_before(pvoice->context.last_timesig(), *ctx->first);
-            };
-        };
-        }
-        catch (Pick::LineLayout::VoiceNotFoundException& e)
-        {
-            Log::warn("Got main-voice without layout after linebreak. (class EngraverState)");
-        };
-    };
-    
     // increment on-plate line iterator
     ++pline;
     
     // we have not reached the end of score, yet
-    return true;
+    return !pick.eos();
 }
 
 // calculate beam information and adjust stem lengths

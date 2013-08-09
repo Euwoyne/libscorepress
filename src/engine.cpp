@@ -361,7 +361,7 @@ void Engine::set_test(Sprites& sprites)
     static_cast<Key&>(*score.staves.back().notes.back()).number = 4;
     //*/
     add1(score.staves.back(), sprites);
-    add2(score.staves.back(), sprites);
+    add2(score.staves.back(), sprites, 0, 3000);
     
     score.staves.push_back(Staff());
     score.staves.back().head_height = 1760;     // µm

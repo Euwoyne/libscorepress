@@ -49,7 +49,7 @@ struct Meta
     Field artist;       // artist
     Field key;          // main key
     Field date;         // date of completion
-    int   number;       // number in collection
+    Field number;       // number in collection
     Map   misc;         // additional metadata
     
     inline Meta() : title("Untitled") {};
@@ -66,7 +66,7 @@ struct DocumentMeta : public Meta
     Field transcriptor;             // transcriptor (empty, if not a transcription)
     List  instrumentation;          // instrumentation
     List  original_instrumentation; // original instrumentation
-    int   opus;                     // opus
+    Field opus;                     // opus
 };
 
 

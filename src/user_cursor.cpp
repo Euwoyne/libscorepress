@@ -1056,7 +1056,8 @@ mpx_t UserCursor::graphical_height(const ViewportParam& viewport) const throw(No
     if (voice_cnt <= line_cnt + 1)
     {   // if we do not have too much voices
         h *= line_cnt + 2 - voice_cnt;      // height (for each voice one head-height shorter)
-    };
+    }
+    else h *= 2;
     
     return h;
 }

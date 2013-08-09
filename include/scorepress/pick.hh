@@ -117,9 +117,10 @@ class Pick
     const ViewportParam* const viewport;    // viewport-paramters (see "parameters.hh")
     const Sprites* const sprites;           // pointer to the sprite-library (access to the graphical widths)
     
-    std::list<VoiceCursor> cursors;         // containing cursors to the notes next to be read of all voices
+    typedef std::list<VoiceCursor> CList;   // list of voice cursors
+    CList cursors;                          // containing cursors to the notes next to be read of all voices
                                             // ordered descending! by "time" (the last entry is the next note)
-    std::list<VoiceCursor> next_cursors;    // cursors for the next line (stored seperately, so that they do not
+    CList next_cursors;                     // cursors for the next line (stored seperately, so that they do not
                                             // get mixed up with the currently processed newlines)
     
     const ScoreDimension* _dimension;       // dimension of the score object on the currently engraved page
@@ -131,7 +132,9 @@ class Pick
     mpx_t      _line_height;                // height of the line (during newline processing)
     
     void insert(const VoiceCursor& cursor); // insert the given cursor, maintaining the order according to "time"
+    void insert(const VoiceCursor& cursor, CList&);
     void add_subvoices(VoiceCursor cursor); // add cursors for the sub-voices of a note to the stack
+    void add_subvoices(VoiceCursor cursor, CList&);
     void _initialize();                     // intialize the cursors to the score's beginning
     
     void calculate_npos(VoiceCursor& nextNote);                      // calculate estimated position of the following note
@@ -151,8 +154,8 @@ class Pick
     void add_distance(mpx_t dst, value_t time);       // apply additional distance to all notes at/after a given time
     void add_distance_after(mpx_t dst, value_t time); // apply additional distance to all notes after a given time
     
+    void insert(const StaffObject& obj);              // insert a virtual object (after the current one)
     void insert_barline(const Barline::Style& style); // insert a virtual barline object after current object
-    void insert_eov();                                // insert an end-of-voice indicator
     bool insert_before(const StaffObject& obj);       // insert a virtual object (changes current cursor)
     bool insert_before(const StaffObject& obj,        // insert a virtual object (into given voice)
                        const Voice& voice);
@@ -169,15 +172,13 @@ class Pick
     const VoiceCursor&    get_cursor()                const; // return current cursor (it is ensured, that this cursor is valid
                                                              //                        as long as the score object hasn't changed)
           bool            eos()                       const; // check if the pick is ready (or has reached the score's end)
+          bool            eov()                       const; // check if the current cursor is last in voice
     const ScoreDimension& get_dimension()             const; // return dimension of the currently engraved score object
           mpx_t           get_indent()                const; // return the indentation of the current line
           bool            get_justify()               const; // return the width justification for the current line
           mpx_t           get_right_margin()          const; // return the distance from the right border of the score object
     const LineLayout&     get_layout()                const; // return the layout information for the current line
     const Newline&        get_layout(const Voice& v)  const; // return the layout of the given voice
-          bool            newline()                   const; // check if the cursor got past a newline (now pointing to the next line)
-          bool            pagebreak()                 const; // check if the cursor got past a pagebreak
-          //value_t         newline_time()              const; // return the timestamp of the first newline in the cluster
     const Score&          get_score()                 const; // return the score object which is to be engraved
 };
 
@@ -192,17 +193,17 @@ inline const StaffObject* Pick::VoiceCursor::operator -> () const
 inline void Pick::LineLayout::swap(LineLayout& a) {std::swap(data, a.data); std::swap(first_voice, a.first_voice);}
 inline void Pick::LineLayout::clear()             {data.clear();}
 
+inline void Pick::insert(const VoiceCursor& cursor) {insert(cursor, cursors);}
+inline void Pick::add_subvoices(VoiceCursor cursor) {add_subvoices(cursor, cursors);}
+
 inline const Pick::VoiceCursor& Pick::get_cursor()                const {return cursors.back();}
-inline       bool               Pick::eos()                       const {return cursors.empty();}
+inline       bool               Pick::eos()                       const {return cursors.empty() && next_cursors.empty();}
 inline const ScoreDimension&    Pick::get_dimension()             const {return *_dimension;}
 inline       mpx_t              Pick::get_indent()                const {return viewport->umtopx_h(_layout.get().indent);}
 inline       bool               Pick::get_justify()               const {return _layout.get().justify;}
 inline       mpx_t              Pick::get_right_margin()          const {return viewport->umtopx_h(_layout.get().right_margin);}
 inline const Pick::LineLayout&  Pick::get_layout()                const {return _layout;}
 inline const Newline&           Pick::get_layout(const Voice& v)  const {return _layout.get(v);}
-inline       bool               Pick::newline()                   const {return _newline;}
-inline       bool               Pick::pagebreak()                 const {return _pagebreak;}
-//inline       value_t            Pick::newline_time()              const {return _newline_time;}
 inline const Score&             Pick::get_score()                 const {return *score;}
 
 } // end namespace

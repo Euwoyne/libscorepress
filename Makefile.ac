@@ -151,7 +151,15 @@ hfiles := ${headerdir}/engine.hh         \
           ${headerdir}/classes.hh        \
           ${headerdir}/log.hh            \
           ${headerdir}/fraction.hh       \
-          ${headerdir}/config.hh 
+          ${headerdir}/config.hh         \
+          ${headerdir}/parameters.hh     \
+          ${headerdir}/stem_info.hh      \
+          ${headerdir}/meta.hh           \
+          ${headerdir}/error.hh          \
+          ${headerdir}/refptr.hh         \
+          ${headerdir}/smartptr.hh       \
+          ${headerdir}/undefined.hh      \
+          ${headerdir}/ui.hh
 
 srcfiles := ${cfiles} ${hfiles}
 
@@ -312,12 +320,14 @@ install-headers: ${includedir}/${basename}
 # documentation
 ${doxyfile}: ${doxy_ac}
 	@echo "Generating:  Doxyfile"
-	@${SED} -e 's|@PACKAGE_NAME[@]|"@PACKAGE_NAME@"|g'     \
+	${SED} -e 's|@PACKAGE_NAME[@]|@PACKAGE_NAME@|g'        \
 	        -e 's|@PACKAGE_VERSION[@]|@PACKAGE_VERSION@|g' \
-	        -e 's|@OUTPUT_DIR[@]|"${builddir}"|g'          \
-	        -e 's|@INPUT_DIR[@]|"${srcdir}" "${headerdir}" "${docsrc}"|g' \
-	        -e 's|@LATEX[@]|"${LATEX}"|g'                  \
-	        -e 's|@MAKEINDEX[@]|"${MAKEINDEX}"|g'          \
+	        -e 's|@OUTPUT_DIR[@]|${builddir}|g'            \
+	        -e 's|@SOURCE_DIR[@]|${srcdir}|g'              \
+	        -e 's|@HEADER_DIR[@]|${headerdir}|g'          \
+	        -e 's|@DOC_DIR[@]|${docsrc}|g'                 \
+	        -e 's|@LATEX[@]|${LATEX}|g'                    \
+	        -e 's|@MAKEINDEX[@]|${MAKEINDEX}|g'            \
 	       < ${doxy_ac} > ${doxyfile}
 
 doc:    man pdf
@@ -488,7 +498,7 @@ clean:
 	@-rm -f  ${builddir}/refman.dvi
 	@-rm -f  ${builddir}/refman.ps
 	@echo "  Deleting:       build directory..."
-	@test -d ${builddir} && (rmdir ${builddir} 2> /dev/null || echo "  WARNING: \"${builddir}\" is not empty")
+	@test -d ${builddir} && (rmdir ${builddir} 2> /dev/null || echo "  WARNING: \"${builddir}\" is not empty") || :
 
 distclean: clean
 	@echo "  Deleting:       configuration..."

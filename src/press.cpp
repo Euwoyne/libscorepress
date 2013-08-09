@@ -229,13 +229,23 @@ void Press::render(Renderer& renderer, const Plate::pAttachable* object, const P
 // rendering method (for on-plate note objects)
 void Press::render(Renderer& renderer, const Plate::pNote& note, const Position<mpx_t> offset, const mpx_t head_height, const mpx_t stem_width)
 {
-    // draw boundaries
-    if (parameters.draw_notebounds) draw_boundaries(renderer, note, offset);
+    // draw eov boundaries
+    if (note.at_end())
+    {
+        if (parameters.draw_eov)
+            draw_boundaries(renderer, note, parameters.eov_color, offset);
+        return;
+    };
     
     // get visible object
     const StaffObject& object = note.get_note();
     if (!object.is(Class::VISIBLEOBJECT)) return;
     const VisibleObject& visible = object.get_visible();
+    
+    // draw boundaries
+    if (parameters.draw_notebounds)
+        draw_boundaries(renderer, note, note.is_virtual() ? parameters.virtualbounds_color : parameters.notebounds_color, offset);
+    
     
     // set color
     set_color(renderer, visible.appearance.color);
@@ -437,7 +447,7 @@ void Press::render(Renderer& renderer, const Plate::pNote& note, const Position<
     for (Plate::pNote::AttachableList::const_iterator i = note.attachables.begin(); i != note.attachables.end(); ++i)
     {
         render(renderer, &**i, offset, note.stem.top < note.stem.base, head_height, stem_width);
-        if (parameters.draw_attachbounds) draw_boundaries(renderer, **i, offset);
+        if (parameters.draw_attachbounds) draw_boundaries(renderer, **i, parameters.attachbounds_color, offset);
     };
 }
 
@@ -632,7 +642,7 @@ void Press::render_staff(Renderer& renderer, const Plate& plate, const Position<
                 
                 if (parameters.draw_attachbounds)
                 {
-                    draw_boundaries(renderer, pvoice->brace, offset);
+                    draw_boundaries(renderer, pvoice->brace, parameters.attachbounds_color, offset);
                     renderer.set_color(0, 0, 0, 255);   // reset color
                 };
             };
@@ -653,7 +663,7 @@ void Press::render_staff(Renderer& renderer, const Plate& plate, const Position<
                 
                 if (parameters.draw_attachbounds)
                 {
-                    draw_boundaries(renderer, pvoice->bracket, offset);
+                    draw_boundaries(renderer, pvoice->bracket, parameters.attachbounds_color, offset);
                     renderer.set_color(0, 0, 0, 255);   // reset color
                 };
             };
@@ -710,7 +720,7 @@ void Press::render_staff(Renderer& renderer, const Plate& plate, const Position<
         // render the line's boundary box
         if (parameters.draw_linebounds)
         {
-            draw_boundaries(renderer, *line, offset);
+            draw_boundaries(renderer, *line, parameters.linebounds_color, offset);
             renderer.set_color(0, 0, 0, 255);   // reset color
         };
     };
@@ -722,17 +732,17 @@ Press::Press(const StyleParam& _style, const ViewportParam& _viewport) : viewpor
                                                                          default_style(_style) {}
 
 // draw the boundary box of a graphical object
-void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException)
 {
     // check if the renderer is ready
     if (!renderer.ready()) throw InvalidRendererException();
     
     // render the box
     renderer.set_line_width(1.0);
-    renderer.set_color(static_cast<unsigned char>(parameters.boundary_color & 0xFF),
-                       static_cast<unsigned char>((parameters.boundary_color >> 8) & 0xFF),
-                       static_cast<unsigned char>((parameters.boundary_color >> 16) & 0xFF),
-                       static_cast<unsigned char>((parameters.boundary_color >> 24) & 0xFF));
+    renderer.set_color(static_cast<unsigned char>(color & 0xFF),
+                       static_cast<unsigned char>((color >> 8) & 0xFF),
+                       static_cast<unsigned char>((color >> 16) & 0xFF),
+                       static_cast<unsigned char>((color >> 24) & 0xFF));
     renderer.move_to((scale(object.gphBox.pos.x) + offset.x) / 1000.0, (scale(object.gphBox.pos.y) + offset.y) / 1000.0);
     renderer.line_to((scale(object.gphBox.pos.x + object.gphBox.width) + offset.x) / 1000.0, (scale(object.gphBox.pos.y) + offset.y) / 1000.0);
     renderer.line_to((scale(object.gphBox.pos.x + object.gphBox.width) + offset.x) / 1000.0, (scale(object.gphBox.pos.y + object.gphBox.height) + offset.y) / 1000.0);
@@ -762,10 +772,10 @@ void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object,
 void Press::draw_cross(Renderer& renderer, const Position<mpx_t>& pos, const Position<mpx_t> offset)
 {
     renderer.set_line_width(1.0);
-    renderer.set_color(static_cast<unsigned char>(parameters.boundary_color & 0xFF),
-                       static_cast<unsigned char>((parameters.boundary_color >> 8) & 0xFF),
-                       static_cast<unsigned char>((parameters.boundary_color >> 16) & 0xFF),
-                       static_cast<unsigned char>((parameters.boundary_color >> 24) & 0xFF));
+    renderer.set_color(static_cast<unsigned char>(parameters.attachbounds_color & 0xFF),
+                       static_cast<unsigned char>((parameters.attachbounds_color >> 8) & 0xFF),
+                       static_cast<unsigned char>((parameters.attachbounds_color >> 16) & 0xFF),
+                       static_cast<unsigned char>((parameters.attachbounds_color >> 24) & 0xFF));
     renderer.move_to((scale(pos.x) + offset.x) / 1000.0 - 3.0, (scale(pos.y) + offset.y) / 1000.0 - 3.0);
     renderer.line_to((scale(pos.x) + offset.x) / 1000.0 + 3.0, (scale(pos.y) + offset.y) / 1000.0 + 3.0);
     renderer.move_to((scale(pos.x) + offset.x) / 1000.0 - 3.0, (scale(pos.y) + offset.y) / 1000.0 + 3.0);
@@ -822,7 +832,7 @@ void Press::render(Renderer& renderer, const PageSet::pPage& page, const PageSet
     for (std::list<Plate::pAttachable>::const_iterator i = page.attachables.begin(); i != page.attachables.end(); ++i)
     {
         render(renderer, &*i, offset, true, pageset.head_height, pageset.stem_width);
-        if (parameters.draw_attachbounds) draw_boundaries(renderer, *i, offset);
+        if (parameters.draw_attachbounds) draw_boundaries(renderer, *i, parameters.attachbounds_color, offset);
     };
 }
 

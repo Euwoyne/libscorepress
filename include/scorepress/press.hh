@@ -88,7 +88,7 @@ class Press
     Press(const StyleParam& style, const ViewportParam& viewport);
     
     // draw the boundary box of a graphical object
-    void draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, const Position<mpx_t> offset) throw(InvalidRendererException);
+    void draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException);
     void draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, const Color& color, const Position<mpx_t> offset) throw(InvalidRendererException);
     
     // render a plate through the given renderer

@@ -159,24 +159,34 @@ struct PressParam
     
     unsigned int shadow_color;      // color of page shadows         (in rgba, little endian)
     unsigned int shadow_offset;     // size of the page shadows      (in mpx)
-    unsigned int boundary_color;    // color of boundary boxes       (in rgba, little endian)
     unsigned int cursor_width;      // cursor line-width             (in mpx)
     unsigned int cursor_distance;   // cursor distance from the note (in micrometer; should be less than "min-distance")
     
     bool draw_notebounds;           // draw boundary boxes of notes
     bool draw_attachbounds;         // draw boundary boxes of attachable objects
     bool draw_linebounds;           // draw boundary boxes of lines
+    bool draw_eov;                  // draw end-of-voice objects
+    unsigned int notebounds_color;      // color of boundary boxes       (in rgba, little endian)
+    unsigned int virtualbounds_color;   // color of boundary boxes       (in rgba, little endian)
+    unsigned int attachbounds_color;    // color of boundary boxes       (in rgba, little endian)
+    unsigned int linebounds_color;      // color of boundary boxes       (in rgba, little endian)
+    unsigned int eov_color;             // color of end-of-voice objects (in rgba, little endian)
     
     // default parameters
     PressParam() : scale(1000),
                    shadow_color(0x80000000),
                    shadow_offset(5000),
-                   boundary_color(0xFF0000FF),
                    cursor_width(2000),
                    cursor_distance(400),
                    draw_notebounds(false),
                    draw_attachbounds(false),
-                   draw_linebounds(false) {};
+                   draw_linebounds(false),
+                   draw_eov(false),
+                   notebounds_color(0xFF0000FF),
+                   virtualbounds_color(0xFF0000C0),
+                   attachbounds_color(0xFFFF0000),
+                   linebounds_color(0xFF00FF00),
+                   eov_color(0xFF800080) {}
 };
 
 //

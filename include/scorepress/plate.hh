@@ -199,6 +199,7 @@ class Plate
         const StaffObject& get_note() const;    // return related staff-object
         bool is_virtual() const;                // is this a virtual note?
         bool is_inserted() const;               // is this an inserted virtual note?
+        bool at_end() const;                    // is this an eov indicator? (if it is, get_note() will SEGFAULT!)
         
         // dump pnote info
         void dump() const;
@@ -259,6 +260,7 @@ class Plate
 inline const StaffObject& Plate::pNote::get_note()    const {return (virtual_obj ? *virtual_obj->object : *note);}
 inline       bool         Plate::pNote::is_virtual()  const {return (virtual_obj != NULL);}
 inline       bool         Plate::pNote::is_inserted() const {return (virtual_obj && virtual_obj->inserted);}
+inline       bool         Plate::pNote::at_end()      const {return note.at_end();}
 inline       void         Plate::pLine::erase()             {voices.clear();}
 
 } // end namespace

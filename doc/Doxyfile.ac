@@ -15,11 +15,11 @@
 #---------------------------------------------------------------------------
 
 DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = @PACKAGE_NAME@
-PROJECT_NUMBER         = @PACKAGE_VERSION@
+PROJECT_NAME           = "@PACKAGE_NAME@"
+PROJECT_NUMBER         = "@PACKAGE_VERSION@"
 PROJECT_BRIEF          = ScorePress&nbsp;&mdash;&nbsp;Music&nbsp;Engraving&nbsp;Software
 PROJECT_LOGO           =
-OUTPUT_DIRECTORY       = @OUTPUT_DIR@
+OUTPUT_DIRECTORY       = "@OUTPUT_DIR@"
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
 BRIEF_MEMBER_DESC      = YES
@@ -103,7 +103,7 @@ WARN_LOGFILE           =
 # configuration options related to the input files
 #---------------------------------------------------------------------------
 
-INPUT                  = @INPUT_DIR@
+INPUT                  = "@SOURCE_DIR@" "@HEADER_DIR@" "@DOC_DIR@"
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.cpp *.hh *.dox
 RECURSIVE              = NO
@@ -150,7 +150,7 @@ HTML_OUTPUT            = html
 HTML_FILE_EXTENSION    = .html
 HTML_HEADER            =
 HTML_FOOTER            =
-HTML_STYLESHEET        =
+HTML_STYLESHEET        = #"@DOC_DIR@/doxygen.css"
 HTML_EXTRA_STYLESHEET  =
 HTML_EXTRA_FILES       =
 HTML_COLORSTYLE_HUE    = 220
@@ -178,8 +178,8 @@ SEARCHENGINE           = NO
 
 GENERATE_LATEX         = NO
 LATEX_OUTPUT           = latex
-LATEX_CMD_NAME         = @LATEX@
-MAKEINDEX_CMD_NAME     = @MAKEINDEX@
+LATEX_CMD_NAME         = "@LATEX@"
+MAKEINDEX_CMD_NAME     = "@MAKEINDEX@"
 COMPACT_LATEX          = NO
 PAPER_TYPE             = a4wide
 EXTRA_PACKAGES         =

@@ -2,7 +2,7 @@
 
 # initialize package
 AC_PREREQ([2.69])
-AC_INIT([libscorepress], [0.2.5])
+AC_INIT([libscorepress], [0.2.6])
 AC_CONFIG_SRCDIR([src/engraver.cpp])
 AC_CONFIG_HEADERS([include/scorepress/config.hh:include/scorepress/config.hh.ac])
 AC_LANG([C++])
@@ -13,7 +13,7 @@ AC_DEFINE([LIBSCOREPRESS_PACKAGE_NAME], ["AC_PACKAGE_NAME"])
 AC_DEFINE([LIBSCOREPRESS_VERSION_STRING], ["AC_PACKAGE_VERSION"])
 AC_DEFINE([LIBSCOREPRESS_VERSION_MAJOR], [0])
 AC_DEFINE([LIBSCOREPRESS_VERSION_MINOR], [2])
-AC_DEFINE([LIBSCOREPRESS_VERSION_PATCH], [5])
+AC_DEFINE([LIBSCOREPRESS_VERSION_PATCH], [6])
 
 # save user flags
 CFLAGS_ORI="$CFLAGS"
