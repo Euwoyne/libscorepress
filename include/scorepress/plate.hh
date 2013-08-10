@@ -206,6 +206,7 @@ class Plate
     };
     
     // voice object (list of notes)
+    typedef std::list<pNote> PNoteList;
     class pVoice
     {
      public:
@@ -216,7 +217,7 @@ class Plate
         
      public:
         Position<mpx_t>  basePos;   // top-right corner of the staff
-        std::list<pNote> notes;     // notes of the voice
+        PNoteList        notes;     // notes of the voice
         const_Cursor     begin;     // cursor at the beginning of this voice (in the score object)
         VoiceContext     context;   // this voice's context at the END of the line (or voice)
         value_t          time;      // time-stamp of the voice's first note
@@ -228,6 +229,7 @@ class Plate
     };
     
     // on-plate line object (list of voices)
+    typedef std::list<pVoice> PVoiceList;
     class pLine : public pGraphical
     {
      public:
@@ -235,22 +237,23 @@ class Plate
         
      public:
         ScoreContext      context;      // score context (at the end of the line)
-        std::list<pVoice> voices;       // voices within this line
+        PVoiceList        voices;       // voices within this line
         StaffContextMap   staffctx;     // staff contexts
         Position<mpx_t>   basePos;      // top-right corner position
         mpx_t             line_end;     // line width
         value_t           end_time;     // time-stamp at the line's end
         
-        std::list<pVoice>::iterator get_voice(const Voice& voice);              // find a voice in this line
-        std::list<pVoice>::const_iterator get_voice(const Voice& voice) const;  // (constant version)
-        std::list<pVoice>::iterator get_staff(const Staff& staff);              // find any voice of a given staff
-        std::list<pVoice>::const_iterator get_staff(const Staff& staff) const;  // (constant version)
+        PVoiceList::iterator get_voice(const Voice& voice);             // find a voice in this line
+        PVoiceList::const_iterator get_voice(const Voice& voice) const; // (constant version)
+        PVoiceList::iterator get_staff(const Staff& staff);             // find any voice of a given staff
+        PVoiceList::const_iterator get_staff(const Staff& staff) const; // (constant version)
         
         void erase();            		// erase the line
     };
     
     // lines on the plate
-    std::list<pLine> lines;
+    typedef std::list<pLine> PLineList;
+    PLineList lines;
     
     // dump the plate content to stdout
     void dump() const;

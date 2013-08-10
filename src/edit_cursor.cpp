@@ -196,7 +196,7 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     prepare_plate(*cursor, *voice);
     
     // iterate the line to find the on-plate note
-    while (cursor->pnote != cursor->pend && &*cursor->pnote->note != &*cursor->note)
+    while (!cursor->pnote->at_end() && &*cursor->pnote->note != &*cursor->note)
     {
         do ++cursor->pnote;                             // increment on-plate iterator
         while (   cursor->pnote != voice->notes.end()   // ignore inserted objects
@@ -210,17 +210,14 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     };
     
     // if we did not find the note
-    if (!cursor->empty() && cursor->pnote == cursor->pend)
+    if (!cursor->empty() && cursor->pnote->at_end())
     {
         if (cursor->note.at_end() || cursor->note->is(Class::NEWLINE))
         {
             cursor->time = cursor->ntime;
-            cursor->behind = true;
         }
-        else  if (&*cursor->pnote->note != &*cursor->note)
-        {
+        else if (&*cursor->pnote->note != &*cursor->note)
             Log::warn("Unable to find current note within the reengraved voice. (class: EditCursor)");
-        };
     };
     }
     
@@ -262,12 +259,11 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
         };
         
         // if we did not find the note
-        if (!c->empty() && c->pnote == c->pend)
+        if (!c->empty() && c->pnote->at_end())
         {
             if (c->note.at_end() || c->note->is(Class::NEWLINE))
             {
                 cursor->time = cursor->ntime;
-                c->behind = true;
             }
             else if (&*c->pnote->note != &*c->note)
             {

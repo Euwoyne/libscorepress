@@ -62,18 +62,15 @@ class UserCursor
     class VoiceCursor
     {
      public:
-        Cursor note;                                // score-cursor
-        Cursor layout;                              // line layout
+        Cursor note;                        // score-cursor
+        Cursor layout;                      // line layout
         
-        std::list<Plate::pNote>::iterator pbegin;   // on-plate voice beginning
-        std::list<Plate::pNote>::iterator pend;     // on-plate voice end
-        std::list<Plate::pNote>::iterator pnote;    // plate-cursor
-        Plate::pVoice*                    pvoice;   // on-plate voice
+        Plate::PNoteList::iterator pnote;   // plate-cursor
+        Plate::pVoice*             pvoice;  // on-plate voice
         
-        value_t time;       // current time-stamp
-        value_t ntime;      // time after the currently referenced object
-        bool    active;     // is this voice part of the current cursor?
-        bool    behind;     // is this cursor behind the note?
+        value_t time;                       // current time-stamp
+        value_t ntime;                      // time after the currently referenced object
+        bool    active;                     // is this voice part of the current cursor?
         
      public:
         bool has_prev() const;                      // check, if there is a previous note (in line and voice)
@@ -112,7 +109,7 @@ class UserCursor
     std::list<VoiceCursor>::const_iterator find(const Voice& voice) const;
     
     // set all voice-cursors to the beginning of the current line
-    void prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" plate data ("note" and "layout" must be correct)
+    void prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" plate data (helper)
     bool prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" data (helper)
     void prepare_voices();
     
@@ -146,7 +143,6 @@ class UserCursor
     //const Newline&       get_layout()    const throw(NotValidException);    // return the line layout
           value_t        get_time()      const throw(NotValidException);    // return the current time-stamp
     
-    bool   is_behind()   const throw(NotValidException);        // check, if the cursor is behind the referenced note
     bool   at_end()      const throw(NotValidException);        // check, if the cursor is at the end of the voice
     size_t voice_index() const throw(NotValidException);        // return the index of the current voice
     size_t voice_count() const;                                 // return the number of voices
@@ -191,10 +187,10 @@ class UserCursor
 };
 
 // inline method implementations
-inline bool UserCursor::VoiceCursor::has_prev() const {return (behind && !empty()) || (&*note != &*pvoice->begin);}
-inline bool UserCursor::VoiceCursor::has_next() const {return (note.has_next() && pnote != pend);}
+inline bool UserCursor::VoiceCursor::has_prev() const {return (&*note != &*pvoice->begin);}
+inline bool UserCursor::VoiceCursor::has_next() const {return (!pnote->at_end() && !note->is(Class::NEWLINE));}
 inline bool UserCursor::VoiceCursor::empty()    const {return pvoice->begin.at_end() || pvoice->begin->is(Class::NEWLINE);}
-inline bool UserCursor::VoiceCursor::at_end()   const {return (behind && (pnote == pend));}
+inline bool UserCursor::VoiceCursor::at_end()   const {return (pnote->at_end() || note->is(Class::NEWLINE));}
 
 inline const Score&         UserCursor::get_score() const {return score->score;}
 inline const Plate&         UserCursor::get_plate() const {return plateinfo->plate;}

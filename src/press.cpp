@@ -878,10 +878,7 @@ void Press::render(Renderer& renderer, const UserCursor& cursor, const Position<
 {
     // get horizontal position
     mpx_t x = cursor.graphical_x();
-    if (!cursor.is_behind())
-        x -= _round(viewport->umtopx_h(parameters.cursor_distance));
-    else
-        x += _round(viewport->umtopx_h(parameters.cursor_distance));
+    x -= _round(viewport->umtopx_h(parameters.cursor_distance));
     
     // get vertical position and height
     mpx_t y = cursor.graphical_y(*viewport);

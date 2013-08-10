@@ -40,8 +40,8 @@ class Error;    // exception base class, containing an error message
 class Error : public std::string
 {
  public:
-    Error() : std::string("Unknown Error within module \"libscorepress\"") {};
-    Error(const std::string msg) : std::string(msg) {};
+    Error();                        // default constructor (generic message)
+    Error(const std::string msg);   // constructor with specific message
 };
 
 }

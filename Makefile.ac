@@ -130,6 +130,7 @@ cfiles := ${srcdir}/main.cpp           \
           ${srcdir}/classes.cpp        \
           ${srcdir}/log.cpp            \
           ${srcdir}/fraction.cpp       \
+          ${srcdir}/error.cpp          \
           ${srcdir}/config.cpp
 
 hfiles := ${headerdir}/engine.hh         \
@@ -183,6 +184,7 @@ sofiles := ${builddir}/main.s.o           \
            ${builddir}/classes.s.o        \
            ${builddir}/log.s.o            \
            ${builddir}/fraction.s.o       \
+           ${builddir}/error.s.o          \
            ${builddir}/config.s.o
 
 afiles := ${builddir}/main.o           \
@@ -205,6 +207,7 @@ afiles := ${builddir}/main.o           \
           ${builddir}/classes.o        \
           ${builddir}/log.o            \
           ${builddir}/fraction.o       \
+          ${builddir}/error.o          \
           ${builddir}/config.o
 
 docfiles := @srcdir@/AUTHORS       \
@@ -255,6 +258,7 @@ deps_classes_cpp        := ${srcdir}/classes.cpp ${deps_classes_hh} ${deps_engra
 deps_config_cpp         := ${srcdir}/config.cpp ${deps_config_hh}
 deps_context_cpp        := ${srcdir}/context.cpp ${deps_context_hh}
 deps_cursor_cpp         := ${srcdir}/cursor.cpp ${deps_cursor_hh}
+deps_error_cpp          := ${srcdir}/error.cpp ${deps_error_hh}
 deps_edit_cursor_cpp    := ${srcdir}/edit_cursor.cpp ${deps_edit_cursor_hh} ${deps_log_hh}
 deps_engine_cpp         := ${srcdir}/engine.cpp ${deps_engine_hh} ${deps_log_hh}
 deps_engrave_info_cpp   := ${srcdir}/engrave_info.cpp ${deps_engrave_info_hh} ${deps_log_hh}
@@ -526,7 +530,7 @@ dist-bzip2: ${srcfiles} dist
 dist-zip: ${srcfiles} dist
 	zip -qr ${distdir}.zip ${distdir}
 
-deb: dist
+deb: ${srcfiles}
 	@echo "Debian Packaging not implemented yet."
 
 # directories
@@ -694,6 +698,13 @@ ${builddir}/fraction.o:		${deps_fraction_cpp}
 ${builddir}/fraction.s.o:	${deps_fraction_cpp}
 							echo "  Compiling:      fraction.cpp..."
 							${CXX} -fPIC -c ${srcdir}/fraction.cpp -o ${builddir}/fraction.s.o ${FLAGS} ${FRACT_SIZECHECK}
+
+${builddir}/error.o:		${deps_error_cpp}
+							echo "  Compiling:      error.cpp..."
+							${CXX} -c ${srcdir}/error.cpp -o ${builddir}/error.o ${FLAGS}
+${builddir}/error.s.o:		${deps_error_cpp}
+							echo "  Compiling:      error.cpp..."
+							${CXX} -fPIC -c ${srcdir}/error.cpp -o ${builddir}/error.s.o ${FLAGS}
 
 ${builddir}/config.o:		${deps_config_cpp}
 							echo "  Compiling:      config.cpp..."
