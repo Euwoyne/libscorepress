@@ -92,6 +92,15 @@ void VoiceContext::modify(const TimeSig& timesig, value_t time)
 // engraver dependant on the current context.
 //
 
+// exception classes
+StaffContext::Error::Error(const std::string& msg) : ScorePress::Error(msg) {}
+StaffContext::IllegalBasenoteException::IllegalBasenoteException()
+            : Error("Found illegal base-note for clef object.") {}
+StaffContext::IllegalAccidentalException::IllegalAccidentalException()
+            : Error("Found illegal accidental on head-instance.") {}
+StaffContext::IllegalKeyException::IllegalKeyException()
+            : Error("Found illegal key-signature.") {}
+
 // default staff-context (treble clef, C major key)
 StaffContext::StaffContext() : _clef(), _key(),
                                _base_note(76),

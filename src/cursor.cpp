@@ -31,6 +31,11 @@ using namespace ScorePress;
 // This is the non-constant version of the class.
 //
 
+// exception classes
+Cursor::Error::Error(const std::string& msg) : ScorePress::Error(msg) {}
+Cursor::IllegalObjectTypeException::IllegalObjectTypeException()
+      : Error("You cannot insert a Staff-Object into a sub-voice.") {}
+
 // constructors for the "Cursor" class
 Cursor::Cursor() : _staff(NULL), _voice(NULL) {}
 Cursor::Cursor(Staff& s) : _staff(&s), _voice(&s), _main(s.notes.begin()) {}
@@ -316,8 +321,10 @@ bool const_Cursor::operator != (const const_Cursor& cursor) const
 // check, whether cursor can be incremented
 bool const_Cursor::has_next() const
 {
-    return (_staff == _voice) ? _main != --static_cast<const MainVoice*>(_voice)->notes.end()
-                              : _sub  != --static_cast<const SubVoice*>(_voice)->notes.end();
+    return (_staff == _voice) ? (_main != --static_cast<const MainVoice*>(_voice)->notes.end() &&
+                                 _main !=   static_cast<const MainVoice*>(_voice)->notes.end())
+                              : (_sub  != --static_cast<const SubVoice*>(_voice)->notes.end()  &&
+                                 _sub  !=   static_cast<const SubVoice*>(_voice)->notes.end());
 }
 
 // check, whether cursor can be decremented

@@ -27,7 +27,6 @@
 #include "stem_info.hh" // StemInfo
 #include "context.hh"   // VoiceContext, StaffContext
 #include "sprite_id.hh" // SpriteId
-#include "error.hh"     // Error
 
 namespace ScorePress
 {
@@ -263,7 +262,7 @@ class Plate
 inline const StaffObject& Plate::pNote::get_note()    const {return (virtual_obj ? *virtual_obj->object : *note);}
 inline       bool         Plate::pNote::is_virtual()  const {return (virtual_obj != NULL);}
 inline       bool         Plate::pNote::is_inserted() const {return (virtual_obj && virtual_obj->inserted);}
-inline       bool         Plate::pNote::at_end()      const {return note.at_end();}
+inline       bool         Plate::pNote::at_end()      const {return (!virtual_obj && note.at_end());}
 inline       void         Plate::pLine::erase()             {voices.clear();}
 
 } // end namespace

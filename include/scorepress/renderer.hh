@@ -48,7 +48,7 @@ class Renderer
 {
  public:
     // error class thrown on syntax errors within the sprites meta information
-    class Error : public ScorePress::Error {public: Error(const std::string& msg) : ScorePress::Error(msg) {};};
+    class Error : public ScorePress::Error {public: Error(const std::string& msg);};
     
     // text alignment enumeration
     enum enuAlignment {ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER};

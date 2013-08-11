@@ -35,6 +35,10 @@ inline int _round(const double d) {return static_cast<mpx_t>(d + 0.5);}
 // engraver-provided Plate instance and a renderer instance.
 //
 
+// exception classes
+Press::Error::Error(const std::string& msg) : ScorePress::Error(msg) {}
+Press::InvalidRendererException::InvalidRendererException() : Error("Unable to draw with non-ready renderer.") {}
+
 // render a sprite transforming the position with "parameters.scale"
 void Press::draw(Renderer& renderer, const SpriteId& sprite, const Position<mpx_t> pos, const Position<mpx_t> offset, const double sprite_scale)
 {

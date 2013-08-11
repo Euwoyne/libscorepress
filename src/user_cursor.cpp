@@ -38,6 +38,18 @@ using namespace ScorePress;
 inline int _round(const double d) {return static_cast<mpx_t>(d + 0.5);}
 inline value_t get_value(const StaffObject& obj) {return (obj.is(Class::NOTEOBJECT)) ? static_cast<const NoteObject&>(obj).value() : value_t(0);}
 
+// exception classes
+UserCursor::Error::Error(const std::string& msg) : ScorePress::Error(msg) {}
+UserCursor::NotValidException::NotValidException()
+        : Error("Unable to dereference invalid user-cursor.") {}
+UserCursor::NotValidException::NotValidException(const std::string& msg) : Error(msg) {}
+UserCursor::NoScoreException::NoScoreException()
+        : NotValidException("No score is set for this user-cursor.") {}
+UserCursor::InvalidMovement::InvalidMovement()
+        : Error("Unable to move the user-cursor in the desired direction.") {}
+UserCursor::InvalidMovement::InvalidMovement(const std::string& dir)
+        : Error("Unable to move the user-cursor in the desired direction (" + dir + ").") {}
+
 
 //     voice-cursor movement
 //    -----------------------
@@ -58,7 +70,7 @@ void UserCursor::VoiceCursor::prev() throw(InvalidMovement, Error)
         --pnote;
     
     // check, if we got the note
-    if (!pnote->at_end() && &*pnote->note != &*note)
+    if (!pnote->at_end() && (&*pnote->note != &*note || pnote->is_inserted()))
         throw Error("Cannot find previous note on-plate.");
 }
 
@@ -78,7 +90,7 @@ void UserCursor::VoiceCursor::next() throw(InvalidMovement, Error)
         ntime += get_value(*++note);    // goto next note, calculate end-time
     
     // check, if we got the note
-    if (!pnote->at_end() && &*pnote->note != &*note)
+    if (!pnote->at_end() && (&*pnote->note != &*note || pnote->is_inserted()))
         throw Error("Cannot find next note on-plate.");
 }
 
@@ -102,8 +114,8 @@ bool UserCursor::VoiceCursor::is_simultaneous(const VoiceCursor& cur) const
 // is the given object during this one?
 bool UserCursor::VoiceCursor::is_during(const VoiceCursor& cur) const
 {
-    //if (is_simultaneous(cur)) return true;                  // simultaneous -> TRUE
-    //if (cur.at_end()) return false;                         // non-simultaneous/at-end -> FALSE
+    if (is_simultaneous(cur)) return true;                  // simultaneous -> TRUE
+    if (cur.at_end()) return false;                         // non-simultaneous/at-end -> FALSE
     if (!cur.note->is(Class::NOTEOBJECT)) return false;     // non-simultaneous/non-note -> FALSE
     //if (time >= cur.time && time < cur.ntime) return true;  // note/during -> TRUE
     //return false;                                           // other -> FALSE
@@ -245,8 +257,15 @@ bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
     
     // calculate layout (search previous newline)
     newvoice.layout = newvoice.note;
-    if (!newvoice.layout.has_prev() || !(--newvoice.layout)->is(Class::NEWLINE))
+    if (!newvoice.layout.has_prev())
+    {
         newvoice.layout.reset();
+    }
+    else if (!(--newvoice.layout)->is(Class::NEWLINE))
+    {
+        newvoice.layout.reset();
+        Log::warn("Unable to find layout object for voice. (class: UserCursor)");
+    };
     
     // prepare on-plate data
     prepare_plate(newvoice, pvoice);
@@ -281,7 +300,7 @@ void UserCursor::prepare_voices()
     {
         // check voice
         if (find(i->begin.voice()) != vcursors.end()) continue; // if the voice does exist already, ignore
-        if (i->begin.is_main())                                 // if the voice is not a main-voice...
+        if (i->begin.is_main())                                 // if the voice is not a sub-voice...
         {                                                       // ...something is wrong
             Log::warn("Unable to add a misplaced MainVoice to cursor. (class: UserCursor)");
             continue;
@@ -828,10 +847,10 @@ void UserCursor::prev_line() throw(NotValidException, InvalidMovement)
 void UserCursor::next_line() throw(NotValidException, InvalidMovement)
 {
     if (!ready()) throw NotValidException();    // validity check
-    mpx_t x = fast_x();                        // save current position
+    mpx_t x = fast_x();                         // save current position
     
     // select next line
-    if (++line == plateinfo->plate.lines.end()) // if it is on the previous page
+    if (++line == plateinfo->plate.lines.end()) // if it is on the next page
     {
         // search previous pages
         std::list<PageSet::pPage>::iterator p = page;                       // page iterator
@@ -1045,8 +1064,11 @@ void UserCursor::dump() const
         if (!i->active) std::cout << "["; else std::cout << " ";
         std::cout << i->note.index() << "/" << idx << ":";
         if (i->has_prev()) std::cout << "<"; else std::cout << " ";
-        if (i->at_end()) std::cout << "E"; else std::cout << "> " << classname(i->note->classtype());
+        if (i->pnote->at_end()) std::cout << "E";
+        else if (i->note->is(Class::NEWLINE)) std::cout << "N";
+        else std::cout << "> " << classname(i->note->classtype());
         std::cout << " (@ " << i->time << "-" << i->ntime << ")" << ((i == cursor) ? " <=" : "");
+        std::cout << "\tpvoice.begin.type = " << classname(i->pvoice->begin->classtype());
         if (!i->active) std::cout << "]\n"; else std::cout << "\n";
     };
     std::cout << "\n";

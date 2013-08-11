@@ -62,7 +62,8 @@ class Pick
         value_t remaining_duration; // duration of the part not yet engraved
         
      public:
-        VoiceCursor();  // default constructor
+        VoiceCursor();          // default constructor
+        bool at_end() const;    // overwrite "at_end" to return "false", if virtual
         
         const StaffObject& original() const;        // return the original staff-object
         const StaffObject& operator * () const;     // return the staff-object the cursor points to
@@ -74,7 +75,7 @@ class Pick
     {
      public:
         class VoiceNotFoundException : public ScorePress::Error // thrown, if layout of non-existant voice is requested
-        {public: VoiceNotFoundException() : ScorePress::Error("Cannot find layout of requested voice.") {};};
+        {public: VoiceNotFoundException();};
         
      private:
         std::map<const Voice*, const Newline*> data;    // maps voices to their newline objects
@@ -183,6 +184,8 @@ class Pick
 };
 
 // inline method implementations
+inline       bool         Pick::VoiceCursor::at_end() const
+            {return (!!virtual_obj ? false : const_Cursor::at_end());}
 inline const StaffObject& Pick::VoiceCursor::original() const
             {return const_Cursor::operator *();}
 inline const StaffObject& Pick::VoiceCursor::operator * () const

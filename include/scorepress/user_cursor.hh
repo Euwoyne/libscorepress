@@ -47,15 +47,13 @@ class UserCursor
 {
  public:
     // exception classes
-    class Error : public ScorePress::Error {public: Error(const std::string& msg) : ScorePress::Error(msg) {};};
+    class Error : public ScorePress::Error {public: Error(const std::string& msg);};
     class NotValidException : public Error              // thrown, if an invalid cursor is dereferenced
-    {public: NotValidException() : Error("Unable to dereference invalid user-cursor.") {};
-             NotValidException(const std::string& msg) : Error(msg) {};};
+        {public: NotValidException(); NotValidException(const std::string& msg);};
     class NoScoreException : public NotValidException   // thrown, if the target-score is not set
-    {public: NoScoreException() : NotValidException("No score is set for this user-cursor.") {};};
+        {public: NoScoreException();};
     class InvalidMovement : public Error                // thrown, if an invalid cursor is dereferenced
-    {public: InvalidMovement() : Error("Unable to move the user-cursor in the desired direction.") {};
-             InvalidMovement(const std::string& dir) : Error("Unable to move the user-cursor in the desired direction (" + dir + ").") {};};
+        {public: InvalidMovement(); InvalidMovement(const std::string& dir);};
     
  protected:
     // plate-voice iterator with score-cursor and time-information

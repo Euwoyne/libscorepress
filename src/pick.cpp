@@ -41,6 +41,10 @@ inline int _round(const double d) {return static_cast<mpx_t>(d + 0.5);}
 Pick::VoiceCursor::VoiceCursor() : const_Cursor(), pos(0), npos(0), ypos(0), time(0), ntime(0),
                                    virtual_obj(NULL), inserted(false), remaining_duration(-1) {}
 
+// exception class
+Pick::LineLayout::VoiceNotFoundException::VoiceNotFoundException()
+    : ScorePress::Error("Cannot find layout of requested voice.") {}
+
 // associate a voice with its newline object
 void Pick::LineLayout::set(const Voice& voice, const Newline& layout)
 {
@@ -853,6 +857,7 @@ void Pick::insert(const StaffObject& obj)
     cur.virtual_obj = StaffObjectPtr(obj.clone());
     cur.inserted = true;
     cur.remaining_duration = -1;
+    ++cur;
     if (cursors.back()->is(Class::NEWLINE)) insert(cur, next_cursors);
     else insert(cur, cursors);
 }

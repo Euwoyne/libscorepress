@@ -45,9 +45,9 @@ class Cursor
 {
  public:
     // exception classes
-    class Error : public ScorePress::Error {public: Error(const std::string& msg) : ScorePress::Error(msg) {};};
+    class Error : public ScorePress::Error {public: Error(const std::string& msg);};
     class IllegalObjectTypeException : public Error    // thrown, if we insert a staff-object into a sub-voice
-    {public: IllegalObjectTypeException() : Error("You cannot insert a Staff-Object into a sub-voice.") {};};
+        {public: IllegalObjectTypeException();};
     
  private:
     Staff* _staff;         // pointer to the staff hosting the voice

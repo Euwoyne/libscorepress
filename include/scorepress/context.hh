@@ -111,13 +111,14 @@ class StaffContext
 {
  public:
     // exception classes
-    class Error : public ScorePress::Error {public: Error(const std::string& msg) : ScorePress::Error(msg) {};};
+    class Error : public ScorePress::Error
+        {public: Error(const std::string& msg);};
     class IllegalBasenoteException : public Error   // thrown, if a clef's base-note is not a whole tone
-    {public: IllegalBasenoteException() : Error("Found illegal base-note for clef object.") {};};
+        {public: IllegalBasenoteException();};
     class IllegalAccidentalException : public Error // thrown, if the tone cannot be expressed using the requested accidental
-    {public: IllegalAccidentalException() : Error("Found illegal accidental on head-instance.") {};};
+        {public: IllegalAccidentalException();};
     class IllegalKeyException : public Error        // thrown, if the index of the key-signature symbol is out of range 0-6
-    {public: IllegalKeyException() : Error("Found illegal key-signature.") {};};
+        {public: IllegalKeyException();};
     
     typedef std::map<int, Accidental::Type> AccidentalMap;
     

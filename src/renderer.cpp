@@ -43,6 +43,9 @@ using namespace ScorePress;
 // object.
 //
 
+// error class thrown on syntax errors within the sprites meta information
+Renderer::Error::Error(const std::string& msg) : ScorePress::Error(msg) {}
+
 // throwing function (general file error)
 void Renderer::mythrow(const char* trns, const std::string& filename) throw(Error)
 {

@@ -35,6 +35,9 @@ std::list<Staff>::const_iterator Score::get_staff(const Staff& staff) const thro
     return out;                                             // return staff-iterator
 }
 
+// thrown by staff-finding methods, if the given staff does not exist
+Score::StaffNotFound::StaffNotFound() : ScorePress::Error("Unable to find requested staff within score.") {}
+
 // check, whether the given staves belong to one instrument
 bool Score::same_instrument(const Staff& staff1, const Staff& staff2) const throw(StaffNotFound)
 {

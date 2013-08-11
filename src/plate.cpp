@@ -239,9 +239,12 @@ void Plate::dump() const
         {
             std::cout << "    Voice " << j++ << ": (" << v->basePos.x << ", " << v->basePos.y << ") t=" << v->time << "\n";
             k = 0;
-            for (std::list<Plate::pNote>::const_iterator n = v->notes.begin(); !n->at_end() && n != v->notes.end(); ++n)
+            for (std::list<Plate::pNote>::const_iterator n = v->notes.begin(); n != v->notes.end(); ++n)
             {
-                std::cout << "        Note " << k++ << " @" << &n->get_note() << "\t" << classname(n->get_note().classtype()) << "\t(" << n->sprite.setid << ", " << n->sprite.spriteid << ")";
+                if (n->at_end())
+                    std::cout << "        Note " << k++ << " @EOV";
+                else
+                    std::cout << "        Note " << k++ << " @" << &n->get_note() << "\t" << classname(n->get_note().classtype()) << "\t(" << n->sprite.setid << ", " << n->sprite.spriteid << ")";
                 if (n->virtual_obj)
                 {
                     std::cout << " [V";

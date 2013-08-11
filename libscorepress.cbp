@@ -342,6 +342,7 @@
 			<Option target="shared" />
 			<Option target="static" />
 		</Unit>
+		<Unit filename="src/error.cpp" />
 		<Unit filename="src/fraction.cpp">
 			<Option target="shared" />
 			<Option target="static" />

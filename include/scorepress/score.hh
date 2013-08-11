@@ -64,7 +64,7 @@ class Score
 {
  public:
     class StaffNotFound : public ScorePress::Error  // thrown by staff-finding methods, if the given staff does not exist
-    {public: StaffNotFound() : ScorePress::Error("Unable to find requested staff within score.") {};};
+    {public: StaffNotFound();};
     
     struct Layout   // first page/line layout
     {

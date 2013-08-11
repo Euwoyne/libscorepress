@@ -46,9 +46,9 @@ class Press
 {
  public:
     // exception classes
-    class Error : public ScorePress::Error {public: Error(const std::string& msg) : ScorePress::Error(msg) {};};
+    class Error : public ScorePress::Error {public: Error(const std::string& msg);};
     class InvalidRendererException : public Error   // thrown, the given renderer is not ready
-    {public: InvalidRendererException() : Error("Unable to draw with non-ready renderer.") {};};
+        {public: InvalidRendererException();};
     
  private:
     // parameters
