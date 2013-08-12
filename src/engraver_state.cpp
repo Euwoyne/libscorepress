@@ -240,6 +240,8 @@ void EngraverState::engrave()
         pvoice->notes.back().gphBox.pos.y = pnote->absolutePos.front().y;
         pvoice->notes.back().gphBox.width = 1000;
         pvoice->notes.back().gphBox.height = head_height * (cursor.staff().line_count - 1);
+        pvoice->notes.back().absolutePos.clear();
+        pvoice->notes.back().absolutePos.push_back(pvoice->notes.back().gphBox.pos);
     }
     
     // insert barline
