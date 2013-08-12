@@ -47,7 +47,9 @@ VoiceContext::VoiceContext() : _volume(127),
                                _time_time(0),
                                _time_bar(0) {
                                _buffer.object = NULL;
-                               _buffer.xpos = 0;}
+                               _buffer.xpos = 0;
+                               _buffer2.object = NULL;
+                               _buffer2.xpos = 0;}
 
 // copy constructor
 VoiceContext::VoiceContext(const VoiceContext& context) : 
@@ -56,7 +58,8 @@ VoiceContext::VoiceContext(const VoiceContext& context) :
                                _time_sig(context._time_sig),
                                _time_time(context._time_time),
                                _time_bar(context._time_bar),
-                               _buffer(context._buffer) {}
+                               _buffer(context._buffer),
+                               _buffer2(context._buffer2) {}
 
 // let the context-changing instance change this context
 void VoiceContext::modify(const ContextChanging& changer, bool vol)

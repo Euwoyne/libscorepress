@@ -55,12 +55,12 @@ class VoiceContext
     value_t _time_time;             // time-position of that signature
     unsigned int _time_bar;         // bar index of the time-signature
     
-    // last object buffer
+    // last objects buffer (double buffer)
     struct Buffer
     {
         const StaffObject* object;  // last engraved object of the voice
         mpx_t xpos;                 // horizontal position of the last engraved object
-    } _buffer;
+    } _buffer, _buffer2;
     
  public:
     // constructors
@@ -78,12 +78,17 @@ class VoiceContext
     void modify(const TimeSig& timesig, value_t time);      // set new time-signature
     
     // last object access
+    bool has_buffer() const;                        // has last engraved object?
+    bool has_buffer2() const;                       // has next-to-last engraved object?
+    void reset_buffer();                            // reset buffer to buffer2
+    
     void set_buffer(const StaffObject* object);     // set last engraved object
     const StaffObject* get_buffer() const;          // get last engraved object
-    bool has_buffer() const;                        // has last engraved object?
+    const StaffObject* get_buffer2() const;         // get next-to-last engraved object
     
     void set_buffer_xpos(const mpx_t xpos);         // set last object position
     mpx_t get_buffer_xpos() const;                  // get last object position
+    mpx_t get_buffer2_xpos() const;                 // get next-to-last object position
 };
 
 // inline method implementations
@@ -91,11 +96,15 @@ inline       unsigned int VoiceContext::bar(const value_t time)         const {r
 inline       value_t      VoiceContext::beat(const value_t time)        const {return (time - _time_time) % static_cast<value_t>(_time_sig);}
 inline       value_t      VoiceContext::restbar(const value_t time)     const {return _time_sig - beat(time);}
 inline const TimeSig&     VoiceContext::last_timesig()                  const {return _time_sig;}
-inline       void         VoiceContext::set_buffer(const StaffObject* object) {_buffer.object = object;}
-inline const StaffObject* VoiceContext::get_buffer()                    const {return _buffer.object;}
 inline       bool         VoiceContext::has_buffer()                    const {return _buffer.object != NULL;}
+inline       bool         VoiceContext::has_buffer2()                   const {return _buffer2.object != NULL;}
+inline       void         VoiceContext::reset_buffer()                        {_buffer = _buffer2; _buffer2.object = NULL;}
+inline       void         VoiceContext::set_buffer(const StaffObject* object) {_buffer2 = _buffer; _buffer.object = object;}
+inline const StaffObject* VoiceContext::get_buffer()                    const {return _buffer.object;}
+inline const StaffObject* VoiceContext::get_buffer2()                   const {return _buffer2.object;}
 inline       void         VoiceContext::set_buffer_xpos(const mpx_t xpos)     {_buffer.xpos = xpos;}
 inline       mpx_t        VoiceContext::get_buffer_xpos()               const {return _buffer.xpos;}
+inline       mpx_t        VoiceContext::get_buffer2_xpos()              const {return _buffer2.xpos;}
 
 
 //

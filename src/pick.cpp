@@ -723,10 +723,10 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
     {
         nextNote.pos = engravedNote.npos;       // the next notes are rendered right behind it
         
-        if (nextNote->is(Class::NOTEOBJECT))
+        if (!nextNote->is(Class::NOTEOBJECT))
             nextNote.pos -= viewport->umtopx_h(param->barline_distance - param->min_distance);
     }
-    else //if (!engravedNote->is(Class::NEWLINE))    // in any other case, if we are not in front of a line
+    else    // in any other case, if we are not in front of a line
     {
         // assume the position to be the previously estimated one
         nextNote.pos = engravedNote.npos;

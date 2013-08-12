@@ -101,6 +101,7 @@ void EngraverState::engrave()
             if (parent != pline->voices.end())  // if we got the parent voice
             {
                 pvoice->context = parent->context;  // copy the context
+                pvoice->context.reset_buffer();     // reset the buffer
                 got_ctx = true;                     // got it!
             }
             else if (pline != plate->lines.begin()) // else try to find it in the previous line
@@ -144,10 +145,8 @@ void EngraverState::engrave()
     // create on-plate object (set "pnote")
     Position<mpx_t> pos(cursor.pos, cursor.ypos);
     if (cursor->is(Class::NOTEOBJECT)) pos.y += viewport->umtopx_v(pick.staff_offset(static_cast<const NoteObject&>(*cursor).staff_shift));
-    else                           {   
-                    //std::cout << "StaffOffset: " << viewport->umtopx_v(pick.staff_offset()) << "\tpos: " << pos.y << "\n";
-                    pos.y += viewport->umtopx_v(pick.staff_offset());
-                    };
+    else                               pos.y += viewport->umtopx_v(pick.staff_offset());
+    
     pvoice->notes.push_back(Plate::pNote(pos, cursor)); // append the new note to the plate
     pnote = &pvoice->notes.back();                      // get the on-plate note-object
     if (cursor.virtual_obj)                             // set virtual object

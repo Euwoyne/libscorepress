@@ -176,7 +176,7 @@ void add_newline(SubVoice& voice, unsigned int distance, int indent, int right_m
 void add1(Staff& staff, Sprites& sprites, int toneoffset)
 {
     // main-voice notes
-    add(staff, 5, toneoffset + 69, 6);
+    add(staff, 5, 69 + toneoffset, 6);
     static_cast<Chord&>(*staff.notes.back()).subvoice = RefPtr<SubVoice>(new SubVoice(&staff));
     SubVoice& subvoice = *static_cast<Chord&>(*staff.notes.back()).subvoice;
     subvoice.stem_direction = Voice::STEM_DOWNWARDS;
