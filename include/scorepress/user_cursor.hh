@@ -187,7 +187,7 @@ class UserCursor
 // inline method implementations
 inline bool UserCursor::VoiceCursor::has_prev() const {return (&*note != &*pvoice->begin);}
 inline bool UserCursor::VoiceCursor::has_next() const {return (!pnote->at_end() && !note->is(Class::NEWLINE));}
-inline bool UserCursor::VoiceCursor::empty()    const {return pvoice->begin.at_end() || pvoice->begin->is(Class::NEWLINE);}
+inline bool UserCursor::VoiceCursor::empty()    const {return false;}//pvoice->begin.at_end() || pvoice->begin->is(Class::NEWLINE);}
 inline bool UserCursor::VoiceCursor::at_end()   const {return (pnote->at_end() || note->is(Class::NEWLINE));}
 
 inline const Score&         UserCursor::get_score() const {return score->score;}

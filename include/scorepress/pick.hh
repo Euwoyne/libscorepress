@@ -174,6 +174,7 @@ class Pick
                                                              //                        as long as the score object hasn't changed)
           bool            eos()                       const; // check if the pick is ready (or has reached the score's end)
           bool            eov()                       const; // check if the current cursor is last in voice
+    const VoiceCursor*    peek(const Voice& v)        const; // peek at the next note in the voice (NULL if not there)
     const ScoreDimension& get_dimension()             const; // return dimension of the currently engraved score object
           mpx_t           get_indent()                const; // return the indentation of the current line
           bool            get_justify()               const; // return the width justification for the current line

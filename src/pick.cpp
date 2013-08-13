@@ -1078,3 +1078,13 @@ bool Pick::eov() const
         if (&i->voice() == voice) return false;
     return true;
 }
+
+// peek at the next note in the voice (NULL if not there)
+const Pick::VoiceCursor* Pick::peek(const Voice& v) const
+{
+    for (std::list<VoiceCursor>::const_reverse_iterator i = cursors.rbegin(); i != cursors.rend(); ++i)
+        if (&i->voice() == &v) return &*i;
+    for (std::list<VoiceCursor>::const_reverse_iterator i = next_cursors.rbegin(); i != next_cursors.rend(); ++i)
+        if (&i->voice() == &v) return &*i;
+    return NULL;
+}

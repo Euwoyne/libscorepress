@@ -204,6 +204,12 @@ void EngraverState::engrave()
             newvoice->basePos = pvoice->basePos;
             newvoice->time = cursor.time;
             newvoice->end_time = cursor.time;
+            
+            // add end-of-voice indicator object
+            newvoice->notes.push_back(Plate::pNote(pnote->absolutePos.front(), newvoice->begin));
+            newvoice->notes.back().gphBox.pos = newvoice->notes.back().absolutePos.front();
+            newvoice->notes.back().gphBox.width = 1000;
+            newvoice->notes.back().gphBox.height = head_height * (cursor.staff().line_count - 1);
         };
     };
     
@@ -239,8 +245,7 @@ void EngraverState::engrave()
         pvoice->notes.back().gphBox.pos.y = pnote->absolutePos.front().y;
         pvoice->notes.back().gphBox.width = 1000;
         pvoice->notes.back().gphBox.height = head_height * (cursor.staff().line_count - 1);
-        pvoice->notes.back().absolutePos.clear();
-        pvoice->notes.back().absolutePos.push_back(pvoice->notes.back().gphBox.pos);
+        pvoice->notes.back().absolutePos.front() = pvoice->notes.back().gphBox.pos;
     }
     
     // insert barline
@@ -1068,6 +1073,54 @@ bool EngraverState::engrave_next()
     lineinfo.indent = pick.get_indent();
     lineinfo.justify = pick.get_justify();
     lineinfo.right_margin = pick.get_right_margin();
+    
+    // add voices
+    const Pick::VoiceCursor* cur;
+    Position<mpx_t>          pos;
+    for (Plate::PVoiceList::iterator v = pline->voices.begin(); v != pline->voices.end(); ++v)
+    {
+        if (v->notes.back().at_end()) continue;
+        if (!v->notes.back().get_note().is(Class::NEWLINE))
+            Log::warn("Found unfinished voice not ending with a Newline. (class: EngraverState)");
+        
+        cur = pick.peek(v->begin.voice());
+        if (!cur)
+        {
+            // add the voice (with "begin" at end)
+            plate->lines.back().voices.push_back(Plate::pVoice(v->begin));
+            pvoice = --plate->lines.back().voices.end();
+            pvoice->begin.to_end();
+            pvoice->context = v->context;
+            
+            // calculate the voice position
+            pvoice->basePos.x = pick.get_indent();
+            pvoice->basePos.y = pick.get_cursor().ypos + viewport->umtopx_v(pick.staff_offset(v->begin.staff()));
+            pvoice->time = start_time;
+            
+            // calculate the EOV indicator position
+            pos = pvoice->basePos;
+            pos.x += viewport->umtopx_h(param->min_distance);
+            
+            // add end-of-voice indicator object
+            pvoice->notes.push_back(Plate::pNote(pos, const_Cursor(v->begin)));
+            pvoice->notes.back().note.to_end();
+            pvoice->notes.back().gphBox.pos = pos;
+            pvoice->notes.back().gphBox.width = 1000;
+            pvoice->notes.back().gphBox.height = head_height * (v->begin.staff().line_count - 1);
+        }
+        else
+        {
+            // add the voice (with "begin" at end)
+            plate->lines.back().voices.push_back(Plate::pVoice(*cur));
+            pvoice = --plate->lines.back().voices.end();
+            pvoice->context = v->context;
+            
+            // calculate the voice position
+            pvoice->basePos.x = pick.get_indent();
+            pvoice->basePos.y = pick.get_cursor().ypos + viewport->umtopx_v(pick.staff_offset(v->begin.staff()));
+            pvoice->time = start_time;
+        };
+    };
     
     // increment on-plate line iterator
     ++pline;

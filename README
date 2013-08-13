@@ -3,3 +3,16 @@ libscorepress
 
 ScorePress - Music Engraving Software  (libscorepress)
 
+
+
+Changelog:
+0.1     * early development
+
+0.2.0   * unified class interfaces and polymorphic structure
+
+0.2.5   * complete reorganization of the engraving process (better use of polymorphism)
+        * rewrite of the Pick algorithms
+
+0.2.6   * Newlines are now engraved to the Plate as well
+        * added special end-of-voice objects to the Plate
+
