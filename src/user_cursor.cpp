@@ -61,7 +61,7 @@ void UserCursor::VoiceCursor::prev() throw(InvalidMovement, Error)
     if (!has_prev()) throw InvalidMovement("prev");
     
     // set note
-    if (!pnote->at_end()) --note;   // if we are not at the end, goto previous note
+    --note;                         // goto previous note
     ntime = time;                   // set end-time
     time -= get_value(*note);       // calculate time
     
@@ -81,16 +81,17 @@ void UserCursor::VoiceCursor::next() throw(InvalidMovement, Error)
     if (at_end()) throw InvalidMovement("next");
     
     // set on-plate note
+    ++note;
     do ++pnote;
     while (pnote->is_inserted() && !pnote->at_end());
     
     // set note
     time = ntime;                   // set time
     if (!pnote->at_end())           // if we are not at the end
-        ntime += get_value(*++note);    // goto next note, calculate end-time
+        ntime += get_value(*note);      // calculate end-time
     
     // check, if we got the note
-    if (!pnote->at_end() && (&*pnote->note != &*note || pnote->is_inserted()))
+    if (&*pnote->note != &*note || pnote->is_inserted())
         throw Error("Cannot find next note on-plate.");
 }
 
@@ -103,8 +104,6 @@ bool UserCursor::VoiceCursor::is_simultaneous(const VoiceCursor& cur) const
 {
     if (time != cur.time) return false;                                 // unequal time -> FALSE
     if (at_end() && cur.at_end()) return true;                          // both at end -> TRUE
-    if (empty()) return cur.note->is(Class::NOTEOBJECT);                // empty voices at notes
-    if (cur.empty()) return note->is(Class::NOTEOBJECT);                // empty voices at notes
     if (at_end() || cur.at_end()) return true;                          // only one at end -> TRUE
     if (note->is(Class::NOTEOBJECT) && cur.note->is(Class::NOTEOBJECT)) // equal time/note -> TRUE
         return true;
@@ -128,8 +127,6 @@ bool UserCursor::VoiceCursor::is_after(const VoiceCursor& cur) const
     if (time == cur.time)   // rendered in order: newline -> clef -> key -> time-signature -> note
     {
         if (at_end() && cur.at_end()) return false;         // both at end -> FALSE
-        if (empty()) return !cur.note->is(Class::NOTEOBJECT);
-        if (cur.empty()) return false;
         if (cur.at_end()) return true;                      // end before everything -> TRUE
         if (at_end()) return false;                         // end before everything -> FALSE
         if (note->classtype() == cur.note->classtype() ||   // equal type -> FALSE
@@ -161,8 +158,6 @@ bool UserCursor::VoiceCursor::is_before(const VoiceCursor& cur) const
     if (time == cur.time)   // rendered in order: newline -> clef -> key -> time-signature -> note
     {
         if (at_end() && cur.at_end()) return false;         // both at end -> FALSE
-        if (cur.empty()) return !note->is(Class::NOTEOBJECT);
-        if (empty()) return false;
         if (at_end()) return true;                          // end before everything -> TRUE
         if (cur.at_end()) return false;                     // end before everything -> FALSE
         if (note->classtype() == cur.note->classtype() ||   // equal type -> FALSE
@@ -334,15 +329,6 @@ void UserCursor::update_voices()
         
         i->active = true;           // initialize at active state
         
-        /*
-        if (i->empty())             // an empty voice...
-        {                           // ...is active, if it is simultaneous and can be a child
-            i->active = (   (i->ntime >= cursor->time)  // (only noteobjects are parents)
-                         && (cursor->empty() || (!cursor->at_end() && cursor->note->is(Class::NOTEOBJECT))));
-            continue;
-        };
-        */
-        
         while (i->is_after(*cursor))    // move backward if necessary
         {                               // (set inactive if movement is impossible)
             if (!(i->active = i->has_prev())) break;
@@ -367,50 +353,16 @@ void UserCursor::update_voices()
 // calculate the horizontal position for the given cursor (position right of the referenced object; fast)
 mpx_t UserCursor::fast_x(const VoiceCursor& cur) const throw(NotValidException)
 {
+    // calculate horizontal position from the note's "gphBox"
     if (!cur.pvoice) throw NotValidException();
-    /*
-    // for empty voices: calculate horizontal position from the parent voice
-    if (cur.empty())
-    {
-        if (cur.note.is_main()) return line->basePos.x; // an empty main-voice has same position as the line
-        else                                            // for empty sub-voices...
-        {                                               // ...consider the parent voice
-            const std::list<UserCursor::VoiceCursor>::const_iterator i = find(*static_cast<const SubVoice&>(cur.note.voice()).parent);
-            if (i == vcursors.end())
-            {
-                Log::error("Unable to find parent of empty voice. (class: UserCursor)");
-                throw NotValidException();
-            };
-            return fast_x(*i);
-        };
-    };
-    */
-    // if the voice is non-empty: calculate horizontal position from the note's "gphBox"
     return cur.pnote->gphBox.right();
 }
 
 // calculate the horizontal position for the given cursor (graphical cursor position, regarding simultaneous notes)
 mpx_t UserCursor::graphical_x(const VoiceCursor& cur) const throw(NotValidException)
 {
+    // calculate horizontal position from the note's "gphBox"
     if (!cur.pvoice) throw NotValidException();
-    /*
-    // for empty voices: calculate horizontal position from the parent voice
-    if (cur.empty())
-    {
-        if (cur.note.is_main()) return line->basePos.x; // an empty main-voice has same position as the line
-        else                                            // for empty sub-voices...
-        {                                               // ...consider the parent voice
-            const std::list<UserCursor::VoiceCursor>::const_iterator i = find(*static_cast<const SubVoice&>(cur.note.voice()).parent);
-            if (i == vcursors.end())
-            {
-                Log::error("Unable to find parent of empty voice. (class: UserCursor)");
-                throw NotValidException();
-            };
-            return graphical_x(*i);
-        };
-    };
-    */
-    // if the voice is non-empty: calculate horizontal position from the note's "gphBox"
     mpx_t x = cur.pnote->gphBox.pos.x;
     
     // search for leftmost position (within staff)
@@ -596,25 +548,23 @@ const Plate::pVoice& UserCursor::get_pvoice() const throw(NotValidException)
 // return the score-cursor
 const Cursor& UserCursor::get_cursor() const throw(NotValidException)
 {
-    if (empty()) throw NotValidException();
+    if (cursor == vcursors.end()) throw NotValidException();
     return cursor->note;
 }
 
 // return the on-plate note
 const Plate::pNote& UserCursor::get_platenote() const throw(NotValidException)
 {
-    if (empty()) throw NotValidException();
+    if (cursor == vcursors.end()) throw NotValidException();
     return *cursor->pnote;
 }
 
-/*
 // return the line layout
 const Newline& UserCursor::get_layout() const throw(NotValidException)
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->get_layout();
 }
-*/
 
 // return the current time-stamp
 value_t UserCursor::get_time() const throw(NotValidException)
@@ -1067,9 +1017,8 @@ void UserCursor::dump() const
         if (i->pnote->at_end()) std::cout << "E";
         else if (i->note->is(Class::NEWLINE)) std::cout << "N";
         else std::cout << "> " << classname(i->note->classtype());
-        std::cout << " (@ " << i->time << "-" << i->ntime << ")" << ((i == cursor) ? " <=" : "");
-        std::cout << "\tpvoice.begin.type = " << classname(i->pvoice->begin->classtype());
-        if (!i->active) std::cout << "]\n"; else std::cout << "\n";
+        std::cout << " (@ " << i->time << "-" << i->ntime << ")";
+        if (!i->active) std::cout << "]\n"; else std::cout << ((i == cursor) ? " <=\n" : "\n");
     };
     std::cout << "\n";
 }

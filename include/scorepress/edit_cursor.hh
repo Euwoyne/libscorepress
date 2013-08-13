@@ -109,7 +109,7 @@ class EditCursor : public UserCursor
     //void remove_voice() throw(NotValidException, Cursor::IllegalObjectTypeException);   // remove a voice
     
     // get the line layout object (non-constant)
-    //Newline& get_layout() throw(NotValidException);
+    Newline& get_layout() throw(NotValidException);
     
     // set auto stem/accidental to current object
     void set_stem_length_auto() throw(Cursor::IllegalObjectTypeException);

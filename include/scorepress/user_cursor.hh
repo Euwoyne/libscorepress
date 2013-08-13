@@ -73,13 +73,11 @@ class UserCursor
      public:
         bool has_prev() const;                      // check, if there is a previous note (in line and voice)
         bool has_next() const;                      // check, if there is a next note (in line and voice)
+        bool at_end() const;                        // check, if the cursor is at the end of the voice
         void prev() throw(InvalidMovement, Error);  // to the previous note (fails, if "!has_prev()")
         void next() throw(InvalidMovement, Error);  // to the next note     (fails, if "at_end()")
         
-        bool empty() const;                         // check, if the voice is empty
-        bool at_end() const;                        // check, if the cursor is at the end of the voice
-        
-        //Newline& get_layout() const;                // return a reference to the layout object
+        Newline& get_layout() const;                // return a reference to the layout object
         
         // engraving time check (corresponding to "cPick::insert")
         bool is_simultaneous(const VoiceCursor& cur) const; // are the objects simultaneous (and equal type)
@@ -138,7 +136,7 @@ class UserCursor
     const Plate::pVoice& get_pvoice()    const throw(NotValidException);    // return the on-plate voice
     const Cursor&        get_cursor()    const throw(NotValidException);    // return the score-cursor
     const Plate::pNote&  get_platenote() const throw(NotValidException);    // return the on-plate note
-    //const Newline&       get_layout()    const throw(NotValidException);    // return the line layout
+    const Newline&       get_layout()    const throw(NotValidException);    // return the line layout
           value_t        get_time()      const throw(NotValidException);    // return the current time-stamp
     
     bool   at_end()      const throw(NotValidException);        // check, if the cursor is at the end of the voice
@@ -171,7 +169,6 @@ class UserCursor
     StaffContext get_staff_context() const throw(NotValidException);    // context without local accidentals
     
     // is the cursor valid?
-    bool empty() const;
     bool ready() const;
     bool has_score() const;
     
@@ -185,16 +182,15 @@ class UserCursor
 };
 
 // inline method implementations
-inline bool UserCursor::VoiceCursor::has_prev() const {return (&*note != &*pvoice->begin);}
-inline bool UserCursor::VoiceCursor::has_next() const {return (!pnote->at_end() && !note->is(Class::NEWLINE));}
-inline bool UserCursor::VoiceCursor::empty()    const {return false;}//pvoice->begin.at_end() || pvoice->begin->is(Class::NEWLINE);}
-inline bool UserCursor::VoiceCursor::at_end()   const {return (pnote->at_end() || note->is(Class::NEWLINE));}
+inline bool     UserCursor::VoiceCursor::has_prev()   const {return (&*note != &*pvoice->begin);}
+inline bool     UserCursor::VoiceCursor::has_next()   const {return (!pnote->at_end() && !note->is(Class::NEWLINE));}
+inline bool     UserCursor::VoiceCursor::at_end()     const {return (pnote->at_end() || note->is(Class::NEWLINE));}
+inline Newline& UserCursor::VoiceCursor::get_layout() const {return static_cast<Newline&>(*layout);}
 
 inline const Score&         UserCursor::get_score() const {return score->score;}
 inline const Plate&         UserCursor::get_plate() const {return plateinfo->plate;}
 inline const Plate::pLine&  UserCursor::get_line()  const {return *line;}
 
-inline bool   UserCursor::empty()       const {return (score == NULL || cursor == vcursors.end() || cursor->empty());}
 inline bool   UserCursor::ready()       const {return (score != NULL && cursor != vcursors.end());}
 inline bool   UserCursor::has_score()   const {return (score != NULL);}
 
