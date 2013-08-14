@@ -326,9 +326,9 @@ void Engine::set_test(Sprites& sprites)
     score.staves.back().layout.indent = 10000;      // µm
     score.staves.back().layout.justify = JUSTIFY;
     score.staves.back().layout.distance = 10000;    // pohh
-    score.staves.back().layout.auto_clef = false;
-    score.staves.back().layout.auto_key = false;
-    score.staves.back().layout.auto_timesig = false;
+    //score.staves.back().layout.auto_clef = false;
+    //score.staves.back().layout.auto_key = false;
+    //score.staves.back().layout.auto_timesig = false;
     
     score.staves.back().notes.push_back(StaffObjectPtr(new Clef()));
     static_cast<Clef&>(*score.staves.back().notes.back()).sprite = SpriteId(0, sprites[0].ids["clef.treble"]);
@@ -372,9 +372,9 @@ void Engine::set_test(Sprites& sprites)
     score.staves.back().layout.indent = 10000;  // µm
     score.staves.back().layout.justify = JUSTIFY;
     score.staves.back().layout.distance = 0;    // pohh
-    score.staves.back().layout.auto_clef = false;
-    score.staves.back().layout.auto_key = false;
-    score.staves.back().layout.auto_timesig = false;
+    //score.staves.back().layout.auto_clef = false;
+    //score.staves.back().layout.auto_key = false;
+    //score.staves.back().layout.auto_timesig = false;
     
     score.staves.back().notes.push_back(StaffObjectPtr(new Clef()));
     static_cast<Clef&>(*score.staves.back().notes.back()).sprite = SpriteId(0, sprites[0].ids["clef.bass"]);

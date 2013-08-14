@@ -334,34 +334,29 @@ void EditCursor::insert_rest(const unsigned char exp, const unsigned char dots) 
     insert(rest);
 }
 
-// insert a newline
-void EditCursor::insert_newline(const Newline& newline) throw(NotValidException, NoScoreException, Error)
-{
-    // TODO: check times / break notes
-    for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
-    {
-        if (cur->active && cur->has_prev())
-        {
-            if (!cur->at_end()) cur->note.insert(new Newline(newline));
-            else                (++cur->note).insert(new Newline(newline));
-            if (cur->has_next()) ++cur->note;
-            else                 cur->pnote = cur->pvoice->notes.end();
-        };
-    };
-    reengrave(NEWLINE);
-}
-
+// insert newline objects into all active voices
 void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Error)
 {
+    bool first = true;
     for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
     {
-        if (cur->active && cur->has_prev())
+        if ((cur->active || cur->note.is_main()) && cur->note.has_prev())
         {
-            if (!cur->at_end()) cur->note.insert(new Newline(/*cur->get_layout()*/));
-            else                (++cur->note).insert(new Newline(/*cur->get_layout()*/));
-            if (cur == vcursors.begin()) static_cast<Newline&>(*cur->note).distance = param->newline_distance;
-            if (cur->has_next()) ++cur->note;
-            else                 cur->pnote = cur->pvoice->notes.end();
+            // insert newline
+            if (!cur->has_prev())
+            {
+                cur->note.insert(new Newline(cur->get_layout()));
+                cur->pvoice->begin = cur->note;
+            }
+            else cur->note.insert(new Newline(cur->get_layout()));
+            
+            // set line distance
+            if (first) static_cast<Newline&>(*cur->note).distance = param->newline_distance, first = false;
+            static_cast<Newline&>(*cur->note).indent = 0;
+            
+            // set cursor to the first note in the new line
+            // TODO: debug
+            //if (cur->has_next()) ++cur->note;
         };
     };
     reengrave(NEWLINE);

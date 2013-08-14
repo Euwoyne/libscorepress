@@ -263,6 +263,7 @@ void EngraverState::create_lineend()
     for (std::list<Plate::pVoice>::iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
     {
         if (voice->notes.empty()) continue; // check if voice contains notes
+        
         // set furthest voice-end as staff/line-end
         if (pline->line_end < voice->notes.back().gphBox.right())
             pline->line_end = voice->notes.back().gphBox.right();
@@ -1008,7 +1009,7 @@ bool EngraverState::engrave_next()
     const bool pagebreak = !pick.eos() && pick.get_cursor()->is(Class::PAGEBREAK);
     
     // engrave all newlines at once
-    while (!pick.eos() && pick.get_cursor()->is(Class::NEWLINE))
+    while (!pick.eos())
     {
         // insert automatic clef, key and time signature
         if (pick.get_cursor().is_main())
@@ -1029,6 +1030,8 @@ bool EngraverState::engrave_next()
         
         engrave();                      // engrave newline
         pick.next(pnote->gphBox.width); // goto next note
+        
+        if (!pick.is_within_newline()) break;
     };
     
     // finish the line

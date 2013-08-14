@@ -367,6 +367,7 @@ void Pick::insert(const Pick::VoiceCursor& cursor, CList& clist)
             };
         };
         clist.push_back(cursor);
+        return;
     };
     
     // iterate through cursors (chronologically)
@@ -533,8 +534,8 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
                 {
                     if (i->time == engravedNote.time)
                     {
+                        i->npos += (engravedNote.npos - i->pos);
                         i->pos = engravedNote.npos; // update the next notes position
-                        return;                     // do not insert next one (already there)
                     };
                 };
                 return;                 // if the note was inserted, the next one is already there
@@ -588,9 +589,10 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
             
             // set newline time
             for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-            {
                 if (i->time > _newline_time) _newline_time = i->time;
-            };
+            if (param->newline_time_reset)
+                for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
+                    i->ntime = _newline_time;
         };
         
         // copy new line layout
@@ -623,10 +625,12 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
             _line_height = viewport->umtopx_v(line_height());
             
             // set newline time
+            _newline_time = engravedNote.ntime;
             for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-            {
                 if (i->time > _newline_time) _newline_time = i->time;
-            };
+            if (param->newline_time_reset)
+                for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
+                    i->ntime = _newline_time;
         };
         
         // copy new line layout
@@ -705,7 +709,7 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
     else if (nextNote->classtype() == engravedNote->classtype() && !engravedNote->is(Class::NOTEOBJECT)
                                                                 && !engravedNote->is(Class::TIMESIG))
     {   // if there are two consequent non-note-objects of the same class (no time-signatures)
-        nextNote.pos = engravedNote.pos;    // render them at the same position (horizontally)
+        nextNote.pos = engravedNote.pos;        // render them at the same position (horizontally)
     }
     else if (nextNote->is(Class::TIMESIG) && engravedNote->is(Class::TIMESIG) &&
              static_cast<const TimeSig*>(&*nextNote)->number == static_cast<const TimeSig*>(&*engravedNote)->number &&
@@ -726,7 +730,7 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
         if (!nextNote->is(Class::NOTEOBJECT))
             nextNote.pos -= viewport->umtopx_h(param->barline_distance - param->min_distance);
     }
-    else    // in any other case, if we are not in front of a line
+    else    // in any other case
     {
         // assume the position to be the previously estimated one
         nextNote.pos = engravedNote.npos;
@@ -734,7 +738,7 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
         // calculate the minimal left margin (i.e. leftmost rightmost position of previous objects)
         for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
         {
-            if (nextNote.pos      > i->npos &&
+            if (nextNote.pos      > i->npos && !(*i)->is(Class::NEWLINE) && 
                 (engravedNote.pos < i->npos ||
                  (engravedNote->is(Class::NOTEOBJECT) && nextNote->is(Class::NOTEOBJECT)
                                                       && engravedNote.pos <= i->npos)))
@@ -785,7 +789,6 @@ void Pick::next(mpx_t w)
     cursors.pop_back();
     insert_next(engravedNote);
     prepare_next(engravedNote, w);
-    //if (!cursors.empty() && !_layout.get(cursors.back().voice()).visible) return next(w);
 }
 
 // reset cursors to the beginning of the score

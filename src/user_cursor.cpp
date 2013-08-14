@@ -930,7 +930,7 @@ StaffContext UserCursor::get_staff_context() const throw(NotValidException)
     if (!cur.is_main()) return out_ctx; // if we cannot find a main-voice, last known context is correct
     
     // apply all (staff-)context modifying objects up to the current cursor
-    while (time < cursor->time)
+    while (!cur.at_end() && time < cursor->time)
     {
         // modify the context
         if (cur->is(Class::CLEF))           // by clef
@@ -940,12 +940,6 @@ StaffContext UserCursor::get_staff_context() const throw(NotValidException)
         else if (cur->is(Class::KEY))       // by key
         {
             out_ctx.modify(*static_cast<const Key*>(&*cur));
-        }
-        else if (cur->is(Class::NEWLINE))   // ERROR if we are inspecting the wrong on-plate line
-        {
-            std::cout << "begin: " << time << ";  cursor: " << cursor->time << "\n";
-            Log::warn("Unable to find cursor position for context calculation. (class: UserCursor)");
-            throw NotValidException();
         };
         
         // calculate timestamp

@@ -185,7 +185,7 @@ class UserCursor
 inline bool     UserCursor::VoiceCursor::has_prev()   const {return (&*note != &*pvoice->begin);}
 inline bool     UserCursor::VoiceCursor::has_next()   const {return (!pnote->at_end() && !note->is(Class::NEWLINE));}
 inline bool     UserCursor::VoiceCursor::at_end()     const {return (pnote->at_end() || note->is(Class::NEWLINE));}
-inline Newline& UserCursor::VoiceCursor::get_layout() const {return static_cast<Newline&>(*layout);}
+inline Newline& UserCursor::VoiceCursor::get_layout() const {return layout.ready() ? static_cast<Newline&>(*layout) : note.staff().layout;}
 
 inline const Score&         UserCursor::get_score() const {return score->score;}
 inline const Plate&         UserCursor::get_plate() const {return plateinfo->plate;}
