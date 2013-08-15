@@ -214,6 +214,13 @@ class Plate
             SpriteId sprite;
         };
         
+        struct Bracket : public pGraphical
+        {
+            SpriteId sprite;
+            Position<mpx_t> line_base;
+            Position<mpx_t> line_end;
+        };
+        
      public:
         Position<mpx_t>  basePos;   // top-right corner of the staff
         PNoteList        notes;     // notes of the voice
@@ -222,7 +229,7 @@ class Plate
         value_t          time;      // time-stamp of the voice's first note
         value_t          end_time;  // time-stamp at the voice's last note
         Brace            brace;     // brace starting here
-        Brace            bracket;   // bracket starting here
+        Bracket          bracket;   // bracket starting here
         
         pVoice(const const_Cursor& cursor); // constructor
     };

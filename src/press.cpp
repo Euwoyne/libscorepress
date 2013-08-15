@@ -17,6 +17,7 @@
   permissions and limitations under the Licence.
 */
 
+#include <cstdlib>
 #include <set>          // std::set
 
 #include "press.hh"
@@ -661,10 +662,19 @@ void Press::render_staff(Renderer& renderer, const Plate& plate, const Position<
                                      scale(pvoice->bracket.gphBox.width) / (1000.0 * renderer.get_sprites()[pvoice->bracket.sprite].width));
                 renderer.draw_sprite(pvoice->bracket.sprite,
                                      (offset.x + scale(pvoice->bracket.gphBox.pos.x)) / 1000.0,
-                                     (offset.y + scale(pvoice->bracket.gphBox.pos.y + pvoice->bracket.gphBox.height)) / 1000.0,
+                                     (offset.y + scale(pvoice->bracket.line_end.y)) / 1000.0,
                                      scale(pvoice->bracket.gphBox.width) / (1000.0 * renderer.get_sprites()[pvoice->bracket.sprite].width),
                                     -scale(pvoice->bracket.gphBox.width) / (1000.0 * renderer.get_sprites()[pvoice->bracket.sprite].width));
-                
+                renderer.set_line_width(parameters.scale / 1000.0);                         // set line width
+                renderer.move_to((offset.x + scale(pvoice->bracket.line_base.x)) / 1000.0,
+                                 (offset.y + scale(pvoice->bracket.line_base.y)) / 1000.0);
+                renderer.line_to((offset.x + scale(pvoice->bracket.line_base.x)) / 1000.0,
+                                 (offset.y + scale(pvoice->bracket.line_end.y)) / 1000.0);
+                renderer.line_to((offset.x + scale(pvoice->bracket.line_end.x)) / 1000.0,
+                                 (offset.y + scale(pvoice->bracket.line_end.y)) / 1000.0);
+                renderer.line_to((offset.x + scale(pvoice->bracket.line_end.x)) / 1000.0,
+                                 (offset.y + scale(pvoice->bracket.line_base.y)) / 1000.0);
+                renderer.fill();
                 if (parameters.draw_attachbounds)
                 {
                     draw_boundaries(renderer, pvoice->bracket, parameters.attachbounds_color, offset);
@@ -844,6 +854,8 @@ void Press::render(Renderer& renderer, const PageSet::pPage& page, const PageSet
 void Press::render_decor(Renderer& renderer, const PageSet& pageset, const Position<mpx_t> offset) throw(InvalidRendererException)
 {
     // draw shadow
+    if (parameters.draw_shadow)
+    {
     renderer.set_color(static_cast<unsigned char>(parameters.shadow_color & 0xFF),
                        static_cast<unsigned char>((parameters.shadow_color >> 8) & 0xFF),
                        static_cast<unsigned char>((parameters.shadow_color >> 16) & 0xFF),
@@ -857,6 +869,7 @@ void Press::render_decor(Renderer& renderer, const PageSet& pageset, const Posit
     renderer.line_to((offset.x + parameters.shadow_offset) / 1000.0,
                      (offset.y + parameters.shadow_offset + scale(pageset.page_layout.height)) / 1000.0);
     renderer.fill();
+    };
     
     // draw page
     renderer.set_color(255,255,255,255);
@@ -875,6 +888,21 @@ void Press::render_decor(Renderer& renderer, const PageSet& pageset, const Posit
     renderer.line_to(offset.x / 1000.0, (offset.y + scale(pageset.page_layout.height)) / 1000.0);
     renderer.close();
     renderer.stroke();
+    
+    // draw page margins
+    if (parameters.draw_margin)
+    {
+    renderer.set_color(static_cast<unsigned char>(parameters.margin_color & 0xFF),
+                       static_cast<unsigned char>((parameters.margin_color >> 8) & 0xFF),
+                       static_cast<unsigned char>((parameters.margin_color >> 16) & 0xFF),
+                       static_cast<unsigned char>((parameters.margin_color >> 24) & 0xFF));
+    renderer.move_to((offset.x + scale(pageset.page_layout.margin.left)) / 1000.0, (offset.y + scale(pageset.page_layout.margin.top)) / 1000.0);
+    renderer.line_to((offset.x + scale(pageset.page_layout.width - pageset.page_layout.margin.right)) / 1000.0, (offset.y + scale(pageset.page_layout.margin.top)) / 1000.0);
+    renderer.line_to((offset.x + scale(pageset.page_layout.width - pageset.page_layout.margin.right)) / 1000.0, (offset.y + scale(pageset.page_layout.height - pageset.page_layout.margin.bottom)) / 1000.0);
+    renderer.line_to((offset.x + scale(pageset.page_layout.margin.left)) / 1000.0, (offset.y + scale(pageset.page_layout.height - pageset.page_layout.margin.bottom)) / 1000.0);
+    renderer.close();
+    renderer.stroke();
+    }
 }
 
 // render a cursor through the given renderer

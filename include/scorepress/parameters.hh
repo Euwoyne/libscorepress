@@ -157,8 +157,11 @@ struct PressParam
 {
     unsigned int scale;             // printing scale (in promille)
     
+    bool         draw_shadow;       // draw page shadow
     unsigned int shadow_color;      // color of page shadows         (in rgba, little endian)
     unsigned int shadow_offset;     // size of the page shadows      (in mpx)
+    bool         draw_margin;       // draw page margin
+    unsigned int margin_color;      // color of page margin          (in rgba, little endian)
     unsigned int cursor_width;      // cursor line-width             (in mpx)
     unsigned int cursor_distance;   // cursor distance from the note (in micrometer; should be less than "min-distance")
     
@@ -174,8 +177,11 @@ struct PressParam
     
     // default parameters
     PressParam() : scale(1000),
+                   draw_shadow(true),
                    shadow_color(0x80000000),
                    shadow_offset(5000),
+                   draw_margin(true),
+                   margin_color(0xFFA0A0A0),
                    cursor_width(2000),
                    cursor_distance(400),
                    draw_notebounds(false),

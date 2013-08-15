@@ -674,9 +674,18 @@ void EngraverState::engrave_braces()
                         SpriteId(pick.get_score().layout.bracket_sprite.setid, (*sprites)[pick.get_score().layout.bracket_sprite.setid].bracket) :
                         pick.get_score().layout.bracket_sprite);
     
+    // minimal position (to calculate offset for the line)
+    mpx_t offset = pline->basePos.x;
+    
     // iterate the voices
     for (std::list<Staff>::const_iterator staff = pick.get_score().staves.begin(); staff != pick.get_score().staves.end(); ++staff)
     {
+        // calculate scales
+        double brace_scale = viewport->umtopx_v(staff->head_height);
+        double bracket_scale(brace_scale); 
+               brace_scale /= sprites->head_height(brace_sprite);
+               bracket_scale /= sprites->head_height(bracket_sprite);
+        
         // check for curly brace
         if (staff->curlybrace)
         {
@@ -695,19 +704,21 @@ void EngraverState::engrave_braces()
                 curlybrace_end = tvoice;                    //          end here
             
             curlybrace_begin->brace.sprite = brace_sprite;  //    set brace sprite
-            curlybrace_begin->brace.gphBox.pos = curlybrace_begin->basePos;
             curlybrace_begin->brace.gphBox.height =
                 ( curlybrace_end->basePos.y
                 + viewport->umtopx_v(curlybrace_end->begin.staff().head_height * (curlybrace_end->begin.staff().line_count - 1))
                 - curlybrace_begin->basePos.y);
             curlybrace_begin->brace.gphBox.width =
-                curlybrace_width(viewport->umtopx_v(staff->head_height) / sprites->head_height(brace_sprite),
+                curlybrace_width(brace_scale,
                                  curlybrace_begin->brace.gphBox.height,
                                  (*sprites)[brace_sprite].width,
                                  (*sprites)[brace_sprite].get_real("hmin"), (*sprites)[brace_sprite].get_real("hmax"),
                                  (*sprites)[brace_sprite].get_real("low"),  (*sprites)[brace_sprite].get_real("high"));
+            curlybrace_begin->brace.gphBox.pos = curlybrace_begin->basePos;
             curlybrace_begin->brace.gphBox.pos.x -= curlybrace_begin->brace.gphBox.width + viewport->umtopx_h(staff->brace_pos);
-            curlybrace_begin = pline->voices.end();         //     end brace (reset)
+            if (curlybrace_begin->brace.gphBox.pos.x < offset)  // update minimal x position
+                offset = curlybrace_begin->brace.gphBox.pos.x;
+            curlybrace_begin = pline->voices.end();             // end brace (reset)
         };
         
         // check for bracket
@@ -723,16 +734,53 @@ void EngraverState::engrave_braces()
         }
         else if (bracket_begin != pline->voices.end())      // if there is no bracket
         {                                                   // but one did begin
-            bracket_begin->brace.sprite = bracket_sprite;   //    set bracket sprite
-            bracket_begin->brace.gphBox.pos = bracket_begin->basePos;
-            bracket_begin->brace.gphBox.height =
+            tvoice = pline->get_staff(*staff);              //      get the staff on the plate
+            if (tvoice != pline->voices.end())              //      if the staff exists (i.e. is visible)
+                bracket_end = tvoice;                       //          end here
+            
+            bracket_begin->bracket.sprite = bracket_sprite;   //    set bracket sprite
+            bracket_begin->bracket.line_end = bracket_begin->basePos;
+            bracket_begin->bracket.line_end.x -= viewport->umtopx_h(staff->bracket_pos);
+            bracket_begin->bracket.line_base = bracket_begin->bracket.line_end;
+            bracket_begin->bracket.line_base.x -= _round(bracket_scale * (*sprites)[bracket_sprite].get_real("line"));
+            bracket_begin->bracket.line_end.y =
                  (bracket_end->basePos.y
                 + viewport->umtopx_v(bracket_end->begin.staff().head_height * (bracket_end->begin.staff().line_count - 1))
                 - bracket_begin->basePos.y);
-            bracket_begin->brace.gphBox.width =
-                  (viewport->umtopx_v(staff->head_height) * (*sprites)[bracket_sprite].width)
-                / sprites->head_height(bracket_sprite);
-            bracket_begin = pline->voices.end();         //     end brace (reset)
+            bracket_begin->bracket.gphBox.pos = bracket_begin->bracket.line_base;
+            bracket_begin->bracket.gphBox.height = _round(bracket_scale * (*sprites)[bracket_sprite].height);
+            bracket_begin->bracket.gphBox.pos.y -= bracket_begin->bracket.gphBox.height;
+            bracket_begin->bracket.gphBox.height *= 2;
+            bracket_begin->bracket.gphBox.height += bracket_begin->bracket.line_end.y;
+            bracket_begin->bracket.gphBox.width = _round(bracket_scale * (*sprites)[bracket_sprite].width);
+            bracket_begin->bracket.line_base.y -= 500;
+            bracket_begin->bracket.line_end.y += bracket_begin->basePos.y;
+            if (bracket_begin->bracket.gphBox.pos.x < offset)  // update minimal x position
+                offset = bracket_begin->bracket.gphBox.pos.x;
+            bracket_begin = pline->voices.end();                // end bracket (reset)
+        };
+    };
+    
+    // offset the line
+    if (offset < pline->basePos.x)
+    {
+        offset = pline->basePos.x - offset;
+        pline->gphBox.width += offset;
+        pline->basePos.x += offset;
+        pline->line_end += offset;
+        
+        for (std::list<Plate::pVoice>::iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
+        {
+            voice->basePos.x += offset;
+            voice->brace.gphBox.pos.x += offset;
+            voice->bracket.gphBox.pos.x += offset;
+            voice->bracket.line_base.x += offset;
+            voice->bracket.line_end.x += offset;
+            for (std::list<Plate::pNote>::iterator note = voice->notes.begin(); note != voice->notes.end(); ++note)
+            {
+                note->add_offset(offset);
+                note->add_tieend_offset(offset);
+            };
         };
     };
 }

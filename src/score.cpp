@@ -23,7 +23,7 @@ using namespace ScorePress;
 // staff default constructor
 Staff::Staff() : offset_y(0), head_height(10), line_count(5),
                  long_barlines(false), curlybrace(false), bracket(false),
-                 brace_pos(1000), bracket_pos(1000),
+                 brace_pos(500), bracket_pos(1000),
                  style(NULL) {}
 
 // get an iterator for a given staff
