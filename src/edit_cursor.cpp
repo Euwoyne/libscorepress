@@ -337,10 +337,23 @@ void EditCursor::insert_rest(const unsigned char exp, const unsigned char dots) 
 // insert newline objects into all active voices
 void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Error)
 {
+    // check if this is a newline completion (i.e. add newline only to those voices without one)
+    bool complete = true;
+    for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
+    {
+        if (cur->active && (cur->pnote->at_end() || !cur->note->is(Class::NEWLINE)))
+        {
+            complete = false;
+            break;
+        };
+    }
+    
+    // add the newlines
     bool first = true;
     for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
     {
-        if ((cur->active || cur->note.is_main()) && cur->note.has_prev())
+        if (   (cur->active || cur->note.is_main()) && cur->note.has_prev()
+            && (complete || cur->pnote->at_end() || !cur->note->is(Class::NEWLINE)))
         {
             // insert newline
             if (!cur->has_prev())
@@ -353,12 +366,9 @@ void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Err
             // set line distance
             if (first) static_cast<Newline&>(*cur->note).distance = param->newline_distance, first = false;
             static_cast<Newline&>(*cur->note).indent = 0;
-            
-            // set cursor to the first note in the new line
-            // TODO: debug
-            //if (cur->has_next()) ++cur->note;
         };
     };
+    
     reengrave(NEWLINE);
 }
 

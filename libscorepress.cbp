@@ -124,6 +124,10 @@
 			<Option target="install-static" />
 			<Option target="clear" />
 		</Unit>
+		<Unit filename="include/scorepress/config.hh.ac">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
 		<Unit filename="include/scorepress/context.hh">
 			<Option target="shared" />
 			<Option target="static" />
@@ -179,6 +183,10 @@
 			<Option target="install-shared" />
 			<Option target="install-static" />
 			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/export.hh">
+			<Option target="shared" />
+			<Option target="static" />
 		</Unit>
 		<Unit filename="include/scorepress/fraction.hh">
 			<Option target="shared" />

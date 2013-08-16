@@ -89,18 +89,18 @@ void Log::verbose(const char* msg)
 void Log::warn(const char* msg)
 {
     if (_flags.ECHO_WARN)
-        std::cout << msg << std::endl;
+        std::cout << "WARNING: " << msg << std::endl;
     if (_flags.LOG_WARN && file.is_open())
-        file << msg << std::endl;
+        file << "WARNING: " << msg << std::endl;
 }
 
 // log error message
 void Log::error(const char* msg)
 {
     if (_flags.ECHO_ERROR)
-        std::cout << msg << std::endl;
+        std::cout << "ERROR: " << msg << std::endl;
     if (_flags.LOG_ERROR && file.is_open())
-        file << msg << std::endl << std::flush;
+        file << "ERROR: " << msg << std::endl << std::flush;
 }
 
 // write message to log file only

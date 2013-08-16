@@ -660,6 +660,14 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         if (nextNote->is(Class::NOTEOBJECT))    // and if we got a note-object
         {                                       //    increase future time-stamp
             nextNote.ntime += static_cast<const NoteObject*>(&*nextNote)->value();
+        }
+        else if (nextNote->is(Class::NEWLINE))  // if we have a newline
+        {                                       //    precalculate position (won't be changed during preparation)
+            if (engravedNote->is(Class::BARLINE))
+                nextNote.pos = engravedNote.pos;
+            else
+                nextNote.pos = engravedNote.npos;
+            nextNote.npos = nextNote.pos;
         };
         
         // insert new note into stack
@@ -691,13 +699,14 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
     if (nextNote->is(Class::NEWLINE))       // if we got a newline/pagebreak
     {
         if (engravedNote->is(Class::NEWLINE))
-            nextNote.pos = engravedNote.pos;
+        {
+            if (engravedNote.time == nextNote.time)
+                nextNote.pos = engravedNote.pos;
+        }
         else if (engravedNote->is(Class::BARLINE))
             nextNote.pos = engravedNote.npos - viewport->umtopx_h(param->barline_distance);
-        else if (engravedNote.npos - engravedNote.pos - w < viewport->umtopx_h(param->min_distance))
+        else if (nextNote.pos - engravedNote.pos - w < viewport->umtopx_h(param->min_distance))
             nextNote.pos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
-        else
-            nextNote.pos = engravedNote.npos;
         nextNote.npos = nextNote.pos;
     }
     else if (engravedNote->is(Class::NEWLINE))

@@ -15,4 +15,5 @@ Changelog:
 
 0.2.6   * Newlines are now engraved to the Plate as well
         * added special end-of-voice objects to the Plate
+        * log implementation redesign
 
