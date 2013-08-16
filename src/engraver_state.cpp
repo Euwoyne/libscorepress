@@ -20,7 +20,6 @@
 #include <cmath>                // sqrt
 
 #include "engraver_state.hh"    // EngraverState
-#include "log.hh"               // Log
 #include "undefined.hh"         // defines "UNDEFINED" macro, resolving to the largest value "size_t" can contain
                                 // this number is interpreted as an undefined value
 using namespace ScorePress;
@@ -42,7 +41,7 @@ void EngraverState::engrave()
 {
     // set "pvoice" corresponding to the current pick
     const Pick::VoiceCursor& cursor = pick.get_cursor();
-    if (cursor.at_end()) {Log::warn("Cursor at end during engraving process. (class: EngraverState)"); return;};
+    if (cursor.at_end()) {log_warn("Cursor at end during engraving process. (class: EngraverState)"); return;};
     
     // get the voice on the plate
     pvoice = pline->get_voice(cursor.voice());  // get the voice
@@ -117,7 +116,7 @@ void EngraverState::engrave()
             };
             
             // if no context was found and we are a sub-voice, dump warn-message
-            if (!got_ctx) Log::warn("Unable to find context for new sub-voice. Using default context. (class: EngraverState)");
+            if (!got_ctx) log_warn("Unable to find context for new sub-voice. Using default context. (class: EngraverState)");
         };
         
         // add position information to the new voice
@@ -234,7 +233,7 @@ void EngraverState::engrave()
     {
         // check dangling ties
         if (!tieinfo[&cursor.voice()].empty())
-            Log::warn("Got tie exceeding the end of the voice. (class: EngraverState)");
+            log_warn("Got tie exceeding the end of the voice. (class: EngraverState)");
         BeamInfoMap::iterator i = beaminfo.find(&*pvoice);
         if (i != beaminfo.end()) i->second.finish();
         
@@ -609,7 +608,7 @@ void EngraverState::engrave_attachables()
         
         if (!durableinfo.empty())   // warn for durable objects exceeding the linebreak
         {
-            Log::warn("Got durable object exceeding the end of the line or voice. (class: EngraverState)");
+            log_warn("Got durable object exceeding the end of the line or voice. (class: EngraverState)");
             for (std::list<DurableInfo>::iterator i = durableinfo.begin(); i != durableinfo.end(); ++i)
                 end_durable(*i->source, *i->target, *voice, voice->notes.back());
             durableinfo.clear();    // erase durable information
@@ -892,8 +891,7 @@ void EngraverState::calculate_gphBox(Plate::pLine& line)
             line.gphBox.extend(pnote->gphBox);
             
             for (Plate::pNote::AttachableList::iterator a = pnote->attachables.begin(); a != pnote->attachables.end(); ++a)
-                if ((*a)->gphBox.width > 0) line.gphBox.extend((*a)->gphBox);
-                else Log::warn("Found object without graphical bounding information. (class: EngraverState)");
+                line.gphBox.extend((*a)->gphBox);
         };
     };
 }
@@ -1132,7 +1130,7 @@ bool EngraverState::engrave_next()
     {
         if (v->notes.back().at_end()) continue;
         if (!v->notes.back().get_note().is(Class::NEWLINE))
-            Log::warn("Found unfinished voice not ending with a Newline. (class: EngraverState)");
+            log_warn("Found unfinished voice not ending with a Newline. (class: EngraverState)");
         
         cur = pick.peek(v->begin.voice());
         if (!cur)
@@ -1225,3 +1223,15 @@ void EngraverState::add_offset(const mpx_t offset)
     pick.add_distance(offset, get_time());
 }
 
+// logging control
+void EngraverState::log_set(Log& log)
+{
+    this->Logging::log_set(log);
+    pick.log_set(log);
+}
+
+void EngraverState::log_unset()
+{
+    this->Logging::log_unset();
+    pick.log_unset();
+}

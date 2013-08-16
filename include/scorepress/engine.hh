@@ -25,11 +25,12 @@
 #include "renderer.hh"     // Renderer, Sprites
 #include "edit_cursor.hh"  // EditCursor
 #include "parameters.hh"   // InterfaceParam
+#include "log.hh"          // Logging
 #include "export.hh"
 
 namespace ScorePress
 {
-class SCOREPRESS_API Engine
+class SCOREPRESS_API Engine : public Logging
 {
  private:
     Document       document;
@@ -64,6 +65,9 @@ class SCOREPRESS_API Engine
     void engrave();
     void render(Renderer& renderer, const Position<mpx_t>& offset);
     void render_cursor(Renderer& renderer, const Position<mpx_t>& offset);
+    
+    void log_set(Log& log);
+    void log_unset();
 };
 
 } // end namespace

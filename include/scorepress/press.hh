@@ -27,6 +27,7 @@
 #include "parameters.hh"    // PressParam, ViewportParam
 #include "user_cursor.hh"   // UserCursor
 #include "error.hh"         // Error
+#include "log.hh"           // Logging
 #include "export.hh"
 
 namespace ScorePress
@@ -43,7 +44,7 @@ class SCOREPRESS_LOCAL Press;    // the press, renders the prepared plate object
 // The press-class exports a method, which draws a score, with the help of the
 // engraver-provided Plate instance and a renderer instance.
 //
-class SCOREPRESS_LOCAL Press
+class SCOREPRESS_LOCAL Press : public Logging
 {
  public:
     // exception classes

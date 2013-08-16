@@ -19,7 +19,6 @@
 
 #include "engraver.hh"         // Engraver
 #include "engraver_state.hh"   // EngraverState
-#include "log.hh"              // Log
 #include "undefined.hh"        // defines "UNDEFINED" macro, resolving to the largest value "size_t" can contain
                                // this number is interpreted as an undefined value
 using namespace ScorePress;
@@ -71,7 +70,7 @@ void Engraver::engrave_attachables(const Document& data)
             p->attachables.back().gphBox.width  = _round(scale * (*sprites)[sprite_id].width);
             p->attachables.back().gphBox.height = _round(scale * (*sprites)[sprite_id].height);
         }
-        else Log::warn(("On-page object type \"" + classname(a->object->classtype()) + "\" not implemented yet. (class: Engraver)").c_str());
+        else log_warn(("On-page object type \"" + classname(a->object->classtype()) + "\" not implemented yet. (class: Engraver)").c_str());
     };
 }
 
@@ -86,6 +85,7 @@ Engraver::Engraver(PageSet& _pageset, const Sprites& _sprites, const StyleParam&
 void Engraver::engrave(const Score& score, const unsigned int start_page)
 {
     EngraverState state(score, start_page, *pageset, *sprites, parameters, *style, *viewport);
+    if (logging_log) state.log_set(*logging_log);
     while (state.engrave_next());
 }
 

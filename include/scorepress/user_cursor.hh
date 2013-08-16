@@ -26,6 +26,7 @@
 #include "pageset.hh"       // PageSet, StaffContext, Plate, value_t
 #include "parameters.hh"    // ViewportParam
 #include "error.hh"         // Error, std::string
+#include "log.hh"           // Logging
 #include "export.hh"
 
 namespace ScorePress
@@ -44,7 +45,7 @@ class SCOREPRESS_API UserCursor;   // cursor, with graphical representation, and
 // "Press" instance. It can be manipulated by directions and graphical
 // coorinates. (Modification methods implemented in child-class "EditCursor".)
 //
-class SCOREPRESS_API UserCursor
+class SCOREPRESS_API UserCursor : public Logging
 {
  public:
     // exception classes

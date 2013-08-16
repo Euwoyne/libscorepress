@@ -20,6 +20,8 @@
 #ifndef CONFIG_HH
 #define CONFIG_HH
 
+#include "export.hh"
+
 #undef LIBSCOREPRESS_PACKAGE_NAME
 
 #undef LIBSCOREPRESS_VERSION_STRING
@@ -29,7 +31,7 @@
 
 #undef LIBSCOREPRESS_DEBUG
 
-extern const char* libscorepress_datadir;
+extern SCOREPRESS_API const char* libscorepress_datadir;
 
 #endif
 

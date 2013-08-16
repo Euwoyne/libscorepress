@@ -27,6 +27,7 @@
 #include "sprites.hh"       // Sprites
 #include "parameters.hh"    // EngraverParam, ViewportParam
 #include "error.hh"         // Error, std::string
+#include "log.hh"           // Logging
 #include "export.hh"
 
 namespace ScorePress
@@ -45,7 +46,7 @@ class SCOREPRESS_LOCAL Pick;     // position calculating iterator for a score ob
 // This is done parallely for each voice in the score to ensure, that the
 // Objects are ordered according to their position along the score.
 //
-class SCOREPRESS_LOCAL Pick
+class SCOREPRESS_LOCAL Pick : public Logging
 {
  public:
     // a special cursor containing position and time information about the note pointed to

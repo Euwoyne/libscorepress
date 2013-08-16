@@ -26,6 +26,7 @@
 #include "sprites.hh"      // Sprites
 #include "engrave_info.hh" // StemInfo, BeamInfo, BeamInfoMap, TieInfo, TieInfoChord, TieInfoMap, SpaceInfo, LineInfo
 #include "parameters.hh"   // EngraverParam, StyleParam, ViewportParam
+#include "log.hh"          // Logging
 #include "export.hh"
 
 namespace ScorePress
@@ -43,7 +44,7 @@ class SCOREPRESS_LOCAL EngraverState;    // engraver, computing a renderable pla
 // the engraving process. It contains all the information necessary for the
 // engraving of a single object, including the "Pick" instance.
 //
-class SCOREPRESS_LOCAL EngraverState
+class SCOREPRESS_LOCAL EngraverState : public Logging
 {
  private:
     // typedefs for cleaner class interface
@@ -165,6 +166,10 @@ class SCOREPRESS_LOCAL EngraverState
     void add_distance_after(mpx_t dst, value_t time); // apply additional distance to notes after a given time
     bool has_cluster_space();                         // check, if this chord has been moved yet, due to clustering
     bool has_accidental_space();                      // check, if this chord has been moved yet, due to clustering
+    
+    // logging control
+    void log_set(Log& log);
+    void log_unset();
 };
 
 // inline method implementations

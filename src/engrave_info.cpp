@@ -18,7 +18,7 @@
 */
 
 #include "engrave_info.hh"     // BeamInfo
-#include "log.hh"              // Log
+
 using namespace ScorePress;
 
 //

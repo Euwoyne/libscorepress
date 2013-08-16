@@ -21,7 +21,6 @@
 #include <set>          // std::set
 
 #include "press.hh"
-#include "log.hh"       // Log
 #include "undefined.hh" // defines "UNDEFINED" macro, resolving to the largest value "size_t" can contain
                         // this number is interpreted as an undefined value
 using namespace ScorePress;
@@ -228,7 +227,7 @@ void Press::render(Renderer& renderer, const Plate::pAttachable* object, const P
              (head_height * appearance.scale)
                       / (1000.0 * renderer.get_sprites().head_height(object->sprite)));
     }
-    else {Log::warn("Unable to render attachable-object. (class: Press)");};
+    else {log_warn("Unable to render attachable-object. (class: Press)");};
 }
 
 // rendering method (for on-plate note objects)
@@ -435,7 +434,7 @@ void Press::render(Renderer& renderer, const Plate::pNote& note, const Position<
         };
         renderer.stroke();
     }
-    else {Log::warn("Unable to render plate-object. (class: Press)");};
+    else {log_warn("Unable to render plate-object. (class: Press)");};
     
     // render ties
     for (std::list<Plate::pNote::Tie>::const_iterator i = note.ties.begin(); i != note.ties.end(); ++i)

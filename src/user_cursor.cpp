@@ -20,7 +20,6 @@
 #include <iostream>         // std::cout
 
 #include "user_cursor.hh"   // UserCursor
-#include "log.hh"           // Log
 using namespace ScorePress;
 
 
@@ -145,8 +144,6 @@ bool UserCursor::VoiceCursor::is_after(const VoiceCursor& cur) const
         if (note->is(Class::NEWLINE)) return true;          // newline -> TRUE
         if (cur.note->is(Class::NEWLINE)) return false;     //    "    ->  FALSE
         
-        // should not occur! (all cases should be handled above)
-        Log::warn("Unable to compare voice-cursors. (class: UserCursor)");
         return false;
     };
     return (time > cur.time);   // compare time of non-simultaneous objects
@@ -176,8 +173,6 @@ bool UserCursor::VoiceCursor::is_before(const VoiceCursor& cur) const
         if (note->is(Class::NOTEOBJECT)) return true;       // note-object -> TRUE
         if (cur.note->is(Class::NOTEOBJECT)) return false;  //  "     "    -> FALSE
         
-        // should not occur! (all cases should be handled above)
-        Log::warn("Unable to compare voice-cursors. (class: UserCursor)");
         return false;
     };
     return (time < cur.time);   // compare time of non-simultaneous objects
@@ -246,7 +241,7 @@ bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
             ++newvoice.note;
     if (newvoice.note != pvoice.begin)      // on failing the search
     {                                           // issue warning
-        Log::warn("Unable to find on-plate voice front in score. (class: UserCursor)");
+        log_warn("Unable to find on-plate voice front in score. (class: UserCursor)");
         return false;                           // return fail
     };
     
@@ -259,7 +254,7 @@ bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
     else if (!(--newvoice.layout)->is(Class::NEWLINE))
     {
         newvoice.layout.reset();
-        Log::warn("Unable to find layout object for voice. (class: UserCursor)");
+        log_warn("Unable to find layout object for voice. (class: UserCursor)");
     };
     
     // prepare on-plate data
@@ -297,7 +292,7 @@ void UserCursor::prepare_voices()
         if (find(i->begin.voice()) != vcursors.end()) continue; // if the voice does exist already, ignore
         if (i->begin.is_main())                                 // if the voice is not a sub-voice...
         {                                                       // ...something is wrong
-            Log::warn("Unable to add a misplaced MainVoice to cursor. (class: UserCursor)");
+            log_warn("Unable to add a misplaced MainVoice to cursor. (class: UserCursor)");
             continue;
         };
         

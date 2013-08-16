@@ -19,7 +19,6 @@
 
 #include "classes.hh"           // [score classes]
 #include "engraver_state.hh"    // EngraverState
-#include "log.hh"               // Log
 #include "undefined.hh"         // defines "UNDEFINED" macro, resolving to the largest value "size_t" can contain
                                 // this number is interpreted as an undefined value
 using namespace ScorePress;
@@ -516,7 +515,7 @@ void Barline::engrave(EngraverState& engraver) const
     
     // warn about illegal barline style
     if (this->style.size() % 2 != 1)
-        Log::warn("Barline has illegal style. (class: Barline)");
+        engraver.log_warn("Barline has illegal style. (class: Barline)");
 }
 
 // engraving method (Newline)

@@ -456,7 +456,23 @@ void Engine::render_cursor(Renderer& renderer, const Position<mpx_t>& offset)
     }
     catch (UserCursor::NotValidException& e)
     {
-        Log::error("Invalid UserCursor (class: Engine)");
+        log_error("Invalid UserCursor (class: Engine)");
         cursor.set_score(document.scores.front());
     };
+}
+
+void Engine::log_set(Log& log)
+{
+    this->Logging::log_set(log);
+    engraver.log_set(log);
+    press.log_set(log);
+    cursor.log_set(log);
+}
+
+void Engine::log_unset()
+{
+    this->Logging::log_unset();
+    engraver.log_unset();
+    press.log_unset();
+    cursor.log_unset();
 }

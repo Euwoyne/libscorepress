@@ -24,6 +24,7 @@
 #include "pageset.hh"      // PageSet
 #include "sprites.hh"      // Sprites
 #include "parameters.hh"   // EngraverParam, StyleParam, ViewportParam
+#include "log.hh"          // Logging
 #include "export.hh"
 
 namespace ScorePress
@@ -43,7 +44,7 @@ class SCOREPRESS_LOCAL Engraver;    // engraver, computing a renderable plate fr
 // Internally an instance of "Pick" (as part of the "EngraverState") is used to
 // calculate the object positions.
 //
-class SCOREPRESS_LOCAL Engraver
+class SCOREPRESS_LOCAL Engraver : public Logging
 {
  private:
           PageSet*       pageset;  // target set of pages

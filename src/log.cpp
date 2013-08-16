@@ -17,10 +17,10 @@
   permissions and limitations under the Licence.
 */
 
-#include <cstring>  // memcpy, strlen
 #include <iostream> // std::cout, std::cerr
 
-#include "log.hh"   // Log, std::vector
+#include "log.hh"
+
 using namespace ScorePress;
 
 
@@ -28,74 +28,90 @@ using namespace ScorePress;
 //     class Log
 //    ===========
 //
-// Singleton class providing logging services.
-// All messages will be saved internally, and optionally printed to
-// the standard output stream.
+// Class providing logging services.
 //
 
 // set default flags
-Log::Log() : _msgs(), _agent(NULL)
+Log::Log(bool nolog)
 {
-    _flags.ECHO_INFO    = 1;    // print information messages
-    _flags.ECHO_DEBUG   = 0;    // print debug messages
-    _flags.ECHO_VERBOSE = 0;    // print verbose-mode messages
-    _flags.ECHO_WARN    = 1;    // print warnings
-    _flags.ECHO_ERROR   = 1;    // print errors
-    _flags.LOG_INFO     = 0;    // save information messages
-    _flags.LOG_DEBUG    = 0;    // save debug messages
-    _flags.LOG_VERBOSE  = 0;    // save verbose-mode messages
-    _flags.LOG_WARN     = 1;    // save warnings
-    _flags.LOG_ERROR    = 1;    // save errors
+    _flags.ECHO_INFO    = (nolog?0:1);  // print information messages
+    _flags.ECHO_DEBUG   = 0;            // print debug messages
+    _flags.ECHO_VERBOSE = 0;            // print verbose-mode messages
+    _flags.ECHO_WARN    = (nolog?0:1);  // print warnings
+    _flags.ECHO_ERROR   = (nolog?0:1);  // print errors
+    _flags.LOG_INFO     = 0;            // log information messages
+    _flags.LOG_DEBUG    = 0;            // log debug messages
+    _flags.LOG_VERBOSE  = 0;            // log verbose-mode messages
+    _flags.LOG_WARN     = (nolog?0:1);  // log warnings
+    _flags.LOG_ERROR    = (nolog?0:1);  // log errors
 }
 
-// singleton instance (created as static object of this method)
-Log& Log::_instance()
+// handle log file
+bool Log::open(const char* filename)
 {
-    static Log instance;    // create singleton instance
-    return instance;        // return instance
-}
-
-// push the given message onto the vector
-void Log::_push(const char* msg, const Message::enuType type)
-{
-    // message output
-    switch (type)    // check for message type
+    file.open(filename, std::ofstream::out | std::ofstream::app);
+    if (file.fail())
     {
-    case Message::INFO:    if (_flags.ECHO_INFO) std::cout << msg << "\n";  // echo if requested
-                           if ((_flags.LOG_INFO) == 0) return;              // abort if log not requested
-                           break;
-    case Message::DEBUG:   if (_flags.ECHO_DEBUG) std::cout << msg << "\n"; // echo if requested
-                           if ((_flags.LOG_DEBUG) == 0) return;             // abort if log not requested
-                           break;
-    case Message::VERBOSE: if (_flags.ECHO_VERBOSE) std::cout << msg << "\n";   // echo if requested
-                           if ((_flags.LOG_VERBOSE) == 0) return;           // abort if log not requested
-                           break;
-    case Message::WARN:    if (_flags.ECHO_WARN) std::cout << "WARNING: " << msg << "\n";   // echo if requested
-                           if ((_flags.LOG_WARN) == 0) return;              // abort if log not requested
-                           break;
-    case Message::ERROR:   if (_flags.ECHO_ERROR) std::cerr << "ERROR: " << msg << "\n";    // echo if requested
-                           if ((_flags.LOG_ERROR) == 0) return;             // abort if log not requested
-                           break;
+        file.clear();
+        return false;
     };
-    
-    // log the message
-    _msgs.push_back(Message());                     // push new message object
-    _msgs.back().type = type;                       // set message type
-    _msgs.back().msg = new char[strlen(msg) + 1];   // allocate memory for message
-    memcpy(_msgs.back().msg, msg, strlen(msg) + 1); // copy message
-    
-    // call logging agent
-    if (_agent) (*_agent)(_msgs.back());
+    return true;
 }
 
-// destructor (deleting all logged messages)
+// log informational message
+void Log::info(const char* msg)
+{
+    if (_flags.ECHO_INFO)
+        std::cout << msg << std::endl;
+    if (_flags.LOG_INFO && file.is_open())
+        file << msg << std::endl;
+}
+
+// log debug message
+void Log::debug(const char* msg)
+{
+    if (_flags.ECHO_DEBUG)
+        std::cout << msg << std::endl;
+    if (_flags.LOG_DEBUG && file.is_open())
+        file << msg << std::endl << std::flush;
+}
+
+// log verbose output
+void Log::verbose(const char* msg)
+{
+    if (_flags.ECHO_VERBOSE)
+        std::cout << msg << std::endl;
+    if (_flags.LOG_VERBOSE && file.is_open())
+        file << msg << std::endl;
+}
+
+// log warning
+void Log::warn(const char* msg)
+{
+    if (_flags.ECHO_WARN)
+        std::cout << msg << std::endl;
+    if (_flags.LOG_WARN && file.is_open())
+        file << msg << std::endl;
+}
+
+// log error message
+void Log::error(const char* msg)
+{
+    if (_flags.ECHO_ERROR)
+        std::cout << msg << std::endl;
+    if (_flags.LOG_ERROR && file.is_open())
+        file << msg << std::endl << std::flush;
+}
+
+// write message to log file only
+void Log::noprint(const char* msg)
+{
+    if (file.is_open())
+        file << msg << std::endl;
+}
+
+// destructor (closing log file)
 Log::~Log()
 {
-    if (_flags.ECHO_DEBUG || _flags.ECHO_VERBOSE)
-        std::cout << "killed Log instance\n";
-    for (std::list<Message>::iterator i = _msgs.begin(); i != _msgs.end(); i++)
-    {   // delete every message in the log-vector
-        delete[] i->msg;
-    };
+    if (file.is_open()) file.close();
 }
-

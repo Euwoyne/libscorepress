@@ -185,7 +185,7 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     {
         line = plateinfo->plate.lines.begin();  // use the first on the plate
         prepare_voices();                       // prepare voices
-        Log::warn("Unable to find the given line on the page after reengraving. Default to first. (class: EditCursor)");
+        log_warn("Unable to find the given line on the page after reengraving. Default to first. (class: EditCursor)");
         return;
     };
     
@@ -209,7 +209,7 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     
     // if we did not find the note
     if (&*cursor->pnote->note != &*cursor->note)
-        Log::warn("Unable to find current note within the reengraved voice. (class: EditCursor)");
+        log_warn("Unable to find current note within the reengraved voice. (class: EditCursor)");
     }
     
     // find on-plate notes for other voices (matching the VoiceCursor::note iterator)
@@ -250,7 +250,7 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
         if (&*c->pnote->note != &*c->note)
         {
             c = vcursors.erase(c);      // remove the cursor
-            Log::warn("Unable to find given note within the reengraved voice. (class: EditCursor)");
+            log_warn("Unable to find given note within the reengraved voice. (class: EditCursor)");
             continue;
         };
         

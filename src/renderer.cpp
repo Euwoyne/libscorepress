@@ -24,7 +24,6 @@
 #include <iostream>             // std::cout
 
 #include "renderer.hh"          // Renderer, Sprites, std::string
-#include "log.hh"               // Log
 
 #define STR_CAST(str)    reinterpret_cast<const xmlChar*>(str)
 #define XML_CAST(xmlstr) reinterpret_cast<const char*>(xmlstr)
@@ -53,7 +52,6 @@ void Renderer::mythrow(const char* trns, const std::string& filename) throw(Erro
     sprintf(msg, trns, filename.c_str());                       // assemble message
     std::string s(msg);                                         // convert to string
     delete[] msg;                                               // delete buffer
-    Log::error((s + " (class: Renderer)").c_str());             // log the error
     throw Error(s);                                             // throw message
 }
 
@@ -65,7 +63,6 @@ void Renderer::mythrow(const char* trns, const std::string& symbol, const std::s
     sprintf(msg, trns, symbol.c_str(), filename.c_str(), line, column);     // assemble message
     std::string s(msg);                                 // convert to string
     delete[] msg;                                       // delete buffer
-    Log::error((s + " (class: Renderer)").c_str());     // log the error
     throw Error(s);                                     // throw message
 }
 
@@ -77,7 +74,6 @@ void Renderer::mythrow(const char* trns, const std::string& filename, const int 
     sprintf(msg, trns, filename.c_str(), line, column);     // assemble message
     std::string s(msg);                                     // convert to string
     delete[] msg;                                           // delete buffer
-    Log::error((s + " (class: Renderer)").c_str());         // log the error
     throw Error(s);                                         // throw message
 }
 

@@ -22,6 +22,7 @@
 
 #include "user_cursor.hh"   // UserCursor, Document, PageSet, [score classes]
 #include "engraver.hh"      // Engraver
+#include "log.hh"           // Logging
 #include "export.hh"
 
 namespace ScorePress

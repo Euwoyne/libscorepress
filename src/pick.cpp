@@ -19,7 +19,6 @@
 
 #include <cmath>        // pow
 #include "pick.hh"      // Pick, const_Cursor, Sprites, List, [score classes]
-#include "log.hh"       // Log
 #include "undefined.hh" // defines "UNDEFINED" macro, resolving to the largest value "size_t" can contain
                         // this number is interpreted as an undefined value
 using namespace ScorePress;
@@ -578,7 +577,7 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
     {
         // pagebreak among newlines is illegal
         if (_newline)
-            Log::warn("Got pagebreak object whilst processing a newline. (class: Pick)");
+            log_warn("Got pagebreak object whilst processing a newline. (class: Pick)");
         
         // on the first pagebreak encountered
         if (!_pagebreak && !_newline)
@@ -615,7 +614,7 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
     {
         // newline among pagebreaks is illegal
         if (_pagebreak)
-            Log::warn("Got newline object whilst processing a pagebreak. (class: Pick)");
+            log_warn("Got newline object whilst processing a pagebreak. (class: Pick)");
         
         // on the first newline encountered
         if (!_newline && !_pagebreak)
@@ -720,7 +719,7 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
     else if (nextNote.time <= engravedNote.time && engravedNote->is(Class::NOTEOBJECT)
                                                 && nextNote->is(Class::NOTEOBJECT))
     {   // if there are two simultaneous note-objects (case < should not occur)
-        if (nextNote.time < engravedNote.time) Log::warn("Got wrong object order. (class: Pick)");
+        if (nextNote.time < engravedNote.time) log_warn("Got wrong object order. (class: Pick)");
         nextNote.pos = engravedNote.pos;    // render them at the same position (horizontally)
     }
     else if (engravedNote->is(Class::BARLINE))  // if we just engraved a barline
@@ -987,7 +986,7 @@ const Staff& Pick::get_staff(int idx_shift) const
     
     // if we did not find the given staff, issue warning
     if (i == score->staves.end())
-        Log::warn("Unable to find the current staff within the score object. (class: Pick)");
+        log_warn("Unable to find the current staff within the score object. (class: Pick)");
     
     // add staff offset and return
     return *j;
@@ -1025,7 +1024,7 @@ int Pick::staff_offset(int idx_shift) const
     // if we did not find the given staff, return
     if (i == score->staves.end())
     {
-        Log::warn("Unable to find the current staff within the score object. (class: Pick)");
+        log_warn("Unable to find the current staff within the score object. (class: Pick)");
         return out;
     };
     
@@ -1050,7 +1049,7 @@ int Pick::staff_offset(const Staff& staff) const
     // if we did not find the given staff, return
     if (i == score->staves.end())
     {
-        Log::warn("Unable to find the current staff within the score object. (class: Pick)");
+        log_warn("Unable to find the current staff within the score object. (class: Pick)");
         return out;
     };
     

@@ -20,7 +20,7 @@
 #ifndef SCOREPRESS_LOG_HH
 #define SCOREPRESS_LOG_HH
 
-#include <list>   // std::list
+#include <fstream>      // std::ofstream
 #include "export.hh"
 
 namespace ScorePress
@@ -34,22 +34,10 @@ class SCOREPRESS_API Log;  // message logging class with memory and output
 //     class Log
 //    ============
 //
-// Singleton class providing logging services.
-// All messages will be saved internally, and optionally printed to
-// the standard output stream.
+// Class providing logging services.
 //
 class SCOREPRESS_API Log
 {
- public:
-    // the message structure
-    struct SCOREPRESS_API Message
-    {
-        enum enuType {INFO, DEBUG, VERBOSE, WARN, ERROR};
-        
-        enuType type;   // type of the message
-        char* msg;      // message content
-    };
-    
  private:
     // behaviour flags
     struct
@@ -59,58 +47,72 @@ class SCOREPRESS_API Log
         unsigned short ECHO_VERBOSE : 1;    // print verbose-mode messages
         unsigned short ECHO_WARN    : 1;    // print warnings
         unsigned short ECHO_ERROR   : 1;    // print errors
-        unsigned short LOG_INFO     : 1;    // save information messages
-        unsigned short LOG_DEBUG    : 1;    // save debug messages
-        unsigned short LOG_VERBOSE  : 1;    // save verbose-mode messages
-        unsigned short LOG_WARN     : 1;    // save warnings
-        unsigned short LOG_ERROR    : 1;    // save errors
+        unsigned short LOG_INFO     : 1;    // log information messages
+        unsigned short LOG_DEBUG    : 1;    // log debug messages
+        unsigned short LOG_VERBOSE  : 1;    // log verbose-mode messages
+        unsigned short LOG_WARN     : 1;    // log warnings
+        unsigned short LOG_ERROR    : 1;    // log errors
     } _flags;
     
-    // instance variables
-    std::list<Message> _msgs;         // logged messages
-    void (*_agent)(const Message&);   // logging agent
-    
-    // singleton instance (created as static object of this method)
-    static Log& _instance();
-    
-    // push the given message onto the vector
-    SCOREPRESS_LOCAL  void _push(const char* msg, const Message::enuType type);
-    
-    // private constructors to prevent instanciation
-    SCOREPRESS_LOCAL  Log();
-    SCOREPRESS_LOCAL  Log(Log const& log);
-    SCOREPRESS_LOCAL  Log& operator = (Log const& log);
+    // log file
+    std::ofstream file;
     
  public:
-    // messaging methods (logging the given message)
-    inline static void info(const char* msg)    {_instance()._push(msg, Message::INFO);};
-    inline static void debug(const char* msg)   {_instance()._push(msg, Message::DEBUG);};
-    inline static void verbose(const char* msg) {_instance()._push(msg, Message::VERBOSE);};
-    inline static void warn(const char* msg)    {_instance()._push(msg, Message::WARN);};
-    inline static void error(const char* msg)   {_instance()._push(msg, Message::ERROR);};
+    // constructor
+    Log(bool nolog = false);    // preset flags (default values or no logging at all)
     
-    // log access
-    inline static const std::list<Message>& messages() {return _instance()._msgs;};
-    inline static void clear() {_instance()._msgs.clear();};
+    // handle log file
+           bool open(const char* filename);
+    inline bool is_open()                  {return file.is_open();};
+    inline void close()                    {file.close();};
+    
+    // messaging methods (logging the given message)
+    void info(const char* msg);
+    void debug(const char* msg);
+    void verbose(const char* msg);
+    void warn(const char* msg);
+    void error(const char* msg);
+    void noprint(const char* msg);      // write message to log file only
     
     // flag setting methods
-    inline static void echo_info(bool v)    {_instance()._flags.ECHO_INFO    = (v?1:0);};
-    inline static void echo_debug(bool v)   {_instance()._flags.ECHO_DEBUG   = (v?1:0);};
-    inline static void echo_verbose(bool v) {_instance()._flags.ECHO_VERBOSE = (v?1:0);};
-    inline static void echo_warn(bool v)    {_instance()._flags.ECHO_WARN    = (v?1:0);};
-    inline static void echo_error(bool v)   {_instance()._flags.ECHO_ERROR   = (v?1:0);};
+    inline void echo_info(bool v = true)    {_flags.ECHO_INFO    = (v?1:0);};
+    inline void echo_debug(bool v = true)   {_flags.ECHO_DEBUG   = (v?1:0);};
+    inline void echo_verbose(bool v = true) {_flags.ECHO_VERBOSE = (v?1:0);};
+    inline void echo_warn(bool v = true)    {_flags.ECHO_WARN    = (v?1:0);};
+    inline void echo_error(bool v = true)   {_flags.ECHO_ERROR   = (v?1:0);};
     
-    inline static void log_info(bool v)     {_instance()._flags.LOG_INFO    = (v?1:0);};
-    inline static void log_debug(bool v)    {_instance()._flags.LOG_DEBUG   = (v?1:0);};
-    inline static void log_verbose(bool v)  {_instance()._flags.LOG_VERBOSE = (v?1:0);};
-    inline static void log_warn(bool v)     {_instance()._flags.LOG_WARN    = (v?1:0);};
-    inline static void log_error(bool v)    {_instance()._flags.LOG_ERROR   = (v?1:0);};
+    inline void log_info(bool v = true)     {_flags.LOG_INFO    = (v?1:0);};
+    inline void log_debug(bool v = true)    {_flags.LOG_DEBUG   = (v?1:0);};
+    inline void log_verbose(bool v = true)  {_flags.LOG_VERBOSE = (v?1:0);};
+    inline void log_warn(bool v = true)     {_flags.LOG_WARN    = (v?1:0);};
+    inline void log_error(bool v = true)    {_flags.LOG_ERROR   = (v?1:0);};
     
-    // logging agent setup
-    inline static void setup_agent(void (*agent)(const Message&)) {_instance()._agent = agent;};
-    
-    // destructor (deleting all logged messages)
+    // destructor (closing log file)
     ~Log();
+};
+
+//
+//     class Logging
+//    ===============
+//
+// Standard interface for classes using an external log.
+//
+class SCOREPRESS_API Logging
+{
+ protected:
+    mutable Log* logging_log;
+    
+ public:
+    inline Logging() : logging_log(NULL) {};
+    inline void log_set(Log& log)        {logging_log = &log;};
+    inline void log_unset()              {logging_log = NULL;};
+    
+    inline void log_info(const char* msg)    const {if (logging_log) logging_log->info(msg);};
+    inline void log_debug(const char* msg)   const {if (logging_log) logging_log->debug(msg);};
+    inline void log_verbose(const char* msg) const {if (logging_log) logging_log->verbose(msg);};
+    inline void log_warn(const char* msg)    const {if (logging_log) logging_log->warn(msg);};
+    inline void log_error(const char* msg)   const {if (logging_log) logging_log->error(msg);};
+    inline void log_noprint(const char* msg) const {if (logging_log) logging_log->noprint(msg);};
 };
 
 } // end namespace
