@@ -27,12 +27,13 @@
 #include "stem_info.hh" // StemInfo
 #include "context.hh"   // VoiceContext, StaffContext
 #include "sprite_id.hh" // SpriteId
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class Plate;    // structure of absolute positions and sprites for immediate rendering
+class SCOREPRESS_API Plate;     // structure of absolute positions and sprites for immediate rendering
 
 
 //
@@ -45,7 +46,7 @@ class Plate;    // structure of absolute positions and sprites for immediate ren
 // Positions are interpreted relative to the score-dimension's origin (see
 // "Pageset")
 //
-class Plate
+class SCOREPRESS_API Plate
 {
  public:
     //  CLASSES

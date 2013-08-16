@@ -25,13 +25,14 @@
 
 #include "sprites.hh"   // Sprites, cSpriteSet, SpriteId
 #include "error.hh"     // Score::Error
+#include "export.hh"
 
 namespace ScorePress
 {
 //
 //  CLASSES
 // ---------
-class Renderer; // abstract vector-graphics and svg-sprites-renderer interface
+class SCOREPRESS_API Renderer;  // abstract vector-graphics and svg-sprites-renderer interface
 
 
 //
@@ -44,11 +45,11 @@ class Renderer; // abstract vector-graphics and svg-sprites-renderer interface
 // parser for the sprite-file's meta-information, preparing a "Sprites"
 // object.
 //
-class Renderer
+class SCOREPRESS_API Renderer
 {
  public:
     // error class thrown on syntax errors within the sprites meta information
-    class Error : public ScorePress::Error {public: Error(const std::string& msg);};
+    class SCOREPRESS_API Error : public ScorePress::Error {public: Error(const std::string& msg);};
     
     // text alignment enumeration
     enum enuAlignment {ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER};

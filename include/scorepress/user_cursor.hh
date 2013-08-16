@@ -26,12 +26,13 @@
 #include "pageset.hh"       // PageSet, StaffContext, Plate, value_t
 #include "parameters.hh"    // ViewportParam
 #include "error.hh"         // Error, std::string
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class UserCursor;   // cursor, with graphical representation, and simple movement interface
+class SCOREPRESS_API UserCursor;   // cursor, with graphical representation, and simple movement interface
 
 
 //
@@ -43,21 +44,21 @@ class UserCursor;   // cursor, with graphical representation, and simple movemen
 // "Press" instance. It can be manipulated by directions and graphical
 // coorinates. (Modification methods implemented in child-class "EditCursor".)
 //
-class UserCursor
+class SCOREPRESS_API UserCursor
 {
  public:
     // exception classes
-    class Error : public ScorePress::Error {public: Error(const std::string& msg);};
-    class NotValidException : public Error              // thrown, if an invalid cursor is dereferenced
+    class SCOREPRESS_API Error : public ScorePress::Error {public: Error(const std::string& msg);};
+    class SCOREPRESS_API NotValidException : public Error            // thrown, if an invalid cursor is dereferenced
         {public: NotValidException(); NotValidException(const std::string& msg);};
-    class NoScoreException : public NotValidException   // thrown, if the target-score is not set
+    class SCOREPRESS_API NoScoreException : public NotValidException // thrown, if the target-score is not set
         {public: NoScoreException();};
-    class InvalidMovement : public Error                // thrown, if an invalid cursor is dereferenced
+    class SCOREPRESS_API InvalidMovement : public Error              // thrown, if an invalid cursor is dereferenced
         {public: InvalidMovement(); InvalidMovement(const std::string& dir);};
     
  protected:
     // plate-voice iterator with score-cursor and time-information
-    class VoiceCursor
+    class SCOREPRESS_LOCAL VoiceCursor
     {
      public:
         Cursor note;                        // score-cursor
@@ -101,26 +102,26 @@ class UserCursor
     
  protected:
     // find a voice's cursor
-    std::list<VoiceCursor>::iterator       find(const Voice& voice);
-    std::list<VoiceCursor>::const_iterator find(const Voice& voice) const;
+    SCOREPRESS_LOCAL std::list<VoiceCursor>::iterator       find(const Voice& voice);
+    SCOREPRESS_LOCAL std::list<VoiceCursor>::const_iterator find(const Voice& voice) const;
     
     // set all voice-cursors to the beginning of the current line
-    void prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" plate data (helper)
-    bool prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" data (helper)
-    void prepare_voices();
+    SCOREPRESS_LOCAL void prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" plate data (helper)
+    SCOREPRESS_LOCAL bool prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" data (helper)
+    SCOREPRESS_LOCAL void prepare_voices();
     
     // move the voice-cursors to the corresponding position within the currently referenced voice
-    void update_voices();
+    SCOREPRESS_LOCAL void update_voices();
     
  private:
     // calculate the horizontal position for the given cursor
-    mpx_t fast_x() const throw(NotValidException);    // (position right of the referenced object; fast)
-    mpx_t fast_x(const VoiceCursor& cur) const throw(NotValidException);
-    mpx_t graphical_x(const VoiceCursor& cur) const throw(NotValidException); // (exact)
+    SCOREPRESS_LOCAL mpx_t fast_x() const throw(NotValidException);    // (position right of the referenced object; fast)
+    SCOREPRESS_LOCAL mpx_t fast_x(const VoiceCursor& cur) const throw(NotValidException);
+    SCOREPRESS_LOCAL mpx_t graphical_x(const VoiceCursor& cur) const throw(NotValidException); // (exact)
     
     // set the cursor near the given x coordinate
-    void set_x_rough(const mpx_t x);    // rough search    (in line)
-    void set_x_voice(const mpx_t x);    // fine adjustment (in voice)
+    SCOREPRESS_LOCAL void set_x_rough(const mpx_t x);    // rough search    (in line)
+    SCOREPRESS_LOCAL void set_x_voice(const mpx_t x);    // fine adjustment (in voice)
     
  public:
     // initialization methods

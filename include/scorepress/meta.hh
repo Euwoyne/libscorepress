@@ -23,13 +23,14 @@
 #include <string>   // std::string
 #include <vector>   // std::vector
 #include <map>      // std::map
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-struct Meta;            // structure of meta information for a score
-struct DocumentMeta;    // structure of meta information for a document
+struct SCOREPRESS_API Meta;            // structure of meta information for a score
+struct SCOREPRESS_API DocumentMeta;    // structure of meta information for a document
 
 
 //
@@ -38,7 +39,7 @@ struct DocumentMeta;    // structure of meta information for a document
 //
 // Structure of meta information for a score.
 //
-struct Meta
+struct SCOREPRESS_API Meta
 {
     typedef std::string                  Field;
     typedef std::vector<Field>           List;
@@ -61,7 +62,7 @@ struct Meta
 //
 // Structure of meta information for a document.
 //
-struct DocumentMeta : public Meta
+struct SCOREPRESS_API DocumentMeta : public Meta
 {
     Field transcriptor;             // transcriptor (empty, if not a transcription)
     List  instrumentation;          // instrumentation

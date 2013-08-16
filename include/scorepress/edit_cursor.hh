@@ -22,6 +22,7 @@
 
 #include "user_cursor.hh"   // UserCursor, Document, PageSet, [score classes]
 #include "engraver.hh"      // Engraver
+#include "export.hh"
 
 namespace ScorePress
 {
@@ -37,14 +38,14 @@ class EditCursor;       // cursor, with graphical representation, and simple mov
 // This cursor inherits the behaviour of the "UserCursor" and provides an
 // interface for the modification of the score data.
 //
-class EditCursor : public UserCursor
+class SCOREPRESS_API EditCursor : public UserCursor
 {
  public:
     // note-name enumeration type
-    enum NoteName {C, D, E, F, G, A, B};
+    enum SCOREPRESS_API NoteName {C, D, E, F, G, A, B};
     
     // note informtaion input structure
-    struct InputNote
+    struct SCOREPRESS_API InputNote
     {
         NoteName         name;         // specified name
         signed char      octave;       // octave modifier
@@ -58,20 +59,20 @@ class EditCursor : public UserCursor
     };
     
  private:
-    enum MoveMode {NONE, INSERT, REMOVE, NEWLINE, RMNEWLINE};   // cursor move mode
+    enum SCOREPRESS_LOCAL MoveMode {NONE, INSERT, REMOVE, NEWLINE, RMNEWLINE};   // cursor move mode
     
     // interface parameters
     const InterfaceParam* param;
           Engraver*       engraver;
     
     // calculate tone from note-name (regarding input method, ignoring accidentals)
-    tone_t get_tone(const InputNote& note) const throw(NotValidException);
+    SCOREPRESS_LOCAL tone_t get_tone(const InputNote& note) const throw(NotValidException);
     
     // create the head instance (according to "relative_accidentals" parameter)
-    HeadPtr create_head(const InputNote& note) const throw(NotValidException);
+    SCOREPRESS_LOCAL HeadPtr create_head(const InputNote& note) const throw(NotValidException);
     
     // calculates the automatic stem-length (uses staff reference)
-    void set_auto_stem_length(Chord& chord) const throw(NotValidException);
+    SCOREPRESS_LOCAL void set_auto_stem_length(Chord& chord) const throw(NotValidException);
     
  public:
     // constructor
@@ -102,7 +103,6 @@ class EditCursor : public UserCursor
     
     // insert a newline
     void insert_newline() throw(NotValidException, NoScoreException, Error);
-    void insert_newline(const Newline& newline) throw(NotValidException, NoScoreException, Error);
     
     // remove an object
     void remove()       throw(NotValidException);                                       // remove a note

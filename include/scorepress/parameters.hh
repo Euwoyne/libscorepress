@@ -20,15 +20,17 @@
 #ifndef SCOREPRESS_PARAMETERS_HH
 #define SCOREPRESS_PARAMETERS_HH
 
+#include "export.hh"
+
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class  ViewportParam;   // viewport information for the engraver (see "engraver.hh")
-struct EngraverParam;   // parameter structure for the engraver class (see "engraver.hh")
-struct StyleParam;      // style parameters for the engraving and rendering process
-struct PressParam;      // style parameters for the rendering process (see "press.hh")
-struct InterfaceParam;  // user input interface parameters for the user input interpretation (see "edit_cursor.hh")
+class  SCOREPRESS_API ViewportParam;   // viewport information for the engraver (see "engraver.hh")
+struct SCOREPRESS_API EngraverParam;   // parameter structure for the engraver class (see "engraver.hh")
+struct SCOREPRESS_API StyleParam;      // style parameters for the engraving and rendering process
+struct SCOREPRESS_API PressParam;      // style parameters for the rendering process (see "press.hh")
+struct SCOREPRESS_API InterfaceParam;  // user input interface parameters for the user input interpretation (see "edit_cursor.hh")
 
 
 //
@@ -38,7 +40,7 @@ struct InterfaceParam;  // user input interface parameters for the user input in
 // This structure contains viewport-specific parameters used during the
 // engraving process to adapt to the client hardware.
 //
-class ViewportParam
+class SCOREPRESS_API ViewportParam
 {
  public:
     unsigned int hppm;  // horizontal viewport resolution (in pixels per meter)
@@ -57,7 +59,7 @@ class ViewportParam
 // This structure contains the parameters which control the engraving process
 // independently from the score object.
 //
-struct EngraverParam
+struct SCOREPRESS_API EngraverParam
 {
     unsigned int min_distance;      // minimal graphical distance of note-heads of the same voice (in micrometer)
     unsigned int default_distance;  // graphical distance between non-note objects                (in micrometer)
@@ -116,7 +118,7 @@ struct EngraverParam
 // dependant on the rendered staff (one instance per staff, and a default one
 // within the press instance).
 //
-struct StyleParam
+struct SCOREPRESS_API StyleParam
 {
     unsigned int stem_width;        // in micrometer
     unsigned int ledger_length;     // ledger line length (in promille of head width)
@@ -153,7 +155,7 @@ struct StyleParam
 // This structure provides parameters to control the rendering process
 // independently from the plate object.
 //
-struct PressParam
+struct SCOREPRESS_API PressParam
 {
     unsigned int scale;             // printing scale (in promille)
     
@@ -203,7 +205,7 @@ struct PressParam
 // "UserCursor" instance.
 //
 //
-struct InterfaceParam
+struct SCOREPRESS_API InterfaceParam
 {
     enum InputBase {LOWER_C = 0, LOWER_D, LOWER_E, LOWER_F, LOWER_G, LOWER_A, LOWER_B,
                     UPPER_C = 7, UPPER_D, UPPER_E, UPPER_F, UPPER_G, UPPER_A, UPPER_B,

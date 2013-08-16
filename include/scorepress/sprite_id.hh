@@ -21,16 +21,17 @@
 #define SCOREPRESS_SPRITEID_HH
 
 #include <cstddef>  // size_t
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class SpriteId;     // Sprite Identification Structure
+class SCOREPRESS_API SpriteId;     // Sprite Identification Structure
 
 
 // Sprite Identification Structure
-class SpriteId
+class SCOREPRESS_API SpriteId
 {
  public:
     size_t setid;       // id of the set containing the sprite

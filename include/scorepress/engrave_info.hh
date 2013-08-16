@@ -25,18 +25,18 @@
 #include "stem_info.hh" // StemInfo
 #include "score.hh"     // Score, Voice, TiedHead, Durable, ScoreDimension, tone_t, value_t, mpx_t
 #include "plate.hh"     // Plate
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-struct  StemInfo;       // stem-information structure
-class   BeamInfo;       // beam-information structure
-class   BeamGroupInfo;  // beam-group-information structure (prepare beam engraving)
-struct  TieInfo;        // tie-information structure
-struct  DurableInfo;    // durable-information structure
-struct  SpaceInfo;      // space-info structure
-struct  LineInfo;       // line-info structure
+class   SCOREPRESS_LOCAL BeamInfo;       // beam-information structure
+class   SCOREPRESS_LOCAL BeamGroupInfo;  // beam-group-information structure (prepare beam engraving)
+struct  SCOREPRESS_LOCAL TieInfo;        // tie-information structure
+struct  SCOREPRESS_LOCAL DurableInfo;    // durable-information structure
+struct  SCOREPRESS_LOCAL SpaceInfo;      // space-info structure
+struct  SCOREPRESS_LOCAL LineInfo;       // line-info structure
 typedef std::map<Plate::pVoice*, BeamGroupInfo> BeamInfoMap;    // beam-information for every voice
 typedef std::map<tone_t, TieInfo>               TieInfoChord;   // tie-information for every tone
 typedef std::map<const Voice*, TieInfoChord>    TieInfoMap;     // tie-information for every voice
@@ -50,7 +50,7 @@ typedef std::map<const Voice*, TieInfoChord>    TieInfoMap;     // tie-informati
 // engraved group of notes. This is used for the real beam
 // engraving during the line-postprocessing.
 //
-class BeamInfo
+class SCOREPRESS_LOCAL BeamInfo
 {
  private:
     Plate::pVoice& voice;                                   // the host voice
@@ -90,7 +90,7 @@ class BeamInfo
 // This is used during the engraving to prepare the real
 // engraving of the beams during line-postprocessing.
 //
-class BeamGroupInfo
+class SCOREPRESS_LOCAL BeamGroupInfo
 {
  private:
     Plate::pVoice& voice;                           // the host voice
@@ -128,7 +128,7 @@ class BeamGroupInfo
 // This structure carries information for incomplete ties, necessary
 // for computing the missing positions.
 //
-struct TieInfo
+struct SCOREPRESS_LOCAL TieInfo
 {
     const TiedHead* source;    // reference to the head, where the tie began
     Plate::pNote::Tie* target; // corresponding on-plate tie information (NULL, if non-head anchor)
@@ -146,7 +146,7 @@ struct TieInfo
 // This structure contains information about a durable object, used
 // for the calculation of the position of the end-node.
 //
-struct DurableInfo
+struct SCOREPRESS_LOCAL DurableInfo
 {
     const Durable* source;     // the durable object
     Plate::pDurable* target;   // the respective on-plate object
@@ -163,7 +163,7 @@ struct DurableInfo
 // Structure carrying information for the engraver to decide, if accidental-
 // or cluster-space has to be added.
 //
-struct SpaceInfo
+struct SCOREPRESS_LOCAL SpaceInfo
 {
     value_t accidental_time;       // time-stamp of the last accidental, which required spacing
     const void* leftcluster_host;  // host object of the last left-cluster, which required spacing
@@ -184,7 +184,7 @@ struct SpaceInfo
 // for the one recently engraved.
 // See also: "Newline" (in "classes.hh")
 //
-struct LineInfo
+struct SCOREPRESS_LOCAL LineInfo
 {
     const ScoreDimension* dimension;   // score dimension (valid for the line)
     mpx_t indent;                      // line indentation

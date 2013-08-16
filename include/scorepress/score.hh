@@ -27,18 +27,19 @@
 #include "smartptr.hh"      // SmartPtr
 #include "meta.hh"          // Meta, DocumentMeta
 #include "error.hh"         // Score::Error
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class Staff;        // staff object (inheriting one main-voice)
-class Score;        // score object (one musical score on consequent pages)
-class Document;     // document object (several musical scores and score-independent objects)
+class SCOREPRESS_API Staff;        // staff object (inheriting one main-voice)
+class SCOREPRESS_API Score;        // score object (one musical score on consequent pages)
+class SCOREPRESS_API Document;     // document object (several musical scores and score-independent objects)
 
 
 // staff object (inheriting one main-voice)
-class Staff : public MainVoice
+class SCOREPRESS_API Staff : public MainVoice
 {
  public:
     typedef SmartPtr<StyleParam> StyleParamPtr;
@@ -60,7 +61,7 @@ class Staff : public MainVoice
 };
 
 // score object (one musical score on consequent pages)
-class Score
+class SCOREPRESS_API Score
 {
  public:
     class StaffNotFound : public ScorePress::Error  // thrown by staff-finding methods, if the given staff does not exist
@@ -94,7 +95,7 @@ class Score
 };
 
 // document object (several musical scores and score-independent objects)
-class Document
+class SCOREPRESS_API Document
 {
  public:
     // page dimension data

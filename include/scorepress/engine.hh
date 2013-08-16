@@ -25,10 +25,11 @@
 #include "renderer.hh"     // Renderer, Sprites
 #include "edit_cursor.hh"  // EditCursor
 #include "parameters.hh"   // InterfaceParam
+#include "export.hh"
 
 namespace ScorePress
 {
-class Engine
+class SCOREPRESS_API Engine
 {
  private:
     Document       document;

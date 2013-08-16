@@ -20,11 +20,13 @@
 #ifndef SCOREPRESS_UI_HH
 #define SCOREPRESS_UI_HH
 
+#include "export.hh"
+
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class UI;   // abstact user-interface base-class
+class SCOREPRESS_API UI;   // abstact user-interface base-class
 
 
 //
@@ -34,7 +36,7 @@ class UI;   // abstact user-interface base-class
 // This is an abstract user-interface class to be used by external modules
 // and implemented by the GUI-frontend.
 //
-class UI
+class SCOREPRESS_API UI
 {
  public:
     

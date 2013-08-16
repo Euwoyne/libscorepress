@@ -21,12 +21,13 @@
 #define SCOREPRESS_LOG_HH
 
 #include <list>   // std::list
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class Log;  // message logging class with memory and output
+class SCOREPRESS_API Log;  // message logging class with memory and output
 
 
 //
@@ -37,11 +38,11 @@ class Log;  // message logging class with memory and output
 // All messages will be saved internally, and optionally printed to
 // the standard output stream.
 //
-class Log
+class SCOREPRESS_API Log
 {
  public:
     // the message structure
-    struct Message
+    struct SCOREPRESS_API Message
     {
         enum enuType {INFO, DEBUG, VERBOSE, WARN, ERROR};
         
@@ -66,19 +67,19 @@ class Log
     } _flags;
     
     // instance variables
-    std::list<Message> _msgs;     // logged messages
-    void (*_agent)(const Message&); // logging agent
+    std::list<Message> _msgs;         // logged messages
+    void (*_agent)(const Message&);   // logging agent
     
     // singleton instance (created as static object of this method)
     static Log& _instance();
     
-    // private methods
-    void _push(const char* msg, const Message::enuType type);   // push the given message onto the vector
+    // push the given message onto the vector
+    SCOREPRESS_LOCAL  void _push(const char* msg, const Message::enuType type);
     
     // private constructors to prevent instanciation
-    Log();
-    Log(Log const& log);
-    Log& operator = (Log const& log);
+    SCOREPRESS_LOCAL  Log();
+    SCOREPRESS_LOCAL  Log(Log const& log);
+    SCOREPRESS_LOCAL  Log& operator = (Log const& log);
     
  public:
     // messaging methods (logging the given message)

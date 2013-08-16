@@ -26,14 +26,15 @@
 #include <deque>        // std::deque
 
 #include "sprite_id.hh" // SpriteId
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-struct SpriteInfo;  // sprite graphic information
-struct SpriteSet;   // set of sprites
-struct Sprites;     // a set of sprite-sets
+struct SCOREPRESS_API SpriteInfo;  // sprite graphic information
+struct SCOREPRESS_API SpriteSet;   // set of sprites
+struct SCOREPRESS_API Sprites;     // a set of sprite-sets
 
 
 //
@@ -44,7 +45,7 @@ struct Sprites;     // a set of sprite-sets
 // This contains the dimension as well as all provided attributes for a single
 // graphic.
 //
-class SpriteInfo
+class SCOREPRESS_API SpriteInfo
 {
  public:
     // sprite type
@@ -91,7 +92,7 @@ inline bool SpriteInfo::has_integer(const std::string& key) const {return intege
 //
 // This class is a set of sprites provided by one svg-file.
 //
-class SpriteSet : public std::vector<SpriteInfo>
+class SCOREPRESS_API SpriteSet : public std::vector<SpriteInfo>
 {
  public:
     // set information
@@ -157,7 +158,7 @@ inline const SpriteInfo& SpriteSet::operator[] (const size_t& idx) const {
 //
 // A set of sprite-sets used to render a document.
 //
-class Sprites : public std::deque<SpriteSet>
+class SCOREPRESS_API Sprites : public std::deque<SpriteSet>
 {
  public:
     inline       SpriteSet& operator[] (const size_t& idx);

@@ -23,13 +23,14 @@
 #include <list>        // std::list
 #include "score.hh"    // Staff, Voice, MainVoice, SubVoice, StaffObject, VoiceObject
 #include "error.hh"    // Error
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class Cursor;          // cursor with voice and staff references
-class const_Cursor;    // cursor with voice and staff references (within a constant score)
+class SCOREPRESS_API Cursor;          // cursor with voice and staff references
+class SCOREPRESS_API const_Cursor;    // cursor with voice and staff references (within a constant score)
 
 
 //
@@ -41,13 +42,13 @@ class const_Cursor;    // cursor with voice and staff references (within a const
 // It provides a unique interface for both main- and sub-voices.
 // This is the non-constant version of the class.
 //
-class Cursor
+class SCOREPRESS_API Cursor
 {
  public:
     // exception classes
-    class Error : public ScorePress::Error {public: Error(const std::string& msg);};
-    class IllegalObjectTypeException : public Error    // thrown, if we insert a staff-object into a sub-voice
-        {public: IllegalObjectTypeException();};
+    class SCOREPRESS_API Error : public ScorePress::Error {public: Error(const std::string& msg);};
+    class SCOREPRESS_API IllegalObjectTypeException : public Error
+        {public: IllegalObjectTypeException();};    // thrown, if we insert a staff-object into a sub-voice
     
  private:
     Staff* _staff;         // pointer to the staff hosting the voice
@@ -117,7 +118,7 @@ class Cursor
 // It provides a unique interface for both main- and sub-voices.
 // This is the constant version of the class.
 //
-class const_Cursor
+class SCOREPRESS_API const_Cursor
 {
  private:
     const Staff* _staff;   // pointer to the staff hosting the voice

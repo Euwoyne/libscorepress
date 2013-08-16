@@ -23,15 +23,16 @@
 #include <map>          // std::map
 #include "classes.hh"   // [score classes]
 #include "error.hh"     // ScorePress::Error
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class VoiceContext;     // voice-context with volume, measure and accidental information
-class StaffContext;     // staff-context with clef and key information
-class LineContext;      // line-context with newline objects
-class ScoreContext;     // score-context with current tempo
+class SCOREPRESS_API VoiceContext;     // voice-context with volume, measure and accidental information
+class SCOREPRESS_API StaffContext;     // staff-context with clef and key information
+class SCOREPRESS_API LineContext;      // line-context with newline objects
+class SCOREPRESS_API ScoreContext;     // score-context with current tempo
 
 
 //
@@ -43,7 +44,7 @@ class ScoreContext;     // score-context with current tempo
 // according to context-changing objects and calculating information for the
 // engraver dependant on the current context.
 //
-class VoiceContext
+class SCOREPRESS_API VoiceContext
 {
  private:
     // dynamic context
@@ -56,7 +57,7 @@ class VoiceContext
     unsigned int _time_bar;         // bar index of the time-signature
     
     // last objects buffer (double buffer)
-    struct Buffer
+    struct SCOREPRESS_LOCAL Buffer
     {
         const StaffObject* object;  // last engraved object of the voice
         mpx_t xpos;                 // horizontal position of the last engraved object
@@ -116,17 +117,17 @@ inline       mpx_t        VoiceContext::get_buffer2_xpos()              const {r
 // according to clef and key objects and calculating information for the
 // engraver dependant on the current context.
 //
-class StaffContext
+class SCOREPRESS_API StaffContext
 {
  public:
     // exception classes
-    class Error : public ScorePress::Error
+    class SCOREPRESS_API Error : public ScorePress::Error
         {public: Error(const std::string& msg);};
-    class IllegalBasenoteException : public Error   // thrown, if a clef's base-note is not a whole tone
+    class SCOREPRESS_API IllegalBasenoteException : public Error   // thrown, if a clef's base-note is not a whole tone
         {public: IllegalBasenoteException();};
-    class IllegalAccidentalException : public Error // thrown, if the tone cannot be expressed using the requested accidental
+    class SCOREPRESS_API IllegalAccidentalException : public Error // thrown, if the tone cannot be expressed using the requested accidental
         {public: IllegalAccidentalException();};
-    class IllegalKeyException : public Error        // thrown, if the index of the key-signature symbol is out of range 0-6
+    class SCOREPRESS_API IllegalKeyException : public Error        // thrown, if the index of the key-signature symbol is out of range 0-6
         {public: IllegalKeyException();};
     
     typedef std::map<int, Accidental::Type> AccidentalMap;
@@ -189,7 +190,7 @@ inline       bool     StaffContext::on_line(const Head& head)     const {return 
 //
 // This class represents a global score-context, containing the current tempo.
 //
-class ScoreContext
+class SCOREPRESS_API ScoreContext
 {
  private:
     int _tempo;        // current tempo (in bpm)

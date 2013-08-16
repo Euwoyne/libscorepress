@@ -26,6 +26,7 @@
 #include "refptr.hh"       // RefPtr
 #include "fraction.hh"     // Fraction
 #include "sprite_id.hh"    // SpriteId
+#include "export.hh"
 
 namespace ScorePress
 {
@@ -33,57 +34,57 @@ namespace ScorePress
 // ---------
 
 // PROTOTYPES
-class EngraverState;   // engraver state class prototype (see "engraver_state.hh")
+class SCOREPRESS_LOCAL EngraverState;   // engraver state class prototype (see "engraver_state.hh")
 
 // BASE CLASSES
 template <typename T>
-class Position;        // graphical position (2-dimensional vector)
-struct Color;          // RGBA-color structure
-struct Font;           // font structure
-class Appearance;      // graphical appearance properties (visibility, color, scale)
-class Class;           // abstract base class for all classes
+class                 Position;     // graphical position (2-dimensional vector)
+struct SCOREPRESS_API Color;        // RGBA-color structure
+struct SCOREPRESS_API Font;         // font structure
+class  SCOREPRESS_API Appearance;   // graphical appearance properties (visibility, color, scale)
+class  SCOREPRESS_API Class;        // abstract base class for all classes
 
 // MAIN MUSIC OBJECT CLASSES
-class VisibleObject;   // base class for visible objects
-class StaffObject;     // class for objects to reside within a staff (clefs, keys, time-signatures, notes and newlines)
-class MusicObject;     // visible staff-objects
-class Clef;            // a clef (contains sprite and note-positioning information)
-class Key;             // class representing a key signature
-class TimeSig;         // a time signature
-class CustomTimeSig;   // a time signature with a custom sprite
-class Barline;         // a barline
-class VoiceObject;     // class for objects to reside within a voice (notes and newlines)
-class Newline;         // newline indicator
-class ScoreDimension;  // dimension of the on-page score-object
-class Pagebreak;       // page-break indicator (with next page's layout information)
-class NoteObject;      // class for played objects (visible voice-objects, which have a duration, as chords and rests)
-class Chord;           // a chord (note-object consisting of several heads)
-class Rest;            // a rest (inherits note-object interface)
+class SCOREPRESS_API VisibleObject;     // base class for visible objects
+class SCOREPRESS_API StaffObject;       // class for objects to reside within a staff (clefs, keys, time-signatures, notes and newlines)
+class SCOREPRESS_API MusicObject;       // visible staff-objects
+class SCOREPRESS_API Clef;              // a clef (contains sprite and note-positioning information)
+class SCOREPRESS_API Key;               // class representing a key signature
+class SCOREPRESS_API TimeSig;           // a time signature
+class SCOREPRESS_API CustomTimeSig;     // a time signature with a custom sprite
+class SCOREPRESS_API Barline;           // a barline
+class SCOREPRESS_API VoiceObject;       // class for objects to reside within a voice (notes and newlines)
+class SCOREPRESS_API Newline;           // newline indicator
+class SCOREPRESS_API ScoreDimension;    // dimension of the on-page score-object
+class SCOREPRESS_API Pagebreak;         // page-break indicator (with next page's layout information)
+class SCOREPRESS_API NoteObject;        // class for played objects (visible voice-objects, which have a duration, as chords and rests)
+class SCOREPRESS_API Chord;             // a chord (note-object consisting of several heads)
+class SCOREPRESS_API Rest;              // a rest (inherits note-object interface)
 
 // MISCELLANEOUS CLASSES (AS PARTS OF MAIN MUSIC CLASSES)
-class Accidental;      // accidental abstraction (type, offset)
-class Articulation;    // articulation symbol (temporarily context changing)
-class Head;            // note-head class (with tone, accidental, etc.)
-class TiedHead;        // note-head with tie-position information
+class SCOREPRESS_API Accidental;    // accidental abstraction (type, offset)
+class SCOREPRESS_API Articulation;  // articulation symbol (temporarily context changing)
+class SCOREPRESS_API Head;          // note-head class (with tone, accidental, etc.)
+class SCOREPRESS_API TiedHead;      // note-head with tie-position information
 
 // VOICE STRUCTURE CLASSES
-class Voice;           // voice base type
-class MainVoice;       // main-voice; wrapper for a list of staff-objects
-class SubVoice;        // sub-voice; wrapper for a list of note-objects
+class SCOREPRESS_API Voice;         // voice base type
+class SCOREPRESS_API MainVoice;     // main-voice; wrapper for a list of staff-objects
+class SCOREPRESS_API SubVoice;      // sub-voice; wrapper for a list of note-objects
 
 // MOVABLE AND ATTACHABLE OBJECTS
-class Movable;         // base class for movable, attachable objects (position data)
-class PlainText;       // plain-text object (text with formatting information)
-class Paragraph;       // paragraph object (list of consequent plain-text objects with alignment information)
-class TextArea;        // text-area object (movable list of consequent plain-text objects)
-class ContextChanging; // context-changing object (see "context.hh")
-class Symbol;          // base class for interpretable symbols (has context-changing information)
-class PluginInfo;      // a movable object carrying arbitrary information for a plugin
-class Annotation;      // a text-area with context-changing information
-class CustomSymbol;    // a custom symbol is a symbol with custom graphical representation (sprite-id)
-class Durable;         // base class for symbols with two anchor points
-class Slur;            // legato slur (a symbol, rendered as a cubic bezier curve)
-class Hairpin;         // crescendo and diminuendo "hairpin" symbols
+class SCOREPRESS_API Movable;         // base class for movable, attachable objects (position data)
+class SCOREPRESS_API PlainText;       // plain-text object (text with formatting information)
+class SCOREPRESS_API Paragraph;       // paragraph object (list of consequent plain-text objects with alignment information)
+class SCOREPRESS_API TextArea;        // text-area object (movable list of consequent plain-text objects)
+class SCOREPRESS_API ContextChanging; // context-changing object (see "context.hh")
+class SCOREPRESS_API Symbol;          // base class for interpretable symbols (has context-changing information)
+class SCOREPRESS_API PluginInfo;      // a movable object carrying arbitrary information for a plugin
+class SCOREPRESS_API Annotation;      // a text-area with context-changing information
+class SCOREPRESS_API CustomSymbol;    // a custom symbol is a symbol with custom graphical representation (sprite-id)
+class SCOREPRESS_API Durable;         // base class for symbols with two anchor points
+class SCOREPRESS_API Slur;            // legato slur (a symbol, rendered as a cubic bezier curve)
+class SCOREPRESS_API Hairpin;         // crescendo and diminuendo "hairpin" symbols
 
 // TYPE DEFINTIONS
 typedef int           mpx_t;       // milli-pixel (graphical positioning)
@@ -129,14 +130,14 @@ template <typename T> Position<T> operator * (const T& p, const Position<T>& q) 
 template <typename T> Position<T> operator / (const Position<T>& p, const T& q) {return Position<T>(p.x / q, p.y / q);}
 
 // RGBA-color structure
-struct Color{unsigned char r; unsigned char g; unsigned char b; unsigned char a;};
-bool operator == (const Color& c1, const Color& c2);
+struct SCOREPRESS_API Color{unsigned char r; unsigned char g; unsigned char b; unsigned char a;};
+extern SCOREPRESS_API bool operator == (const Color& c1, const Color& c2);
 
 // font structure
-struct Font{std::string family; double size; bool bold; bool italic; bool underline; Color color;};
+struct SCOREPRESS_API Font{std::string family; double size; bool bold; bool italic; bool underline; Color color;};
 
 // graphical appearance properties (visibility, color, scale)
-class Appearance
+class SCOREPRESS_API Appearance
 {
  public:
     bool visible;       // visibility
@@ -148,7 +149,7 @@ class Appearance
 };
 
 // abstract base class for all classes
-class Class
+class SCOREPRESS_API Class
 {
  public:
     // type enumeration
@@ -181,7 +182,7 @@ class Class
 };
 
 // returns a human readable class name (for debugging purposes)
-const std::string classname(Class::classType type);
+extern SCOREPRESS_API const std::string classname(Class::classType type);
 
 
 //
@@ -190,7 +191,7 @@ const std::string classname(Class::classType type);
 //
 
 // base class for visible objects
-class VisibleObject : virtual public Class
+class SCOREPRESS_API VisibleObject : virtual public Class
 {
  public:
     MovableList attached;      // attached objects
@@ -205,7 +206,7 @@ class VisibleObject : virtual public Class
 };
 
 // class for objects to reside within a staff (clefs, keys, time-signatures, notes and newlines)
-class StaffObject : virtual public Class
+class SCOREPRESS_API StaffObject : virtual public Class
 {
  public:
     int acc_offset;             // accumulative horizontal offset (in promille of head-width) 
@@ -222,7 +223,7 @@ class StaffObject : virtual public Class
 };
 
 // visible staff-objects
-class MusicObject : public StaffObject, public VisibleObject
+class SCOREPRESS_API MusicObject : public StaffObject, public VisibleObject
 {
  protected: MusicObject() {};
  public:
@@ -235,7 +236,7 @@ class MusicObject : public StaffObject, public VisibleObject
 };
 
 // a clef (contains sprite and note-positioning information)
-class Clef : public MusicObject
+class SCOREPRESS_API Clef : public MusicObject
 {
  public:
     SpriteId sprite;       // sprite
@@ -253,7 +254,7 @@ class Clef : public MusicObject
 };
 
 // class representing a key signature
-class Key : public MusicObject
+class SCOREPRESS_API Key : public MusicObject
 {
  public:
     enum Type {SHARP, FLAT} type;  // key type
@@ -269,7 +270,7 @@ class Key : public MusicObject
 };
 
 // a time signature
-class TimeSig : public MusicObject
+class SCOREPRESS_API TimeSig : public MusicObject
 {
  public:
     unsigned char number;  // number of beats per measure (enumerator)
@@ -288,7 +289,7 @@ class TimeSig : public MusicObject
 };
 
 // a time signature with a custom sprite
-class CustomTimeSig : public TimeSig
+class SCOREPRESS_API CustomTimeSig : public TimeSig
 {
  public:
     SpriteId sprite;   // custom sprite for the time signature
@@ -301,7 +302,7 @@ class CustomTimeSig : public TimeSig
 };
 
 // a barline
-class Barline : public MusicObject
+class SCOREPRESS_API Barline : public MusicObject
 {
  public:
     typedef std::string Style;
@@ -321,7 +322,7 @@ class Barline : public MusicObject
 };
 
 // class for objects to reside within a voice (notes and newlines)
-class VoiceObject : public StaffObject
+class SCOREPRESS_API VoiceObject : public StaffObject
 {
  protected: VoiceObject() {};
  public:
@@ -334,7 +335,7 @@ class VoiceObject : public StaffObject
 };
 
 // newline indicator
-class Newline : public VoiceObject
+class SCOREPRESS_API Newline : public VoiceObject
 {
  public:
     int  indent;                // LINE:  in micrometer
@@ -357,7 +358,7 @@ class Newline : public VoiceObject
 };
 
 // dimension of the on-page score-object
-class ScoreDimension
+class SCOREPRESS_API ScoreDimension
 {
  public:
     Position<> position;        // position of the score-object (in micrometer)
@@ -370,7 +371,7 @@ class ScoreDimension
 };
 
 // page-break indicator (with next page's layout information)
-class Pagebreak : public Newline
+class SCOREPRESS_API Pagebreak : public Newline
 {
  public:
     MovableList attached;       // objects attached to the page
@@ -384,7 +385,7 @@ class Pagebreak : public Newline
 };
 
 // class for played objects (music-objects, which have a duration, as chords and rests)
-class NoteObject : public VoiceObject, public VisibleObject
+class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
 {
  public:
     RefPtr<SubVoice> subvoice;  // sub voice attached to this note
@@ -421,7 +422,7 @@ class NoteObject : public VoiceObject, public VisibleObject
 };
 
 // a chord (note-object consisting of several heads)
-class Chord : public NoteObject
+class SCOREPRESS_API Chord : public NoteObject
 {
  public:
     enum BeamType {NO_BEAM, AUTO_BEAM, FORCE_BEAM, CUT_BEAM};
@@ -446,7 +447,7 @@ class Chord : public NoteObject
 };
 
 // a rest (inherits note-object interface)
-class Rest : public NoteObject
+class SCOREPRESS_API Rest : public NoteObject
 {
  public:
     int offset_y;          // vertical offset (in promille of head-height)
@@ -470,11 +471,11 @@ class Rest : public NoteObject
 //
 
 // accidental abstraction (type, offset)
-class Accidental : public Class
+class SCOREPRESS_API Accidental : public Class
 {
  public:
-    static const int  note_modifier[9]; // tone modification for each accidental-type
-                                        // (quarter tones are rounded down)
+    SCOREPRESS_LOCAL static const int note_modifier[9]; // tone modification for each accidental-type
+                                                        // (quarter tones are rounded down)
     enum Type   // accidental type enumerator
     {
         double_flat    = 0,
@@ -503,7 +504,7 @@ class Accidental : public Class
 };
 
 // articulation symbol (temporarily context changing)
-class Articulation : public Class
+class SCOREPRESS_API Articulation : public Class
 {
  public:
     SpriteId sprite;               // sprite id
@@ -521,7 +522,7 @@ class Articulation : public Class
 };
 
 // note-head class (with tone, accidental, etc.)
-class Head : public Class
+class SCOREPRESS_API Head : public Class
 {
  public:
     tone_t tone;               // as defined for MIDI: a' = 69
@@ -537,7 +538,7 @@ class Head : public Class
 };
 
 // note-head with tie-position information
-class TiedHead : public Head
+class SCOREPRESS_API TiedHead : public Head
 {
  public:
     Position<> offset1;    // offset of the first anchor (in promille of head-height)
@@ -560,7 +561,7 @@ class TiedHead : public Head
 //
 
 // voice base type
-class Voice : public Class
+class SCOREPRESS_API Voice : public Class
 {
  public:
     enum StemDirection {STEM_AUTOMATIC, STEM_UPWARDS, STEM_DOWNWARDS};
@@ -574,7 +575,7 @@ class Voice : public Class
 };
 
 // main-voice; wrapper for a list of staff-objects
-class MainVoice : public Voice
+class SCOREPRESS_API MainVoice : public Voice
 {
  public:
     StaffObjectList notes;     // content of the voice
@@ -586,7 +587,7 @@ class MainVoice : public Voice
 };
 
 // sub-voice; wrapper for a list of note-objects
-class SubVoice : public Voice
+class SCOREPRESS_API SubVoice : public Voice
 {
  public:
     Voice* parent;         // parent voice (either a main-voice or another sub-voice)
@@ -607,7 +608,7 @@ class SubVoice : public Voice
 //
 
 // base class for movable, attachable objects (position data)
-class Movable : public Class
+class SCOREPRESS_API Movable : public Class
 {
  public:
     Position<> position;                   // position data (in micrometer or promille of head-height)
@@ -625,7 +626,7 @@ class Movable : public Class
 };
 
 // plain-text object (text with formatting information)
-class PlainText
+class SCOREPRESS_API PlainText
 {
  public:
     std::string text;  // text to be shown (encoded in UTF-8)
@@ -633,7 +634,7 @@ class PlainText
 };
 
 // paragraph object (list of consequent plain-text objects with alignment information)
-class Paragraph
+class SCOREPRESS_API Paragraph
 {
  public:
     std::list<PlainText> text;                 // plain-text parts
@@ -645,7 +646,7 @@ class Paragraph
 };
 
 // text-area object (movable list of consequent paragraphs)
-class TextArea : public Movable
+class SCOREPRESS_API TextArea : public Movable
 {
  public:
     unsigned int width;            // width of the text-area (in micrometer)
@@ -659,7 +660,7 @@ class TextArea : public Movable
 };
 
 // context-changing object (see "context.hh")
-class ContextChanging
+class SCOREPRESS_API ContextChanging
 {
  public:
     enum Type  // modifier type
@@ -689,7 +690,7 @@ class ContextChanging
 };
 
 // base class for interpretable symbols (has context-changing information)
-class Symbol : public Movable
+class SCOREPRESS_API Symbol : public Movable
 {
  private:
     ContextChanging ctxchanger;    // context-changing information
@@ -703,10 +704,10 @@ class Symbol : public Movable
 };
 
 // a movable object carrying arbitrary information for a plugin
-class PluginInfo : public Movable
+class SCOREPRESS_API PluginInfo : public Movable
 {
  private:
-    char* data;             // data delivered to the plugin (will NOT be deleted with object!)
+    char* data;     // data delivered to the plugin (will NOT be deleted with object!)
         
  public:
     std::string caption;    // caption, shown to the user
@@ -724,10 +725,10 @@ class PluginInfo : public Movable
 };
 
 // a text-area with context-changing information
-class Annotation : public TextArea
+class SCOREPRESS_API Annotation : public TextArea
 {
  private:
-    ContextChanging ctxchanger;    // context-changing information
+    ContextChanging ctxchanger;     // context-changing information
     
  public:
     virtual bool is(classType type) const {return ((type == ANNOTATION) || (TextArea::is(type)));};
@@ -738,7 +739,7 @@ class Annotation : public TextArea
 };
 
 // a custom symbol is a symbol with custom graphical representation (sprite-id)
-class CustomSymbol : public Symbol
+class SCOREPRESS_API CustomSymbol : public Symbol
 {
  public:
     SpriteId sprite;   // sprite of the symbol
@@ -750,7 +751,7 @@ class CustomSymbol : public Symbol
 };
 
 // base class for symbols with two anchor points
-class Durable : public Symbol
+class SCOREPRESS_API Durable : public Symbol
 {
  public:
     size_t duration;           // number of staff-objects within the scope of the symbol
@@ -764,7 +765,7 @@ class Durable : public Symbol
 };
 
 // legato slur (a symbol, rendered as a cubic bezier curve)
-class Slur : public Durable
+class SCOREPRESS_API Slur : public Durable
 {
  public:
     Position<> control1;       // first control point        (same unit as position; see "Movable")
@@ -780,7 +781,7 @@ class Slur : public Durable
 };
 
 // crescendo and diminuendo "hairpin" symbols
-class Hairpin : public Durable
+class SCOREPRESS_API Hairpin : public Durable
 {
  public:
     unsigned int thickness;    // line-width (in promille of stem-width)

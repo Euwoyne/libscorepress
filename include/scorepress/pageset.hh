@@ -24,12 +24,13 @@
 
 #include "plate.hh"        // Plate
 #include "parameters.hh"   // ViewportParam
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class PageSet;    // set of plates for all pages of a document
+class SCOREPRESS_LOCAL PageSet;     // set of plates for all pages of a document
 
 
 //
@@ -39,7 +40,7 @@ class PageSet;    // set of plates for all pages of a document
 // A set of plates used to render one document,
 // subdivided by sets of plates for each page.
 //
-class PageSet
+class SCOREPRESS_LOCAL PageSet
 {
  public:
     // dimension of the page

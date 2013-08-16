@@ -98,12 +98,17 @@ DEBUG   := -ggdb -O0
 PROFILE := -pg -O2
 RELEASE := -O2 -fomit-frame-pointer
 
+DEBUG_SO   :=
+PROFILE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS -fvisibility=hidden -fvisibility-inlines-hidden
+RELEASE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS -fvisibility=hidden -fvisibility-inlines-hidden
+SOFLAGS    := -fPIC ${${MODE}_SO}
+
 CONFIGFLAGS := -DDATADIR="\"${datadir}\""
 USER_FLAGS := @CFLAGS@
 USER_LIBS  := @LDFLAGS@ @LIBS@
 
-FLAGS := ${WARNINGS} ${CTRLFLAGS} ${${MODE}} -I${headerdir} ${USER_FLAGS}
-LIBS  := ${XMLLIBS} ${USER_LIBS}
+FLAGS   := ${WARNINGS} ${CTRLFLAGS} ${${MODE}} -I${headerdir} ${USER_FLAGS}
+LIBS    := ${XMLLIBS} ${USER_LIBS}
 
 SIZECHECK_ON    := -DSIZECHECK -Wno-long-long
 SIZECHECK_OFF   :=
@@ -564,152 +569,152 @@ ${builddir}/main.o:			${deps_main_cpp}
 							${CXX} -c ${srcdir}/main.cpp -o ${builddir}/main.o ${FLAGS}
 ${builddir}/main.s.o:		${deps_main_cpp}
 							echo "  Compiling:      main.cpp..."
-							${CXX} -fPIC -c ${srcdir}/main.cpp -o ${builddir}/main.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/main.cpp -o ${builddir}/main.s.o ${FLAGS}
 
 ${builddir}/engine.o:		${deps_engine_cpp}
 							echo "  Compiling:      engine.cpp..."
 							${CXX} -c ${srcdir}/engine.cpp -o ${builddir}/engine.o ${FLAGS}
 ${builddir}/engine.s.o:		${deps_engine_cpp}
 							echo "  Compiling:      engine.cpp..."
-							${CXX} -fPIC -c ${srcdir}/engine.cpp -o ${builddir}/engine.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/engine.cpp -o ${builddir}/engine.s.o ${FLAGS}
 
 ${builddir}/press.o:		${deps_press_cpp}
 							echo "  Compiling:      press.cpp..."
 							${CXX} -c ${srcdir}/press.cpp -o ${builddir}/press.o ${FLAGS}
 ${builddir}/press.s.o:		${deps_press_cpp}
 							echo "  Compiling:      press.cpp..."
-							${CXX} -fPIC -c ${srcdir}/press.cpp -o ${builddir}/press.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/press.cpp -o ${builddir}/press.s.o ${FLAGS}
 
 ${builddir}/engraver.o:		${deps_engraver_cpp}
 							echo "  Compiling:      engraver.cpp..."
 							${CXX} -c ${srcdir}/engraver.cpp -o ${builddir}/engraver.o ${FLAGS}
 ${builddir}/engraver.s.o:	${deps_engraver_cpp}
 							echo "  Compiling:      engraver.cpp..."
-							${CXX} -fPIC -c ${srcdir}/engraver.cpp -o ${builddir}/engraver.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/engraver.cpp -o ${builddir}/engraver.s.o ${FLAGS}
 
 ${builddir}/engraver_state.o:	${deps_engraver_state_cpp}
 								echo "  Compiling:      engraver_state.cpp..."
 								${CXX} -c ${srcdir}/engraver_state.cpp -o ${builddir}/engraver_state.o ${FLAGS}
 ${builddir}/engraver_state.s.o:	${deps_engraver_state_cpp}
 								echo "  Compiling:      engraver_state.cpp..."
-								${CXX} -fPIC -c ${srcdir}/engraver_state.cpp -o ${builddir}/engraver_state.s.o ${FLAGS}
+								${CXX} ${SOFLAGS} -c ${srcdir}/engraver_state.cpp -o ${builddir}/engraver_state.s.o ${FLAGS}
 
 ${builddir}/engrave_info.o:		${deps_engrave_info_cpp}
 								echo "  Compiling:      engrave_info.cpp..."
 								${CXX} -c ${srcdir}/engrave_info.cpp -o ${builddir}/engrave_info.o ${FLAGS}
 ${builddir}/engrave_info.s.o:	${deps_engrave_info_cpp}
 								echo "  Compiling:      engrave_info.cpp..."
-								${CXX} -fPIC -c ${srcdir}/engrave_info.cpp -o ${builddir}/engrave_info.s.o ${FLAGS}
+								${CXX} ${SOFLAGS} -c ${srcdir}/engrave_info.cpp -o ${builddir}/engrave_info.s.o ${FLAGS}
 
 ${builddir}/context.o:		${deps_context_cpp}
 							echo "  Compiling:      context.cpp..."
 							${CXX} -c ${srcdir}/context.cpp -o ${builddir}/context.o ${FLAGS}
 ${builddir}/context.s.o:	${deps_context_cpp}
 							echo "  Compiling:      context.cpp..."
-							${CXX} -fPIC -c ${srcdir}/context.cpp -o ${builddir}/context.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/context.cpp -o ${builddir}/context.s.o ${FLAGS}
 
 ${builddir}/pageset.o:		${deps_pageset_cpp}
 							echo "  Compiling:      pageset.cpp..."
 							${CXX} -c ${srcdir}/pageset.cpp -o ${builddir}/pageset.o ${FLAGS}
 ${builddir}/pageset.s.o:	${deps_pageset_cpp}
 							echo "  Compiling:      pageset.cpp..."
-							${CXX} -fPIC -c ${srcdir}/pageset.cpp -o ${builddir}/pageset.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/pageset.cpp -o ${builddir}/pageset.s.o ${FLAGS}
 
 ${builddir}/plate.o:		${deps_plate_cpp}
 							echo "  Compiling:      plate.cpp..."
 							${CXX} -c ${srcdir}/plate.cpp -o ${builddir}/plate.o ${FLAGS}
 ${builddir}/plate.s.o:		${deps_plate_cpp}
 							echo "  Compiling:      plate.cpp..."
-							${CXX} -fPIC -c ${srcdir}/plate.cpp -o ${builddir}/plate.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/plate.cpp -o ${builddir}/plate.s.o ${FLAGS}
 
 ${builddir}/cursor.o:		${deps_cursor_cpp}
 							echo "  Compiling:      cursor.cpp..."
 							${CXX} -c ${srcdir}/cursor.cpp -o ${builddir}/cursor.o ${FLAGS}
 ${builddir}/cursor.s.o:		${deps_cursor_cpp}
 							echo "  Compiling:      cursor.cpp..."
-							${CXX} -fPIC -c ${srcdir}/cursor.cpp -o ${builddir}/cursor.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/cursor.cpp -o ${builddir}/cursor.s.o ${FLAGS}
 
 ${builddir}/user_cursor.o:		${deps_user_cursor_cpp}
 								echo "  Compiling:      user_cursor.cpp..."
 								${CXX} -c ${srcdir}/user_cursor.cpp -o ${builddir}/user_cursor.o ${FLAGS}
 ${builddir}/user_cursor.s.o:	${deps_user_cursor_cpp}
 								echo "  Compiling:      user_cursor.cpp..."
-								${CXX} -fPIC -c ${srcdir}/user_cursor.cpp -o ${builddir}/user_cursor.s.o ${FLAGS}
+								${CXX} ${SOFLAGS} -c ${srcdir}/user_cursor.cpp -o ${builddir}/user_cursor.s.o ${FLAGS}
 
 ${builddir}/edit_cursor.o:		${deps_edit_cursor_cpp}
 								echo "  Compiling:      edit_cursor.cpp..."
 								${CXX} -c ${srcdir}/edit_cursor.cpp -o ${builddir}/edit_cursor.o ${FLAGS}
 ${builddir}/edit_cursor.s.o:	${deps_edit_cursor_cpp}
 								echo "  Compiling:      edit_cursor.cpp..."
-								${CXX} -fPIC -c ${srcdir}/edit_cursor.cpp -o ${builddir}/edit_cursor.s.o ${FLAGS}
+								${CXX} ${SOFLAGS} -c ${srcdir}/edit_cursor.cpp -o ${builddir}/edit_cursor.s.o ${FLAGS}
 
 ${builddir}/pick.o:			${deps_pick_cpp}
 							echo "  Compiling:      pick.cpp..."
 							${CXX} -c ${srcdir}/pick.cpp -o ${builddir}/pick.o ${FLAGS}
 ${builddir}/pick.s.o:		${deps_pick_cpp}
 							echo "  Compiling:      pick.cpp..."
-							${CXX} -fPIC -c ${srcdir}/pick.cpp -o ${builddir}/pick.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/pick.cpp -o ${builddir}/pick.s.o ${FLAGS}
 
 ${builddir}/renderer.o:		${deps_renderer_cpp}
 							echo "  Compiling:      renderer.cpp..."
 							${CXX} -c ${srcdir}/renderer.cpp -o ${builddir}/renderer.o ${XMLFLAGS} ${FLAGS}
 ${builddir}/renderer.s.o:	${deps_renderer_cpp}
 							echo "  Compiling:      renderer.cpp..."
-							${CXX} -fPIC -c ${srcdir}/renderer.cpp -o ${builddir}/renderer.s.o ${XMLFLAGS} ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/renderer.cpp -o ${builddir}/renderer.s.o ${XMLFLAGS} ${FLAGS}
 
 ${builddir}/sprites.o:		${deps_sprites_cpp}
 							echo "  Compiling:      sprites.cpp..."
 							${CXX} -c ${srcdir}/sprites.cpp -o ${builddir}/sprites.o ${FLAGS}
 ${builddir}/sprites.s.o:	${deps_sprites_cpp}
 							echo "  Compiling:      sprites.cpp..."
-							${CXX} -fPIC -c ${srcdir}/sprites.cpp -o ${builddir}/sprites.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/sprites.cpp -o ${builddir}/sprites.s.o ${FLAGS}
 
 ${builddir}/sprite_id.o:	${deps_sprite_id_cpp}
 							echo "  Compiling:      sprite_id.cpp..."
 							${CXX} -c ${srcdir}/sprite_id.cpp -o ${builddir}/sprite_id.o ${FLAGS}
 ${builddir}/sprite_id.s.o:	${deps_sprite_id_cpp}
 							echo "  Compiling:      sprite_id.cpp..."
-							${CXX} -fPIC -c ${srcdir}/sprite_id.cpp -o ${builddir}/sprite_id.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/sprite_id.cpp -o ${builddir}/sprite_id.s.o ${FLAGS}
 
 ${builddir}/score.o:		${deps_score_cpp}
 							echo "  Compiling:      score.cpp..."
 							${CXX} -c ${srcdir}/score.cpp -o ${builddir}/score.o ${FLAGS}
 ${builddir}/score.s.o:		${deps_score_cpp}
 							echo "  Compiling:      score.cpp..."
-							${CXX} -fPIC -c ${srcdir}/score.cpp -o ${builddir}/score.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/score.cpp -o ${builddir}/score.s.o ${FLAGS}
 
 ${builddir}/classes.o:		${deps_classes_cpp}
 							echo "  Compiling:      classes.cpp..."
 							${CXX} -c ${srcdir}/classes.cpp -o ${builddir}/classes.o ${FLAGS}
 ${builddir}/classes.s.o:	${deps_classes_cpp}
 							echo "  Compiling:      classes.cpp..."
-							${CXX} -fPIC -c ${srcdir}/classes.cpp -o ${builddir}/classes.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/classes.cpp -o ${builddir}/classes.s.o ${FLAGS}
 
 ${builddir}/log.o:			${deps_log_cpp}
 							echo "  Compiling:      log.cpp..."
 							${CXX} -c ${srcdir}/log.cpp -o ${builddir}/log.o ${FLAGS}
 ${builddir}/log.s.o:		${deps_log_cpp}
 							echo "  Compiling:      log.cpp..."
-							${CXX} -fPIC -c ${srcdir}/log.cpp -o ${builddir}/log.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/log.cpp -o ${builddir}/log.s.o ${FLAGS}
 
 ${builddir}/fraction.o:		${deps_fraction_cpp}
 							echo "  Compiling:      fraction.cpp..."
 							${CXX} -c ${srcdir}/fraction.cpp -o ${builddir}/fraction.o ${FLAGS} ${FRACT_SIZECHECK}
 ${builddir}/fraction.s.o:	${deps_fraction_cpp}
 							echo "  Compiling:      fraction.cpp..."
-							${CXX} -fPIC -c ${srcdir}/fraction.cpp -o ${builddir}/fraction.s.o ${FLAGS} ${FRACT_SIZECHECK}
+							${CXX} ${SOFLAGS} -c ${srcdir}/fraction.cpp -o ${builddir}/fraction.s.o ${FLAGS} ${FRACT_SIZECHECK}
 
 ${builddir}/error.o:		${deps_error_cpp}
 							echo "  Compiling:      error.cpp..."
 							${CXX} -c ${srcdir}/error.cpp -o ${builddir}/error.o ${FLAGS}
 ${builddir}/error.s.o:		${deps_error_cpp}
 							echo "  Compiling:      error.cpp..."
-							${CXX} -fPIC -c ${srcdir}/error.cpp -o ${builddir}/error.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/error.cpp -o ${builddir}/error.s.o ${FLAGS}
 
 ${builddir}/config.o:		${deps_config_cpp}
 							echo "  Compiling:      config.cpp..."
 							${CXX} -c ${srcdir}/config.cpp -o ${builddir}/config.o ${FLAGS} ${CONFIGFLAGS}
 ${builddir}/config.s.o:		${deps_config_cpp}
 							echo "  Compiling:      config.cpp..."
-							${CXX} -fPIC -c ${srcdir}/config.cpp -o ${builddir}/config.s.o ${FLAGS} ${CONFIGFLAGS}
+							${CXX} ${SOFLAGS} -c ${srcdir}/config.cpp -o ${builddir}/config.s.o ${FLAGS} ${CONFIGFLAGS}
 

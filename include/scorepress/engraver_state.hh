@@ -26,13 +26,13 @@
 #include "sprites.hh"      // Sprites
 #include "engrave_info.hh" // StemInfo, BeamInfo, BeamInfoMap, TieInfo, TieInfoChord, TieInfoMap, SpaceInfo, LineInfo
 #include "parameters.hh"   // EngraverParam, StyleParam, ViewportParam
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class EngraverState;    // engraver, computing a renderable plate from an abstact score-object
-class Pick;             // prototype for pick-class (see "pick.hh")
+class SCOREPRESS_LOCAL EngraverState;    // engraver, computing a renderable plate from an abstact score-object
 
 
 //
@@ -43,7 +43,7 @@ class Pick;             // prototype for pick-class (see "pick.hh")
 // the engraving process. It contains all the information necessary for the
 // engraving of a single object, including the "Pick" instance.
 //
-class EngraverState
+class SCOREPRESS_LOCAL EngraverState
 {
  private:
     // typedefs for cleaner class interface

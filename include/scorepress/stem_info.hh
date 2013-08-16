@@ -21,12 +21,13 @@
 #define SCOREPRESS_STEMINFO_HH
 
 #include "classes.hh"   // mpx_t
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-struct  StemInfo;       // stem-information structure
+struct SCOREPRESS_LOCAL StemInfo;       // stem-information structure
 
 
 //
@@ -36,7 +37,7 @@ struct  StemInfo;       // stem-information structure
 // Stem position information (saved on the plate) for
 // postprocessing stem correction.
 //
-struct StemInfo
+struct SCOREPRESS_LOCAL StemInfo
 {
     mpx_t top_pos;              // y-position of the uppermost head
     mpx_t base_pos;             // y-position of the lowermost head

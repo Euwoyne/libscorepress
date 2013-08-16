@@ -21,12 +21,13 @@
 #define SCOREPRESS_ERROR_HH
 
 #include <string>   // std::string
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class Error;    // exception base class, containing an error message
+class SCOREPRESS_API Error;    // exception base class, containing an error message
 
 
 //
@@ -37,7 +38,7 @@ class Error;    // exception base class, containing an error message
 // It inherits the implementation of "std::string" to contain a human-
 // readable error message.
 //
-class Error : public std::string
+class SCOREPRESS_API Error : public std::string
 {
  public:
     Error();                        // default constructor (generic message)

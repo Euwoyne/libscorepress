@@ -27,12 +27,13 @@
 #include "parameters.hh"    // PressParam, ViewportParam
 #include "user_cursor.hh"   // UserCursor
 #include "error.hh"         // Error
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class Press;    // the press, renders the prepared plate object with a renderer
+class SCOREPRESS_LOCAL Press;    // the press, renders the prepared plate object with a renderer
 
 
 //
@@ -42,12 +43,12 @@ class Press;    // the press, renders the prepared plate object with a renderer
 // The press-class exports a method, which draws a score, with the help of the
 // engraver-provided Plate instance and a renderer instance.
 //
-class Press
+class SCOREPRESS_LOCAL Press
 {
  public:
     // exception classes
-    class Error : public ScorePress::Error {public: Error(const std::string& msg);};
-    class InvalidRendererException : public Error   // thrown, the given renderer is not ready
+    class SCOREPRESS_API Error : public ScorePress::Error {public: Error(const std::string& msg);};
+    class SCOREPRESS_API InvalidRendererException : public Error   // thrown, the given renderer is not ready
         {public: InvalidRendererException();};
     
  private:

@@ -20,11 +20,13 @@
 #ifndef SCOREPRESS_FRACTION_HH
 #define SCOREPRESS_FRACTION_HH
 
+#include "export.hh"
+
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class Fraction;    // class representing a rational number
+class SCOREPRESS_API Fraction;    // class representing a rational number
 
 
 //
@@ -34,13 +36,14 @@ class Fraction;    // class representing a rational number
 // The fraction class implements all arithmetic operations on the field of
 // rational numbers.
 //
-class Fraction
+class SCOREPRESS_API Fraction
 {
  private:
     long enumerator;            // the enumerator
     unsigned long denominator;  // the denominator
     
-    static unsigned long gcd(unsigned long x, unsigned long y); // return the greatest common divisor
+    // return the greatest common divisor
+    SCOREPRESS_LOCAL static unsigned long gcd(unsigned long x, unsigned long y);
     
  public:
     // constructors

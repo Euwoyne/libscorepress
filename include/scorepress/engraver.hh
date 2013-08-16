@@ -24,12 +24,13 @@
 #include "pageset.hh"      // PageSet
 #include "sprites.hh"      // Sprites
 #include "parameters.hh"   // EngraverParam, StyleParam, ViewportParam
+#include "export.hh"
 
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-class Engraver;        // engraver, computing a renderable plate from an abstact score-object
+class SCOREPRESS_LOCAL Engraver;    // engraver, computing a renderable plate from an abstact score-object
 
 
 //
@@ -42,7 +43,7 @@ class Engraver;        // engraver, computing a renderable plate from an abstact
 // Internally an instance of "Pick" (as part of the "EngraverState") is used to
 // calculate the object positions.
 //
-class Engraver
+class SCOREPRESS_LOCAL Engraver
 {
  private:
           PageSet*       pageset;  // target set of pages
