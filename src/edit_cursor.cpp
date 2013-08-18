@@ -76,7 +76,6 @@ HeadPtr EditCursor::create_head(const InputNote& note) const throw(NotValidExcep
         case Accidental::sharp:
         case Accidental::double_sharp:
             // calculate the accidental dictated by the key
-            // TODO:BUG! relative accidentals
             acc_modifier =  Accidental::note_modifier[get_staff_context().get_key_accidental(out->tone)]
                           + Accidental::note_modifier[note.accidental]; // and modify by user input
             if      (acc_modifier >  2) acc_modifier =  2;  // check range

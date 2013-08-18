@@ -907,39 +907,46 @@ StaffContext UserCursor::get_staff_context() const throw(NotValidException)
     };  // (if we cannot find this staff within the previous line, empty context is correct)
     
     // get the staff's main voice
-    const_Cursor cur(cursor->pvoice->begin);    // search for the main voice of the current staff
-    value_t time(cursor->pvoice->time);         // voice start time
+    const_Cursor cur(cursor->note);         // search for the main voice of the current staff
     if (!cur.is_main())
     {
-        for (std::list<Plate::pVoice>::const_iterator v = line->voices.begin(); v != line->voices.end(); ++v)
+        for (std::list<VoiceCursor>::const_iterator c = vcursors.begin(); c != vcursors.end(); ++c)
         {
             // search the main voice within the same staff
-            if (&v->begin.staff() == &cursor->pvoice->begin.staff() && v->begin.is_main())
+            if (&c->note.staff() == &cur.staff() && c->note.is_main())
             {
-                cur  = v->begin;    // save begin cursor
-                time = v->time;     // save start time stamp
-                break;              // stop search
+                cur = c->note;  // save cursor
+                break;          // stop search
             };
         };
     }
     if (!cur.is_main()) return out_ctx; // if we cannot find a main-voice, last known context is correct
+    if (cur.at_end())                   // if we are at end
+    {                                   //     goto previous note, if possible
+        if (!cur.has_prev()) return out_ctx;
+        --cur;
+    };
     
     // apply all (staff-)context modifying objects up to the current cursor
-    while (!cur.at_end() && time < cursor->time)
+    bool got_clef = false;
+    bool got_key  = false;
+    while (!got_clef || !got_key)
     {
         // modify the context
-        if (cur->is(Class::CLEF))           // by clef
+        if (!got_clef && cur->is(Class::CLEF))           // by clef
         {
-            out_ctx.modify(*static_cast<const Clef*>(&*cur));
+            out_ctx.modify(static_cast<const Clef&>(*cur));
+            got_clef = true;
         }
         else if (cur->is(Class::KEY))       // by key
         {
-            out_ctx.modify(*static_cast<const Key*>(&*cur));
+            out_ctx.modify(static_cast<const Key&>(*cur));
+            got_key = true;
         };
         
-        // calculate timestamp
-        if (cur->is(Class::NOTEOBJECT)) time += static_cast<const NoteObject*>(&*cur)->value();
-        ++cur;
+        // move to the previous note
+        if (!cur.has_prev()) break;
+        --cur;
     };
     
     // return calculated context

@@ -271,7 +271,7 @@ void Engine::set_test(Sprites& sprites)
     //press.parameters.draw_linebounds = true;
     //press.parameters.draw_notebounds = true;
     //press.parameters.draw_attachbounds = true;
-    interface.relative_accidentals = false;
+    //interface.relative_accidentals = false;
     
     // setup document
     document.head_height = 2000;       // µm
@@ -336,11 +336,11 @@ void Engine::set_test(Sprites& sprites)
     static_cast<Clef&>(*score.staves.back().notes.back()).line = static_cast<unsigned char>(sprites[0][sprites[0].ids["clef.treble"]].integer["line"]);
     static_cast<Clef&>(*score.staves.back().notes.back()).keybnd_sharp = static_cast<tone_t>(sprites[0][sprites[0].ids["clef.treble"]].integer["keybound.sharp"]);
     static_cast<Clef&>(*score.staves.back().notes.back()).keybnd_flat = static_cast<tone_t>(sprites[0][sprites[0].ids["clef.treble"]].integer["keybound.flat"]);
-    /*
+    //*
     score.staves.back().notes.push_back(StaffObjectPtr(new Key()));
     static_cast<Key&>(*score.staves.back().notes.back()).type = Key::SHARP;
-    static_cast<Key&>(*score.staves.back().notes.back()).number = 0;
-    */
+    static_cast<Key&>(*score.staves.back().notes.back()).number = 4;
+    //*/
     score.staves.back().notes.push_back(StaffObjectPtr(new CustomTimeSig()));
     static_cast<CustomTimeSig&>(*score.staves.back().notes.back()).number = 4;
     static_cast<CustomTimeSig&>(*score.staves.back().notes.back()).beat = 4;
@@ -371,11 +371,11 @@ void Engine::set_test(Sprites& sprites)
     static_cast<Clef&>(*score.staves.back().notes.back()).line = static_cast<unsigned char>(sprites[0][sprites[0].ids["clef.bass"]].integer["line"]);
     static_cast<Clef&>(*score.staves.back().notes.back()).keybnd_sharp = static_cast<tone_t>(sprites[0][sprites[0].ids["clef.bass"]].integer["keybound.sharp"]);
     static_cast<Clef&>(*score.staves.back().notes.back()).keybnd_flat = static_cast<tone_t>(sprites[0][sprites[0].ids["clef.bass"]].integer["keybound.flat"]);
-    /*
+    //*
     score.staves.back().notes.push_back(StaffObjectPtr(new Key()));
     static_cast<Key&>(*score.staves.back().notes.back()).type = Key::SHARP;
-    static_cast<Key&>(*score.staves.back().notes.back()).number = 0;
-    */
+    static_cast<Key&>(*score.staves.back().notes.back()).number = 4;
+    //*/
     score.staves.back().notes.push_back(StaffObjectPtr(new CustomTimeSig()));
     static_cast<CustomTimeSig&>(*score.staves.back().notes.back()).number = 4;
     static_cast<CustomTimeSig&>(*score.staves.back().notes.back()).beat = 4;
