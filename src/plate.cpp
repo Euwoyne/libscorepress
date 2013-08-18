@@ -167,6 +167,20 @@ void Plate::pNote::dump() const
     for (PositionList::const_iterator i = absolutePos.begin(); i != absolutePos.end(); ++i)
         std::cout << " (" << i->x << ", " << i->y << ")";
     std::cout << "\n";
+    if (!dotPos.empty())
+    {
+        std::cout << "dotPos      ";
+        for (PositionList::const_iterator i = dotPos.begin(); i != dotPos.end(); ++i)
+            std::cout << " (" << i->x << ", " << i->y << ")";
+        std::cout << "\n";
+    };
+    if (!ledgers.empty())
+    {
+        std::cout << "ledgers    ";
+        for (LedgerLineList::const_iterator i = ledgers.begin(); i != ledgers.end(); ++i)
+            std::cout << "  " << i->count << " x (" << i->basepos.x << ", " << i->basepos.y << ") - " << i->length << (i->below ? " v" : " ^");
+        std::cout << "\n";
+    };
     std::cout << "virtual      " << (virtual_obj ? (virtual_obj->inserted ? "Yes (inserted)\n" : "Yes\n") : "No\n");
     std::cout << "stem         (" << stem.x << ", " << stem.top << ") - (" << stem.x << ", " << stem.base << ") : " << stem.beam_off << "\n";
     for (size_t i = 0; i < VALUE_BASE - 2; ++i)

@@ -919,7 +919,7 @@ void Chord::engrave(EngraverState& engraver) const
     // engrave ledger lines
     {
     const mpx_t ledger_length = engraver.get_style().ledger_length;
-    if (min_ledger < 0)        // if there are ledger lines above the staff
+    if (min_ledger < 0)         // if there are ledger lines above the staff
     {
         if (min_cluster_ledger < 0)           // engrave wide ledger lines
         {
@@ -937,7 +937,7 @@ void Chord::engrave(EngraverState& engraver) const
             pnote.ledgers.back().count = min_cluster_ledger - min_ledger;
             pnote.ledgers.back().length = _round((ledger_length * head_width) / 1000.0);
             pnote.ledgers.back().basepos = pnote.absolutePos.front();
-            pnote.ledgers.back().basepos.x -= _round((head_width * (ledger_length - 1000)) / 2000.0);
+            pnote.ledgers.back().basepos.x -= _round((head_width * (ledger_length + (stem_info.cluster && stem_len < 0 ? -3000 : -1000))) / 2000.0);
             pnote.ledgers.back().basepos.y -= head_height;
             pnote.ledgers.back().below = false;
         };
@@ -949,7 +949,7 @@ void Chord::engrave(EngraverState& engraver) const
         if (max_cluster_ledger > 0)          // engrave wide ledger lines
         {
             pnote.ledgers.push_back(Plate::pNote::LedgerLines());
-            pnote.ledgers.back().count = max_cluster_ledger - 1;
+            pnote.ledgers.back().count = max_cluster_ledger;
             pnote.ledgers.back().length = _round(((ledger_length + 1000) * head_width) / 1000.0);
             pnote.ledgers.back().basepos = pnote.absolutePos.front();
             pnote.ledgers.back().basepos.x -= _round((head_width * (ledger_length - 1000)) / 2000.0);
@@ -959,10 +959,10 @@ void Chord::engrave(EngraverState& engraver) const
         if (max_cluster_ledger < max_ledger) // engrave normal ledger lines
         {
             pnote.ledgers.push_back(Plate::pNote::LedgerLines());
-            pnote.ledgers.back().count = max_ledger - max_cluster_ledger - 1;
+            pnote.ledgers.back().count = max_ledger - max_cluster_ledger;
             pnote.ledgers.back().length = _round((ledger_length * head_width) / 1000.0);
             pnote.ledgers.back().basepos = pnote.absolutePos.front();
-            pnote.ledgers.back().basepos.x -= _round((head_width * (ledger_length - 1000)) / 2000.0);
+            pnote.ledgers.back().basepos.x -= _round((head_width * (ledger_length + (stem_info.base_side ? -3000 : -1000))) / 2000.0);
             pnote.ledgers.back().basepos.y += staff.line_count * head_height;
             pnote.ledgers.back().below = true;
         };

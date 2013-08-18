@@ -298,10 +298,11 @@ void Press::render(Renderer& renderer, const Plate::pNote& note, const Position<
         render_beam(renderer, note, *static_cast<const Chord*>(&object), offset, head_height, stem_width);
         
         // render ledger lines
+        size_t l = 0;
         renderer.set_line_width(scale(viewport->umtopx_v(style->ledger_thickness)) / 1000.0);
         for (Plate::pNote::LedgerLineList::const_iterator i = note.ledgers.begin(); i != note.ledgers.end(); ++i)
         {
-            for (size_t l = 0; l <= i->count; ++l)
+            for (size_t j = 0; j < i->count; ++j, ++l)
             {
                 if (i->below)
                 {
