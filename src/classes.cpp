@@ -243,6 +243,11 @@ void Key::engrave(EngraverState& engraver) const
     anchor.x = _round(spriteinfo.get_real("anchor.x") * scale * this->appearance.scale);
     anchor.y = _round(spriteinfo.get_real("anchor.y") * scale * this->appearance.scale);
     
+    // initialize graphical boundaries
+    pnote.gphBox.pos = pnote.absolutePos.back();
+    pnote.gphBox.width = 1000;
+    pnote.gphBox.height = 1000;
+    
     // calculate key accidental positions
     Position<mpx_t> kpos;
     for (char i = 0; i < this->number; ++i)
@@ -254,16 +259,7 @@ void Key::engrave(EngraverState& engraver) const
         pnote.absolutePos.push_back(pnote.absolutePos.front() + kpos);
         
         // calculate graphical boundaries
-        if (i == 0)
-        {
-            pnote.gphBox.pos = pnote.absolutePos.back();
-            pnote.gphBox.width = sprite_width;
-            pnote.gphBox.height = sprite_height;
-        }
-        else
-        {
-            pnote.gphBox.extend(Plate::pGraphical::Box(pnote.absolutePos.back(), sprite_width, sprite_height));
-        };
+        pnote.gphBox.extend(Plate::pGraphical::Box(pnote.absolutePos.back(), sprite_width, sprite_height));
     };
     
     // break ties

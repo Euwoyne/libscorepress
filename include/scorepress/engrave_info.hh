@@ -63,7 +63,7 @@ class SCOREPRESS_LOCAL BeamInfo
     
     void start(unsigned int exp, std::list<Plate::pNote>::iterator pnote);  // start necessary beams
     void set(unsigned int exp, std::list<Plate::pNote>::iterator pnote);    // end unnecessary beams
-    void stop(unsigned int exp, std::list<Plate::pNote>::iterator end);     // end all existing beams at this note
+    void stop(unsigned int exp, std::list<Plate::pNote>::iterator end);     // end all beams at this note
     
  public:
     void cut(std::list<Plate::pNote>::iterator pnote);                      // end each beam on the previous note

@@ -413,6 +413,49 @@ void EditCursor::remove() throw(NotValidException)
     reengrave(REMOVE);
 }
 
+// remove a voice
+void EditCursor::remove_voice() throw(NotValidException, Cursor::IllegalObjectTypeException)
+{
+    if (!ready()) throw NotValidException();        // check cursor
+    if (at_end()) return;                           // no note at end
+    
+    // only sub-voices can be removed
+    if (!cursor->note.is_sub())
+        throw Cursor::IllegalObjectTypeException();
+    
+    // check for parent type
+    if (static_cast<SubVoice&>(cursor->note.voice()).parent->is(Class::SUBVOICE))
+    {
+        // iterate the parent and delete the reference to this voice
+        VoiceObjectList::iterator       i = static_cast<SubVoice*>(static_cast<SubVoice&>(cursor->note.voice()).parent)->notes.begin();
+        const VoiceObjectList::iterator e = static_cast<SubVoice*>(static_cast<SubVoice&>(cursor->note.voice()).parent)->notes.end();
+        for (; i != e; ++i)
+            if ((*i)->is(Class::NOTEOBJECT))
+                if (static_cast<NoteObject&>(**i).subvoice)
+                    if (&*static_cast<NoteObject&>(**i).subvoice == &cursor->note.voice()) {
+                        free(static_cast<NoteObject&>(**i).subvoice); break;};
+    }
+    else
+    {
+        // iterate the parent and delete the reference to this voice
+        StaffObjectList::iterator       i = static_cast<MainVoice*>(static_cast<SubVoice&>(cursor->note.voice()).parent)->notes.begin();
+        const StaffObjectList::iterator e = static_cast<MainVoice*>(static_cast<SubVoice&>(cursor->note.voice()).parent)->notes.end();
+        for (; i != e; ++i)
+            if ((*i)->is(Class::NOTEOBJECT))
+                if (static_cast<NoteObject&>(**i).subvoice)
+                    if (&*static_cast<NoteObject&>(**i).subvoice == &cursor->note.voice()) {
+                        free(static_cast<NoteObject&>(**i).subvoice); break;};
+    };
+    
+    // erase the corresponding cursor
+    vcursors.erase(cursor);
+    cursor = find(*static_cast<SubVoice&>(cursor->note.voice()).parent);
+    if (cursor == vcursors.end()) --cursor;
+    
+    // reengrave score
+    reengrave(REMOVE);
+}
+
 // get the line layout object (non-constant)
 Newline& EditCursor::get_layout() throw(NotValidException)
 {
@@ -420,16 +463,114 @@ Newline& EditCursor::get_layout() throw(NotValidException)
     return cursor->get_layout();
 }
 
+void EditCursor::add_stem_length(int mpx) throw(Cursor::IllegalObjectTypeException)
+{
+    if (!ready()) throw NotValidException();        // check cursor
+    if (at_end()) throw Cursor::IllegalObjectTypeException();
+    
+    // for notes without beams
+    if (   cursor->pnote->beam_begin == cursor->pvoice->notes.end()
+        && cursor->note->is(Class::CHORD))
+    {   // just set the value, and quit
+        static_cast<Chord&>(*cursor->note).stem_length += mpx;
+        return;
+    };
+    
+    // if our note has got a beam, ...
+    // goto beam front
+    VoiceCursor i(*cursor);
+    while (i.pnote != cursor->pnote->beam_begin)
+        if (!i.has_prev())
+            return log_warn("Unable to find beam begin. (class: EditCursor)");
+        else
+            i.prev();
+    
+    const Plate::pNote* e = i.pnote->beam[VALUE_BASE - 3]->end;
+    
+    // iterate to the end
+    while(true)
+    {
+        if (i.note->is(Class::CHORD))
+        {
+            static_cast<Chord&>(*i.note).stem_length += mpx;
+        };
+        if (&*i.pnote == e || !i.has_next()) break;
+        i.next();
+    };
+}
+
+void EditCursor::set_stem_length(int mpx) throw(Cursor::IllegalObjectTypeException)
+{
+    if (!ready()) throw NotValidException();        // check cursor
+    if (at_end()) throw Cursor::IllegalObjectTypeException();
+    
+    // for notes without beams
+    if (   cursor->pnote->beam_begin == cursor->pvoice->notes.end()
+        && cursor->note->is(Class::CHORD))
+    {   // just set the value, and quit
+        static_cast<Chord&>(*cursor->note).stem_length = mpx;
+        return;
+    };
+    
+    // if our note has got a beam, ...
+    // goto beam front
+    VoiceCursor i(*cursor);
+    while (i.pnote != cursor->pnote->beam_begin)
+        if (!i.has_prev())
+            return log_warn("Unable to find beam begin. (class: EditCursor)");
+        else
+            i.prev();
+    
+    const Plate::pNote* e = i.pnote->beam[VALUE_BASE - 3]->end;
+    
+    // iterate to the end
+    while(true)
+    {
+        if (i.note->is(Class::CHORD))
+        {
+            static_cast<Chord&>(*i.note).stem_length = mpx;
+        };
+        if (&*i.pnote == e || !i.has_next()) break;
+        i.next();
+    };
+}
+
+void EditCursor::add_stem_slope(int mpx) throw(Cursor::IllegalObjectTypeException)
+{
+    if (!ready()) throw NotValidException();        // check cursor
+    if (at_end()) throw Cursor::IllegalObjectTypeException();
+    
+    // check, if there even is a beam
+    if (cursor->pnote->beam_begin == cursor->pvoice->notes.end())
+        return;
+    
+    // adjust the end-notes beam length
+    VoiceCursor i(*cursor);
+    const Plate::pNote* e = cursor->pnote->beam_begin->beam[VALUE_BASE - 3]->end;
+    while (!i.at_end() && &*i.pnote != e) i.next();
+    if (i.at_end())
+        return log_warn("Unable to find beam end. (class: EditCursor)");
+    if (!i.note->is(Class::CHORD))
+        return log_warn("Beam end is no chord. (class: EditCursor)");
+    static_cast<Chord&>(*i.note).stem_length += mpx;
+}
+
 // set auto stem length to current object
 void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException)
 {
-    if (!cursor->note->is(Class::CHORD)) throw Cursor::IllegalObjectTypeException();
+    if (!ready()) throw NotValidException();        // check cursor
+    if (at_end() || !cursor->note->is(Class::CHORD))
+        throw Cursor::IllegalObjectTypeException();
     set_auto_stem_length(static_cast<Chord&>(*cursor->note));
 }
 
 // set auto stem direction to current object
 void EditCursor::set_stem_dir_auto() throw(Cursor::IllegalObjectTypeException)
 {
+    if (!ready()) throw NotValidException();        // check cursor
+    if (at_end() || !cursor->note->is(Class::CHORD))
+        throw Cursor::IllegalObjectTypeException();
+    
     switch (get_voice().stem_direction)
     {
     case Voice::STEM_AUTOMATIC:
@@ -456,7 +597,10 @@ void EditCursor::set_stem_dir_auto() throw(Cursor::IllegalObjectTypeException)
 // set auto accidental to current object
 void EditCursor::set_accidental_auto()  throw(Cursor::IllegalObjectTypeException)
 {
-    if (!cursor->note->is(Class::CHORD)) throw Cursor::IllegalObjectTypeException();
+    if (!ready()) throw NotValidException();        // check cursor
+    if (at_end() || !cursor->note->is(Class::CHORD))
+        throw Cursor::IllegalObjectTypeException();
+    
     Chord& chord = static_cast<Chord&>(*cursor->note);
     const StaffContext& ctx = get_staff_context();
     for (HeadList::iterator head = chord.heads.begin(); head != chord.heads.end(); ++head)

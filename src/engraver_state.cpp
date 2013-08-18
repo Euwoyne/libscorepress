@@ -241,7 +241,7 @@ void EngraverState::engrave()
         pvoice->notes.push_back(Plate::pNote(pos, cursor));
         pvoice->notes.back().note.to_end();
         pvoice->notes.back().gphBox.pos.x = pnote->gphBox.right() + 2 * viewport->umtopx_h(param->min_distance);
-        pvoice->notes.back().gphBox.pos.y = pnote->absolutePos.front().y;
+        pvoice->notes.back().gphBox.pos.y = pvoice->basePos.y;
         pvoice->notes.back().gphBox.width = 1000;
         pvoice->notes.back().gphBox.height = head_height * (cursor.staff().line_count - 1);
         pvoice->notes.back().absolutePos.front() = pvoice->notes.back().gphBox.pos;
@@ -408,8 +408,13 @@ void EngraverState::engrave_stems()
         got_beam = false;
         for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
         {
+            it->beam_begin = voice->notes.end();    // reset beam_begin
+            
             if (got_beam)   // while on beamed note
             {
+                // set begin iterator
+                it->beam_begin = beam_it;
+                
                 // on the end of the beam
                 if (beam_it->beam[VALUE_BASE - 3]->end == &*it)
                 {
@@ -460,6 +465,7 @@ void EngraverState::engrave_stems()
             
             if (!got_beam && it->beam[VALUE_BASE - 3])  // on beam's begin
             {
+                it->beam_begin = it;        // set on-plate begin iterator
                 beam_it = it;               // set begin iterator
                 got_beam = true;            // set beam indicator
                 x1 = it->stem.x;            // set coordinates

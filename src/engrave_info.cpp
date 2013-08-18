@@ -187,23 +187,25 @@ void BeamInfo::apply(const Chord& object, std::list<Plate::pNote>::iterator pnot
                               == (end_time - object.value()).i() / (1 << beam_group)
                           );
     
-    const unsigned int exp = (   object.beam == Chord::CUT_BEAM
-                              && object.val.exp < VALUE_BASE - 3) ?
-                                    (VALUE_BASE - 3) :
-                                    object.val.exp;
+    const unsigned int& exp = object.val.exp;
     
-    last_pnote = pnote;
+    // if the previous note cut all beams
+    if (last_chord && last_chord->beam == Chord::CUT_BEAM)
+        set(VALUE_BASE - 3, pnote);     //   end all beams but one on the previous
     
     if (has_beam && exp < VALUE_BASE - 2)   // if the note has got a beam
     {
-        last_chord = &object;
-        if (beam[exp] == voice.notes.end())     // and there are not sufficient beams attached already
-            start(exp, pnote);                  //   add additional beams
-        else if (exp != 0)      // if there are sufficient beams (and we could need less)
-            set(exp, pnote);    //   end unnecessary beams at the previous note
+        if (beam[exp] == voice.notes.end()) // and there are not sufficient beams attached already
+            start(exp, pnote);              //   add additional beams
+        else if (exp != 0)                  // if there are sufficient beams (and we could need less)
+            set(exp, pnote);                //   end unnecessary beams at the previous note
+        
+        last_chord = &object;               // remember last chord
+        last_pnote = pnote;                 // and last pnote
     }
     else if (beam[VALUE_BASE - 3] != voice.notes.end()) // if the note does not have a beam
     {                                                   // but the array is not empty yet
+        // erase remembered chord
         last_chord = NULL;
         
         // remove flags
@@ -222,11 +224,11 @@ void BeamInfo::apply(const Chord& object, std::list<Plate::pNote>::iterator pnot
         {
             if (beam[exp] == voice.notes.end())     // if there are not sufficient beams attached already
                 start(exp, pnote);                  //   add necessary beams
-            set(exp, pnote);        // end unnecessary beams
-            stop(exp, pnote);       // end existing beams
+            set(exp, pnote);            // end unnecessary beams
+            stop(exp, pnote);           // end existing beams
         };
     }
-    else last_chord = NULL;
+    else last_chord = NULL;     // erase remembered chord
 }
 
 // end all beams

@@ -174,6 +174,7 @@ class SCOREPRESS_API Plate
         typedef RefPtr<Virtual>              VirtualPtr;
         typedef RefPtr<Beam>                 BeamPtr;
         typedef SmartPtr<StemInfo>           StemInfoPtr;
+        typedef std::list<pNote>::iterator   Iterator;
         
      public:
         const_Cursor   note;            // note object
@@ -189,6 +190,7 @@ class SCOREPRESS_API Plate
         Stem           stem;                    // stem information
         StemInfoPtr    stem_info;               // temporary additional stem information (only there during engraving)
         BeamPtr        beam[VALUE_BASE - 2];    // beam information (VALUE_BASE - 3 being eighth)
+        Iterator       beam_begin;              // beam begin note
         bool           noflag;                  // is a flag to be rendered?
         
      public:

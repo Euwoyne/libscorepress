@@ -92,29 +92,27 @@ class SCOREPRESS_API EditCursor : public UserCursor
     
     // insert an object (inserting transfers the objects ownership to the voice-object within the score)
     void insert(StaffObject* const object) throw(NotValidException, Cursor::IllegalObjectTypeException);
-    
-    // insert a note
     void insert(const InputNote& note) throw(NotValidException, NoScoreException, Error);
-
-    // insert a head
     void insert_head(const InputNote& note) throw(NotValidException, Cursor::IllegalObjectTypeException, NoScoreException, Error);
-    
-    // insert a rest
     void insert_rest(const unsigned char exp, const unsigned char dots = 0) throw(NotValidException, NoScoreException, Error);
-    
-    // insert a newline
     void insert_newline() throw(NotValidException, NoScoreException, Error);
     
     // remove an object
     void remove()       throw(NotValidException);                                       // remove a note
-    //void remove_voice() throw(NotValidException, Cursor::IllegalObjectTypeException);   // remove a voice
+    void remove_voice() throw(NotValidException, Cursor::IllegalObjectTypeException);   // remove a voice
     
     // get the line layout object (non-constant)
     Newline& get_layout() throw(NotValidException);
     
-    // set auto stem/accidental to current object
-    void set_stem_length_auto() throw(Cursor::IllegalObjectTypeException);
-    void set_stem_dir_auto()    throw(Cursor::IllegalObjectTypeException);
+    // stem control
+    void add_stem_length(int mpx) throw(Cursor::IllegalObjectTypeException);
+    void set_stem_length(int mpx) throw(Cursor::IllegalObjectTypeException);
+    void add_stem_slope(int mpx)  throw(Cursor::IllegalObjectTypeException);
+    
+    void set_stem_length_auto()   throw(Cursor::IllegalObjectTypeException);
+    void set_stem_dir_auto()      throw(Cursor::IllegalObjectTypeException);
+    
+    // set auto accidental to current object
     void set_accidental_auto()  throw(Cursor::IllegalObjectTypeException);
 };
 
