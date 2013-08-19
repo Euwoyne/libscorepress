@@ -315,6 +315,8 @@ void UserCursor::prepare_voices()
 }
 
 // move the voice-cursors to the corresponding position within the currently referenced voice
+// TODO: empty voices should line up with the corresponding noteobject
+//     :     not with non-noteobjects with the same timestamp
 void UserCursor::update_voices()
 {
     for (std::list<VoiceCursor>::iterator i = vcursors.begin(); i != vcursors.end(); ++i)

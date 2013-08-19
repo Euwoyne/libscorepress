@@ -795,25 +795,60 @@ void EngraverState::justify_line()
 {
     /*
     // calculate justification information
-    struct JustificationData {value_t time; mpx_t dist; JustificationData(value_t t, mpx_t d) : time(t), dist(d) {};};
-    std::list<JustificationData> dists;
-    
-    std::list<JustificationData> distit;
-    for (std::list<Plate::pVoice>::iterator voice = line.voices.begin(); voice != line.voices.end(); ++voice)
+    struct JustificationData
     {
-        time = voice->time - start_time;                // reset time
+        value_t time;
+        mpx_t   dist;
+        mpx_t   dist_all;
         
-        distit = dists.begin();
-        while (distit != dists.end() && distit->time < time) ++distit;
-        
-        offset = _round((diff * time.real()) / (end_time - start_time).real());
+        JustificationData(value_t t, mpx_t d)          : time(t), dist(d), dist_all(d) {};
+        JustificationData(value_t t, mpx_t d, mpx_t a) : time(t), dist(d), dist_all(a) {};
+    };
+    
+    std::list<JustificationData> dists; // available distances
+    
+    for (Plate::pLine::Iterator voice = line.voices.begin(); voice != line.voices.end(); ++voice)
+    {
+        // calculate distances for the current voice
+        std::list<JustificationData> vdist;
         
         // iterate the voice
-        Plate::pVoice::iterator it(*voice);
-        while (!it.at_end())
+        time = voice->time;
+        const StaffObject* note;
+        for (Plate::pVoice::Iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
+        {
+            if (it->at_end()) break;
+            note = &it->get_note();
+            vdist.push_back(JustificationData(time, -it->gphBox.right()));
+            ++it;
+            vdist.back().dist_all += it->gphBox.pos.x;
+            vdist.back().dist = vdist.back().dist_all - viewport->umtopx_h(param->min_distance);
+            if (note->is(Class::NOTEOBJECT))
+                time += static_cast<const NoteObject&>(*note).value();
+        };
+        
+        // apply data to the global structure
+        std::list<JustificationData>::iterator git = dists.begin();
+        for (std::list<JustificationData>::iterator i = vdist.begin(); i != vdist.end(); ++i)
+        {
+            while (git != dists.end() && git->time < i->time) ++git;
+            if (git == dists.end())
+            {
+                dists.splice(git, vdist, i, vdist.end());
+                break;
+            };
+            if (i != --vdist.end() && git->time > (++i).time)
+            {
+                --git;
+                git->dist = 
+            }
+            time = git->time;
+            --git;
+            if (time > )
+            
+        };
     };
     */
-    
     const mpx_t   diff =   viewport->umtopx_h(lineinfo.dimension->width)    // space to be added
                          - lineinfo.indent - lineinfo.right_margin - (pline->line_end - pline->basePos.x);
     value_t time  = 0;      // current time

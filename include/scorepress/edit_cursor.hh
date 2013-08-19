@@ -108,6 +108,7 @@ class SCOREPRESS_API EditCursor : public UserCursor
     void add_stem_length(int mpx) throw(Cursor::IllegalObjectTypeException);
     void set_stem_length(int mpx) throw(Cursor::IllegalObjectTypeException);
     void add_stem_slope(int mpx)  throw(Cursor::IllegalObjectTypeException);
+    void set_stem_dir(bool down)  throw(Cursor::IllegalObjectTypeException);
     
     void set_stem_length_auto()   throw(Cursor::IllegalObjectTypeException);
     void set_stem_dir_auto()      throw(Cursor::IllegalObjectTypeException);

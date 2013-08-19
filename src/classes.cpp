@@ -544,6 +544,7 @@ static bool engrave_head(Head&          head,           // head to be engraved
     headPos.y += gph_context.note_offset(head, head_height);
     
     // add horizontal offset for close heads in the chord
+    Position<mpx_t> unscaledPos(headPos);            // save unscaled pos for accidental
     for (std::list< Position<mpx_t> >::iterator j = ++target.absolutePos.begin(); j != target.absolutePos.end(); ++j)
     {
         // if the head is close to ours, and is not drawn on the other side of the stem
@@ -558,7 +559,6 @@ static bool engrave_head(Head&          head,           // head to be engraved
     };
     
     // apply scaling offset (vertical centerizing)
-    Position<mpx_t> unscaledPos(headPos);            // save unscaled pos for accidental
     headPos.y += _round((((1000.0 - (head.appearance.scale * chord_scale)) / 1000.0) * head_height) / 2.0);
     
     // push position for head ("sprite_width < 0" implies downward stem, that means heads are inserted backwards)
@@ -791,6 +791,20 @@ void Chord::engrave(EngraverState& engraver) const
             if (engraver.get_parameters().remember_accidentals && !engraver.has_tie(**i))
                 gph_context.remember_acc(**i);
         };
+        
+        // correct accidental position and incorporate the accidental's graphical boundaries into the chord's
+        Plate::pNote::AttachableList::iterator j = pnote.attachables.begin();
+        for (Plate::pNote::AttachableList::iterator i = pnote.attachables.begin(); i != pnote.attachables.end(); ++i)
+        {
+            if (i != j && (*i)->gphBox.overlaps((*j)->gphBox))
+            {
+                (*i)->absolutePos.x -= (*j)->gphBox.width + 1000;
+                (*i)->gphBox.pos.x  -= (*j)->gphBox.width + 1000;
+            };
+            
+            pnote.gphBox.extend((*i)->gphBox);
+            j = i;
+        };
     }
     else                  // downward stem
     {
@@ -856,11 +870,27 @@ void Chord::engrave(EngraverState& engraver) const
             if (engraver.get_parameters().remember_accidentals && !engraver.has_tie(**i))
                 gph_context.remember_acc(**i);
         };
+        
+        // correct accidental position and incorporate the accidental's graphical boundaries into the chord's
+        Plate::pNote::AttachableList::reverse_iterator j = pnote.attachables.rbegin();
+        for (Plate::pNote::AttachableList::reverse_iterator i = pnote.attachables.rbegin(); i != pnote.attachables.rend(); ++i)
+        {
+            if (stem_info.cluster)
+            {
+                (*i)->absolutePos.x -= sprite_width;
+                (*i)->gphBox.pos.x  -= sprite_width;
+            };
+            
+            if (i != j && (*i)->gphBox.overlaps((*j)->gphBox))
+            {
+                (*i)->absolutePos.x -= (*j)->gphBox.width + 1000;
+                (*i)->gphBox.pos.x  -= (*j)->gphBox.width + 1000;
+            };
+            
+            pnote.gphBox.extend((*i)->gphBox);
+            j = i;
+        };
     };
-    
-    // incorporate the accidental's graphical boundaries into the chord's
-    for (Plate::pNote::AttachableList::iterator i = pnote.attachables.begin(); i != pnote.attachables.end(); ++i)
-        pnote.gphBox.extend((*i)->gphBox);
     
     // engrave stem
     if (stem_len >= 0)  // an upward stem is right of the chord

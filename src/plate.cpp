@@ -38,10 +38,15 @@ using namespace ScorePress;
 Plate::pGraphical::Box::Box() : pos(), width(0), height(0) {}
 Plate::pGraphical::Box::Box(Position<mpx_t> p, mpx_t w, mpx_t h) : pos(p), width(w), height(h) {}
 
-// check, if a given point is inside the box
-bool Plate::pGraphical::Box::contains(const Position<mpx_t>& p) const
+// check, if a given box overlaps this box
+bool Plate::pGraphical::Box::overlaps(const Plate::pGraphical::Box& box)
 {
-    return (p.x >= pos.x && p.y >= pos.y && p.x < pos.x + width && p.y < pos.y + height);
+    return ((contains(box.pos) || contains(Position<mpx_t>(box.right(), box.pos.y))
+                               || contains(Position<mpx_t>(box.right(), box.bottom()))
+                               || contains(Position<mpx_t>(box.pos.x, box.bottom())))
+        ||  (box.contains(pos) || box.contains(Position<mpx_t>(right(), pos.y))
+                               || box.contains(Position<mpx_t>(right(), bottom())) 
+                               || box.contains(Position<mpx_t>(pos.x, bottom()))));
 }
 
 // extend box, such that the given point is covered

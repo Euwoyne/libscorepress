@@ -346,12 +346,12 @@ void Engine::set_test(Sprites& sprites)
     static_cast<CustomTimeSig&>(*score.staves.back().notes.back()).beat = 4;
     static_cast<CustomTimeSig&>(*score.staves.back().notes.back()).sprite = SpriteId(0, sprites[0].ids["timesig.symbol4_4_timesigC"]);
     
-    /*
+    //*
     add1(score.staves.back(), sprites);
     add2(score.staves.back(), sprites, 0, 3000);
-    add1(score.staves.back(), sprites);
-    add2(score.staves.back(), sprites, 0, 3000);
-    */
+    //add1(score.staves.back(), sprites);
+    //add2(score.staves.back(), sprites, 0, 3000);
+    //*/
     score.staves.push_back(Staff());
     score.staves.back().head_height = 1760;     // µm
     score.staves.back().offset_y = 6000;        // pohh
@@ -380,12 +380,12 @@ void Engine::set_test(Sprites& sprites)
     static_cast<CustomTimeSig&>(*score.staves.back().notes.back()).number = 4;
     static_cast<CustomTimeSig&>(*score.staves.back().notes.back()).beat = 4;
     static_cast<CustomTimeSig&>(*score.staves.back().notes.back()).sprite = SpriteId(0, sprites[0].ids["timesig.symbol4_4_timesigC"]);
-    /*
+    //*
     add1(score.staves.back(), sprites, -24);
     add2(score.staves.back(), sprites, -24);
-    add1(score.staves.back(), sprites, -24);
-    add2(score.staves.back(), sprites, -24);
-    */
+    //add1(score.staves.back(), sprites, -24);
+    //add2(score.staves.back(), sprites, -24);
+    //*/
 }
 
 Engine::Engine(Sprites& sprites) : engraver(pageset, sprites, style, viewport),

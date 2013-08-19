@@ -554,6 +554,44 @@ void EditCursor::add_stem_slope(int mpx) throw(Cursor::IllegalObjectTypeExceptio
     static_cast<Chord&>(*i.note).stem_length += mpx;
 }
 
+void EditCursor::set_stem_dir(bool down) throw(Cursor::IllegalObjectTypeException)
+{
+    if (!ready()) throw NotValidException();        // check cursor
+    if (at_end()) throw Cursor::IllegalObjectTypeException();
+    
+    // for notes without beams
+    if (   cursor->pnote->beam_begin == cursor->pvoice->notes.end()
+        && cursor->note->is(Class::CHORD))
+    {   // just set the value, and quit
+        if (down != (static_cast<Chord&>(*cursor->note).stem_length < 0))
+            static_cast<Chord&>(*cursor->note).stem_length = -static_cast<Chord&>(*cursor->note).stem_length;
+        return;
+    };
+    
+    // if our note has got a beam, ...
+    // goto beam front
+    VoiceCursor i(*cursor);
+    while (i.pnote != cursor->pnote->beam_begin)
+        if (!i.has_prev())
+            return log_warn("Unable to find beam begin. (class: EditCursor)");
+        else
+            i.prev();
+    
+    const Plate::pNote* e = i.pnote->beam[VALUE_BASE - 3]->end;
+    
+    // iterate to the end
+    while(true)
+    {
+        if (i.note->is(Class::CHORD))
+        {
+            if (down != (static_cast<Chord&>(*i.note).stem_length < 0))
+                static_cast<Chord&>(*i.note).stem_length = -static_cast<Chord&>(*i.note).stem_length;
+        };
+        if (&*i.pnote == e || !i.has_next()) break;
+        i.next();
+    };
+}
+
 // set auto stem length to current object
 void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException)
 {

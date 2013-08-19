@@ -73,10 +73,11 @@ class SCOREPRESS_API Plate
             Box();                  // constructors
             Box(Position<mpx_t> pos, mpx_t width, mpx_t height);
             
-            inline mpx_t right() const {return pos.x + width;};     // calculate the right margin of the box
+            inline mpx_t right()  const {return pos.x + width;};    // calculate the right margin of the box
             inline mpx_t bottom() const {return pos.y + height;};   // calculate the bottom of the box
             
             bool contains(const Position<mpx_t>& p) const;  // check, if a given point is inside the box
+            bool overlaps(const Box& box);                  // check, if a given box overlaps this box
             void extend(const Position<mpx_t>& p);          // extend box, such that the given point is covered
             void extend(const Box& box);                    // extend box, such that the given box is covered
         } gphBox;
@@ -212,6 +213,9 @@ class SCOREPRESS_API Plate
     class pVoice
     {
      public:
+        typedef PNoteList::iterator       Iterator;
+        typedef PNoteList::const_iterator const_Iterator;
+        
         struct Brace : public pGraphical
         {
             SpriteId sprite;
@@ -242,6 +246,8 @@ class SCOREPRESS_API Plate
     class pLine : public pGraphical
     {
      public:
+        typedef PVoiceList::iterator       Iterator;
+        typedef PVoiceList::const_iterator const_Iterator;
         typedef std::map<const Staff*, StaffContext> StaffContextMap;
         
      public:
@@ -269,6 +275,8 @@ class SCOREPRESS_API Plate
 };
 
 // inline method implementations
+inline bool Plate::pGraphical::Box::contains(const Position<mpx_t>& p) const {
+    return (p.x >= pos.x && p.y >= pos.y && p.x < pos.x + width && p.y < pos.y + height);}
 inline const StaffObject& Plate::pNote::get_note()    const {return (virtual_obj ? *virtual_obj->object : *note);}
 inline       bool         Plate::pNote::is_virtual()  const {return (virtual_obj != NULL);}
 inline       bool         Plate::pNote::is_inserted() const {return (virtual_obj && virtual_obj->inserted);}
