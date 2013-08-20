@@ -18,6 +18,7 @@
 */
 
 #include <cmath>                // sqrt
+#include <set>                  // std::multiset
 
 #include "engraver_state.hh"    // EngraverState
 #include "undefined.hh"         // defines "UNDEFINED" macro, resolving to the largest value "size_t" can contain
@@ -790,102 +791,166 @@ void EngraverState::engrave_braces()
     };
 }
 
+// justification information
+struct SCOREPRESS_LOCAL DistanceData
+{
+    mutable mpx_t begin;    // empty space in front of the note
+            mpx_t pos;      // position of the note
+    mutable mpx_t end;      // end of the graphical objec (start of the next empty space)
+    mutable mpx_t dist;     // distance available for scaling
+    
+    mutable std::string tag;
+    
+    Plate::pVoice* const src;
+    
+    DistanceData(Plate::pVoice* v, mpx_t p) : pos(p), src(v) {};
+    inline bool operator < (const DistanceData& data) const {return pos < data.pos;};
+};
+
+// graphical mask (union over the line)
+struct SCOREPRESS_LOCAL GraphicData
+{
+            mpx_t pos;  // gphBox.pos.x
+    mutable mpx_t end;  // gphBox.right
+    
+    GraphicData(mpx_t p, mpx_t e) : pos(p), end(e) {};
+    inline bool operator < (const GraphicData& data) const {return pos < data.pos;};
+};
+
 // justify the given line to fit into the score-area
+// TODO: don't do forced justification; check "param->force_justification"
 void EngraverState::justify_line()
 {
-    /*
-    // calculate justification information
-    struct JustificationData
-    {
-        value_t time;
-        mpx_t   dist;
-        mpx_t   dist_all;
-        
-        JustificationData(value_t t, mpx_t d)          : time(t), dist(d), dist_all(d) {};
-        JustificationData(value_t t, mpx_t d, mpx_t a) : time(t), dist(d), dist_all(a) {};
-    };
+    // initialization and check
+    const mpx_t   width = pline->line_end - pline->basePos.x;               // current line width
+    const mpx_t   diff  =   viewport->umtopx_h(lineinfo.dimension->width)   // space to be added
+                          - pline->line_end - lineinfo.right_margin;
     
-    std::list<JustificationData> dists; // available distances
+    if ((1000 * diff) / width > mpx_t(param->max_justification) - 1000) return;
     
-    for (Plate::pLine::Iterator voice = line.voices.begin(); voice != line.voices.end(); ++voice)
+    // prepare justification data
+    std::multiset<DistanceData>     dists;          // interleaved distance information
+    std::multiset<GraphicData>      gphs;           // merged graphical information
+    std::map<Plate::pVoice*, mpx_t> dists_sum;      // sum of available distance
+    mpx_t                           dist_sum = 0;   // total of available distances
+    
+    // calculate distances for each voice
     {
-        // calculate distances for the current voice
-        std::list<JustificationData> vdist;
+    std::multiset<DistanceData>::iterator tgt;
+    for (Plate::pLine::Iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
+    {
+        // setup sum
+        dists_sum[&*voice] = 0;
         
         // iterate the voice
-        time = voice->time;
-        const StaffObject* note;
-        for (Plate::pVoice::Iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
+        mpx_t npos = pline->basePos.x + viewport->umtopx_h(param->min_distance);
+        for (Plate::pVoice::const_Iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
         {
-            if (it->at_end()) break;
-            note = &it->get_note();
-            vdist.push_back(JustificationData(time, -it->gphBox.right()));
-            ++it;
-            vdist.back().dist_all += it->gphBox.pos.x;
-            vdist.back().dist = vdist.back().dist_all - viewport->umtopx_h(param->min_distance);
-            if (note->is(Class::NOTEOBJECT))
-                time += static_cast<const NoteObject&>(*note).value();
-        };
-        
-        // apply data to the global structure
-        std::list<JustificationData>::iterator git = dists.begin();
-        for (std::list<JustificationData>::iterator i = vdist.begin(); i != vdist.end(); ++i)
-        {
-            while (git != dists.end() && git->time < i->time) ++git;
-            if (git == dists.end())
-            {
-                dists.splice(git, vdist, i, vdist.end());
-                break;
-            };
-            if (i != --vdist.end() && git->time > (++i).time)
-            {
-                --git;
-                git->dist = 
-            }
-            time = git->time;
-            --git;
-            if (time > )
-            
+            tgt = dists.insert(DistanceData(&*voice, it->gphBox.pos.x));
+            tgt->begin = npos;
+            tgt->end   = npos = it->gphBox.right();
+            tgt->dist  = tgt->pos - tgt->begin;
+            tgt->tag   = (!it->at_end()) ? classname(it->get_note().classtype()) : "EOV";
+            gphs.insert(GraphicData(it->gphBox.pos.x, it->gphBox.right()));
         };
     };
-    */
-    const mpx_t   diff =   viewport->umtopx_h(lineinfo.dimension->width)    // space to be added
-                         - lineinfo.indent - lineinfo.right_margin - (pline->line_end - pline->basePos.x);
-    value_t time  = 0;      // current time
-    mpx_t offset  = 0;      // current offset
-    bool pre_tie  = false;  // indicating the second part of a broken tie
+    }
     
-    // TODO: don't do forced justification; check "param->force_justification"
+    // merge graphic data
+    {
+    mpx_t npos = 0;
+    for (std::multiset<GraphicData>::iterator it = gphs.begin(); it != gphs.end(); ++it)
+    {
+        if (it->pos < npos)
+        {
+            if (npos < it->end)
+                ((--it)++)->end = npos = it->end;
+            gphs.erase(it--);
+        }
+        else npos = it->end;
+    };
+    }
     
-    // move line-end
-    pline->line_end += diff;
+    // remove graphical data from available spaces ("punch holes")
+    {
+    std::multiset<GraphicData>::iterator git = gphs.begin();
+    for (std::multiset<DistanceData>::iterator it = dists.begin(); it != dists.end(); ++it)
+    {
+        while (git->end > it->begin && git != gphs.begin()) --git;
+        for (; git != gphs.end(); ++git)
+        {
+            if (git->end <= it->begin) ;        // case:   ,,|           | |
+            else if (git->pos <= it->begin)
+            {
+                if (git->end <= it->pos)        // case:    ,|,          | |
+                    it->dist -= (git->end - it->begin);
+                else                            // case:    ,|           |,|
+                    it->dist -= (it->end - it->begin);
+            }
+            else if (git->end <= it->pos)       // case:     |    , ,    | |
+                it->dist -= (git->end - git->pos);
+            else if (git->pos <= it->pos)       // case:     |          ,|,|
+                it->dist -= (it->pos - git->pos);
+            else                                // case:     |           | |,,
+                break;
+        };
+        if (it->dist < 0) it->dist = 0;
+        dists_sum[&*it->src] += it->dist;
+    };
+    }
+    
+    // check distance sum
+    for (std::map<Plate::pVoice*, mpx_t>::const_iterator i = dists_sum.begin(); i != dists_sum.end(); ++i)
+        if (i->second > dist_sum)
+            dist_sum = i->second;
+    
+    
+    // execute justification
+    pline->line_end += diff;    // move line-end
     
     // iterate the voices
-    for (std::list<Plate::pVoice>::iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
+    mpx_t prev_offset;  // previous offset
+    mpx_t offset;       // current offset
+    bool  pre_tie;      // indicating the second part of a broken tie
+    bool  got_tie;      // indicating the first  part of a broken tie
+    for (Plate::pLine::Iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
     {
-        time = voice->time - start_time;    // reset time
-        offset = _round((diff * time.real()) / (end_time - start_time).real());
+        // initialize
+        offset  = 0;
+        pre_tie = false;
+        got_tie = false;
         
         // iterate the voice
-        for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
+        Plate::pVoice::Iterator               note_it = voice->notes.begin();
+        std::multiset<DistanceData>::iterator data_it = dists.begin();
+        for (; note_it != voice->notes.end(); ++note_it, ++data_it)
         {
+            while (data_it->src != &*voice) ++data_it;                      // move to correct data element
+            prev_offset = offset;                                           // save previous offset
+            offset += _round((double(diff) * data_it->dist) / dist_sum);    // calculate offset
+            
+            // check for broken tie at the end
+            if (!pre_tie && got_tie)
+                ((--note_it)++)->add_tieend_offset(offset);
+            
             // check for broken tie (second node will not be moved)
-            if (!it->ties.empty())
-                pre_tie = (it->ties.front().pos1.x > it->ties.front().pos2.x);
+            pre_tie = (!note_it->ties.empty() && (note_it->ties.front().pos1.x > note_it->ties.front().pos2.x));
+            got_tie = !note_it->ties.empty();
             
             // add offset
-            it->add_offset(offset);
+            note_it->add_offset(offset);
+            if (pre_tie) note_it->add_tieend_offset(prev_offset);
             
-            // calculate offset for further notes
-            if (it->get_note().is(Class::NOTEOBJECT))
-            {
-                time += static_cast<const NoteObject&>(it->get_note()).value();
-                offset = _round((diff * time.real()) / (end_time - start_time).real());
-            };
-            
-            // if we got a regular tie justify the second node
-            if (time == voice->end_time) it->add_tieend_offset(diff);   // (to stick to the line's end)
-            else if (!pre_tie)           it->add_tieend_offset(offset); // (with offset for the next note)
+            /*
+              Algorithm Overview:
+                update data pointer
+                update offset (needs: cur data)
+                offset prev tieend (needs: prev pretie/hastie, cur offset)
+                update pretie
+                update hastie
+                offset cur note (needs: cur offset)
+                offset cur tieend (needs: prev offset, cur pretie)
+            */
         };
     };
 }
@@ -1123,12 +1188,12 @@ bool EngraverState::engrave_next()
     
     // finish the line
     create_lineend();               // calculate line-end information
-    if (lineinfo.justify)           // justifiy the line
-        justify_line();
-    apply_offsets();                // apply non-cumulative offsets
     engrave_stems();                // engrave all the missing stems
     engrave_attachables();          // engrave all the line's attached objects
     engrave_braces();               // engrave braces and brackets
+    if (lineinfo.justify)           // justifiy the line
+        justify_line();
+    apply_offsets();                // apply non-cumulative offsets
     calculate_gphBox(*pline);       // calculate the graphical boundary box
     barcnt = pvoice->context.bar(pick.get_cursor().time);
     

@@ -20,7 +20,8 @@
 #include "engine.hh"
 #include "log.hh"
 
-#define JUSTIFY false
+#define JUSTIFY       true
+#define FORCE_JUSTIFY true
 
 using namespace ScorePress;
 
@@ -265,7 +266,7 @@ void add2(Staff& staff, Sprites& sprites, int toneoffset, int staffdist)
 void Engine::set_test(Sprites& sprites)
 {
     // setup parameters
-    engraver.parameters.force_justification = true;
+    engraver.parameters.force_justification = FORCE_JUSTIFY;
     //engraver.parameters.auto_barlines = true;
     press.parameters.scale = 1200;
     //press.parameters.draw_linebounds = true;
@@ -349,8 +350,8 @@ void Engine::set_test(Sprites& sprites)
     //*
     add1(score.staves.back(), sprites);
     add2(score.staves.back(), sprites, 0, 3000);
-    //add1(score.staves.back(), sprites);
-    //add2(score.staves.back(), sprites, 0, 3000);
+    add1(score.staves.back(), sprites);
+    add2(score.staves.back(), sprites, 0, 3000);
     //*/
     score.staves.push_back(Staff());
     score.staves.back().head_height = 1760;     // µm
@@ -383,8 +384,8 @@ void Engine::set_test(Sprites& sprites)
     //*
     add1(score.staves.back(), sprites, -24);
     add2(score.staves.back(), sprites, -24);
-    //add1(score.staves.back(), sprites, -24);
-    //add2(score.staves.back(), sprites, -24);
+    add1(score.staves.back(), sprites, -24);
+    add2(score.staves.back(), sprites, -24);
     //*/
 }
 
