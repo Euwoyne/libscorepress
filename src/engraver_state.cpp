@@ -818,7 +818,6 @@ struct SCOREPRESS_LOCAL GraphicData
 };
 
 // justify the given line to fit into the score-area
-// TODO: don't do forced justification; check "param->forced_justification"
 void EngraverState::justify_line()
 {
     // initialization and check
@@ -878,6 +877,7 @@ void EngraverState::justify_line()
     std::multiset<GraphicData>::iterator git = gphs.begin();
     for (std::multiset<DistanceData>::iterator it = dists.begin(); it != dists.end(); ++it)
     {
+        if (git == gphs.end()) --git;
         while (git->end > it->begin && git != gphs.begin()) --git;
         for (; git != gphs.end(); ++git)
         {
@@ -906,12 +906,12 @@ void EngraverState::justify_line()
         if (i->second > dist_sum)
             dist_sum = i->second;
     
-    
     // execute justification
     if (diff < -dist_sum) diff = -dist_sum; // do not force overlapping
     pline->line_end += diff;                // move line-end
     
     // iterate the voices
+    mpx_t distance;     // current distance
     mpx_t prev_offset;  // previous offset
     mpx_t offset;       // current offset
     bool  pre_tie;      // indicating the second part of a broken tie
@@ -919,18 +919,20 @@ void EngraverState::justify_line()
     for (Plate::pLine::Iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
     {
         // initialize
-        offset  = 0;
-        pre_tie = false;
-        got_tie = false;
+        distance = 0;
+        offset   = 0;
+        pre_tie  = false;
+        got_tie  = false;
         
         // iterate the voice
         Plate::pVoice::Iterator               note_it = voice->notes.begin();
         std::multiset<DistanceData>::iterator data_it = dists.begin();
         for (; note_it != voice->notes.end(); ++note_it, ++data_it)
         {
-            while (data_it->src != &*voice) ++data_it;                      // move to correct data element
-            prev_offset = offset;                                           // save previous offset
-            offset += _round((double(diff) * data_it->dist) / dist_sum);    // calculate offset
+            while (data_it->src != &*voice) ++data_it;              // move to correct data element
+            prev_offset = offset;                                   // save previous offset
+            distance += data_it->dist;
+            offset = _round((double(diff) * distance) / dist_sum);  // calculate offset
             
             // check for broken tie at the end
             if (!pre_tie && got_tie)
