@@ -21,7 +21,7 @@
 #include "log.hh"
 
 #define JUSTIFY       true
-#define FORCE_JUSTIFY true
+#define FORCE_JUSTIFY false
 
 using namespace ScorePress;
 
@@ -39,8 +39,8 @@ void add_accidental(MainVoice& voice, Accidental::Type type, int offset_x);
 void add_accidental(SubVoice& voice, Accidental::Type type, int offset_x);
 void add_articulation(MainVoice& voice, const SpriteId& sprite, int offset_y, bool far = false);
 void add_articulation(SubVoice& voice, const SpriteId& sprite, int offset_y, bool far = false);
-void add_newline(MainVoice& voice, unsigned int distance, int indent = 0, int right_margin = 0, bool justify = false);
-void add_newline(SubVoice& voice, unsigned int distance, int indent = 0, int right_margin = 0, bool justify = false);
+void add_newline(MainVoice& voice, unsigned int distance, int indent = 0, int right_margin = 0, bool justify = false, bool force = false);
+void add_newline(SubVoice& voice, unsigned int distance, int indent = 0, int right_margin = 0, bool justify = false, bool force = false);
 void add1(Staff& staff, Sprites& sprites, int toneoffset = 0);
 void add2(Staff& staff, Sprites& sprites, int toneoffset = 0, int staffdist = 0);
 
@@ -156,22 +156,24 @@ void add_articulation(SubVoice& voice, const SpriteId& sprite, int offset_y, boo
     static_cast<Chord&>(*voice.notes.back()).articulation.back().far = far;
 }
 
-void add_newline(MainVoice& voice, unsigned int distance, int indent, int right_margin, bool justify)
+void add_newline(MainVoice& voice, unsigned int distance, int indent, int right_margin, bool justify, bool force)
 {
     voice.notes.push_back(StaffObjectPtr(new Newline()));
     static_cast<Newline&>(*voice.notes.back()).distance = distance;
     static_cast<Newline&>(*voice.notes.back()).indent = indent;
     static_cast<Newline&>(*voice.notes.back()).right_margin = right_margin;
     static_cast<Newline&>(*voice.notes.back()).justify = justify;
+    static_cast<Newline&>(*voice.notes.back()).forced_justification = force;
 }
 
-void add_newline(SubVoice& voice, unsigned int distance, int indent, int right_margin, bool justify)
+void add_newline(SubVoice& voice, unsigned int distance, int indent, int right_margin, bool justify, bool force)
 {
     voice.notes.push_back(VoiceObjectPtr(new Newline()));
     static_cast<Newline&>(*voice.notes.back()).distance = distance;
     static_cast<Newline&>(*voice.notes.back()).indent = indent;
     static_cast<Newline&>(*voice.notes.back()).right_margin = right_margin;
     static_cast<Newline&>(*voice.notes.back()).justify = justify;
+    static_cast<Newline&>(*voice.notes.back()).forced_justification = force;
 }
 
 void add1(Staff& staff, Sprites& sprites, int toneoffset)
@@ -230,7 +232,7 @@ void add2(Staff& staff, Sprites& sprites, int toneoffset, int staffdist)
     add_accidental(staff, Accidental::sharp, 200);
     //*/
     add(staff, 5, 69 + toneoffset, 6, 0, -1100, 1500, -600, -800, -650, 0, -1100);
-    add_newline(staff, staffdist, 0, 0, JUSTIFY);
+    add_newline(staff, staffdist, 0, 0, JUSTIFY, FORCE_JUSTIFY);
     
     // sub-voice notes
     addr(subvoice, 5, 3000);
@@ -260,13 +262,12 @@ void add2(Staff& staff, Sprites& sprites, int toneoffset, int staffdist)
     add_accidental(subvoice, Accidental::natural, 0);
     add_head(subvoice, 67 + toneoffset);
     add_accidental(subvoice, Accidental::natural, 250);
-    add_newline(subvoice, staffdist, 0, 0, JUSTIFY);
+    add_newline(subvoice, staffdist, 0, 0, JUSTIFY, FORCE_JUSTIFY);
 }
 
 void Engine::set_test(Sprites& sprites)
 {
     // setup parameters
-    engraver.parameters.force_justification = FORCE_JUSTIFY;
     //engraver.parameters.auto_barlines = true;
     press.parameters.scale = 1200;
     //press.parameters.draw_linebounds = true;

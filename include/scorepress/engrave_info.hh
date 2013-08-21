@@ -189,9 +189,10 @@ struct SCOREPRESS_LOCAL LineInfo
     const ScoreDimension* dimension;   // score dimension (valid for the line)
     mpx_t indent;                      // line indentation
     bool justify;                      // width justification for this line?
+    bool forced_justification;         // use forced justification (do not preserve min-distance)?
     mpx_t right_margin;                // (only for justified lines)
     
-    LineInfo() : dimension(NULL), indent(0), justify(false), right_margin(0) {};
+    LineInfo() : dimension(NULL), indent(0), justify(false), forced_justification(false), right_margin(0) {};
 };
 
 } // end namespace

@@ -181,6 +181,7 @@ class SCOREPRESS_LOCAL Pick : public Logging
     const ScoreDimension& get_dimension()             const; // return dimension of the currently engraved score object
           mpx_t           get_indent()                const; // return the indentation of the current line
           bool            get_justify()               const; // return the width justification for the current line
+          bool            get_forced_justification()  const; // return the forced justification for the current line
           mpx_t           get_right_margin()          const; // return the distance from the right border of the score object
     const LineLayout&     get_layout()                const; // return the layout information for the current line
     const Newline&        get_layout(const Voice& v)  const; // return the layout of the given voice
@@ -209,6 +210,7 @@ inline       bool               Pick::is_within_newline()         const {return 
 inline const ScoreDimension&    Pick::get_dimension()             const {return *_dimension;}
 inline       mpx_t              Pick::get_indent()                const {return viewport->umtopx_h(_layout.get().indent);}
 inline       bool               Pick::get_justify()               const {return _layout.get().justify;}
+inline       bool               Pick::get_forced_justification()  const {return _layout.get().forced_justification;}
 inline       mpx_t              Pick::get_right_margin()          const {return viewport->umtopx_h(_layout.get().right_margin);}
 inline const Pick::LineLayout&  Pick::get_layout()                const {return _layout;}
 inline const Newline&           Pick::get_layout(const Voice& v)  const {return _layout.get(v);}

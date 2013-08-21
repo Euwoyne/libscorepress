@@ -818,13 +818,13 @@ struct SCOREPRESS_LOCAL GraphicData
 };
 
 // justify the given line to fit into the score-area
-// TODO: don't do forced justification; check "param->force_justification"
+// TODO: don't do forced justification; check "param->forced_justification"
 void EngraverState::justify_line()
 {
     // initialization and check
-    const mpx_t   width = pline->line_end - pline->basePos.x;               // current line width
-    const mpx_t   diff  =   viewport->umtopx_h(lineinfo.dimension->width)   // space to be added
-                          - pline->line_end - lineinfo.right_margin;
+    mpx_t width = pline->line_end - pline->basePos.x;               // current line width
+    mpx_t diff  = viewport->umtopx_h(lineinfo.dimension->width)     // space to be added
+                - pline->line_end - lineinfo.right_margin;
     
     if ((1000 * diff) / width > mpx_t(param->max_justification) - 1000) return;
     
@@ -848,10 +848,12 @@ void EngraverState::justify_line()
         {
             tgt = dists.insert(DistanceData(&*voice, it->gphBox.pos.x));
             tgt->begin = npos;
-            tgt->end   = npos = it->gphBox.right();
+            tgt->end   = npos = (lineinfo.forced_justification)
+                                ? it->gphBox.right()
+                                : it->gphBox.right() + viewport->umtopx_h(param->min_distance);
             tgt->dist  = tgt->pos - tgt->begin;
             tgt->tag   = (!it->at_end()) ? classname(it->get_note().classtype()) : "EOV";
-            gphs.insert(GraphicData(it->gphBox.pos.x, it->gphBox.right()));
+            gphs.insert(GraphicData(it->gphBox.pos.x, npos));
         };
     };
     }
@@ -906,7 +908,8 @@ void EngraverState::justify_line()
     
     
     // execute justification
-    pline->line_end += diff;    // move line-end
+    if (diff < -dist_sum) diff = -dist_sum; // do not force overlapping
+    pline->line_end += diff;                // move line-end
     
     // iterate the voices
     mpx_t prev_offset;  // previous offset
@@ -1115,6 +1118,7 @@ EngraverState::EngraverState(const Score&         _score,
     lineinfo.dimension = &pick.get_dimension();
     lineinfo.indent = pick.get_indent();
     lineinfo.justify = pick.get_justify();
+    lineinfo.forced_justification = pick.get_forced_justification();
     lineinfo.right_margin = pick.get_right_margin();
     start_time = pick.get_cursor().time;
     
@@ -1189,11 +1193,11 @@ bool EngraverState::engrave_next()
     // finish the line
     create_lineend();               // calculate line-end information
     engrave_stems();                // engrave all the missing stems
-    engrave_attachables();          // engrave all the line's attached objects
     engrave_braces();               // engrave braces and brackets
     if (lineinfo.justify)           // justifiy the line
         justify_line();
     apply_offsets();                // apply non-cumulative offsets
+    engrave_attachables();          // engrave all the line's attached objects
     calculate_gphBox(*pline);       // calculate the graphical boundary box
     barcnt = pvoice->context.bar(pick.get_cursor().time);
     
@@ -1227,6 +1231,7 @@ bool EngraverState::engrave_next()
     lineinfo.dimension = &pick.get_dimension();
     lineinfo.indent = pick.get_indent();
     lineinfo.justify = pick.get_justify();
+    lineinfo.forced_justification = pick.get_forced_justification();
     lineinfo.right_margin = pick.get_right_margin();
     
     // add voices

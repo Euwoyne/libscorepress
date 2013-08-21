@@ -70,11 +70,11 @@ struct SCOREPRESS_API EngraverParam
     unsigned int constant_coeff;    // constant additional distance (in micrometer)
     unsigned int linear_coeff;      // linear coefficient to the note value (in micrometer per whole note)
     
+    unsigned int max_justification; // only justify, if the strech-factor is less than this (in promille)
+    
     bool newline_time_reset;        // should the time-stamp be reset on newline?
     bool auto_barlines;             // engrave barlines automatically
     bool remember_accidentals;      // memorize accidentals
-    bool force_justification;       // shall the line be justified, even if the min-distance has to be reduced?
-    unsigned int max_justification; // only justify, if the strech-factor is less than this (in promille)
     
     unsigned char beam_group;       // default beam group
     
@@ -96,11 +96,10 @@ struct SCOREPRESS_API EngraverParam
                       exponent(1000),
                       constant_coeff(250),
                       linear_coeff(60000),
+                      max_justification(2000),
                       newline_time_reset(true),
                       auto_barlines(true),
                       remember_accidentals(true),
-                      force_justification(false),
-                      max_justification(2000),
                       beam_group(VALUE_BASE - 2),
                       tieup_offset1(100, -700),
                       tieup_offset2(-100, -700),

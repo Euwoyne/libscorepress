@@ -340,6 +340,7 @@ class SCOREPRESS_API Newline : public VoiceObject
  public:
     int  indent;                // LINE:  in micrometer
     bool justify;               // LINE:  width justification for this line?
+    bool forced_justification;  // LINE:  use forced justification (do not preserve min-distance)?
     int  right_margin;          // LINE:  in micrometer (only for justified lines)
     int  distance;              // STAFF: in promille of head-height
     bool auto_clef;             // STAFF: insert clef at the line front
@@ -348,7 +349,7 @@ class SCOREPRESS_API Newline : public VoiceObject
     bool visible;               // VOICE: voice visible in this line?
     
  public:
-    Newline() : indent(0), justify(false), right_margin(0), distance(0), auto_clef(true), auto_key(true), auto_timesig(false), visible(true) {};
+    Newline() : indent(0), justify(false), forced_justification(false), right_margin(0), distance(0), auto_clef(true), auto_key(true), auto_timesig(false), visible(true) {};
     virtual VisibleObject& get_visible() {return *static_cast<VisibleObject*>(NULL);};
     virtual const VisibleObject& get_visible() const {return *static_cast<VisibleObject*>(NULL);};
     virtual void engrave(EngraverState&) const;
