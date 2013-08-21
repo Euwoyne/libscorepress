@@ -22,6 +22,7 @@
 
 using namespace ScorePress;
 
+inline int _round(const double d) {return static_cast<int>(d + 0.5);}
 inline value_t get_value(const StaffObject* obj) {return (obj->is(Class::NOTEOBJECT)) ? static_cast<const NoteObject*>(obj)->value() : value_t(0);}
 
 static const int tone_off[7]  = {0, 2, 4, 5, 7, 9, 11};    // (tone by offset)
@@ -135,6 +136,82 @@ void EditCursor::set_auto_stem_length(Chord& chord) const throw(NotValidExceptio
         break;
     };
 }
+
+// sets the stem-length, so that the stem alignes with the second note (uses staff reference)
+void EditCursor::set_stem_aligned(Chord& chord, const Chord& chord2) const throw(NotValidException)
+{
+    const StaffContext& ctx(get_staff_context());
+    if (chord2.stem_length < 0)
+        chord.stem_length =   chord2.stem_length
+                            - ctx.note_offset(*chord2.heads.front(), 1000)
+                            + ctx.note_offset(*chord.heads.front(), 1000);
+    else
+        chord.stem_length =   chord2.stem_length
+                            - ctx.note_offset(*chord2.heads.back(), 1000)
+                            + ctx.note_offset(*chord.heads.back(), 1000);
+}
+
+#define ABS(x) ((x<0)?(-(x)):(x))
+void EditCursor::set_stem_aligned(Chord& chord, Chord& chord2, bool shorten) const throw(NotValidException)
+{
+    const StaffContext& ctx(get_staff_context());
+    const int new1 = (chord2.stem_length < 0) ?   chord2.stem_length
+                                                - ctx.note_offset(*chord2.heads.front(), 1000)
+                                                + ctx.note_offset(*chord.heads.front(), 1000)
+                                              :   chord2.stem_length
+                                                - ctx.note_offset(*chord2.heads.back(), 1000)
+                                                + ctx.note_offset(*chord.heads.back(), 1000);
+    const int new2 = (chord.stem_length < 0) ?    chord.stem_length
+                                                - ctx.note_offset(*chord.heads.front(), 1000)
+                                                + ctx.note_offset(*chord2.heads.front(), 1000)
+                                              :   chord.stem_length
+                                                - ctx.note_offset(*chord.heads.back(), 1000)
+                                                + ctx.note_offset(*chord2.heads.back(), 1000);
+    if ((shorten) == (ABS(new1) < ABS(chord.stem_length)))
+        chord.stem_length = new1;
+    else if ((shorten) == (ABS(new2) < ABS(chord2.stem_length)))
+        chord2.stem_length = new2;
+    else chord.stem_length = new1;
+}
+
+// execute the given function for each chord in the beam-group defined by the cursor
+bool EditCursor::for_each_chord_in_beam_do(VoiceCursor& cur, void (*func)(Chord&,const int,int*), const int arg, int* out)
+{
+    // for notes without beams
+    if (   cur.pnote->beam_begin == cur.pvoice->notes.end()
+        && cur.note->is(Class::CHORD))
+    {   // just set the value, and quit
+        (*func)(static_cast<Chord&>(*cur.note), arg, out);
+        return true;
+    };
+    
+    // if our note has got a beam, ...
+    // goto beam front
+    VoiceCursor i(cur);
+    while (i.pnote != cur.pnote->beam_begin)
+        if (!i.has_prev()) return false;
+        else
+            i.prev();
+    
+    const Plate::pNote* e = i.pnote->beam[VALUE_BASE - 3]->end;
+    
+    // iterate to the end
+    while(true)
+    {
+        if (i.note->is(Class::CHORD))
+        {
+            (*func)(static_cast<Chord&>(*i.note), arg, out);
+        };
+        if (&*i.pnote == e || !i.has_next()) break;
+        i.next();
+    };
+    
+    return true;
+}
+
+// constructors
+EditCursor::EditCursor(Document& doc, PageSet& pset, const InterfaceParam& _param) : UserCursor(doc, pset), param(&_param), engraver(NULL) {}
+EditCursor::EditCursor(Document& doc, PageSet& pset, const InterfaceParam& _param, Engraver& _engraver) : UserCursor(doc, pset), param(&_param), engraver(&_engraver) {}
 
 // reengrave the score and update this cursor (all iterators and pVoice::begin must be valid when calling this!)
 void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
@@ -261,10 +338,6 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     update_voices();
     if (mode == INSERT && !at_end()) next();
 }
-
-// constructor
-EditCursor::EditCursor(Document& doc, PageSet& pset, const InterfaceParam& _param) : UserCursor(doc, pset), param(&_param), engraver(NULL) {}
-EditCursor::EditCursor(Document& doc, PageSet& pset, const InterfaceParam& _param, Engraver& _engraver) : UserCursor(doc, pset), param(&_param), engraver(&_engraver) {}
 
 // insert an object (inserting transfers the objects ownership to the voice-object within the score)
 void EditCursor::insert(StaffObject* const object) throw(NotValidException, Cursor::IllegalObjectTypeException)
@@ -462,79 +535,33 @@ Newline& EditCursor::get_layout() throw(NotValidException)
     return cursor->get_layout();
 }
 
-void EditCursor::add_stem_length(int mpx) throw(Cursor::IllegalObjectTypeException)
+static void _add_stem_length(Chord& chord, const int pohh, int*)
+{
+    chord.stem_length += pohh;
+}
+
+void EditCursor::add_stem_length(int pohh) throw(Cursor::IllegalObjectTypeException)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) throw Cursor::IllegalObjectTypeException();
-    
-    // for notes without beams
-    if (   cursor->pnote->beam_begin == cursor->pvoice->notes.end()
-        && cursor->note->is(Class::CHORD))
-    {   // just set the value, and quit
-        static_cast<Chord&>(*cursor->note).stem_length += mpx;
-        return;
-    };
-    
-    // if our note has got a beam, ...
-    // goto beam front
-    VoiceCursor i(*cursor);
-    while (i.pnote != cursor->pnote->beam_begin)
-        if (!i.has_prev())
-            return log_warn("Unable to find beam begin. (class: EditCursor)");
-        else
-            i.prev();
-    
-    const Plate::pNote* e = i.pnote->beam[VALUE_BASE - 3]->end;
-    
-    // iterate to the end
-    while(true)
-    {
-        if (i.note->is(Class::CHORD))
-        {
-            static_cast<Chord&>(*i.note).stem_length += mpx;
-        };
-        if (&*i.pnote == e || !i.has_next()) break;
-        i.next();
-    };
+    if (!for_each_chord_in_beam_do(*cursor, &_add_stem_length, pohh))
+        log_warn("Unable to find beam begin. (class: EditCursor)");
 }
 
-void EditCursor::set_stem_length(int mpx) throw(Cursor::IllegalObjectTypeException)
+static void _set_stem_length(Chord& chord, const int pohh, int*)
+{
+    chord.stem_length = pohh;
+}
+
+void EditCursor::set_stem_length(int pohh) throw(Cursor::IllegalObjectTypeException)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) throw Cursor::IllegalObjectTypeException();
-    
-    // for notes without beams
-    if (   cursor->pnote->beam_begin == cursor->pvoice->notes.end()
-        && cursor->note->is(Class::CHORD))
-    {   // just set the value, and quit
-        static_cast<Chord&>(*cursor->note).stem_length = mpx;
-        return;
-    };
-    
-    // if our note has got a beam, ...
-    // goto beam front
-    VoiceCursor i(*cursor);
-    while (i.pnote != cursor->pnote->beam_begin)
-        if (!i.has_prev())
-            return log_warn("Unable to find beam begin. (class: EditCursor)");
-        else
-            i.prev();
-    
-    const Plate::pNote* e = i.pnote->beam[VALUE_BASE - 3]->end;
-    
-    // iterate to the end
-    while(true)
-    {
-        if (i.note->is(Class::CHORD))
-        {
-            static_cast<Chord&>(*i.note).stem_length = mpx;
-        };
-        if (&*i.pnote == e || !i.has_next()) break;
-        i.next();
-    };
+    if (!for_each_chord_in_beam_do(*cursor, &_set_stem_length, pohh))
+        log_warn("Unable to find beam begin. (class: EditCursor)");
 }
 
-void EditCursor::add_stem_slope(int mpx) throw(Cursor::IllegalObjectTypeException)
+void EditCursor::add_stem_slope(int pohh) throw(Cursor::IllegalObjectTypeException)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) throw Cursor::IllegalObjectTypeException();
@@ -551,45 +578,54 @@ void EditCursor::add_stem_slope(int mpx) throw(Cursor::IllegalObjectTypeExceptio
         return log_warn("Unable to find beam end. (class: EditCursor)");
     if (!i.note->is(Class::CHORD))
         return log_warn("Beam end is no chord. (class: EditCursor)");
-    static_cast<Chord&>(*i.note).stem_length += mpx;
+    static_cast<Chord&>(*i.note).stem_length += pohh;
+}
+
+void EditCursor::set_stem_slope(int pohh) throw(Cursor::IllegalObjectTypeException)
+{
+    if (!ready()) throw NotValidException();        // check cursor
+    if (at_end()) throw Cursor::IllegalObjectTypeException();
+    
+    // check, if there even is a beam
+    if (cursor->pnote->beam_begin == cursor->pvoice->notes.end())
+        return;
+    
+    // adjust the end-notes beam length
+    VoiceCursor i(*cursor);
+    const Plate::pNote* e = cursor->pnote->beam_begin->beam[VALUE_BASE - 3]->end;
+    while (!i.at_end() && &*i.pnote != e) i.next();
+    if (i.at_end())
+        return log_warn("Unable to find beam end. (class: EditCursor)");
+    if (!i.note->is(Class::CHORD))
+        return log_warn("Beam end is no chord. (class: EditCursor)");
+    if (!cursor->pnote->beam_begin->note->is(Class::CHORD))
+        return log_warn("Beam begin is no chord. (class: EditCursor)");
+    set_stem_aligned(static_cast<Chord&>(*i.note), static_cast<const Chord&>(*cursor->pnote->beam_begin->note));
+    static_cast<Chord&>(*i.note).stem_length += pohh;
+}
+
+static void _set_stem_dir(Chord& chord, const int dir, int*)
+{
+    if ((dir < 0) != (chord.stem_length < 0))
+        chord.stem_length = -chord.stem_length;
 }
 
 void EditCursor::set_stem_dir(bool down) throw(Cursor::IllegalObjectTypeException)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) throw Cursor::IllegalObjectTypeException();
-    
-    // for notes without beams
-    if (   cursor->pnote->beam_begin == cursor->pvoice->notes.end()
-        && cursor->note->is(Class::CHORD))
-    {   // just set the value, and quit
-        if (down != (static_cast<Chord&>(*cursor->note).stem_length < 0))
-            static_cast<Chord&>(*cursor->note).stem_length = -static_cast<Chord&>(*cursor->note).stem_length;
-        return;
-    };
-    
-    // if our note has got a beam, ...
-    // goto beam front
-    VoiceCursor i(*cursor);
-    while (i.pnote != cursor->pnote->beam_begin)
-        if (!i.has_prev())
-            return log_warn("Unable to find beam begin. (class: EditCursor)");
-        else
-            i.prev();
-    
-    const Plate::pNote* e = i.pnote->beam[VALUE_BASE - 3]->end;
-    
-    // iterate to the end
-    while(true)
-    {
-        if (i.note->is(Class::CHORD))
-        {
-            if (down != (static_cast<Chord&>(*i.note).stem_length < 0))
-                static_cast<Chord&>(*i.note).stem_length = -static_cast<Chord&>(*i.note).stem_length;
-        };
-        if (&*i.pnote == e || !i.has_next()) break;
-        i.next();
-    };
+    if (!for_each_chord_in_beam_do(*cursor, &_set_stem_dir, down ? -1 : 1))
+        log_warn("Unable to find beam begin. (class: EditCursor)");
+}
+
+inline static bool is_below(const Position<mpx_t>& p, const Position<mpx_t>& p1, const Position<mpx_t>& p2, const mpx_t e)
+{   // NOTE: it is mandatory, that p2.x > p1.x
+    return ((p.y - p1.y) * (p2.x - p1.x) > (p.x - p1.x) * (p2.y - p1.y) + e);
+}
+
+inline static bool is_above(const Position<mpx_t>& p, const Position<mpx_t>& p1, const Position<mpx_t>& p2, const mpx_t e)
+{   // NOTE: it is mandatory, that p2.x > p1.x
+    return ((p.y - p1.y) * (p2.x - p1.x) < (p.x - p1.x) * (p2.y - p1.y) - e);
 }
 
 // set auto stem length to current object
@@ -598,7 +634,108 @@ void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end() || !cursor->note->is(Class::CHORD))
         throw Cursor::IllegalObjectTypeException();
-    set_auto_stem_length(static_cast<Chord&>(*cursor->note));
+    
+    // for notes without beams
+    if (   cursor->pnote->beam_begin == cursor->pvoice->notes.end()
+        && cursor->note->is(Class::CHORD))
+    {   // just set the stem length, and quit
+        set_auto_stem_length(static_cast<Chord&>(*cursor->note));
+        return;
+    };
+    
+    // if our note has got a beam, ...
+    // goto beam front
+    VoiceCursor b(*cursor);
+    while (b.pnote != cursor->pnote->beam_begin)
+        if (!b.has_prev())
+            return log_warn("Unable to find beam begin. (class: EditCursor)");
+        else
+            b.prev();
+    
+    // get beam end note
+    const Plate::pNote* e = b.pnote->beam[VALUE_BASE - 3]->end;
+    
+    // calculate inner trapezoid
+    Position<mpx_t> begin_top    = *++b.pnote->absolutePos.begin();
+    Position<mpx_t> begin_bottom = b.pnote->absolutePos.back();
+    if (begin_bottom.y < begin_top.y)
+    {
+        begin_bottom = begin_top;
+        begin_top = b.pnote->absolutePos.back();
+    };
+    
+    Position<mpx_t> end_top    = *++e->absolutePos.begin();
+    Position<mpx_t> end_bottom = e->absolutePos.back();
+    if (end_bottom.y < end_top.y)
+    {
+        end_bottom = end_top;
+        end_top = e->absolutePos.back();
+    };
+    
+    // calculate the stem direction
+    // (we completely avoid beamed notes with different stem directions on end notes)
+    const mpx_t err = _round(engraver->get_viewport().umtopx_v(cursor->note.staff().head_height) / 2.0);
+    signed char dir = -1;   // -1 - undecided;  0 - default; 1 - up; 2 - down
+    VoiceCursor i(b);
+    i.next();
+    while(&*i.pnote != e)   // do not check the first and last note!
+    {
+        if (!i.pnote->is_inserted() && i.pnote->note->is(Class::CHORD))
+        {
+            // check hull curve
+            if (   is_below(*++i.pnote->absolutePos.begin(), begin_bottom, end_bottom, err)
+                || is_below(   i.pnote->absolutePos.back(),  begin_bottom, end_bottom, err))
+            {                               // if we have a head below the trapezoid
+                dir = (dir == 2) ? 0 : 1;   // the beam should be above the notes
+            };
+            
+            if (   is_above(*++i.pnote->absolutePos.begin(), begin_top, end_top, err)
+                || is_above(   i.pnote->absolutePos.back(),  begin_top, end_top, err))
+            {                               // if we have a head above the trapezoid
+                dir = (dir == 1) ? 0 : 2;   // the beam should be below the notes
+            };
+        };
+        if (dir == 0) break;
+        i.next();
+    };
+    
+    // check object types (these warnings should never occur)
+    if (!i.note->is(Class::CHORD))
+        return log_warn("Beam end is no chord. (class: EditCursor)");
+    if (!b.note->is(Class::CHORD))
+        return log_warn("Beam begin is no chord. (class: EditCursor)");
+    
+    // calculate stems for begin/end note
+    Chord& begin_chord = static_cast<Chord&>(*b.note);
+    Chord& end_chord   = static_cast<Chord&>(*i.note);
+
+    set_auto_stem_length(begin_chord);
+    if (cursor->note.voice().stem_direction == Voice::STEM_AUTOMATIC)
+    {
+        switch (dir)
+        {
+        case -1: // for default and undecided, rely on the first note
+        case  0: cursor->note.voice().stem_direction =
+                    (begin_chord.stem_length > 0) ? Voice::STEM_UPWARDS : Voice::STEM_DOWNWARDS;
+                 break;
+        case  1: cursor->note.voice().stem_direction = Voice::STEM_UPWARDS;   break;
+        case  2: cursor->note.voice().stem_direction = Voice::STEM_DOWNWARDS; break;
+        };
+        set_auto_stem_length(begin_chord);
+        set_auto_stem_length(end_chord);
+        cursor->note.voice().stem_direction = Voice::STEM_AUTOMATIC;
+    }
+    else set_auto_stem_length(end_chord);
+    
+    // check the beam slope
+    set_stem_aligned(end_chord, begin_chord, false);
+    if (dir == -1)      // if there are notes within the inner trapezoid only
+    {                   // we can slope the beam
+        if (begin_chord.stem_length > end_chord.stem_length)
+            begin_chord.stem_length -= param->autobeam_slope;
+        else
+            end_chord.stem_length -= param->autobeam_slope;
+    };
 }
 
 // set auto stem direction to current object
@@ -616,17 +753,17 @@ void EditCursor::set_stem_dir_auto() throw(Cursor::IllegalObjectTypeException)
         int stemdir =   ctx.note_offset(*static_cast<Chord&>(*cursor->note).heads.front(), 500)
                       + ctx.note_offset(*static_cast<Chord&>(*cursor->note).heads.back(), 500)
                       - 500 * (cursor->note.staff().line_count - 2);
-        if (stemdir * static_cast<Chord&>(*cursor->note).stem_length < 0)
-            static_cast<Chord&>(*cursor->note).stem_length = -static_cast<Chord&>(*cursor->note).stem_length;
+        if (!for_each_chord_in_beam_do(*cursor, &_set_stem_dir, stemdir))
+            log_warn("Unable to find beam begin. (class: EditCursor)");
         }
         break;
     case Voice::STEM_UPWARDS:
-        if (static_cast<Chord&>(*cursor->note).stem_length < 0)
-            static_cast<Chord&>(*cursor->note).stem_length = -static_cast<Chord&>(*cursor->note).stem_length;
+        if (!for_each_chord_in_beam_do(*cursor, &_set_stem_dir, -1))
+            log_warn("Unable to find beam begin. (class: EditCursor)");
         break;
     case Voice::STEM_DOWNWARDS:
-        if (static_cast<Chord&>(*cursor->note).stem_length > 0)
-            static_cast<Chord&>(*cursor->note).stem_length = -static_cast<Chord&>(*cursor->note).stem_length;
+        if (!for_each_chord_in_beam_do(*cursor, &_set_stem_dir, 1))
+            log_warn("Unable to find beam begin. (class: EditCursor)");
         break;
     };
 }

@@ -222,6 +222,7 @@ struct SCOREPRESS_API InterfaceParam
     unsigned int accidental_offset; // default accidental offset (in promille of head-width)
     Position<>   dot_offset;        // default dot offset        (in promille of head-size)
     unsigned int newline_distance;  // default newline distance
+    unsigned int autobeam_slope;    // default slope of automatic beams (in promille of head-height)
     
     // default parameters
     InterfaceParam() : input_base(LOWER_C),
@@ -230,7 +231,8 @@ struct SCOREPRESS_API InterfaceParam
                        stem_length(3000),
                        accidental_offset(0),
                        dot_offset(),
-                       newline_distance(3000) {};
+                       newline_distance(3000),
+                       autobeam_slope(500) {};
 };
 
 } // end namespace

@@ -67,9 +67,14 @@ class SCOREPRESS_LOCAL Engraver : public Logging
     inline void set_style(const StyleParam& style);                     // set the staff-style
     inline void set_viewport(const ViewportParam& viewport);            // set the viewport
     
+    // get methods
+    inline const Sprites&       get_sprites();                          // get the sprite-library
+    inline const StyleParam&    get_style();                            // get the staff-style
+    inline const ViewportParam& get_viewport();                         // get the viewport
+    
     // (engraving deletes and recreates all affected plates!)
-    void engrave(const Score& score, const unsigned int start_page);   // engrave the whole score
-    void engrave(const Document& document);                            // engrave the document
+    void engrave(const Score& score, const unsigned int start_page);    // engrave the whole score
+    void engrave(const Document& document);                             // engrave the document
 };
 
 // set methods
@@ -77,6 +82,11 @@ inline void Engraver::set_pageset(PageSet& _pageset)               {pageset = &_
 inline void Engraver::set_sprites(const Sprites& _sprites)         {sprites = &_sprites;}
 inline void Engraver::set_style(const StyleParam& _style)          {style = &_style;}
 inline void Engraver::set_viewport(const ViewportParam& _viewport) {viewport = &_viewport;}
+
+// get methods
+inline const Sprites&       Engraver::get_sprites()  {return *sprites;}
+inline const StyleParam&    Engraver::get_style()    {return *style;}
+inline const ViewportParam& Engraver::get_viewport() {return *viewport;}
 
 } // end namespace
 

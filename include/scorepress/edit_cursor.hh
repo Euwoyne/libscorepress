@@ -75,6 +75,14 @@ class SCOREPRESS_API EditCursor : public UserCursor
     // calculates the automatic stem-length (uses staff reference)
     SCOREPRESS_LOCAL void set_auto_stem_length(Chord& chord) const throw(NotValidException);
     
+    // sets the stem-length, so that the stem alignes with the second note (uses staff reference)
+    SCOREPRESS_LOCAL void set_stem_aligned(Chord& chord, const Chord& chord2) const throw(NotValidException);
+    SCOREPRESS_LOCAL void set_stem_aligned(Chord& chord, Chord& chord2, bool shorten) const throw(NotValidException);
+    
+    // execute the given function for each chord in the beam-group defined by the cursor
+    SCOREPRESS_LOCAL
+    static bool for_each_chord_in_beam_do(VoiceCursor&, void (*)(Chord&, const int, int*), const int arg, int* out = NULL);
+    
  public:
     // constructor
     EditCursor(Document& doc, PageSet& pset, const InterfaceParam& param);
@@ -105,9 +113,10 @@ class SCOREPRESS_API EditCursor : public UserCursor
     Newline& get_layout() throw(NotValidException);
     
     // stem control
-    void add_stem_length(int mpx) throw(Cursor::IllegalObjectTypeException);
-    void set_stem_length(int mpx) throw(Cursor::IllegalObjectTypeException);
-    void add_stem_slope(int mpx)  throw(Cursor::IllegalObjectTypeException);
+    void add_stem_length(int pohh) throw(Cursor::IllegalObjectTypeException);
+    void set_stem_length(int pohh) throw(Cursor::IllegalObjectTypeException);
+    void add_stem_slope(int pohh)  throw(Cursor::IllegalObjectTypeException);
+    void set_stem_slope(int pohh)  throw(Cursor::IllegalObjectTypeException);
     void set_stem_dir(bool down)  throw(Cursor::IllegalObjectTypeException);
     
     void set_stem_length_auto()   throw(Cursor::IllegalObjectTypeException);

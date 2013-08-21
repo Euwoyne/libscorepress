@@ -112,6 +112,7 @@ class SCOREPRESS_API Document
             unsigned int right;     // in micrometer
         } margin;
         
+        // A4: 210 x 297; NE: 231 x 303
         PageDimension() : width(210000), height(297000) {margin.top = margin.bottom = 15000; margin.left = margin.right = 10000;};
     };
     

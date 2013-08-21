@@ -492,7 +492,7 @@ void EngraverState::engrave_stems()
             };
         };
         beam_info.finish();
-        
+        /*
         // correct stem length for notes with beam (II)
         got_beam = false;
         for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
@@ -510,12 +510,13 @@ void EngraverState::engrave_stems()
                 if (it->stem.base < it->stem.top)
                     it->stem.top = _round(it->stem.top + head_height * (style->beam_height + it->stem.beam_off * (style->beam_height + style->beam_distance)) / 1000.0);
                 else
-                    it->stem.top = _round(  it->stem.top - head_height * (it->stem.beam_off * (style->beam_height + style->beam_distance)) / 1000.0);
+                    it->stem.top = _round(it->stem.top - head_height * (it->stem.beam_off * (style->beam_height + style->beam_distance)) / 1000.0);
                 
                 if (beam_it->beam[VALUE_BASE - 3]->end == &*it)
                     got_beam = false;       // reset beam indicator
             };
         };
+        */
     };
 }
 

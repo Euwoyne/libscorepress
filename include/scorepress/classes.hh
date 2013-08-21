@@ -430,7 +430,7 @@ class SCOREPRESS_API Chord : public NoteObject
     
  public:
     // TODO: tremolo implementation
-    HeadList heads;                 // heads of the chord
+    HeadList heads;                 // heads of the chord (in ascending order)
     ArticulationList articulation;  // articulation symbols
     SpriteId sprite;                // head sprite id
     int stem_length;                // stem length (in promille of head_height)
@@ -440,7 +440,7 @@ class SCOREPRESS_API Chord : public NoteObject
     BeamType beam;                  // type of the beam to the next note
     
  public:
-    Chord() : stem_length(3500), invisible_flag(false), beam(AUTO_BEAM) {stem_color.r = stem_color.g = stem_color.b = 0; stem_color.a = 255;};
+    Chord() : stem_length(3000), invisible_flag(false), beam(AUTO_BEAM) {stem_color.r = stem_color.g = stem_color.b = 0; stem_color.a = 255;};
     virtual void engrave(EngraverState& engraver) const;
     virtual bool is(classType type) const {return ((type == CHORD) || NoteObject::is(type));};
     virtual classType classtype() const {return CHORD;};
