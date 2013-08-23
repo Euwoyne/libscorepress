@@ -112,6 +112,7 @@ HeadPtr EditCursor::create_head(const InputNote& note) const throw(NotValidExcep
 // calculates the automatic stem-length (uses staff reference)
 void EditCursor::set_auto_stem_length(Chord& chord) const throw(NotValidException)
 {
+    // set stem length to param->stem_length, but let the stem at least reach the center line
     const StaffContext& ctx(get_staff_context());
     switch (get_voice().stem_direction)
     {
@@ -134,6 +135,40 @@ void EditCursor::set_auto_stem_length(Chord& chord) const throw(NotValidExceptio
         if (chord.stem_length > -param->stem_length)
             chord.stem_length = -param->stem_length;
         break;
+    };
+    
+    // elongate stem for flags/beams
+    if (chord.val.exp < VALUE_BASE - 2)
+    {
+        if (!get_staff().style)
+        {
+            if (chord.stem_length < 0)
+                chord.stem_length -=
+                    //engraver->get_style().beam_height
+                    + (VALUE_BASE - 3 - chord.val.exp)
+                      * (engraver->get_style().beam_distance + engraver->get_style().beam_height);
+            else
+                chord.stem_length +=
+                    //engraver->get_style().beam_height
+                    + (VALUE_BASE - 3 - chord.val.exp)
+                      * (engraver->get_style().beam_distance + engraver->get_style().beam_height);
+        }
+        else
+        {
+            if (chord.stem_length < 0)
+                chord.stem_length -=
+                    //get_staff().style->beam_height
+                    + (VALUE_BASE - 3 - chord.val.exp)
+                      * (get_staff().style->beam_distance + get_staff().style->beam_height);
+            else
+                chord.stem_length +=
+                    //get_staff().style->beam_height
+                    + (VALUE_BASE - 3 - chord.val.exp)
+                      * (get_staff().style->beam_distance + get_staff().style->beam_height);
+        };
+        
+        // round to full 500
+        chord.stem_length -= chord.stem_length % 500;
     };
 }
 
@@ -627,7 +662,7 @@ inline static bool is_above(const Position<mpx_t>& p, const Position<mpx_t>& p1,
 {   // NOTE: it is mandatory, that p2.x > p1.x
     return ((p.y - p1.y) * (p2.x - p1.x) < (p.x - p1.x) * (p2.y - p1.y) - e);
 }
-
+#include <iostream> 
 // set auto stem length to current object
 void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException)
 {
@@ -708,7 +743,7 @@ void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException
     // calculate stems for begin/end note
     Chord& begin_chord = static_cast<Chord&>(*b.note);
     Chord& end_chord   = static_cast<Chord&>(*i.note);
-
+    std::cout << "dir = " << int(dir) << " (" << 'C' + begin_chord.heads.front().tone % 12   "\n";
     set_auto_stem_length(begin_chord);
     if (cursor->note.voice().stem_direction == Voice::STEM_AUTOMATIC)
     {
@@ -729,11 +764,11 @@ void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException
     
     // check the beam slope
     set_stem_aligned(end_chord, begin_chord, false);
-    if (dir == -1)      // if there are notes within the inner trapezoid only
+    if (dir != 0)       // if there are no disturbing notes
     {                   // we can slope the beam
         if (begin_chord.stem_length > end_chord.stem_length)
             begin_chord.stem_length -= param->autobeam_slope;
-        else
+        else if (begin_chord.stem_length < end_chord.stem_length)
             end_chord.stem_length -= param->autobeam_slope;
     };
 }

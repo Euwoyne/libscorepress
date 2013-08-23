@@ -393,7 +393,7 @@ void EngraverState::engrave_stems()
     bool got_beam = false;  // indicating notes with beam
     mpx_t  x1(0), y1(0);    // beam coordinates
     double slope(0.0);      // beam slope
-    mpx_t  top(0);          // new stem top position
+    double top(0.0);        // new stem top position
     
     // iterate the voices
     for (std::list<Plate::pVoice>::iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
@@ -423,7 +423,7 @@ void EngraverState::engrave_stems()
                 }
                 else if (it->stem_info)     // correct stems within the beam
                 {
-                    top = _round(y1 + (it->stem.x - x1) * slope);
+                    top = y1 + (it->stem.x - x1) * slope;
                     if ((it->stem.base > top) != (it->stem.base > it->stem.top))
                     {
                         // correct stem position
@@ -436,30 +436,32 @@ void EngraverState::engrave_stems()
                         stem.x = _round(headsprite.get_real("stem.x") * scale * app_scale);
                         stem.y = _round(headsprite.get_real("stem.y") * scale * app_scale);
                         
-                        if (it->stem.base > top) // an upward stem is right of the chord
+                        if (it->stem.base > top)    // an upward stem is right of the chord
                         {
                             it->stem.x = it->absolutePos.front().x                              // base position
                                 + stem.x                                                        // offset for the sprite
                                 - _round(it->stem_info->cluster ? 0 : stem_width * scale / 2);  // offset for the stem's width
                             
-                            it->stem.top = top;
+                            it->stem.top = _round(y1 + (it->stem.x - x1) * slope);
                             it->stem.base = it->stem_info->base_pos + (it->stem_info->base_side ?
                                 _round(((headsprite.height * scale * app_scale - stem.y) * it->stem_info->base_scale) / 1000.0) :
                                 stem.y);
-                        }
-                        else                            // downward stems are placed left of the chord
+                        };
+                        
+                        if (it->stem.base < top)    // downward stems are placed left of the chord
                         {
                             it->stem.x = it->absolutePos.front().x                              // base position
                              + _round(it->stem_info->cluster ? stem.x : sprite_width - stem.x + stem_width * scale / 2);
                             
-                            it->stem.top = top;
+                            it->stem.top = _round(y1 + (it->stem.x - x1) * slope);
                             it->stem.base = it->stem_info->top_pos + (it->stem_info->top_side ?
                                 stem.y :
                                 _round(((headsprite.height * scale * app_scale - stem.y) * it->stem_info->top_scale) / 1000.0));
                         };
+                        
                         it->gphBox.extend(Position<mpx_t>(it->stem.x, it->stem.top));
                     }
-                    else it->stem.top = top;
+                    else it->stem.top = _round(top);
                     free(it->stem_info);
                 };
             };
@@ -492,7 +494,7 @@ void EngraverState::engrave_stems()
             };
         };
         beam_info.finish();
-        /*
+        
         // correct stem length for notes with beam (II)
         got_beam = false;
         for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
@@ -502,21 +504,26 @@ void EngraverState::engrave_stems()
             {
                 beam_it = it;               // set begin iterator
                 got_beam = true;            // set beam indicator
-            };
+            }
             
             // while on beamed note
-            if (got_beam)
+            else if (got_beam)
             {
+                // update stem lengths by beam-offset
                 if (it->stem.base < it->stem.top)
-                    it->stem.top = _round(it->stem.top + head_height * (style->beam_height + it->stem.beam_off * (style->beam_height + style->beam_distance)) / 1000.0);
+                    it->stem.top = _round(it->stem.top + head_height *
+                        (((beam_it->stem.base > beam_it->stem.top) ? style->beam_height : 0)
+                           + it->stem.beam_off * (style->beam_height + style->beam_distance))
+                        / 1000.0);
                 else
-                    it->stem.top = _round(it->stem.top - head_height * (it->stem.beam_off * (style->beam_height + style->beam_distance)) / 1000.0);
+                    it->stem.top = _round(it->stem.top - head_height *
+                        (((beam_it->stem.base < beam_it->stem.top) ? style->beam_height : 0)
+                           + it->stem.beam_off * (style->beam_height + style->beam_distance))
+                        / 1000.0);
                 
-                if (beam_it->beam[VALUE_BASE - 3]->end == &*it)
-                    got_beam = false;       // reset beam indicator
+                got_beam = (beam_it->beam[VALUE_BASE - 3]->end != &*it);    // update beam indicator
             };
         };
-        */
     };
 }
 
@@ -1195,11 +1202,11 @@ bool EngraverState::engrave_next()
     
     // finish the line
     create_lineend();               // calculate line-end information
-    engrave_stems();                // engrave all the missing stems
     engrave_braces();               // engrave braces and brackets
     if (lineinfo.justify)           // justifiy the line
         justify_line();
     apply_offsets();                // apply non-cumulative offsets
+    engrave_stems();                // engrave all the missing stems
     engrave_attachables();          // engrave all the line's attached objects
     calculate_gphBox(*pline);       // calculate the graphical boundary box
     barcnt = pvoice->context.bar(pick.get_cursor().time);

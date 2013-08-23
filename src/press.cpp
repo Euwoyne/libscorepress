@@ -559,6 +559,28 @@ void Press::render_beam(Renderer& renderer, const Plate::pNote& note, const Chor
         };
     };
     
+    /*
+    if (note.beam[VALUE_BASE - 3])
+    {
+        renderer.set_color(255, 0, 0, 255);
+        renderer.move_to((scale(note.stem.x) + offset.x) / 1000.0,
+                         (scale(note.stem.top) + offset.y) / 1000.0);
+        renderer.line_to((scale(note.beam[VALUE_BASE - 3]->end->stem.x) + offset.x) / 1000.0,
+                         (scale(note.beam[VALUE_BASE - 3]->end->stem.top) + offset.y) / 1000.0);
+        renderer.stroke();
+        renderer.set_color(0, 0, 0, 255);
+    };
+    
+    char buf[4];
+    renderer.move_to((scale(note.stem.x) + offset.x) / 1000.0,
+                     (scale(note.stem.top) + offset.y) / 1000.0 - ((note.stem.top < note.stem.base) ? 10 : 0));
+    renderer.set_font_size(8);
+    renderer.set_font_color(255,0,0);
+    snprintf(buf, 4, "%+i", note.stem.beam_off);
+    renderer.add_text(buf);
+    renderer.render_text();
+    */
+    
     // render flags
     if (!note.noflag)   // if a flag should be rendered
     {

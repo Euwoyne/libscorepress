@@ -535,6 +535,13 @@ const Voice& UserCursor::get_voice() const throw(NotValidException)
     return cursor->note.voice();
 }
 
+// return the staff
+const Staff& UserCursor::get_staff() const throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->note.staff();
+}
+
 // return the on-plate voice
 const Plate::pVoice& UserCursor::get_pvoice() const throw(NotValidException)
 {

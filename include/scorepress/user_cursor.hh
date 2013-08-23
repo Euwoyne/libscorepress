@@ -135,6 +135,7 @@ class SCOREPRESS_API UserCursor : public Logging
     const Plate&         get_plate()     const;                             // return the plate-object
     const Plate::pLine&  get_line()      const;                             // return the on-plate line
     const Voice&         get_voice()     const throw(NotValidException);    // return the voice
+    const Staff&         get_staff()     const throw(NotValidException);    // return the staff
     const Plate::pVoice& get_pvoice()    const throw(NotValidException);    // return the on-plate voice
     const Cursor&        get_cursor()    const throw(NotValidException);    // return the score-cursor
     const Plate::pNote&  get_platenote() const throw(NotValidException);    // return the on-plate note
