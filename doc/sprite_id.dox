@@ -1,0 +1,53 @@
+
+/*
+  ScorePress - Music Engraving Software  (libscorepress-doc)
+  Copyright (C) 2013 Dominik Lehmann
+  
+  Licensed under the EUPL, Version 1.1 or - as soon they
+  will be approved by the European Commission - subsequent
+  versions of the EUPL (the "Licence");
+  You may not use this work except in compliance with the
+  Licence.
+ 
+  Unless required by applicable law or agreed to in
+  writing, software distributed under the Licence is
+  distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
+  CONDITIONS OF ANY KIND, either expressed or implied.
+  See the Licence for the specific language governing
+  permissions and limitations under the Licence.
+*/
+
+/*! \file sprite_id.hh
+    \brief A unique numerical ID for a \link ScorePress::SpriteInfo sprite\endlink within a SpriteSet.
+*/
+
+/*! \class ScorePress::SpriteId sprite_id.hh
+    \brief A unique numerical ID for a \link ScorePress::SpriteInfo sprite\endlink within a SpriteSet.
+*/
+
+/*! \var size_t ScorePress::SpriteId::setid
+    \brief Index of the SpriteSet containing the referenced \link ScorePress::SpriteInfo sprite\endlink within the Sprites collection.
+*/
+
+/*! \var size_t ScorePress::SpriteId::spriteid
+    \brief Index of the \link ScorePress::SpriteInfo sprite\endlink within the SpriteSet.
+*/
+
+/*! \fn ScorePress::SpriteId::SpriteId()
+    \brief Default constructor.
+    
+    The default constructor initializies both indices with \link undefined.hh UNDEFINED\endlink.
+*/
+
+/*! \fn ScorePress::SpriteId::SpriteId(const size_t setid, const size_t spriteid)
+    \brief Create a new instance.
+    
+    Constructs a new instance initializing the indices with the given parameters.
+    
+    \param setid     initial value for the \link ScorePress::SpriteId::setid set index\endlink.
+    \param spriteid  initial value for the \link ScorePress::SpriteId::spriteid sprite index\endlink.
+*/
+
+/*! \fn bool ScorePress::SpriteId::ready () const
+    \brief Check, if both setid and spriteid are not \link undefined.hh undefined\endlink.
+*/
