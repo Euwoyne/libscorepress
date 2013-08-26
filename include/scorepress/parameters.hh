@@ -196,6 +196,9 @@ struct SCOREPRESS_API PressParam
                    attachbounds_color(0xFFFF0000),
                    linebounds_color(0xFF00FF00),
                    eov_color(0xFF800080) {}
+    
+    // apply scale
+    inline double do_scale(const double coord) const {return (scale * coord) / 1000.0;};
 };
 
 //

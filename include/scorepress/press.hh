@@ -34,7 +34,32 @@ namespace ScorePress
 {
 //  CLASSES
 // ---------
-class SCOREPRESS_LOCAL Press;    // the press, renders the prepared plate object with a renderer
+class SCOREPRESS_LOCAL Press;       // the press, renders the prepared plate object with a renderer
+class SCOREPRESS_LOCAL PressState;  // state of the press (including parameters and offset data, etc.)
+
+
+//
+//     class PressState
+//    ==================
+//
+// The State structure is the set of data passed to the object class on
+// rendering the object by the press. It contains all necessary parameters
+// and positioning information needed for successful rendering.
+// (Not counting those provided by the on-plate object.)
+//
+class PressState
+{
+ public:
+    const PressParam&    parameters;    // rendering parameters
+    const StyleParam*    style;         // current style
+    const ViewportParam& viewport;      // viewport parameters
+    Position<mpx_t>      offset;        // offset to be applied
+    mpx_t                head_height;   // current voice's head-height
+    mpx_t                stem_width;    // current stem-width
+    
+    PressState(const PressParam& parameters, const StyleParam& style, const ViewportParam& viewport);
+    inline void set_style(const StyleParam& new_style) {style = &new_style;};
+};
 
 
 //
@@ -54,8 +79,7 @@ class SCOREPRESS_LOCAL Press : public Logging
     
  private:
     // parameters
-    const ViewportParam* viewport;      // viewport parameters
-    const StyleParam* style;            // current style
+    PressState        state;            // current state
     const StyleParam& default_style;    // default style
     
     // scales the given coordinates
@@ -64,17 +88,8 @@ class SCOREPRESS_LOCAL Press : public Logging
     // set the renderer's foreground color
     inline static void set_color(Renderer& renderer, const Color& color) {renderer.set_color(color.r, color.g, color.b, color.a);};
     
-    // render a sprite transforming the position with "param.scale"
-    void draw(Renderer& renderer, const SpriteId& sprite, const Position<mpx_t> pos, const Position<mpx_t> offset, const double sprite_scale);
-    
-    // rendering method (for attachable objects)
-    void render(Renderer& renderer, const Plate::pAttachable* object, const Position<mpx_t> offset, const bool stemup, const mpx_t head_height, const mpx_t stem_width);
-    
     // rendering method (for on-plate note objects)
-    void render(Renderer& renderer, const Plate::pNote& note, const Position<mpx_t> offset, const mpx_t head_height, const mpx_t stem_width);
-    
-    // beam renderer
-    void render_beam(Renderer& renderer, const Plate::pNote& note, const Chord& chord, const Position<mpx_t> offset, const mpx_t head_height, const mpx_t stem_width);
+    void render(Renderer& renderer, const Plate::pNote& note);
     
     // render the (empty) staff for a plate
     void render_staff(Renderer& renderer, const Plate& plate, const Position<mpx_t> offset);

@@ -655,14 +655,14 @@ void EditCursor::set_stem_dir(bool down) throw(Cursor::IllegalObjectTypeExceptio
 
 inline static bool is_below(const Position<mpx_t>& p, const Position<mpx_t>& p1, const Position<mpx_t>& p2, const mpx_t e)
 {   // NOTE: it is mandatory, that p2.x > p1.x
-    return ((p.y - p1.y) * (p2.x - p1.x) > (p.x - p1.x) * (p2.y - p1.y) + e);
+    return ((p.y - p1.y) * (p2.x - p1.x) < (p.x - p1.x) * (p2.y - p1.y) - e);
 }
 
 inline static bool is_above(const Position<mpx_t>& p, const Position<mpx_t>& p1, const Position<mpx_t>& p2, const mpx_t e)
 {   // NOTE: it is mandatory, that p2.x > p1.x
-    return ((p.y - p1.y) * (p2.x - p1.x) < (p.x - p1.x) * (p2.y - p1.y) - e);
+    return ((p.y - p1.y) * (p2.x - p1.x) > (p.x - p1.x) * (p2.y - p1.y) + e);
 }
-#include <iostream> 
+
 // set auto stem length to current object
 void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException)
 {
@@ -715,7 +715,7 @@ void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException
     i.next();
     while(&*i.pnote != e)   // do not check the first and last note!
     {
-        if (!i.pnote->is_inserted() && i.pnote->note->is(Class::CHORD))
+        if (dir != 0 && !i.pnote->is_inserted() && i.pnote->note->is(Class::CHORD))
         {
             // check hull curve
             if (   is_below(*++i.pnote->absolutePos.begin(), begin_bottom, end_bottom, err)
@@ -730,7 +730,6 @@ void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException
                 dir = (dir == 1) ? 0 : 2;   // the beam should be below the notes
             };
         };
-        if (dir == 0) break;
         i.next();
     };
     
@@ -743,7 +742,6 @@ void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException
     // calculate stems for begin/end note
     Chord& begin_chord = static_cast<Chord&>(*b.note);
     Chord& end_chord   = static_cast<Chord&>(*i.note);
-    std::cout << "dir = " << int(dir) << " (" << 'C' + begin_chord.heads.front().tone % 12   "\n";
     set_auto_stem_length(begin_chord);
     if (cursor->note.voice().stem_direction == Voice::STEM_AUTOMATIC)
     {
@@ -760,7 +758,12 @@ void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException
         set_auto_stem_length(end_chord);
         cursor->note.voice().stem_direction = Voice::STEM_AUTOMATIC;
     }
-    else set_auto_stem_length(end_chord);
+    else    // if the stem direction is dictated by the voice
+    {       // and the calculated direction does not comply
+        if (dir > 0 && dir != ((cursor->note.voice().stem_direction == Voice::STEM_UPWARDS) ? 1 : 2))
+            dir = 0;                        // render the beam horizontally
+        set_auto_stem_length(end_chord);
+    };
     
     // check the beam slope
     set_stem_aligned(end_chord, begin_chord, false);

@@ -22,9 +22,9 @@
 
 #include <map>          // std::map
 
+#include "plate.hh"     // Plate
 #include "stem_info.hh" // StemInfo
 #include "score.hh"     // Score, Voice, TiedHead, Durable, ScoreDimension, tone_t, value_t, mpx_t
-#include "plate.hh"     // Plate
 #include "export.hh"
 
 namespace ScorePress
