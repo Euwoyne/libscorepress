@@ -106,7 +106,7 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     
     // calculate the graphical box for (1. the voices within a line; 2. the given bezier spline)
     static void calculate_gphBox(Plate::pLine& line);
-    static Plate::pGraphical::Box calculate_gphBox(Position<mpx_t> p1, Position<mpx_t> c1, Position<mpx_t> c2, Position<mpx_t> p2, mpx_t w0 = 0, mpx_t w1 = 0);
+    static Plate::GphBox calculate_gphBox(Position<mpx_t> p1, Position<mpx_t> c1, Position<mpx_t> c2, Position<mpx_t> p2, mpx_t w0 = 0, mpx_t w1 = 0);
     
  public:
     // constructor (will erase "score" from the "pageset" and prepare for engraving)

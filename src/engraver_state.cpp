@@ -1016,7 +1016,7 @@ void EngraverState::calculate_gphBox(Plate::pLine& line)
 }
 
 // calculate the graphical box for the given bezier spline
-Plate::pGraphical::Box EngraverState::calculate_gphBox(Position<mpx_t> p1, Position<mpx_t> c1, Position<mpx_t> c2, Position<mpx_t> p2, mpx_t w0, mpx_t w1)
+Plate::GphBox EngraverState::calculate_gphBox(Position<mpx_t> p1, Position<mpx_t> c1, Position<mpx_t> c2, Position<mpx_t> p2, mpx_t w0, mpx_t w1)
 {
     double tx1, tx2, ty1, ty2;  // extreme parameters
     
@@ -1095,7 +1095,7 @@ Plate::pGraphical::Box EngraverState::calculate_gphBox(Position<mpx_t> p1, Posit
                                                             p2.y - w0 / 2 )));
     
     // create box
-    return Plate::pGraphical::Box(Position<mpx_t>(mx, my), Mx - mx, My - my);
+    return Plate::GphBox(Position<mpx_t>(mx, my), Mx - mx, My - my);
 }
 
 // constructor (will erase "score" from the "pageset" and prepare for engraving)
@@ -1247,7 +1247,7 @@ bool EngraverState::engrave_next()
     // add voices
     const Pick::VoiceCursor* cur;
     Position<mpx_t>          pos;
-    for (Plate::PVoiceList::iterator v = pline->voices.begin(); v != pline->voices.end(); ++v)
+    for (Plate::VoiceList::iterator v = pline->voices.begin(); v != pline->voices.end(); ++v)
     {
         if (v->notes.back().at_end()) continue;
         if (!v->notes.back().get_note().is(Class::NEWLINE))

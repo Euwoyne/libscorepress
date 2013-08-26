@@ -35,11 +35,11 @@ using namespace ScorePress;
 //
 
 // box constructors
-Plate::pGraphical::Box::Box() : pos(), width(0), height(0) {}
-Plate::pGraphical::Box::Box(Position<mpx_t> p, mpx_t w, mpx_t h) : pos(p), width(w), height(h) {}
+Plate_GphBox::Plate_GphBox() : pos(), width(0), height(0) {}
+Plate_GphBox::Plate_GphBox(Position<mpx_t> p, mpx_t w, mpx_t h) : pos(p), width(w), height(h) {}
 
 // check, if a given box overlaps this box
-bool Plate::pGraphical::Box::overlaps(const Plate::pGraphical::Box& box)
+bool Plate_GphBox::overlaps(const Plate_GphBox& box)
 {
     return ((contains(box.pos) || contains(Position<mpx_t>(box.right(), box.pos.y))
                                || contains(Position<mpx_t>(box.right(), box.bottom()))
@@ -50,7 +50,7 @@ bool Plate::pGraphical::Box::overlaps(const Plate::pGraphical::Box& box)
 }
 
 // extend box, such that the given point is covered
-void Plate::pGraphical::Box::extend(const Position<mpx_t>& p)
+void Plate_GphBox::extend(const Position<mpx_t>& p)
 {
     if (p.x < pos.x)
     {
@@ -73,7 +73,7 @@ void Plate::pGraphical::Box::extend(const Position<mpx_t>& p)
 }
 
 // extend box, such that the given box is covered
-void Plate::pGraphical::Box::extend(const Plate::pGraphical::Box& box)
+void Plate_GphBox::extend(const Plate_GphBox& box)
 {
     if (box.pos.x < pos.x)
     {
@@ -96,25 +96,22 @@ void Plate::pGraphical::Box::extend(const Plate::pGraphical::Box& box)
 }
 
 // graphical object constructor
-Plate::pGraphical::pGraphical(Position<mpx_t> pos, mpx_t width, mpx_t height) : gphBox(pos, width, height) {}
-
-// check if a point is within a graphical object
-bool Plate::pGraphical::contains(Position<mpx_t> p) const
-{
-    return gphBox.contains(p);
-}
+Plate_pGraphical::Plate_pGraphical(Position<mpx_t> pos, mpx_t width, mpx_t height) : gphBox(pos, width, height) {}
 
 // attachable constructor
-Plate::pAttachable::pAttachable(const Class& obj, const Position<mpx_t>& pos) : object(&obj), absolutePos(pos) {}
+Plate_pAttachable::Plate_pAttachable(const AttachedObject& obj, const Position<mpx_t>& pos) : object(&obj), absolutePos(pos)
+{
+    flipped.x = flipped.y = 0;
+}
 
 // durable constructor
-Plate::pDurable::pDurable(const Class& obj, const Position<mpx_t>& pos) : pAttachable(obj, pos) {}
+Plate_pDurable::Plate_pDurable(const AttachedObject& obj, const Position<mpx_t>& pos) : Plate_pAttachable(obj, pos) {}
 
 // virtual note constructor
-Plate::pNote::Virtual::Virtual(const StaffObject& _object, bool _inserted) : object(_object.clone()), inserted(_inserted) {}
+Plate_pNote::Virtual::Virtual(const StaffObject& _object, bool _inserted) : object(_object.clone()), inserted(_inserted) {}
 
 // note object constructor
-Plate::pNote::pNote(const Position<mpx_t>& pos, const const_Cursor& n) : note(n), virtual_obj(), stem_info(), noflag(false)
+Plate_pNote::Plate_pNote(const Position<mpx_t>& pos, const const_Cursor& n) : note(n), virtual_obj(), stem_info(), noflag(false)
 {
     absolutePos.push_back(pos); // append top pos
     stem.x = pos.x;             // initialize zero length stem at pos
@@ -124,7 +121,7 @@ Plate::pNote::pNote(const Position<mpx_t>& pos, const const_Cursor& n) : note(n)
 }
 
 // add offset to all positions (except to the tie-end)
-void Plate::pNote::add_offset(mpx_t offset)
+void Plate_pNote::add_offset(mpx_t offset)
 {
     for (PositionList::iterator p = absolutePos.begin(); p != absolutePos.end(); ++p)
     {
@@ -153,9 +150,9 @@ void Plate::pNote::add_offset(mpx_t offset)
 }
 
 // add offset to tie-end positions
-void Plate::pNote::add_tieend_offset(mpx_t offset)
+void Plate_pNote::add_tieend_offset(mpx_t offset)
 {
-    for (std::list<pNote::Tie>::iterator t = ties.begin(); t != ties.end(); ++t)
+    for (std::list<Tie>::iterator t = ties.begin(); t != ties.end(); ++t)
     {
         t->pos2.x += offset;
         t->control2.x += offset;
@@ -163,7 +160,7 @@ void Plate::pNote::add_tieend_offset(mpx_t offset)
 }
 
 // dump pnote info
-void Plate::pNote::dump() const
+void Plate_pNote::dump() const
 {
     std::cout << "address      " << this << "\n";
     std::cout << "type         " << classname(get_note().classtype()) << "\n";
@@ -202,12 +199,12 @@ void Plate::pNote::dump() const
 }
 
 // voice constructor
-Plate::pVoice::pVoice(const const_Cursor& cursor) : begin(cursor) {}
+Plate_pVoice::Plate_pVoice(const const_Cursor& cursor) : begin(cursor) {}
 
 // find the given voice in this line
-std::list<Plate::pVoice>::iterator Plate::pLine::get_voice(const Voice& voice)
+Plate_pLine::Iterator Plate_pLine::get_voice(const Voice& voice)
 {
-    for (std::list<pVoice>::iterator i = voices.begin(); i != voices.end(); ++i)    // check each on-plate voice
+    for (VoiceList::iterator i = voices.begin(); i != voices.end(); ++i)    // check each on-plate voice
     {
         if (&i->begin.voice() == &voice) return i;  // if it refers to the given voice, return
     };
@@ -215,9 +212,9 @@ std::list<Plate::pVoice>::iterator Plate::pLine::get_voice(const Voice& voice)
 }
 
 // find the given voice in this line (constant version)
-std::list<Plate::pVoice>::const_iterator Plate::pLine::get_voice(const Voice& voice) const
+Plate_pLine::const_Iterator Plate_pLine::get_voice(const Voice& voice) const
 {
-    for (std::list<pVoice>::const_iterator i = voices.begin(); i != voices.end(); ++i)  // check each on-plate voice
+    for (VoiceList::const_iterator i = voices.begin(); i != voices.end(); ++i)  // check each on-plate voice
     {
         if (&i->begin.voice() == &voice) return i;  // if it refers to the given voice, return
     };
@@ -225,9 +222,9 @@ std::list<Plate::pVoice>::const_iterator Plate::pLine::get_voice(const Voice& vo
 }
 
 // find any voice of a given staff
-std::list<Plate::pVoice>::iterator Plate::pLine::get_staff(const Staff& staff)
+Plate_pLine::Iterator Plate_pLine::get_staff(const Staff& staff)
 {
-    for (std::list<pVoice>::iterator i = voices.begin(); i != voices.end(); ++i)    // check each on-plate voice
+    for (VoiceList::iterator i = voices.begin(); i != voices.end(); ++i)    // check each on-plate voice
     {
         if (&i->begin.staff() == &staff) return i;  // if it refers to the given voice, return
     };
@@ -235,9 +232,9 @@ std::list<Plate::pVoice>::iterator Plate::pLine::get_staff(const Staff& staff)
 }
 
 // find any voice of a given staff (constant version)
-std::list<Plate::pVoice>::const_iterator Plate::pLine::get_staff(const Staff& staff) const
+Plate_pLine::const_Iterator Plate_pLine::get_staff(const Staff& staff) const
 {
-    for (std::list<pVoice>::const_iterator i = voices.begin(); i != voices.end(); ++i)  // check each on-plate voice
+    for (VoiceList::const_iterator i = voices.begin(); i != voices.end(); ++i)  // check each on-plate voice
     {
         if (&i->begin.staff() == &staff) return i;  // if it refers to the given voice, return
     };

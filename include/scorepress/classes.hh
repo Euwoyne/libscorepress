@@ -34,7 +34,11 @@ namespace ScorePress
 // ---------
 
 // PROTOTYPES
-class SCOREPRESS_LOCAL EngraverState;   // engraver state class prototype (see "engraver_state.hh")
+class EngraverState;        // engraver state class prototype (see "engraver_state.hh")
+class PressState;           // press state class prototype (see "press.hh")
+class Renderer;             // renderer class prototype (see "renderer.hh")
+class Plate_pNote;          // pNote prototype (see "plate.hh")
+class Plate_pAttachable;    // pAttachable prototype (see "plate.hh")
 
 // BASE CLASSES
 template <typename T>
@@ -46,6 +50,8 @@ class  SCOREPRESS_API Class;        // abstract base class for all classes
 
 // MAIN MUSIC OBJECT CLASSES
 class SCOREPRESS_API VisibleObject;     // base class for visible objects
+class SCOREPRESS_API AttachedObject;    // base class for visible objects, attached to notes
+class SCOREPRESS_API SpriteObject;      // base class for objects, which appearance is defined by a sprite
 class SCOREPRESS_API StaffObject;       // class for objects to reside within a staff (clefs, keys, time-signatures, notes and newlines)
 class SCOREPRESS_API MusicObject;       // visible staff-objects
 class SCOREPRESS_API Clef;              // a clef (contains sprite and note-positioning information)
@@ -153,7 +159,7 @@ class SCOREPRESS_API Class
 {
  public:
     // type enumeration
-    enum classType {VISIBLEOBJECT,
+    enum classType {VISIBLEOBJECT, ATTACHEDOBJECT,     // ABSTRACT BASE CLASSES
                     STAFFOBJECT, MUSICOBJECT, CLEF,    // MAIN MUSIC OBJECT CLASSES
                                               KEY,
                                               TIMESIG, CUSTOMTIMESIG,
@@ -205,6 +211,32 @@ class SCOREPRESS_API VisibleObject : virtual public Class
     virtual VisibleObject* clone() const = 0;
 };
 
+// base class for visible objects, attached to notes
+class SCOREPRESS_API AttachedObject : virtual public Class
+{
+ public:
+    Appearance appearance;     // graphical appearance properties
+    
+ protected: AttachedObject() {};
+ public:
+    virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
+    virtual bool is(classType type) const {return (type == ATTACHEDOBJECT);};
+    virtual classType classtype() const {return ATTACHEDOBJECT;};
+    virtual AttachedObject* clone() const = 0;
+};
+
+// base class for visible objects, attached to notes
+class SCOREPRESS_API SpriteObject : public AttachedObject
+{
+ public:
+    SpriteId sprite;               // sprite id
+    
+ protected: SpriteObject() {};
+ public:
+    virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const;
+    virtual AttachedObject* clone() const = 0;
+};
+
 // class for objects to reside within a staff (clefs, keys, time-signatures, notes and newlines)
 class SCOREPRESS_API StaffObject : virtual public Class
 {
@@ -217,6 +249,7 @@ class SCOREPRESS_API StaffObject : virtual public Class
     virtual const VisibleObject& get_visible() const = 0;
     
     virtual void engrave(EngraverState& engraver) const = 0;
+    virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const = 0;
     virtual bool is(classType type) const {return (type == STAFFOBJECT);};
     virtual StaffObject* clone() const = 0;
     virtual classType classtype() const {return STAFFOBJECT;};
@@ -229,7 +262,9 @@ class SCOREPRESS_API MusicObject : public StaffObject, public VisibleObject
  public:
     virtual VisibleObject& get_visible() {return *this;};
     virtual const VisibleObject& get_visible() const {return *this;};
+    
     virtual void engrave(EngraverState& engraver) const = 0;
+    virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const = 0;
     virtual bool is(classType type) const {return ((type == MUSICOBJECT) || StaffObject::is(type) || VisibleObject::is(type));};
     virtual MusicObject* clone() const = 0;
     virtual classType classtype() const {return MUSICOBJECT;};
@@ -248,6 +283,7 @@ class SCOREPRESS_API Clef : public MusicObject
  public:
     Clef() : base_note(67), line(5), keybnd_sharp(69), keybnd_flat(65) {};
     virtual void engrave(EngraverState& engraver) const;
+    virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == CLEF) || MusicObject::is(type));};
     virtual classType classtype() const {return CLEF;};
     virtual Clef* clone() const {return new Clef(*this);};
@@ -264,6 +300,7 @@ class SCOREPRESS_API Key : public MusicObject
  public:
     Key() : type(SHARP), number(0) {};
     virtual void engrave(EngraverState& engraver) const;
+    virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType _type) const {return ((_type == KEY) || MusicObject::is(_type));};
     virtual classType classtype() const {return KEY;};
     virtual Key* clone() const {return new Key(*this);};
@@ -280,6 +317,7 @@ class SCOREPRESS_API TimeSig : public MusicObject
     TimeSig() : number(4), beat(4) {};
     void engrave(EngraverState& engraver, size_t setid) const;
     virtual void engrave(EngraverState& engraver) const;
+    virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == TIMESIG) || MusicObject::is(type));};
     virtual classType classtype() const {return TIMESIG;};
     virtual TimeSig* clone() const {return new TimeSig(*this);};
@@ -296,6 +334,7 @@ class SCOREPRESS_API CustomTimeSig : public TimeSig
     
  public:
     virtual void engrave(EngraverState& engraver) const;
+    virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == CUSTOMTIMESIG) || TimeSig::is(type));};
     virtual classType classtype() const {return CUSTOMTIMESIG;};
     virtual CustomTimeSig* clone() const {return new CustomTimeSig(*this);};
@@ -316,6 +355,7 @@ class SCOREPRESS_API Barline : public MusicObject
     Barline() : style(singlebar) {};
     Barline(const Style& s) : style(s) {};
     virtual void engrave(EngraverState& engraver) const;
+    virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == BARLINE) || MusicObject::is(type));};
     virtual classType classtype() const {return BARLINE;};
     virtual Barline* clone() const {return new Barline(*this);};
@@ -353,6 +393,7 @@ class SCOREPRESS_API Newline : public VoiceObject
     virtual VisibleObject& get_visible() {return *static_cast<VisibleObject*>(NULL);};
     virtual const VisibleObject& get_visible() const {return *static_cast<VisibleObject*>(NULL);};
     virtual void engrave(EngraverState&) const;
+    virtual void render(Renderer&, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == NEWLINE) || VoiceObject::is(type));};
     virtual classType classtype() const {return NEWLINE;};
     virtual Newline* clone() const {return new Newline(*this);};
@@ -442,6 +483,8 @@ class SCOREPRESS_API Chord : public NoteObject
  public:
     Chord() : stem_length(3000), invisible_flag(false), beam(AUTO_BEAM) {stem_color.r = stem_color.g = stem_color.b = 0; stem_color.a = 255;};
     virtual void engrave(EngraverState& engraver) const;
+    virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
+            void render_beam(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == CHORD) || NoteObject::is(type));};
     virtual classType classtype() const {return CHORD;};
     virtual Chord* clone() const {return new Chord(*this);};
@@ -460,6 +503,7 @@ class SCOREPRESS_API Rest : public NoteObject
  public:
     Rest() : offset_y(0) {};
     virtual void engrave(EngraverState& engraver) const;
+    virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == REST) || NoteObject::is(type));};
     virtual classType classtype() const {return REST;};
     virtual Rest* clone() const {return new Rest(*this);};
@@ -472,7 +516,7 @@ class SCOREPRESS_API Rest : public NoteObject
 //
 
 // accidental abstraction (type, offset)
-class SCOREPRESS_API Accidental : public Class
+class SCOREPRESS_API Accidental : public SpriteObject
 {
  public:
     SCOREPRESS_LOCAL static const int note_modifier[9]; // tone modification for each accidental-type
@@ -493,23 +537,19 @@ class SCOREPRESS_API Accidental : public Class
  public:
     Type type;              // accidental type
     int offset_x;           // horizontal offset (in promille of head-width)
-    Appearance appearance;  // graphical appearance properties
     bool force;             // force rendering (do not check key signature)
-    SpriteId sprite;        // accidental sprite id
     
  public:
     Accidental() : type(natural), offset_x(0), force(false) {};
-    virtual bool is(classType _type) const {return (_type == ACCIDENTAL);};
+    virtual bool is(classType _type) const {return ((_type == ACCIDENTAL) || SpriteObject::is(_type));};
     virtual classType classtype() const {return ACCIDENTAL;};
     virtual Accidental* clone() const {return new Accidental(*this);};
 };
 
 // articulation symbol (temporarily context changing)
-class SCOREPRESS_API Articulation : public Class
+class SCOREPRESS_API Articulation : public SpriteObject
 {
  public:
-    SpriteId sprite;               // sprite id
-    Appearance appearance;         // graphical appearance properties
     int offset_y;                  // vertical offset (in promille of head-height)
     bool far;                      // symbol placed far from the heads (i.e. on top of the stem)
     unsigned int value_modifier;   // (in promille)
@@ -517,7 +557,7 @@ class SCOREPRESS_API Articulation : public Class
     
  public:
     Articulation() : offset_y(0), far(false), value_modifier(0), volume_modifier(0) {};
-    virtual bool is(classType type) const {return (type == ARTICULATION);};
+    virtual bool is(classType type) const {return ((type == ARTICULATION) || SpriteObject::is(type));};
     virtual classType classtype() const {return ARTICULATION;};
     virtual Articulation* clone() const {return new Articulation(*this);};
 };
@@ -609,17 +649,17 @@ class SCOREPRESS_API SubVoice : public Voice
 //
 
 // base class for movable, attachable objects (position data)
-class SCOREPRESS_API Movable : public Class
+class SCOREPRESS_API Movable : public AttachedObject
 {
  public:
     Position<> position;                   // position data (in micrometer or promille of head-height)
     enum Type {PAGE, LINE, STAFF, PARENT}; // position type (origin position; ignored for on-page objects)
     Type typeX, typeY;                     // position type for X- and Y-coordinate
-    Appearance appearance;                 // graphical appearance properties
     
  public:
     Movable() : typeX(PAGE), typeY(PAGE) {};
-    virtual bool is(classType type) const {return (type == MOVABLE);};
+    virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
+    virtual bool is(classType type) const {return ((type == MOVABLE) || AttachedObject::is(type));};
     virtual classType classtype() const {return MOVABLE;};
     virtual Movable* clone() const = 0;
     virtual ContextChanging* ctxchange() {return NULL;};
@@ -655,6 +695,7 @@ class SCOREPRESS_API TextArea : public Movable
     std::list<Paragraph> text;     // paragraphs
     
  public:
+    virtual void render(Renderer&, const Plate_pAttachable&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == TEXTAREA) || (Movable::is(type)));};
     virtual classType classtype() const {return TEXTAREA;};
     virtual TextArea* clone() const {return new TextArea(*this);};
@@ -697,9 +738,10 @@ class SCOREPRESS_API Symbol : public Movable
     ContextChanging ctxchanger;    // context-changing information
     
  public:
+    virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
     virtual bool is(classType type) const {return ((type == SYMBOL) || (Movable::is(type)));};
     virtual classType classtype() const {return SYMBOL;};
-    virtual Symbol* clone() const {return new Symbol(*this);};
+    virtual Symbol* clone() const = 0;
     virtual ContextChanging* ctxchange() {return &ctxchanger;};
     virtual const ContextChanging* ctxchange() const {return &ctxchanger;};
 };
@@ -720,9 +762,10 @@ class SCOREPRESS_API PluginInfo : public Movable
     void free()                     {delete[] data; data = NULL;};
     operator const char* () const {return data;};
     operator       char* ()       {return data;};
+    virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
     virtual bool is(classType type) const {return ((type == PLUGININFO) || (Movable::is(type)));};
     virtual classType classtype() const {return PLUGININFO;};
-    virtual PluginInfo* clone() const {return new PluginInfo(*this);};
+    virtual PluginInfo* clone() const = 0;
 };
 
 // a text-area with context-changing information
@@ -746,6 +789,7 @@ class SCOREPRESS_API CustomSymbol : public Symbol
     SpriteId sprite;   // sprite of the symbol
     
  public:
+    virtual void render(Renderer&, const Plate_pAttachable&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == CUSTOMSYMBOL) || (Symbol::is(type)));};
     virtual classType classtype() const {return CUSTOMSYMBOL;};
     virtual CustomSymbol* clone() const {return new CustomSymbol(*this);};
@@ -760,9 +804,10 @@ class SCOREPRESS_API Durable : public Symbol
     
  public:
     Durable() : duration(1) {};
+    virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
     virtual bool is(classType type) const {return ((type == DURABLE) || (Symbol::is(type)));};
     virtual classType classtype() const {return DURABLE;};
-    virtual Durable* clone() const {return new Durable(*this);};
+    virtual Durable* clone() const = 0;
 };
 
 // legato slur (a symbol, rendered as a cubic bezier curve)
@@ -776,6 +821,7 @@ class SCOREPRESS_API Slur : public Durable
     
  public:
     Slur() : thickness1(500), thickness2(2000) {};
+    virtual void render(Renderer&, const Plate_pAttachable&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == SLUR) || (Durable::is(type)));};
     virtual classType classtype() const {return SLUR;};
     virtual Slur* clone() const {return new Slur(*this);};
@@ -791,6 +837,7 @@ class SCOREPRESS_API Hairpin : public Durable
     
  public:
     Hairpin() : thickness(1000), height(1000), crescendo(true) {};
+    virtual void render(Renderer&, const Plate_pAttachable&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == HAIRPIN) || (Durable::is(type)));};
     virtual classType classtype() const {return HAIRPIN;};
     virtual Hairpin* clone() const {return new Hairpin(*this);};

@@ -65,8 +65,8 @@ class SCOREPRESS_API UserCursor : public Logging
         Cursor note;                        // score-cursor
         Cursor layout;                      // line layout
         
-        Plate::PNoteList::iterator pnote;   // plate-cursor
-        Plate::pVoice*             pvoice;  // on-plate voice
+        Plate::NoteList::iterator pnote;    // plate-cursor
+        Plate::pVoice*            pvoice;   // on-plate voice
         
         value_t time;                       // current time-stamp
         value_t ntime;                      // time after the currently referenced object
