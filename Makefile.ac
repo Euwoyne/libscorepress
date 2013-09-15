@@ -22,7 +22,7 @@
 #
 
 # programs
-SHELL     := /bin/sh
+SH        := @SH@
 CXX       := @CXX@
 AR        := @AR@ rcs
 LN        := @LN_S@
@@ -55,9 +55,9 @@ srcdir      := @srcdir@/src
 headerdir   := @srcdir@/include/${basename}
 datasrc     := @srcdir@/data
 docsrc      := @srcdir@/doc
+builddir    := @builddir@/build
 doxyfile    := ${docsrc}/Doxyfile
 doxy_ac     := ${docsrc}/Doxyfile.ac
-builddir    := @builddir@/build
 
 libdir      := @libdir@
 includedir  := @includedir@/@PACKAGE_NAME@-@PACKAGE_VERSION@
@@ -73,35 +73,19 @@ psdir       := @psdir@
 XMLFLAGS := @LIBXML_CFLAGS@
 XMLLIBS  := @LIBXML_LIBS@
 
-WARNINGS := -W                     \
-            -Wall                  \
-            -Wextra                \
-            -Wcast-qual            \
-            -Wcast-align           \
-            -Wconversion           \
-            -Wfloat-equal          \
-            -Winit-self            \
-            -Wold-style-cast       \
-            -Wpointer-arith        \
-            -Wredundant-decls      \
-            -Wshadow               \
-            -Wundef                \
-            -Wunreachable-code     \
-            -Wwrite-strings
-            
-CTRLFLAGS := -ansi                 \
-             -pedantic             \
-             -fno-nonansi-builtins
-             
-MODE    := @MODE@
-DEBUG   := -ggdb -O0
-PROFILE := -pg -O2
-RELEASE := -O2 -fomit-frame-pointer
+WARNINGS :=  @WARNINGS@
 
-DEBUG_SO   :=
-PROFILE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS -fvisibility=hidden -fvisibility-inlines-hidden
-RELEASE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS -fvisibility=hidden -fvisibility-inlines-hidden
-SOFLAGS    := -fPIC ${${MODE}_SO}
+CTRLFLAGS := @CTRLFLAGS@
+
+MODE    := @MODE@
+DEBUG   := @DEBUG@
+PROFILE := @PROFILE@
+RELEASE := @RELEASE@
+
+DEBUG_SO   := @DEBUG_SO@
+PROFILE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS @PROFILE_SO@
+RELEASE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS @RELEASE_SO@
+SOFLAGS    := @SOFLAGS@ ${${MODE}_SO}
 
 CONFIGFLAGS := -DDATADIR="\"${datadir}\""
 USER_FLAGS := @CFLAGS@
@@ -110,7 +94,7 @@ USER_LIBS  := @LDFLAGS@ @LIBS@
 FLAGS   := ${WARNINGS} ${CTRLFLAGS} ${${MODE}} -I${headerdir} ${USER_FLAGS}
 LIBS    := ${XMLLIBS} ${USER_LIBS}
 
-SIZECHECK_ON    := -DSIZECHECK -Wno-long-long
+SIZECHECK_ON    := -DSIZECHECK @FSIZECHECK@
 SIZECHECK_OFF   :=
 FRACT_SIZECHECK := @FRACT_SIZECHECK@
 
@@ -310,7 +294,7 @@ install-shared: ${builddir} ${builddir}/${sofile} ${libdir}
 	@echo "Installing:  ${sofile}"
 	@${INSTALL} ${builddir}/${sofile} ${libdir}
 	@-${LN} -f ${libdir}/${sofile} ${libdir}/${sobase}
-	@${LDCONFIG} ${libdir}
+	@${LDCONFIG} -n ${libdir}
 
 install-static: ${builddir} ${builddir}/${afile} ${libdir}
 	@echo "Installing:  ${afile}"
@@ -323,21 +307,21 @@ install-data: ${datadir}/dtd ${datadir}/symbol
 	@${INSTALLU} -t ${datadir}/dtd ${datasrc}/dtd/*
 
 install-headers: ${includedir}/${basename}
-	@echo "Installing Headers..."
+	@echo "Installing:  Headers"
 	@${INSTALL} -t ${includedir}/${basename} ${headerdir}/*.hh
 
 # documentation
 ${doxyfile}: ${doxy_ac}
 	@echo "Generating:  Doxyfile"
-	${SED} -e 's|@PACKAGE_NAME[@]|@PACKAGE_NAME@|g'        \
+	@${SED} -e 's|@PACKAGE_NAME[@]|@PACKAGE_NAME@|g'       \
 	        -e 's|@PACKAGE_VERSION[@]|@PACKAGE_VERSION@|g' \
 	        -e 's|@OUTPUT_DIR[@]|${builddir}|g'            \
 	        -e 's|@SOURCE_DIR[@]|${srcdir}|g'              \
-	        -e 's|@HEADER_DIR[@]|${headerdir}|g'          \
+	        -e 's|@HEADER_DIR[@]|${headerdir}|g'           \
 	        -e 's|@DOC_DIR[@]|${docsrc}|g'                 \
 	        -e 's|@LATEX[@]|${LATEX}|g'                    \
 	        -e 's|@MAKEINDEX[@]|${MAKEINDEX}|g'            \
-	       < ${doxy_ac} > ${doxyfile}
+	        < ${doxy_ac} > ${doxyfile}
 
 doc:    man pdf
 alldoc: man pdf html dvi ps

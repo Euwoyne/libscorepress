@@ -1,10 +1,28 @@
 # Process this file with autoconf to produce a configure script.
+#
+#  ScorePress - Music Engraving Software  (libscorepress)
+#  Copyright (C) 2013 Dominik Lehmann
+#  
+#  Licensed under the EUPL, Version 1.1 or - as soon they
+#  will be approved by the European Commission - subsequent
+#  versions of the EUPL (the "Licence");
+#  You may not use this work except in compliance with the
+#  Licence.
+#  
+#  Unless required by applicable law or agreed to in
+#  writing, software distributed under the Licence is
+#  distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
+#  CONDITIONS OF ANY KIND, either expressed or implied.
+#  See the Licence for the specific language governing
+#  permissions and limitations under the Licence.
+#
 
 # initialize package
 AC_PREREQ([2.69])
 AC_INIT([libscorepress], [0.2.6])
 AC_CONFIG_SRCDIR([src/engraver.cpp])
 AC_CONFIG_HEADERS([include/scorepress/config.hh:include/scorepress/config.hh.ac])
+AC_CONFIG_FILES([Makefile:Makefile.ac])
 AC_LANG([C++])
 
 AC_SUBST([PACKAGE_VERSION_MAIN], [0])
@@ -44,22 +62,71 @@ AC_ARG_WITH([libxml2],
             [with_libxml2="auto"])
 
 AS_IF([test "x$with_sizecheck" != "xno"],
-    AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_ON}]),
-    AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_OFF}]))
+    [AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_ON}])],
+    [AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_OFF}])])
 
 AS_IF([test "x$with_debug" != "xno"],
-    AC_DEFINE([LIBSCOREPRESS_DEBUG], [1]),
-    AC_DEFINE([LIBSCOREPRESS_DEBUG], [0]))
+    [AC_DEFINE([LIBSCOREPRESS_DEBUG], [1])],
+    [AC_DEFINE([LIBSCOREPRESS_DEBUG], [0])])
 AC_SUBST([MODE], [RELEASE])
 
 AS_IF([test "x$with_profile" != "xno"],
-    AC_SUBST([MODE], [PROFILE]))
+    [AC_SUBST([MODE], [PROFILE])])
 
 AS_IF([test "x$with_debug" != "xno"],
-    AC_SUBST([MODE], [DEBUG]))
+    [AC_SUBST([MODE], [DEBUG])])
+
+# check shell
+AS_IF([test "x$SHELL" != "x"],
+    [AC_SUBST([SH], [$SHELL])],
+    [AC_PATH_PROG([SH], [/bin/sh])])
+
+# check compiler
+AC_PROG_CXX
+
+# set compiler specific flags
+if test "x$CXX" = "xgcc" || test "x$CXX" = "xg++"; then
+    AC_CHECK_PROG([DEBUG], [gdb], [-ggdb], [])
+    AC_SUBST([DEBUG],      ["$DEBUG -fno-inline"])
+    AC_SUBST([PROFILE],    ["-O2 -fno-omit-frame-pointer"])
+    AC_SUBST([RELEASE],    ["-O2 -fomit-frame-pointer"])
+    AC_SUBST([DEBUG_SO],   [])
+    AC_SUBST([PROFILE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
+    AC_SUBST([RELEASE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
+    AC_SUBST([SOFLAGS],    ["-fPIC -lc"])
+    AC_SUBST([FSIZECHECK], ["-Wno-long-long"])
+    AC_SUBST([WARNINGS],   ["-W                   \\
+             -Wall                \\
+             -Wextra              \\
+             -Wcast-qual          \\
+             -Wcast-align         \\
+             -Wconversion         \\
+             -Wfloat-equal        \\
+             -Winit-self          \\
+             -Wold-style-cast     \\
+             -Wpointer-arith      \\
+             -Wredundant-decls    \\
+             -Wshadow             \\
+             -Wundef              \\
+             -Wunreachable-code   \\
+             -Wwrite-strings"])
+    AC_SUBST([CTRLFLAGS],  ["-ansi                \\
+             -pedantic            \\
+             -fno-nonansi-builtins"])
+    
+    # set compiler-version specific flags
+    AS_IF([gcc_version=`$CXX -dumpversion 2> /dev/null`],[
+            if test `echo -n $gcc_version | cut -d'.' -f1` -eq 4 &&
+               test `echo -n $gcc_version | cut -d'.' -f2` -ge 8 ||
+               test `echo -n $gcc_version | cut -d'.' -f1` -gt 4
+            then
+                AC_SUBST([DEBUG], ["$DEBUG -Og"])
+            else
+                AC_SUBST([DEBUG], ["$DEBUG -O0"])
+            fi ])
+fi
 
 # check for programs
-AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PATH_PROG([AR], [ar])
@@ -67,7 +134,7 @@ AC_PATH_PROG([LDCONFIG], [ldconfig])
 AC_PATH_PROG([PKGCONFIG], [pkg-config])
 
 AS_IF([test "x$with_doxygen" != "xno"],
-      [AC_SUBST([DOXYGEN], [$with_doxygen])]
+      [AC_SUBST([DOXYGEN], [$with_doxygen])],
       [AC_SUBST([DOXYGEN], [:])])
 AS_IF([test -z "$with_doxygen"],
       [AC_PATH_PROG([DOXYGEN], [doxygen])])
@@ -134,6 +201,5 @@ AC_CHECK_FUNC([xmlReaderForMemory],, AC_MSG_ERROR([library 'libxml2' does not pr
 AC_SUBST([CFLAGS],[$CFLAGS_ORI])
 AC_SUBST([LDFLAGS],[$LDFLAGS_ORI])
 AC_SUBST([LIBS],[$LIBS_ORI])
-AC_CONFIG_FILES([Makefile:Makefile.ac])
 AC_OUTPUT()
 
