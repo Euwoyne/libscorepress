@@ -57,10 +57,13 @@ class SCOREPRESS_API Engine : public Logging
     inline InterfaceParam& get_interface_parameters() {return interface;};
     inline ViewportParam&  get_viewport()             {return viewport;};
     
-    inline mpx_t page_width()  {return (viewport.umtopx_h(document.page_layout.width)  * press.parameters.scale) / 1000;};
-    inline mpx_t page_height() {return (viewport.umtopx_v(document.page_layout.height) * press.parameters.scale) / 1000;};
+    mpx_t        page_width()  const;
+    mpx_t        page_height() const;
+    size_t       page_count()  const;
+    unsigned int view_width()  const;   // in pixel
+    unsigned int view_height() const;   // in pixel
     
-    inline void plate_dump() const {pageset.pages.front().plates.front().plate.dump();};
+    void plate_dump() const;
     
     void engrave();
     void render(Renderer& renderer, const Position<mpx_t>& offset);
@@ -69,6 +72,10 @@ class SCOREPRESS_API Engine : public Logging
     void log_set(Log& log);
     void log_unset();
 };
+
+inline mpx_t  Engine::page_width()  const {return (viewport.umtopx_h(document.page_layout.width)  * press.parameters.scale) / 1000;}
+inline mpx_t  Engine::page_height() const {return (viewport.umtopx_v(document.page_layout.height) * press.parameters.scale) / 1000;}
+inline size_t Engine::page_count()  const {return pageset.pages.size();}
 
 } // end namespace
 

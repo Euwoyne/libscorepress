@@ -45,7 +45,7 @@ bool Plate_GphBox::overlaps(const Plate_GphBox& box)
                                || contains(Position<mpx_t>(box.right(), box.bottom()))
                                || contains(Position<mpx_t>(box.pos.x, box.bottom())))
         ||  (box.contains(pos) || box.contains(Position<mpx_t>(right(), pos.y))
-                               || box.contains(Position<mpx_t>(right(), bottom())) 
+                               || box.contains(Position<mpx_t>(right(), bottom()))
                                || box.contains(Position<mpx_t>(pos.x, bottom()))));
 }
 
@@ -224,9 +224,9 @@ Plate_pLine::const_Iterator Plate_pLine::get_voice(const Voice& voice) const
 // find any voice of a given staff
 Plate_pLine::Iterator Plate_pLine::get_staff(const Staff& staff)
 {
-    for (VoiceList::iterator i = voices.begin(); i != voices.end(); ++i)    // check each on-plate voice
+    for (VoiceList::iterator i = voices.begin(); i != voices.end(); ++i) // check each on-plate voice
     {
-        if (&i->begin.staff() == &staff) return i;  // if it refers to the given voice, return
+        if (&i->begin.staff() == &staff) return i;      // if it refers to the given voice, return
     };
     return voices.end();    // if it cannot be found, return empty iterator
 }
@@ -234,9 +234,9 @@ Plate_pLine::Iterator Plate_pLine::get_staff(const Staff& staff)
 // find any voice of a given staff (constant version)
 Plate_pLine::const_Iterator Plate_pLine::get_staff(const Staff& staff) const
 {
-    for (VoiceList::const_iterator i = voices.begin(); i != voices.end(); ++i)  // check each on-plate voice
+    for (VoiceList::const_iterator i = voices.begin(); i != voices.end(); ++i) // check each on-plate voice
     {
-        if (&i->begin.staff() == &staff) return i;  // if it refers to the given voice, return
+        if (&i->begin.staff() == &staff) return i;      // if it refers to the given voice, return
     };
     return voices.end();    // if it cannot be found, return empty iterator
 }
@@ -247,15 +247,15 @@ void Plate::dump() const
     size_t i = 0;
     size_t j = 0;
     size_t k = 0;
-    for (std::list<pLine>::const_iterator l = lines.begin(); l != lines.end(); ++l)
+    for (LineList::const_iterator l = lines.begin(); l != lines.end(); ++l)
     {
-        std::cout << "Line " << i++ << ": (" << l->basePos.x << ", " << l->basePos.y << ")\n";
+        std::cout << "Line " << i++ << ": (" << l->basePos.x << ", " << l->basePos.y << ")  " <<  &l->voices << "\n";
         j = 0;
-        for (std::list<Plate::pVoice>::const_iterator v = l->voices.begin(); v != l->voices.end(); ++v)
+        for (VoiceList::const_iterator v = l->voices.begin(); v != l->voices.end(); ++v)
         {
             std::cout << "    Voice " << j++ << ": (" << v->basePos.x << ", " << v->basePos.y << ") t=" << v->time << "\n";
             k = 0;
-            for (std::list<Plate::pNote>::const_iterator n = v->notes.begin(); n != v->notes.end(); ++n)
+            for (NoteList::const_iterator n = v->notes.begin(); n != v->notes.end(); ++n)
             {
                 if (n->at_end())
                     std::cout << "        Note " << k++ << " @EOV";
@@ -269,7 +269,7 @@ void Plate::dump() const
                 };
                 std::cout << "\n";
                 std::cout << "            ";
-                for (std::list< Position<mpx_t> >::const_iterator p = n->absolutePos.begin(); p!= n->absolutePos.end(); ++p)
+                for (Plate_pNote::PositionList::const_iterator p = n->absolutePos.begin(); p!= n->absolutePos.end(); ++p)
                 {
                     std::cout << "(" << p->x / 1000.0 << "," << p->y / 1000.0 << ") ";
                 };

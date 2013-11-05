@@ -206,7 +206,7 @@ inline void Pick::add_subvoices(VoiceCursor cursor) {add_subvoices(cursor, curso
 
 inline const Pick::VoiceCursor& Pick::get_cursor()                const {return cursors.back();}
 inline       bool               Pick::eos()                       const {return cursors.empty() && next_cursors.empty();}
-inline       bool               Pick::is_within_newline()         const {return _newline;}
+inline       bool               Pick::is_within_newline()         const {return _newline || _pagebreak;}
 inline const ScoreDimension&    Pick::get_dimension()             const {return *_dimension;}
 inline       mpx_t              Pick::get_indent()                const {return viewport->umtopx_h(_layout.get().indent);}
 inline       bool               Pick::get_justify()               const {return _layout.get().justify;}

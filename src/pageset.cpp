@@ -48,7 +48,7 @@ bool PageSet::ScoreDimension::contains(const Position<mpx_t>& pos) const
 
 // plate-info constructor
 PageSet::PlateInfo::PlateInfo(const unsigned int _pageno, const Score& _score, const ScoreDimension& _dim)
-    : pageno(_pageno), score(&_score), dimension(_dim) {}
+    : pageno(_pageno), score(&_score), dimension(_dim), plate(new Plate()) {}
 
 // find a plate belonging to a given score on this page
 std::list<PageSet::PlateInfo>::iterator PageSet::pPage::get_plate_by_score(const Score& score)

@@ -95,6 +95,10 @@ class SCOREPRESS_API Renderer
     virtual void stroke() = 0;                  // render the drawn object
     virtual void close() = 0;                   // close the drawn object
     
+    // clipping
+    virtual void clip(const int x1, const int y1, const int w, const int h) = 0;    // set rectangle clipping
+    virtual void unclip() = 0;                                                      // reset the last "clip" call
+    
     // text rendering
     virtual void set_font_family(const std::string& family) = 0; // set the font family
     virtual void set_font_size(const double pt) = 0;             // set the font size (in pt)

@@ -277,7 +277,7 @@ class SCOREPRESS_API Plate_pLine : public Plate_pGraphical
     void erase();            		// erase the line
 };
 
-inline       void         Plate_pLine::erase()             {voices.clear();}
+inline void Plate_pLine::erase() {voices.clear();}
 
 // plate class
 class SCOREPRESS_API Plate

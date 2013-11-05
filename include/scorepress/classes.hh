@@ -420,7 +420,6 @@ class SCOREPRESS_API Pagebreak : public Newline
     ScoreDimension dimension;   // layout information
     
  public:
-    virtual void engrave(EngraverState&) const;
     virtual bool is(classType type) const {return ((type == PAGEBREAK) || Newline::is(type));};
     virtual classType classtype() const {return PAGEBREAK;};
     virtual Pagebreak* clone() const {return new Pagebreak(*this);};

@@ -1123,8 +1123,8 @@ EngraverState::EngraverState(const Score&         _score,
     
     // initialize local variables
     page = pageset->get_page(_start_page);
-    page->plates.push_back(PageSet::PlateInfo(_start_page, _score, dimtopx(pick.get_dimension())));
-    plate = &page->plates.back().plate;
+    page->plates.push_back(PageSet::PlateInfo(pagecnt, _score, dimtopx(pick.get_dimension())));
+    plate = page->plates.back().plate;
     lineinfo.dimension = &pick.get_dimension();
     lineinfo.indent = pick.get_indent();
     lineinfo.justify = pick.get_justify();
@@ -1222,8 +1222,8 @@ bool EngraverState::engrave_next()
             pageset->pages.push_back(PageSet::pPage());
             page = --pageset->pages.end();
         };
-        page->plates.push_back(PageSet::PlateInfo(++pagecnt, get_score(), dimtopx(pick.get_dimension())));
-        plate = &page->plates.back().plate;
+        page->plates.push_back(PageSet::PlateInfo(++pagecnt, pick.get_score(), dimtopx(pick.get_dimension())));
+        plate = page->plates.back().plate;
     };
     
     // add new line to the plate
@@ -1287,13 +1287,16 @@ bool EngraverState::engrave_next()
             
             // calculate the voice position
             pvoice->basePos.x = pick.get_indent();
-            pvoice->basePos.y = pick.get_cursor().ypos + viewport->umtopx_v(pick.staff_offset(v->begin.staff()));
+            pvoice->basePos.y = cur->ypos + viewport->umtopx_v(pick.staff_offset(v->begin.staff()));
             pvoice->time = start_time;
         };
     };
     
     // increment on-plate line iterator
-    ++pline;
+    if (pagebreak)
+        pline = plate->lines.begin();   // initialize target line iterator (first of new page)
+    else
+        ++pline;                        // increment target line iterator
     
     // we have not reached the end of score, yet
     return !pick.eos();

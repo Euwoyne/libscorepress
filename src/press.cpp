@@ -279,15 +279,22 @@ void Press::render(Renderer& renderer, const Plate& plate, const Position<mpx_t>
     // render the lines
     render_staff(renderer, plate, offset);
     
+    // iterate through the lines
     size_t l = 0;
     size_t v = 0;
-    // iterate through the lines
-    for (std::list<Plate::pLine>::const_iterator line = plate.lines.begin(); line != plate.lines.end(); ++line)
+    for (Plate::LineList::const_iterator line = plate.lines.begin(); line != plate.lines.end(); ++line)
     {
         ++l;
         v = 0;
+        
+        // clip to the line
+        renderer.clip(static_cast<int>((scale(line->gphBox.pos.x) + offset.x) / 1000),
+                      static_cast<int>((scale(line->gphBox.pos.y) + offset.y) / 1000),
+                      static_cast<int>(scale(line->gphBox.width)  / 1000),
+                      static_cast<int>(scale(line->gphBox.height) / 1000));
+        
         // iterate through the on-plate voices
-        for (std::list<Plate::pVoice>::const_iterator pvoice = line->voices.begin(); pvoice != line->voices.end(); ++pvoice)
+        for (Plate::VoiceList::const_iterator pvoice = line->voices.begin(); pvoice != line->voices.end(); ++pvoice)
         {
             ++v;
             
@@ -297,11 +304,14 @@ void Press::render(Renderer& renderer, const Plate& plate, const Position<mpx_t>
             state.stem_width  = state.viewport.umtopx_h(state.style->stem_width);
             
             // iterate the voice
-            for (std::list<Plate::pNote>::const_iterator it = pvoice->notes.begin(); it != pvoice->notes.end(); ++it)
+            for (Plate::NoteList::const_iterator it = pvoice->notes.begin(); it != pvoice->notes.end(); ++it)
             {
                 render(renderer, *it);
             };
         };
+        
+        // reset clip
+        renderer.unclip();
     };
     
     // reset style
@@ -314,8 +324,8 @@ void Press::render(Renderer& renderer, const PageSet::pPage& page, const PageSet
     // render scores
     for (std::list<PageSet::PlateInfo>::const_iterator i = page.plates.begin(); i != page.plates.end(); ++i)
     {
-        render(renderer, i->plate, Position<mpx_t>(_round(scale(i->dimension.position.x)) + offset.x,
-                                                   _round(scale(i->dimension.position.y)) + offset.y));
+        render(renderer, *i->plate, Position<mpx_t>(_round(scale(i->dimension.position.x)) + offset.x,
+                                                    _round(scale(i->dimension.position.y)) + offset.y));
     };
     
     // set state

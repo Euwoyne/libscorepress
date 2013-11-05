@@ -596,13 +596,15 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         
         // copy new line layout
         const Pagebreak& obj = static_cast<const Pagebreak&>(*engravedNote);
-        _dimension = &obj.dimension;                    // set new score dimension
-        _next_layout.set(engravedNote.voice(), obj);    // set new line layout
+        if (obj.dimension.width && obj.dimension.height)    // set new score dimension
+            _dimension = &obj.dimension;
+        _next_layout.set(engravedNote.voice(), obj);        // set new line layout
         _next_layout.set_first_voice(engravedNote.voice());
         
         // reset "pos" and add newline-distance to "ypos"
         nextNote.pos = viewport->umtopx_h(param->min_distance + obj.indent);
-        nextNote.ypos = viewport->umtopx_v(obj.distance);
+        nextNote.ypos = 0;
+        
         if (param->newline_time_reset || !obj.visible)
             nextNote.ntime = _newline_time;
         
@@ -862,13 +864,19 @@ void Pick::insert(const StaffObject& obj)
     cur.time = cur.ntime;               // set timestamp to current time
     if (obj.is(Class::NOTEOBJECT))      // if we got a note-object
         cur.ntime += static_cast<const NoteObject&>(obj).value();   // increase end time-stamp
-    if (cursors.back()->is(Class::NEWLINE))
+    
+    if (cursors.back()->is(Class::PAGEBREAK))
+    {
+        cur.pos = viewport->umtopx_h(param->min_distance + static_cast<const Pagebreak&>(*cursors.back()).indent);
+    }
+    else if (cursors.back()->is(Class::NEWLINE))
     {
         if (!_newline) _line_height = viewport->umtopx_v(line_height());
         cur.pos = viewport->umtopx_h(param->min_distance + static_cast<const Newline&>(*cursors.back()).indent);
         cur.ypos += _line_height;
     }
     else cur.pos = cur.npos;
+    
     calculate_npos(cur);
     cur.virtual_obj = StaffObjectPtr(obj.clone());
     cur.inserted = true;

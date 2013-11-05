@@ -126,8 +126,10 @@ bool UserCursor::VoiceCursor::is_after(const VoiceCursor& cur) const
     if (time == cur.time)   // rendered in order: newline -> clef -> key -> time-signature -> note
     {
         if (at_end() && cur.at_end()) return false;         // both at end -> FALSE
-        if (cur.at_end()) return true;                      // end before everything -> TRUE
-        if (at_end()) return false;                         // end before everything -> FALSE
+        if (cur.at_end())
+            return note->is(Class::NOTEOBJECT);             // end before notes
+        if (at_end())
+            return !cur.note->is(Class::NOTEOBJECT);        // end before notes
         if (note->classtype() == cur.note->classtype() ||   // equal type -> FALSE
             (note->is(Class::TIMESIG) && cur.note->is(Class::CUSTOMTIMESIG)) ||
             (note->is(Class::CUSTOMTIMESIG) && cur.note->is(Class::TIMESIG)) ||
@@ -155,8 +157,10 @@ bool UserCursor::VoiceCursor::is_before(const VoiceCursor& cur) const
     if (time == cur.time)   // rendered in order: newline -> clef -> key -> time-signature -> note
     {
         if (at_end() && cur.at_end()) return false;         // both at end -> FALSE
-        if (at_end()) return true;                          // end before everything -> TRUE
-        if (cur.at_end()) return false;                     // end before everything -> FALSE
+        if (at_end())
+            return cur.note->is(Class::NOTEOBJECT);         // end before notes
+        if (cur.at_end())
+            return !note->is(Class::NOTEOBJECT);            // end before notes
         if (note->classtype() == cur.note->classtype() ||   // equal type -> FALSE
             (note->is(Class::TIMESIG) && cur.note->is(Class::CUSTOMTIMESIG)) ||
             (note->is(Class::CUSTOMTIMESIG) && cur.note->is(Class::TIMESIG)) ||
@@ -238,23 +242,18 @@ bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
     
     // search for the front note
     while (!newvoice.note.at_end() && newvoice.note != pvoice.begin)
-            ++newvoice.note;
+    {
+        if (newvoice.note->is(Class::PAGEBREAK))    // search for page layout
+            newvoice.page_layout = newvoice.note;
+        if (newvoice.note->is(Class::NEWLINE))      // search for line layout
+            newvoice.line_layout = newvoice.note;
+        ++newvoice.note;
+    };
+    
     if (newvoice.note != pvoice.begin)      // on failing the search
     {                                           // issue warning
         log_warn("Unable to find on-plate voice front in score. (class: UserCursor)");
         return false;                           // return fail
-    };
-    
-    // calculate layout (search previous newline)
-    newvoice.layout = newvoice.note;
-    if (!newvoice.layout.has_prev())
-    {
-        newvoice.layout.reset();
-    }
-    else if (!(--newvoice.layout)->is(Class::NEWLINE))
-    {
-        newvoice.layout.reset();
-        log_warn("Unable to find layout object for voice. (class: UserCursor)");
     };
     
     // prepare on-plate data
@@ -262,6 +261,65 @@ bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
     
     // return success
     return true;
+}
+
+// prepare voice-cursor of a given sub-voice (called recursively to ensure that parents are prepared)
+std::list<UserCursor::VoiceCursor>::iterator UserCursor::prepare_subvoice(const Voice& voice, Plate::pVoice& pvoice)
+{
+    // voice cursor iterators
+    std::list<VoiceCursor>::iterator newvoice;      // the prepared voice
+    std::list<VoiceCursor>::iterator parent;        // the parent voice
+    
+    // check voice
+    newvoice = find(voice);             // try to find the voice
+    if (newvoice != vcursors.end())     // if the voice does exist already...
+        return newvoice;                //  ...ignore
+    
+    if (!voice.is(Class::SUBVOICE))     // if the voice is not a sub-voice...
+    {                                   //  ...something is wrong
+        log_warn("Unable to add a misplaced MainVoice to cursor. (class: UserCursor)");
+        return vcursors.end();
+    };
+    
+    // prepare the parent voice
+    parent = find(*static_cast<const SubVoice&>(voice).parent); // find parent
+    
+    if (parent == vcursors.end())                               // if there is no parent, prepare it
+        parent = prepare_subvoice(*static_cast<const SubVoice&>(voice).parent,
+                                  *line->get_voice(*static_cast<const SubVoice&>(voice).parent));
+    
+    if (parent == vcursors.end())                               // if the parent can not be prepared
+    {                                                           //     abort!
+        log_warn("Unable to add a SubVoice, which has no parent, to cursor. (class: UserCursor)");
+        return vcursors.end();
+    };
+    
+    // add new voice (at the correct position)
+    if (static_cast<const SubVoice&>(voice).on_top)              // if on top
+        newvoice = vcursors.insert(parent, VoiceCursor());       //     insert new voice above parent
+    else                                                         // otherwise
+        newvoice = vcursors.insert((++parent)--, VoiceCursor()); //     insert below the parent
+    
+    // prepare the voice cursor
+    if (!prepare_voice(*newvoice, pvoice))              // if preparation fails,
+    {
+        vcursors.erase(newvoice);                       //     remove the voice
+        return vcursors.end();                          //     abort
+    };
+    
+    // inherit layouts (if neccessary)
+    if (!newvoice->page_layout.ready())                 // if no page-layout is given
+        newvoice->page_layout = parent->page_layout;    //     inherit from parent
+    if (!newvoice->line_layout.ready())                 // if no line-layout is given
+        newvoice->line_layout = parent->line_layout;    //     inherit from parent
+    
+    // set active state
+    if (cursor != vcursors.end())                           // if we got a main-voice
+        newvoice->active = newvoice->is_during(*cursor);    //     choose active state
+    else    cursor = newvoice;
+    
+    // return new voice-cursor
+    return newvoice;
 }
 
 // set all voice-cursors to the beginning of the current line
@@ -285,33 +343,8 @@ void UserCursor::prepare_voices()
     cursor = vcursors.begin();  // initialize cursor to first main-voice
     
     // prepare all sub-voices of the current line (expecting all main-voices to exist)
-    std::list<VoiceCursor>::iterator newvoice;  // on-plate voice
     for (std::list<Plate::pVoice>::iterator i = line->voices.begin(); i != line->voices.end(); ++i)
-    {
-        // check voice
-        if (find(i->begin.voice()) != vcursors.end()) continue; // if the voice does exist already, ignore
-        if (i->begin.is_main())                                 // if the voice is not a sub-voice...
-        {                                                       // ...something is wrong
-            log_warn("Unable to add a misplaced MainVoice to cursor. (class: UserCursor)");
-            continue;
-        };
-        
-        // add new voice (at the correct position)
-        newvoice = find(*static_cast<const SubVoice&>(i->begin.voice()).parent);    // find parent
-        if (static_cast<const SubVoice&>(i->begin.voice()).on_top)  // if on top
-            newvoice = vcursors.insert(newvoice, VoiceCursor());    //     insert new voice above parent
-        else                                                        // otherwise
-            newvoice = vcursors.insert(++newvoice, VoiceCursor());  //     insert below the parent
-        
-        // prepare the voice cursor
-        if (!prepare_voice(*newvoice, *i))                      // if this fails,
-            vcursors.pop_back();                                //     remove the voice
-        else if (cursor != vcursors.end())                      // if we got a main-voice
-            newvoice->active = newvoice->is_during(*cursor);    //     choose active state
-    };
-    
-    // set cursor, if necessary (i.e. if there are no main-voices)
-    if (cursor == vcursors.end()) cursor = vcursors.begin();
+        static_cast<void>(prepare_subvoice(i->begin.voice(), *i));
 }
 
 // move the voice-cursors to the corresponding position within the currently referenced voice
@@ -435,7 +468,7 @@ void UserCursor::set_score(Document::Score& _score) throw(Error)
     if (pi == page->plates.end()) goto on_error;        // skip to error handling
     plateinfo = &*pi;                                   // get plate information
     }
-    line = plateinfo->plate.lines.begin();              // get first line
+    line = plateinfo->plate->lines.begin();             // get first line
     prepare_voices();                                   // prepare voice-cursors
     return;                                             // sucessfully finish
     
@@ -449,30 +482,24 @@ void UserCursor::set_score(Document::Score& _score) throw(Error)
 }
 
 // set cursor to graphical position (on the current page)
-void UserCursor::set_pos(Position<mpx_t> pos, const ViewportParam& viewport)
+void UserCursor::set_pos(Position<mpx_t> pos, const PressParam& press_param, const ViewportParam& viewport)
 {
-    pos.x -= pageset->page_layout.margin.left;
-    pos.y -= pageset->page_layout.margin.top;
+    pos.x = _round((1000.0 * pos.x) / press_param.scale - pageset->page_layout.margin.left);
+    pos.y = _round((1000.0 * pos.y) / press_param.scale - pageset->page_layout.margin.top);
     
     // find PLATE
     PageSet::PlateInfo* new_pinfo = NULL;
-    if (plateinfo->dimension.contains(pos))     // if the current plate is the correct one
+    for (std::list<PageSet::PlateInfo>::iterator p = page->plates.begin(); pos.y >= 0 && p != page->plates.end(); ++p)
     {
-        new_pinfo = plateinfo;                  //     just use this one
-    }
-    else                                        // otherwise
-    {                                           //     search all plates for a match
-        for (std::list<PageSet::PlateInfo>::iterator p = page->plates.begin(); p != page->plates.end(); ++p)
-        {
-            if (p->dimension.contains(pos)) {new_pinfo = &*p; break;};
-        };
+        if (p->dimension.contains(pos)) {new_pinfo = &*p; break;};
+        pos.y -= pageset->page_layout.height + press_param.page_distance;
     };
     if (!new_pinfo) return;                     // if no plate is found at the position, abort
     pos -= new_pinfo->dimension.position;       // calculate position relative to plate
     
     // find on-plate LINE
     bool check = false;                         // success indicator
-    for (std::list<Plate::pLine>::iterator l = new_pinfo->plate.lines.begin(); l != new_pinfo->plate.lines.end(); ++l)
+    for (std::list<Plate::pLine>::iterator l = new_pinfo->plate->lines.begin(); l != new_pinfo->plate->lines.end(); ++l)
     {                                           // search all lines for a match
         if (l->gphBox.contains(pos)) {line = l; check = true; break;};
     };
@@ -567,7 +594,24 @@ const Plate::pNote& UserCursor::get_platenote() const throw(NotValidException)
 const Newline& UserCursor::get_layout() const throw(NotValidException)
 {
     if (cursor == vcursors.end()) throw NotValidException();
-    return cursor->get_layout();
+    return cursor->line_layout.ready() ? static_cast<Newline&>(*cursor->line_layout)
+                                       : cursor->note.staff().layout;
+}
+
+// return the score dimension
+const ScoreDimension& UserCursor::get_dimension() const throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).dimension
+                                       : score->score.layout.dimension;
+}
+
+// return objects attached to the page
+const MovableList& UserCursor::get_attached() const throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).attached
+                                       : score->score.layout.attached;
 }
 
 // return the current time-stamp
@@ -669,13 +713,14 @@ bool UserCursor::has_next_voice() const throw(NotValidException)
 bool UserCursor::has_prev_line() const throw(NotValidException)
 {
     if (!ready()) throw NotValidException();
-    if (line != plateinfo->plate.lines.begin())     // if there is a previous line on the page
+    if (line != plateinfo->plate->lines.begin())    // if there is a previous line on the page
         return true;                                //     return "true"
     std::list<PageSet::pPage>::iterator p = page;   // otherwise search the previous pages
     while (p != pageset->pages.begin())
     {
         --p;
-        if (p->get_plate_by_score(score->score) != p->plates.end()) return true;
+        if (p->get_plate_by_score(score->score) != p->plates.end())
+            return true;
     };
     return false;
 }
@@ -684,12 +729,13 @@ bool UserCursor::has_prev_line() const throw(NotValidException)
 bool UserCursor::has_next_line() const throw(NotValidException)
 {
     if (!ready()) throw NotValidException();
-    if (line != --plateinfo->plate.lines.end())     // if there is a next line on the page
+    if (line != --plateinfo->plate->lines.end())    // if there is a next line on the page
         return true;                                //     return "true"
     std::list<PageSet::pPage>::iterator p = page;   // otherwise search the next pages
     while (++p != pageset->pages.end())
     {
-        if (p->get_plate_by_score(score->score) != p->plates.end()) return true;
+        if (p->get_plate_by_score(score->score) != p->plates.end())
+            return true;
     };
     return false;
 }
@@ -764,10 +810,10 @@ void UserCursor::next_voice() throw(NotValidException, InvalidMovement)
 void UserCursor::prev_line() throw(NotValidException, InvalidMovement)
 {
     if (!ready()) throw NotValidException();    // validity check
-    mpx_t x = fast_x();                        // save current position
+    mpx_t x = fast_x();                         // save current position
     
     // select previous line
-    if (line == plateinfo->plate.lines.begin()) // if it is on the previous page
+    if (line == plateinfo->plate->lines.begin())    // if it is on the previous page
     {
         // search previous pages
         std::list<PageSet::pPage>::iterator p = page;                       // page iterator
@@ -786,7 +832,7 @@ void UserCursor::prev_line() throw(NotValidException, InvalidMovement)
         // set data
         page = p;
         plateinfo = &*pinfo;
-        line = plateinfo->plate.lines.begin();
+        line = plateinfo->plate->lines.begin();
     }
     else --line;    // if there is a previous line on the plate, just use it
     
@@ -804,7 +850,7 @@ void UserCursor::next_line() throw(NotValidException, InvalidMovement)
     mpx_t x = fast_x();                         // save current position
     
     // select next line
-    if (++line == plateinfo->plate.lines.end()) // if it is on the next page
+    if (++line == plateinfo->plate->lines.end())    // if it is on the next page
     {
         // search previous pages
         std::list<PageSet::pPage>::iterator p = page;                       // page iterator
@@ -822,7 +868,7 @@ void UserCursor::next_line() throw(NotValidException, InvalidMovement)
         // set data
         page = p;
         plateinfo = &*pinfo;
-        line = --plateinfo->plate.lines.end();
+        line = --plateinfo->plate->lines.end();
     };
     
     // reset x position from the old line
@@ -908,7 +954,7 @@ StaffContext UserCursor::get_staff_context() const throw(NotValidException)
     
     // get the context at the lines begin
     StaffContext out_ctx;
-    if (line != plateinfo->plate.lines.begin()) // get the end-context of the previous line
+    if (line != plateinfo->plate->lines.begin())    // get the end-context of the previous line
     {
         std::list<Plate::pLine>::iterator l(line); --l;
         std::map<const Staff*, StaffContext>::iterator ctx = l->staffctx.find(&cursor->pvoice->begin.staff());

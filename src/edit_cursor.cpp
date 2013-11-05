@@ -277,9 +277,9 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     };
     
     // search line and current voice (based on saved pVoice::begin cursor "vbegin")
-    line = plateinfo->plate.lines.begin();      // initialize "line"
+    line = plateinfo->plate->lines.begin();     // initialize "line"
     std::list<Plate::pVoice>::iterator voice;   // voice
-    for (; line != plateinfo->plate.lines.end(); ++line)
+    for (; line != plateinfo->plate->lines.end(); ++line)
     {
         // get voice and check for old begin
         voice = line->get_voice(vbegin.voice());
@@ -287,14 +287,14 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
         if (voice == line->voices.end()) continue;  // voice exists?
         if (voice->begin != vbegin)      continue;  // past old begin?
         if (mode == NEWLINE)                        // on inserted newline, ...
-            if (++line == plateinfo->plate.lines.end()) break; // ...goto next line and break on nonexisting
+            if (++line == plateinfo->plate->lines.end()) break; // ...goto next line and break on nonexisting
         break;
     };
     
     // if we did not find the correct line
-    if (line == plateinfo->plate.lines.end())
+    if (line == plateinfo->plate->lines.end())
     {
-        line = plateinfo->plate.lines.begin();  // use the first on the plate
+        line = plateinfo->plate->lines.begin(); // use the first on the plate
         prepare_voices();                       // prepare voices
         log_warn("Unable to find the given line on the page after reengraving. Default to first. (class: EditCursor)");
         return;
@@ -448,7 +448,7 @@ void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Err
     bool complete = true;
     for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
     {
-        if (cur->active && (cur->pnote->at_end() || !cur->note->is(Class::NEWLINE)))
+        if (cur->active && (cur->pnote->at_end() || cur->note->classtype() != Class::NEWLINE))
         {
             complete = false;
             break;
@@ -460,7 +460,7 @@ void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Err
     for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
     {
         if (   (cur->active || cur->note.is_main()) && cur->note.has_prev()
-            && (complete || cur->pnote->at_end() || !cur->note->is(Class::NEWLINE)))
+            && (complete || cur->pnote->at_end() || cur->note->classtype() != Class::NEWLINE))
         {
             // insert newline
             if (!cur->has_prev())
@@ -477,6 +477,50 @@ void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Err
     };
     
     reengrave(NEWLINE);
+}
+
+// insert pagebreak objects into all active voices
+void EditCursor::insert_pagebreak() throw(NotValidException, NoScoreException, Error)
+{
+    // check if this is a newline completion (i.e. add newline only to those voices without one)
+    bool complete = true;
+    for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
+    {
+        if (cur->active && (cur->pnote->at_end() || cur->note->classtype() != Class::PAGEBREAK))
+        {
+            complete = false;
+            break;
+        };
+    }
+    
+    // add the newlines
+    bool first = true;
+    for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
+    {
+        if (   (cur->active || cur->note.is_main()) && cur->note.has_prev()
+            && (complete || cur->pnote->at_end() || cur->note->classtype() != Class::PAGEBREAK))
+        {
+            // save layout/dimension
+            const Newline&        layout    = cur->get_layout();
+            const ScoreDimension& dimension = get_dimension();
+            
+            // insert newline
+            if (!cur->has_prev())
+            {
+                cur->note.insert(new Pagebreak());
+                cur->pvoice->begin = cur->note;
+            }
+            else cur->note.insert(new Pagebreak());
+            
+            // set layout
+            static_cast<Pagebreak&>(*cur->note).Newline::operator=(layout);
+            if (first) static_cast<Pagebreak&>(*cur->note).distance = param->newline_distance, first = false;
+            static_cast<Pagebreak&>(*cur->note).indent = 0;
+            static_cast<Pagebreak&>(*cur->note).dimension = dimension;
+        };
+    };
+    
+    reengrave(PAGEBREAK);
 }
 
 // remove a note
@@ -564,7 +608,7 @@ void EditCursor::remove_voice() throw(NotValidException, Cursor::IllegalObjectTy
 }
 
 // get the line layout object (non-constant)
-Newline& EditCursor::get_layout() throw(NotValidException)
+const Newline& EditCursor::get_layout() const throw(NotValidException)
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->get_layout();

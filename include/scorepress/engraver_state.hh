@@ -72,7 +72,7 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     
     // target instances
     PageSet*       pageset;         // target set of pages
-    Plate*         plate;           // target plate
+    RefPtr<Plate>  plate;           // target plate
     pLineIt        pline;           // target on-plate line
     pVoiceIt       pvoice;          // target on-plate voice
     Plate::pNote*  pnote;           // target on-plate note

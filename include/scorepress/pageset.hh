@@ -86,7 +86,7 @@ class SCOREPRESS_LOCAL PageSet
         unsigned int pageno;                // pagenumber relative to the score-object's beginning
         const Score* score;                 // pointer to the score object
         const ScoreDimension dimension;     // score dimension
-        Plate plate;                        // plate object for the given page of the given score
+        const RefPtr<Plate> plate;          // plate object for the given page of the given score
         
         PlateInfo(const unsigned int _pno, const Score& _score, const ScoreDimension& _dim);    // constructor
     };

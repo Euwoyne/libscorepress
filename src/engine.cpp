@@ -2,13 +2,13 @@
 /*
   ScorePress - Music Engraving Software  (libscorepress)
   Copyright (C) 2013 Dominik Lehmann
-  
+
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
   versions of the EUPL (the "Licence");
   You may not use this work except in compliance with the
   Licence.
-  
+
   Unless required by applicable law or agreed to in
   writing, software distributed under the Licence is
   distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
@@ -19,6 +19,8 @@
 
 #include "engine.hh"
 #include "log.hh"
+
+#include <iostream>
 
 #define JUSTIFY       true
 #define FORCE_JUSTIFY false
@@ -41,6 +43,8 @@ void add_articulation(MainVoice& voice, const SpriteId& sprite, int offset_y, bo
 void add_articulation(SubVoice& voice, const SpriteId& sprite, int offset_y, bool far = false);
 void add_newline(MainVoice& voice, unsigned int distance, int indent = 0, int right_margin = 0, bool justify = false, bool force = false);
 void add_newline(SubVoice& voice, unsigned int distance, int indent = 0, int right_margin = 0, bool justify = false, bool force = false);
+void add_pagebreak(MainVoice& voice, unsigned int distance, int indent = 0, int right_margin = 0, bool justify = false, bool force = false);
+void add_pagebreak(SubVoice& voice, unsigned int distance, int indent = 0, int right_margin = 0, bool justify = false, bool force = false);
 void add1(Staff& staff, Sprites& sprites, int toneoffset = 0);
 void add2(Staff& staff, Sprites& sprites, int toneoffset = 0, int staffdist = 0);
 
@@ -176,6 +180,26 @@ void add_newline(SubVoice& voice, unsigned int distance, int indent, int right_m
     static_cast<Newline&>(*voice.notes.back()).forced_justification = force;
 }
 
+void add_pagebreak(MainVoice& voice, unsigned int distance, int indent, int right_margin, bool justify, bool force)
+{
+    voice.notes.push_back(StaffObjectPtr(new Pagebreak()));
+    static_cast<Pagebreak&>(*voice.notes.back()).distance = distance;
+    static_cast<Pagebreak&>(*voice.notes.back()).indent = indent;
+    static_cast<Pagebreak&>(*voice.notes.back()).right_margin = right_margin;
+    static_cast<Pagebreak&>(*voice.notes.back()).justify = justify;
+    static_cast<Pagebreak&>(*voice.notes.back()).forced_justification = force;
+}
+
+void add_pagebreak(SubVoice& voice, unsigned int distance, int indent, int right_margin, bool justify, bool force)
+{
+    voice.notes.push_back(VoiceObjectPtr(new Pagebreak()));
+    static_cast<Pagebreak&>(*voice.notes.back()).distance = distance;
+    static_cast<Pagebreak&>(*voice.notes.back()).indent = indent;
+    static_cast<Pagebreak&>(*voice.notes.back()).right_margin = right_margin;
+    static_cast<Pagebreak&>(*voice.notes.back()).justify = justify;
+    static_cast<Pagebreak&>(*voice.notes.back()).forced_justification = force;
+}
+
 void add1(Staff& staff, Sprites& sprites, int toneoffset)
 {
     // main-voice notes
@@ -232,7 +256,8 @@ void add2(Staff& staff, Sprites& sprites, int toneoffset, int staffdist)
     add_accidental(staff, Accidental::sharp, 200);
     //*/
     add(staff, 5, 69 + toneoffset, 6, 0, -1100, 1500, -600, -800, -650, 0, -1100);
-    add_newline(staff, staffdist, 0, 0, JUSTIFY, FORCE_JUSTIFY);
+    //add_newline(staff, staffdist, 0, 0, JUSTIFY, FORCE_JUSTIFY);
+    add_pagebreak(staff, staffdist, 0, 0, JUSTIFY, FORCE_JUSTIFY);
     
     // sub-voice notes
     addr(subvoice, 5, 3000);
@@ -262,7 +287,8 @@ void add2(Staff& staff, Sprites& sprites, int toneoffset, int staffdist)
     add_accidental(subvoice, Accidental::natural, 0);
     add_head(subvoice, 67 + toneoffset);
     add_accidental(subvoice, Accidental::natural, 250);
-    add_newline(subvoice, staffdist, 0, 0, JUSTIFY, FORCE_JUSTIFY);
+    //add_newline(subvoice, staffdist, 0, 0, JUSTIFY, FORCE_JUSTIFY);
+    add_pagebreak(subvoice, staffdist, 0, 0, JUSTIFY, FORCE_JUSTIFY);
 }
 
 void Engine::set_test(Sprites& sprites)
@@ -400,6 +426,56 @@ void Engine::set_resolution(unsigned int hppm, unsigned int vppm)
     viewport.vppm = vppm;
 }
 
+unsigned int Engine::view_width() const
+{
+    switch (press.parameters.multipage_layout)
+    {
+        case PressParam::ONEPAGE:
+        case PressParam::ONEPAGE_NODIST:
+        default:
+            return (viewport.umtopx_h(document.page_layout.width) * press.parameters.scale) / 1000000;
+        case PressParam::TWOPAGE:
+            return (  (press.parameters.page_distance + 2 * viewport.umtopx_h(document.page_layout.width)) / 1000
+                     * press.parameters.scale) / 1000;
+        case PressParam::TWOPAGE_JOINED:
+        case PressParam::TWOPAGE_NODIST:
+            return (viewport.umtopx_h(document.page_layout.width) * press.parameters.scale) / 500000;
+    };
+}
+
+unsigned int Engine::view_height() const
+{
+    switch (press.parameters.multipage_layout)
+    {
+        case PressParam::ONEPAGE:
+        default:
+            return ((   (pageset.pages.size() * viewport.umtopx_v(document.page_layout.height) / 1000)
+                      + ((pageset.pages.size() - 1) * press.parameters.page_distance / 1000))
+                    * press.parameters.scale) / 1000;
+        case PressParam::ONEPAGE_NODIST:
+            return ((pageset.pages.size() * viewport.umtopx_v(document.page_layout.height) / 1000)
+                                          * press.parameters.scale) / 1000;
+        case PressParam::TWOPAGE:
+        case PressParam::TWOPAGE_JOINED:
+            return ((   ((pageset.pages.size() / 2 + 1) * viewport.umtopx_v(document.page_layout.height) / 1000)
+                      + (((pageset.pages.size() / 2 + 1) - 1) * press.parameters.page_distance / 1000))
+                    * press.parameters.scale) / 1000;
+        case PressParam::TWOPAGE_NODIST:
+            return (((pageset.pages.size() / 2 + 1) * viewport.umtopx_v(document.page_layout.height) / 1000)
+                     * press.parameters.scale) / 1000;
+    };
+}
+
+void Engine::plate_dump() const
+{
+    size_t idx = 0;
+    for (std::list<PageSet::pPage>::const_iterator p = pageset.pages.begin(); p != pageset.pages.end(); ++p)
+    {
+        std::cout << "=== PAGE " << ++idx << " ===\n";
+        p->plates.front().plate->dump();
+    };
+}
+
 void Engine::engrave()
 {
     engraver.engrave(document);
@@ -421,7 +497,7 @@ void Engine::render(Renderer& renderer, const Position<mpx_t>& offset)
     {
         press.render_decor(renderer, pageset, off);
         press.render(renderer, *i, pageset, off + margin_offset);
-        off.y += pageset.page_layout.height;
+        off.y += (press.parameters.scale * (pageset.page_layout.height + press.parameters.page_distance)) / 1000;
     };
 }
 

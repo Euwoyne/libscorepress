@@ -1748,8 +1748,8 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
         renderer.draw_sprite(note.sprite,
                              (state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0,
                              (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0,
-                             state.parameters.do_scale(sprite_scale * appearance.scale) / 1000.0,
-                             state.parameters.do_scale(sprite_scale * appearance.scale) / 1000.0);
+                             state.parameters.do_scale(sprite_scale * appearance.scale) / 1.0e6,
+                             state.parameters.do_scale(sprite_scale * appearance.scale) / 1.0e6);
     };
     
     // render dots

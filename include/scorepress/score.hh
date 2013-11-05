@@ -67,7 +67,7 @@ class SCOREPRESS_API Score
     class StaffNotFound : public ScorePress::Error  // thrown by staff-finding methods, if the given staff does not exist
     {public: StaffNotFound();};
     
-    struct Layout   // first page/line layout
+    struct Layout   // first page layout
     {
         // TODO: user defined brace scale parameters
         ScoreDimension dimension;   // layout information
@@ -80,7 +80,7 @@ class SCOREPRESS_API Score
     
  public:
     std::list<Staff> staves;    // the staves within the score
-    Layout layout;              // layout information for the first page/line
+    Layout layout;              // layout information for the first page
                                 // (consequent page information given with pagebreak-objects)
     EngraverParamPtr param;     // optional engraver parameters
     Meta meta;                  // meta information

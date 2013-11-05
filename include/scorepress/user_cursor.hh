@@ -63,7 +63,8 @@ class SCOREPRESS_API UserCursor : public Logging
     {
      public:
         Cursor note;                        // score-cursor
-        Cursor layout;                      // line layout
+        Cursor line_layout;                 // line layout
+        Cursor page_layout;                 // page layout
         
         Plate::NoteList::iterator pnote;    // plate-cursor
         Plate::pVoice*            pvoice;   // on-plate voice
@@ -79,7 +80,7 @@ class SCOREPRESS_API UserCursor : public Logging
         void prev() throw(InvalidMovement, Error);  // to the previous note (fails, if "!has_prev()")
         void next() throw(InvalidMovement, Error);  // to the next note     (fails, if "at_end()")
         
-        Newline& get_layout() const;                // return a reference to the layout object
+        const Newline& get_layout() const;          // return the line layout
         
         // engraving time check (corresponding to "cPick::insert")
         bool is_simultaneous(const VoiceCursor& cur) const; // are the objects simultaneous (and equal type)
@@ -107,9 +108,10 @@ class SCOREPRESS_API UserCursor : public Logging
     SCOREPRESS_LOCAL std::list<VoiceCursor>::const_iterator find(const Voice& voice) const;
     
     // set all voice-cursors to the beginning of the current line
-    SCOREPRESS_LOCAL void prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" plate data (helper)
-    SCOREPRESS_LOCAL bool prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice);   // set "VoiceCursor" data (helper)
-    SCOREPRESS_LOCAL void prepare_voices();
+    SCOREPRESS_LOCAL void                             prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice);
+    SCOREPRESS_LOCAL bool                             prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice);
+    SCOREPRESS_LOCAL std::list<VoiceCursor>::iterator prepare_subvoice(const Voice& voice, Plate::pVoice& pvoice);
+    SCOREPRESS_LOCAL void                             prepare_voices();
     
     // move the voice-cursors to the corresponding position within the currently referenced voice
     SCOREPRESS_LOCAL void update_voices();
@@ -126,27 +128,31 @@ class SCOREPRESS_API UserCursor : public Logging
     
  public:
     // initialization methods
-    UserCursor(Document& document, PageSet& pageset);       // constructor
-    void set_score(Document::Score& score) throw(Error);    // initialize the cursor at the beginning of a given score
-    void set_pos(Position<mpx_t>, const ViewportParam&);    // set cursor to graphical position (on current page)
+    UserCursor(Document& document, PageSet& pageset);                       // constructor
+    void set_score(Document::Score& score) throw(Error);                    // initialize the cursor at the beginning of a given score
+    void set_pos(Position<mpx_t>, const PressParam&, const ViewportParam&); // set cursor to graphical position (on current page)
     
     // access methods
-    const Score&         get_score()     const;                             // return the score-object
-    const Plate&         get_plate()     const;                             // return the plate-object
-    const Plate::pLine&  get_line()      const;                             // return the on-plate line
-    const Voice&         get_voice()     const throw(NotValidException);    // return the voice
-    const Staff&         get_staff()     const throw(NotValidException);    // return the staff
-    const Plate::pVoice& get_pvoice()    const throw(NotValidException);    // return the on-plate voice
-    const Cursor&        get_cursor()    const throw(NotValidException);    // return the score-cursor
-    const Plate::pNote&  get_platenote() const throw(NotValidException);    // return the on-plate note
-    const Newline&       get_layout()    const throw(NotValidException);    // return the line layout
-          value_t        get_time()      const throw(NotValidException);    // return the current time-stamp
+    const Score&          get_score()     const;                            // return the score-object
+    const Plate&          get_plate()     const;                            // return the plate-object
+    const Plate::pLine&   get_line()      const;                            // return the on-plate line
+    const Voice&          get_voice()     const throw(NotValidException);   // return the voice
+    const Staff&          get_staff()     const throw(NotValidException);   // return the staff
+    const Plate::pVoice&  get_pvoice()    const throw(NotValidException);   // return the on-plate voice
+    const Cursor&         get_cursor()    const throw(NotValidException);   // return the score-cursor
+    const Plate::pNote&   get_platenote() const throw(NotValidException);   // return the on-plate note
+          value_t         get_time()      const throw(NotValidException);   // return the current time-stamp
     
     bool   at_end()      const throw(NotValidException);        // check, if the cursor is at the end of the voice
     size_t voice_index() const throw(NotValidException);        // return the index of the current voice
     size_t voice_count() const;                                 // return the number of voices
     size_t staff_voice_index() const throw(NotValidException);  // return index of current voice (in staff)
     size_t staff_voice_count() const throw(NotValidException);  // return the number of voices (in staff)
+    
+    // layout access
+    const Newline&        get_layout()    const throw(NotValidException);   // return the line layout
+    const ScoreDimension& get_dimension() const throw(NotValidException);   // return the score dimension
+    const MovableList&    get_attached()  const throw(NotValidException);   // return objects attached to the page
     
     // direction checkers (indicate, if the respective movement would throw an "InvalidMovement" exception)
     bool has_prev()       const throw(NotValidException);       // check, if the cursor can be decremented
@@ -185,13 +191,15 @@ class SCOREPRESS_API UserCursor : public Logging
 };
 
 // inline method implementations
-inline bool     UserCursor::VoiceCursor::has_prev()   const {return (&*note != &*pvoice->begin);}
-inline bool     UserCursor::VoiceCursor::has_next()   const {return (!pnote->at_end() && !note->is(Class::NEWLINE));}
-inline bool     UserCursor::VoiceCursor::at_end()     const {return (pnote->at_end() || note->is(Class::NEWLINE));}
-inline Newline& UserCursor::VoiceCursor::get_layout() const {return layout.ready() ? static_cast<Newline&>(*layout) : note.staff().layout;}
+inline bool UserCursor::VoiceCursor::has_prev() const {return (&*note != &*pvoice->begin);}
+inline bool UserCursor::VoiceCursor::has_next() const {return (!pnote->at_end() && !note->is(Class::NEWLINE));}
+inline bool UserCursor::VoiceCursor::at_end()   const {return (pnote->at_end() || note->is(Class::NEWLINE));}
+
+inline const Newline& UserCursor::VoiceCursor::get_layout() const
+    {return line_layout.ready() ? static_cast<Newline&>(*line_layout) : note.staff().layout;}
 
 inline const Score&         UserCursor::get_score() const {return score->score;}
-inline const Plate&         UserCursor::get_plate() const {return plateinfo->plate;}
+inline const Plate&         UserCursor::get_plate() const {return *plateinfo->plate;}
 inline const Plate::pLine&  UserCursor::get_line()  const {return *line;}
 
 inline bool   UserCursor::ready()       const {return (score != NULL && cursor != vcursors.end());}
