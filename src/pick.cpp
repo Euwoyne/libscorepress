@@ -1107,3 +1107,4 @@ const Pick::VoiceCursor* Pick::peek(const Voice& v) const
         if (&i->voice() == &v) return &*i;
     return NULL;
 }
+

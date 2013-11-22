@@ -22,7 +22,7 @@ using namespace ScorePress;
 
 
 //
-//     class PageSet
+//     class Pageset
 //    ===============
 //
 // A set of plates used to render one document,
@@ -30,7 +30,7 @@ using namespace ScorePress;
 //
 
 // set data from page-dimension in micrometer
-void PageSet::PageDimension::set(const Document::PageDimension& dim, const ViewportParam& viewport)
+void Pageset::PageDimension::set(const Document::PageDimension& dim, const ViewportParam& viewport)
 {
     width = viewport.umtopx_h(dim.width);
     height = viewport.umtopx_v(dim.height);
@@ -41,19 +41,19 @@ void PageSet::PageDimension::set(const Document::PageDimension& dim, const Viewp
 }
 
 // check, if the score-object contains a given point
-bool PageSet::ScoreDimension::contains(const Position<mpx_t>& pos) const
+bool Pageset::ScoreDimension::contains(const Position<mpx_t>& pos) const
 {
     return (pos.x >= position.x && pos.y >= position.y && pos.x < position.x + width && pos.y < position.y + height);
 }
 
 // plate-info constructor
-PageSet::PlateInfo::PlateInfo(const unsigned int _pageno, const Score& _score, const ScoreDimension& _dim)
-    : pageno(_pageno), score(&_score), dimension(_dim), plate(new Plate()) {}
+Pageset::PlateInfo::PlateInfo(const unsigned int _pageno, const unsigned int _start, const Score& _score, const ScoreDimension& _dim)
+    : pageno(_pageno), start_page(_start), score(&_score), dimension(_dim), plate(new Plate()) {}
 
 // find a plate belonging to a given score on this page
-std::list<PageSet::PlateInfo>::iterator PageSet::pPage::get_plate_by_score(const Score& score)
+Pageset::pPage::Iterator Pageset::pPage::get_plate_by_score(const Score& score)
 {
-    for (std::list<PlateInfo>::iterator i = plates.begin(); i != plates.end(); ++i) // check each plate
+    for (Iterator i = plates.begin(); i != plates.end(); ++i)   // check each plate
     {
         if (i->score == &score) return i;   // if it refers to the given score, return
     };
@@ -61,9 +61,9 @@ std::list<PageSet::PlateInfo>::iterator PageSet::pPage::get_plate_by_score(const
 }
 
 // find a plate containing the given graphical coordinate (relative to the page)
-std::list<PageSet::PlateInfo>::iterator PageSet::pPage::get_plate_by_pos(const Position<>& pos)
+Pageset::pPage::Iterator Pageset::pPage::get_plate_by_pos(const Position<>& pos)
 {
-    for (std::list<PlateInfo>::iterator i = plates.begin(); i != plates.end(); ++i) // check each plate
+    for (Iterator i = plates.begin(); i != plates.end(); ++i)   // check each plate
     {
         if (i->dimension.position.x <= pos.x && // if the given position is within the score object
             i->dimension.position.x + static_cast<int>(i->dimension.width) >= pos.x &&
@@ -75,10 +75,10 @@ std::list<PageSet::PlateInfo>::iterator PageSet::pPage::get_plate_by_pos(const P
 }
 
 // remove plates of the given score from all pages 
-void PageSet::erase_score(const Score& score)
+void Pageset::erase_score(const Score& score)
 {
-    std::list<PageSet::PlateInfo>::iterator info;   // plate to be removed
-    for (std::list<pPage>::iterator i = pages.begin(); i != pages.end(); ++i)   // for each page
+    Pageset::pPage::Iterator info;      // plate to be removed
+    for (Iterator i = pages.begin(); i != pages.end(); ++i)    // for each page
     {
         info = i->get_plate_by_score(score);                // get the plate for the given score
         if (info != i->plates.end()) i->plates.erase(info); // if it exists, remove the plate
@@ -86,10 +86,10 @@ void PageSet::erase_score(const Score& score)
 }
 
 // get the page with the given index (creating non-existing pages)
-std::list<PageSet::pPage>::iterator PageSet::get_page(unsigned int pageno)
+Pageset::Iterator Pageset::get_page(unsigned int pageno)
 {
     unsigned int idx = 0;   // page index
-    for (std::list<pPage>::iterator i = pages.begin(); i != pages.end(); ++i)   // iterate through pages
+    for (Iterator i = pages.begin(); i != pages.end(); ++i) // iterate through pages
     {
         if (idx == pageno) return i;    // if we have got the correct page, return
         idx++;                          // count the page
@@ -99,7 +99,7 @@ std::list<PageSet::pPage>::iterator PageSet::get_page(unsigned int pageno)
 }
 
 // remove empty pages from the end of the pageset
-void PageSet::remove_empty_pages()
+void Pageset::remove_empty_pages()
 {
     while (!pages.empty() && pages.back().plates.empty() && pages.back().attachables.empty())
     {

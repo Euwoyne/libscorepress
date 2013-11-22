@@ -23,3 +23,4 @@ using namespace ScorePress;
 
 Error::Error() : std::string("Unknown Error within module \"libscorepress\"") {}
 Error::Error(const std::string msg) : std::string(msg) {}
+

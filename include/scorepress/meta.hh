@@ -74,3 +74,4 @@ struct SCOREPRESS_API DocumentMeta : public Meta
 } // end namespace
 
 #endif
+

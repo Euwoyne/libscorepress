@@ -2,7 +2,7 @@
 /*
   ScorePress - Music Engraving Software  (libscorepress)
   Copyright (C) 2013 Dominik Lehmann
-
+  
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
   versions of the EUPL (the "Licence");
@@ -245,8 +245,8 @@ bool EditCursor::for_each_chord_in_beam_do(VoiceCursor& cur, void (*func)(Chord&
 }
 
 // constructors
-EditCursor::EditCursor(Document& doc, PageSet& pset, const InterfaceParam& _param) : UserCursor(doc, pset), param(&_param), engraver(NULL) {}
-EditCursor::EditCursor(Document& doc, PageSet& pset, const InterfaceParam& _param, Engraver& _engraver) : UserCursor(doc, pset), param(&_param), engraver(&_engraver) {}
+EditCursor::EditCursor(Document& doc, Pageset& pset, const InterfaceParam& _param) : UserCursor(doc, pset), param(&_param), engraver(NULL) {}
+EditCursor::EditCursor(Document& doc, Pageset& pset, const InterfaceParam& _param, Engraver& _engraver) : UserCursor(doc, pset), param(&_param), engraver(&_engraver) {}
 
 // reengrave the score and update this cursor (all iterators and pVoice::begin must be valid when calling this!)
 void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
@@ -255,18 +255,19 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     if (!has_score()) throw NoScoreException();
     
     // save plate information (plateinfo and pnote/pvoice will be invalidated)
-    const unsigned int pageno = plateinfo->pageno;      // current page number (relative to score's beginning)
-    const const_Cursor vbegin = cursor->pvoice->begin;  // current cursor voice-begin
+    const unsigned int pageno = plateinfo->pageno;          // current page number (relative to score's beginning)
+    const unsigned int start_page = plateinfo->start_page;  // the score's start-page number
+    const const_Cursor vbegin = cursor->pvoice->begin;      // current cursor voice-begin
     
     // engrave the score (invalidates page, plateinfo, line and every "pnote" and "pvoice" of the voice-cursors)
     engraver->set_pageset(*pageset);
-    engraver->engrave(score->score, score->start_page);
+    engraver->engrave(*score, start_page);
     
     // recalculate on-plate references (page and plateinfo)
-    page = pageset->get_page(score->start_page + pageno);       // get correct page
+    page = pageset->get_page(start_page + pageno);      // get correct page
     if (page != pageset->pages.end())
     {
-        plateinfo = &*page->get_plate_by_score(score->score);   // get plate information
+        plateinfo = &*page->get_plate_by_score(*score); // get plate information
     };
     if (page == pageset->pages.end())   // if the page does not exist
     {
@@ -864,3 +865,4 @@ void EditCursor::set_accidental_auto()  throw(Cursor::IllegalObjectTypeException
         (*head)->accidental.type = ctx.guess_accidental((*head)->tone, param->prefer_natural);
     };
 }
+

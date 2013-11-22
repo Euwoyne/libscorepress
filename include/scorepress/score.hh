@@ -26,7 +26,7 @@
 #include "parameters.hh"    // StyleParam
 #include "smartptr.hh"      // SmartPtr
 #include "meta.hh"          // Meta, DocumentMeta
-#include "error.hh"         // Score::Error
+#include "error.hh"         // Error
 #include "export.hh"
 
 namespace ScorePress
@@ -77,12 +77,14 @@ class SCOREPRESS_API Score
     };
     
     typedef SmartPtr<EngraverParam> EngraverParamPtr;
+    typedef SmartPtr<StyleParam>    StyleParamPtr;
     
  public:
     std::list<Staff> staves;    // the staves within the score
     Layout layout;              // layout information for the first page
                                 // (consequent page information given with pagebreak-objects)
     EngraverParamPtr param;     // optional engraver parameters
+    StyleParamPtr style;        // optional style parameters
     Meta meta;                  // meta information
     
  public:
@@ -136,30 +138,33 @@ class SCOREPRESS_API Document
         Attached(unsigned int _page, Movable* _object) : page(_page), object(_object) {};
     };
     
+    // list typedefs
+    typedef std::list<Attached> AttachedList;
+    typedef std::list<Score>    ScoreList;
+    
  private:
-    std::list<Attached> attached;   // objects attached to the document
+    AttachedList   attached;        // objects attached to the document
     
  public:
-    PageDimension    page_layout;   // page layout
-    std::list<Score> scores;        // scores within the document
-    DocumentMeta     meta;          // meta information
+    PageDimension  page_layout;     // page layout
+    ScoreList      scores;          // scores within the document
+    DocumentMeta   meta;            // meta information
     
     // on-page object parameters
     unsigned int head_height;       // default head-height (in micrometer)
     unsigned int stem_width;        // default stem-width  (in micrometer)
     
-    // inserts the given attachable into the list, ordering by page (ownership transferred to this instance)
-    void add_attached(Movable* object, unsigned int page);
-    
-    // removes the attached object pointed to by the iterator (this invalidates the iterator)
-    void remove_attached(std::list<Attached>::iterator it);
-    
-    // returns an iterator for the attached objects (pointing to the beginning of the given page)
-    inline const std::list<Attached>& get_attached() const {return attached;};
+ public:
+    // attached object interface
+    void add_attached(Movable* object, unsigned int page);  // adds attachable (ownership transferred to this instance)
+    void remove_attached(std::list<Attached>::iterator it); // removes attached object (this invalidates the iterator)
+    const std::list<Attached>& get_attached() const;        // returns an iterator for the attached objects
     
     // destructor (deleting attached objects)
     virtual ~Document();
 };
+
+inline const std::list<Document::Attached>& Document::get_attached() const {return attached;}
 
 } // end namespace
 

@@ -21,7 +21,7 @@
 #define SCOREPRESS_ENGRAVERSTATE_HH
 
 #include "score.hh"        // Score, value_t, std::list
-#include "pageset.hh"      // PageSet, Plate, ScoreContext, StaffContext, VoiceContext
+#include "pageset.hh"      // Pageset, Plate, ScoreContext, StaffContext, VoiceContext
 #include "pick.hh"         // Pick
 #include "sprites.hh"      // Sprites
 #include "engrave_info.hh" // StemInfo, BeamInfo, BeamInfoMap, TieInfo, TieInfoChord, TieInfoMap, SpaceInfo, LineInfo
@@ -48,10 +48,11 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
 {
  private:
     // typedefs for cleaner class interface
-    typedef std::list<Plate::pNote>::iterator    pNoteIt;
-    typedef std::list<Plate::pVoice>::iterator   pVoiceIt;
-    typedef std::list<Plate::pLine>::iterator    pLineIt;
-    typedef std::list<PageSet::pPage>::iterator  pPageIt;
+    typedef std::list<Plate::pNote>::iterator        pNoteIt;
+    typedef std::list<Plate::pVoice>::iterator       pVoiceIt;
+    typedef std::list<Plate::pLine>::iterator        pLineIt;
+    typedef std::list<Pageset::pPage>::iterator      pPageIt;
+    typedef std::list<Pageset::PlateInfo>::iterator  PlateInfoIt;
     
  private:
     // initial parameters
@@ -71,7 +72,8 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     Pick pick;
     
     // target instances
-    PageSet*       pageset;         // target set of pages
+    Pageset*       pageset;         // target set of pages
+    PlateInfoIt    plateinfo;       // target plate-info
     RefPtr<Plate>  plate;           // target plate
     pLineIt        pline;           // target on-plate line
     pVoiceIt       pvoice;          // target on-plate voice
@@ -98,7 +100,7 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     
     void justify_line();        // justify the given line to fit into the score-area
     
-    PageSet::ScoreDimension dimtopx(const ScoreDimension& dim); // convert score-dimension from micrometer to millipixel
+    Pageset::ScoreDimension dimtopx(const ScoreDimension& dim); // convert score-dimension from micrometer to millipixel
     
  private:
     // break all ties at the specified x-position
@@ -112,7 +114,7 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     // constructor (will erase "score" from the "pageset" and prepare for engraving)
     EngraverState(const Score&         score,       // score object to be engraved
                   const unsigned int   start_page,  // page to begin the score on
-                        PageSet&       pageset,     // target pageset
+                        Pageset&       pageset,     // target pageset
                   const Sprites&       sprites,     // sprite set
                   const EngraverParam& parameters,  // engraver parameters
                   const StyleParam&    style,       // default staff-style (may be overridden by score)

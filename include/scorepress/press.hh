@@ -22,7 +22,7 @@
 
 #include <string>           // std::string
 
-#include "pageset.hh"       // PageSet, Plate, Score, List, Color
+#include "pageset.hh"       // Pageset, Plate, Score, List, Color
 #include "renderer.hh"      // Renderer
 #include "parameters.hh"    // PressParam, ViewportParam
 #include "user_cursor.hh"   // UserCursor
@@ -112,10 +112,10 @@ class SCOREPRESS_LOCAL Press : public Logging
     void render(Renderer& renderer, const Plate& plate, const Position<mpx_t> offset) throw(InvalidRendererException);
     
     // render a page through the given renderer
-    void render(Renderer& renderer, const PageSet::pPage& page, const PageSet& pageset, const Position<mpx_t> offset) throw(InvalidRendererException);
+    void render(Renderer& renderer, const Pageset::pPage& page, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException);
     
     // render page decoration
-    void render_decor(Renderer& renderer, const PageSet& pageset, const Position<mpx_t> offset) throw(InvalidRendererException);
+    void render_decor(Renderer& renderer, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException);
     
     // render a cursor through the given renderer
     void render(Renderer& renderer, const UserCursor& cursor, const Position<mpx_t> offset) throw (InvalidRendererException, UserCursor::NotValidException);

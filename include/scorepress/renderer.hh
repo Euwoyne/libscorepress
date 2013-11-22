@@ -29,7 +29,6 @@
 
 namespace ScorePress
 {
-//
 //  CLASSES
 // ---------
 class SCOREPRESS_API Renderer;  // abstract vector-graphics and svg-sprites-renderer interface

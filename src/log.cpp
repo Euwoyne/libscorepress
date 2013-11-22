@@ -115,3 +115,4 @@ Log::~Log()
 {
     if (file.is_open()) file.close();
 }
+

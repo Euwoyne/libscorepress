@@ -105,6 +105,7 @@ class SCOREPRESS_API Logging
  public:
     inline Logging() : logging_log(NULL) {};
     inline void log_set(Log& log)        {logging_log = &log;};
+    inline void log_set(Logging& log)    {logging_log = log.logging_log;};
     inline void log_unset()              {logging_log = NULL;};
     
     inline void log_info(const char* msg)    const {if (logging_log) logging_log->info(msg);};

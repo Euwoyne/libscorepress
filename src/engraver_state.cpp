@@ -2,7 +2,7 @@
 /*
   ScorePress - Music Engraving Software  (libscorepress)
   Copyright (C) 2013 Dominik Lehmann
-
+  
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
   versions of the EUPL (the "Licence");
@@ -969,9 +969,9 @@ void EngraverState::justify_line()
 }
 
 // transform a score-dimension from micrometer to millipixel
-PageSet::ScoreDimension EngraverState::dimtopx(const ScoreDimension& dim)
+Pageset::ScoreDimension EngraverState::dimtopx(const ScoreDimension& dim)
 {
-    return PageSet::ScoreDimension(viewport->umtopx_h(dim.position.x), viewport->umtopx_v(dim.position.y),
+    return Pageset::ScoreDimension(viewport->umtopx_h(dim.position.x), viewport->umtopx_v(dim.position.y),
                                    viewport->umtopx_h(dim.width), viewport->umtopx_v(dim.height));
 }
 
@@ -1101,7 +1101,7 @@ Plate::GphBox EngraverState::calculate_gphBox(Position<mpx_t> p1, Position<mpx_t
 // constructor (will erase "score" from the "pageset" and prepare for engraving)
 EngraverState::EngraverState(const Score&         _score,
                              const unsigned int   _start_page,
-                                   PageSet&       _pageset,
+                                   Pageset&       _pageset,
                              const Sprites&       _sprites,
                              const EngraverParam& _param,
                              const StyleParam&    _style,
@@ -1123,8 +1123,9 @@ EngraverState::EngraverState(const Score&         _score,
     
     // initialize local variables
     page = pageset->get_page(_start_page);
-    page->plates.push_back(PageSet::PlateInfo(pagecnt, _score, dimtopx(pick.get_dimension())));
-    plate = page->plates.back().plate;
+    page->plates.push_back(Pageset::PlateInfo(pagecnt, _start_page, _score, dimtopx(pick.get_dimension())));
+    plateinfo = --page->plates.end();
+    plate = plateinfo->plate;
     lineinfo.dimension = &pick.get_dimension();
     lineinfo.indent = pick.get_indent();
     lineinfo.justify = pick.get_justify();
@@ -1219,10 +1220,11 @@ bool EngraverState::engrave_next()
     {
         if (++page == pageset->pages.end())
         {
-            pageset->pages.push_back(PageSet::pPage());
+            pageset->pages.push_back(Pageset::pPage());
             page = --pageset->pages.end();
         };
-        page->plates.push_back(PageSet::PlateInfo(++pagecnt, pick.get_score(), dimtopx(pick.get_dimension())));
+        page->plates.push_back(Pageset::PlateInfo(++pagecnt, plateinfo->start_page, pick.get_score(), dimtopx(pick.get_dimension())));
+        plateinfo = --page->plates.end();
         plate = page->plates.back().plate;
     };
     
@@ -1359,3 +1361,4 @@ void EngraverState::log_unset()
     this->Logging::log_unset();
     pick.log_unset();
 }
+

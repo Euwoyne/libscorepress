@@ -25,7 +25,7 @@
     \brief %Engraver, converting a \link Score\endlink into displayable \link Plate Plates\endlink.
     
     Converter class using a \link Score score-object\endlink to calculate a set
-    of absolute-positioned sprites saved to a Plate. The target \link PageSet pageset\endlink as
+    of absolute-positioned sprites saved to a Plate. The target \link Pageset pageset\endlink as
     well as the \link Sprites sprite-library\endlink are given during the construction.
     Internally an instance of Pick is used to calculate the object positions.
 */
@@ -37,7 +37,7 @@
     EngraverParam for a detailed description of available parameters.
 */
 
-/*! \fn ScorePress::Engraver::Engraver(PageSet& pageset, const Sprites& sprites, const StyleParam& style, const ViewportParam& viewport)
+/*! \fn ScorePress::Engraver::Engraver(Pageset& pageset, const Sprites& sprites, const StyleParam& style, const ViewportParam& viewport)
     \brief Create a new instance.
     
     Creates an Engraver instance, that writes to the given pageset.
@@ -49,10 +49,10 @@
     \param viewport  The used viewport.
 */
 
-/*! \fn void ScorePress::Engraver::set_pageset(PageSet& pageset)
+/*! \fn void ScorePress::Engraver::set_pageset(Pageset& pageset)
     \brief Set the target pageset.
     
-    Set the target PageSet instance, to which all created data is written.
+    Set the target Pageset instance, to which all created data is written.
     The value given to the \link Engraver() constructor\endlink will be overwritten.
     
     \param pageset  New target pageset.
@@ -88,7 +88,7 @@
     \brief Engraves the given score to the plateset.
     
     Create an instance of Plate for every page of the given score and inserts these
-    plates into the target PageSet given to the \link Engraver() constructor \endlink.
+    plates into the target Pageset given to the \link Engraver() constructor \endlink.
     If the pageset already contains plates for this particular score, this data is removed prior
     to the engraving process.
     Note, that this does not affect the \link Document::PageDimension page-layout\endlink, head-height and stem-width

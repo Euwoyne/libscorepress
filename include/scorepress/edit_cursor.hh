@@ -20,7 +20,7 @@
 #ifndef SCOREPRESS_EDITCURSOR_HH
 #define SCOREPRESS_EDITCURSOR_HH
 
-#include "user_cursor.hh"   // UserCursor, Document, PageSet, [score classes]
+#include "user_cursor.hh"   // UserCursor, Document, Pageset, [score classes]
 #include "engraver.hh"      // Engraver
 #include "log.hh"           // Logging
 #include "export.hh"
@@ -85,8 +85,8 @@ class SCOREPRESS_API EditCursor : public UserCursor
     
  public:
     // constructor
-    EditCursor(Document& doc, PageSet& pset, const InterfaceParam& param);
-    EditCursor(Document& doc, PageSet& pset, const InterfaceParam& param, Engraver& engraver);
+    EditCursor(Document& doc, Pageset& pset, const InterfaceParam& param);
+    EditCursor(Document& doc, Pageset& pset, const InterfaceParam& param, Engraver& engraver);
     
     // engraver interface
     bool has_engraver() const;

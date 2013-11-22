@@ -149,6 +149,7 @@ hfiles := ${headerdir}/engine.hh         \
           ${headerdir}/refptr.hh         \
           ${headerdir}/smartptr.hh       \
           ${headerdir}/undefined.hh      \
+          ${headerdir}/file_reader.hh    \
           ${headerdir}/ui.hh
 
 srcfiles := ${cfiles} ${hfiles}

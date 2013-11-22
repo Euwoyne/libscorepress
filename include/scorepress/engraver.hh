@@ -21,7 +21,7 @@
 #define SCOREPRESS_ENGRAVER_HH
 
 #include "score.hh"        // Document, Score
-#include "pageset.hh"      // PageSet
+#include "pageset.hh"      // Pageset
 #include "sprites.hh"      // Sprites
 #include "parameters.hh"   // EngraverParam, StyleParam, ViewportParam
 #include "log.hh"          // Logging
@@ -47,7 +47,7 @@ class SCOREPRESS_LOCAL Engraver;    // engraver, computing a renderable plate fr
 class SCOREPRESS_LOCAL Engraver : public Logging
 {
  private:
-          PageSet*       pageset;  // target set of pages
+          Pageset*       pageset;  // target set of pages
     const Sprites*       sprites;  // pointer to the sprite-library (for the pick)
     const StyleParam*    style;    // default staff-style
     const ViewportParam* viewport; // viewport-parameters (see "parameters.hh")
@@ -59,10 +59,10 @@ class SCOREPRESS_LOCAL Engraver : public Logging
     EngraverParam parameters;  // engraving-parameters (see "parameters.hh")
     
     // constructor
-    Engraver(PageSet& pageset, const Sprites& sprites, const StyleParam& style, const ViewportParam& viewport);
+    Engraver(Pageset& pageset, const Sprites& sprites, const StyleParam& style, const ViewportParam& viewport);
     
     // set methods
-    inline void set_pageset(PageSet& pageset);                          // set the pageset
+    inline void set_pageset(Pageset& pageset);                          // set the pageset
     inline void set_sprites(const Sprites& sprites);                    // set the sprite-library
     inline void set_style(const StyleParam& style);                     // set the staff-style
     inline void set_viewport(const ViewportParam& viewport);            // set the viewport
@@ -78,7 +78,7 @@ class SCOREPRESS_LOCAL Engraver : public Logging
 };
 
 // set methods
-inline void Engraver::set_pageset(PageSet& _pageset)               {pageset = &_pageset;}
+inline void Engraver::set_pageset(Pageset& _pageset)               {pageset = &_pageset;}
 inline void Engraver::set_sprites(const Sprites& _sprites)         {sprites = &_sprites;}
 inline void Engraver::set_style(const StyleParam& _style)          {style = &_style;}
 inline void Engraver::set_viewport(const ViewportParam& _viewport) {viewport = &_viewport;}

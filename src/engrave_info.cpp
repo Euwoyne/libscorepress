@@ -30,7 +30,7 @@ using namespace ScorePress;
 // engraving during the line-postprocessing.
 //
 
-// TODO:BUG! Prevent short 8th beam
+// FIXME: Prevent short 8th beam
 
 // set the given beam information to be ending at the given note
 void BeamInfo::set(size_t beam_idx, size_t end_idx, Plate::pNote& begin, const Plate::pNote& end, const Plate::pNote& cur)
@@ -459,3 +459,4 @@ void BeamGroupInfo::finish()
     // end existing beams
     stop(last_chord->val.exp, last_pnote);
 }
+

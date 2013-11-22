@@ -23,7 +23,7 @@
 #include <list>             // std::list
 
 #include "cursor.hh"        // Cursor, Document
-#include "pageset.hh"       // PageSet, StaffContext, Plate, value_t
+#include "pageset.hh"       // Pageset, StaffContext, Plate, value_t
 #include "parameters.hh"    // ViewportParam
 #include "error.hh"         // Error, std::string
 #include "log.hh"           // Logging
@@ -91,12 +91,12 @@ class SCOREPRESS_API UserCursor : public Logging
     
  protected:
     // base data
-    Document* document;                         // document
-    PageSet* pageset;                           // page-set
-    Document::Score* score;                     // score
-    std::list<PageSet::pPage>::iterator page;   // the currently referenced page
-    PageSet::PlateInfo* plateinfo;              // plate and score
-    std::list<Plate::pLine>::iterator line;     // on-plate line
+    Document*           document;               // document
+    Pageset*            pageset;                // page-set
+    Score*              score;                  // score
+    Pageset::Iterator   page;                   // the currently referenced page
+    Pageset::PlateInfo* plateinfo;              // plate and score
+    Plate::Iterator     line;                   // on-plate line
     
     // voice cursors
     std::list<VoiceCursor> vcursors;            // a cursor for each voice
@@ -128,19 +128,26 @@ class SCOREPRESS_API UserCursor : public Logging
     
  public:
     // initialization methods
-    UserCursor(Document& document, PageSet& pageset);                       // constructor
+    UserCursor(Document& document, Pageset& pageset);                       // constructor
+    UserCursor(const UserCursor& cursor);                                   // copy constructor
+    
     void set_score(Document::Score& score) throw(Error);                    // initialize the cursor at the beginning of a given score
-    void set_pos(Position<mpx_t>, const PressParam&, const ViewportParam&); // set cursor to graphical position (on current page)
+    void set_pos(Position<mpx_t>, const ViewportParam&);                    // set cursor to graphical position (on current page, at 100% Zoom)
+    void set_pos(Pageset::Iterator, Position<mpx_t>, const ViewportParam&); // set cursor to graphical position (on given page, at 100% Zoom)
     
     // access methods
     const Score&          get_score()     const;                            // return the score-object
+    const Staff&          get_staff()     const throw(NotValidException);   // return the staff
+    const Voice&          get_voice()     const throw(NotValidException);   // return the voice
+    const Cursor&         get_cursor()    const throw(NotValidException);   // return the score-cursor
+    
+          unsigned int    get_pageno()    const;                            // return the page-number
+    const Pageset::pPage& get_page()      const;                            // return the page
     const Plate&          get_plate()     const;                            // return the plate-object
     const Plate::pLine&   get_line()      const;                            // return the on-plate line
-    const Voice&          get_voice()     const throw(NotValidException);   // return the voice
-    const Staff&          get_staff()     const throw(NotValidException);   // return the staff
     const Plate::pVoice&  get_pvoice()    const throw(NotValidException);   // return the on-plate voice
-    const Cursor&         get_cursor()    const throw(NotValidException);   // return the score-cursor
     const Plate::pNote&   get_platenote() const throw(NotValidException);   // return the on-plate note
+    
           value_t         get_time()      const throw(NotValidException);   // return the current time-stamp
     
     bool   at_end()      const throw(NotValidException);        // check, if the cursor is at the end of the voice
@@ -198,9 +205,13 @@ inline bool UserCursor::VoiceCursor::at_end()   const {return (pnote->at_end() |
 inline const Newline& UserCursor::VoiceCursor::get_layout() const
     {return line_layout.ready() ? static_cast<Newline&>(*line_layout) : note.staff().layout;}
 
-inline const Score&         UserCursor::get_score() const {return score->score;}
-inline const Plate&         UserCursor::get_plate() const {return *plateinfo->plate;}
-inline const Plate::pLine&  UserCursor::get_line()  const {return *line;}
+inline void UserCursor::set_pos(Position<mpx_t> pos, const ViewportParam& viewport) {set_pos(page, pos, viewport);}
+
+inline const Score&          UserCursor::get_score()  const {return *score;}
+inline       unsigned int    UserCursor::get_pageno() const {return page->plates.front().pageno;}
+inline const Pageset::pPage& UserCursor::get_page()   const {return *page;}
+inline const Plate&          UserCursor::get_plate()  const {return *plateinfo->plate;}
+inline const Plate::pLine&   UserCursor::get_line()   const {return *line;}
 
 inline bool   UserCursor::ready()       const {return (score != NULL && cursor != vcursors.end());}
 inline bool   UserCursor::has_score()   const {return (score != NULL);}

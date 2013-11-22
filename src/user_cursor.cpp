@@ -330,7 +330,7 @@ void UserCursor::prepare_voices()
     cursor = vcursors.end();
     
     // prepare all main-voices of the current line
-    for (std::list<Staff>::iterator staff = score->score.staves.begin(); staff != score->score.staves.end(); ++staff)
+    for (std::list<Staff>::iterator staff = score->staves.begin(); staff != score->staves.end(); ++staff)
     {
         // prepare voice
         std::list<Plate::pVoice>::iterator pvoice = line->get_voice(*staff);    // get staff on the plate
@@ -454,17 +454,31 @@ void UserCursor::set_x_voice(const mpx_t x)
 }
 
 // constructor (initializing the cursor at the beginning of the given score)
-UserCursor::UserCursor(Document& _document, PageSet& _pageset)
+UserCursor::UserCursor(Document& _document, Pageset& _pageset)
     : document(&_document), pageset(&_pageset), score(NULL), plateinfo(NULL) {}
+
+// copy constructor
+UserCursor::UserCursor(const UserCursor& _cursor) : document(_cursor.document), pageset(_cursor.pageset), score(_cursor.score),
+                                                    page(_cursor.page), plateinfo(_cursor.plateinfo), line(_cursor.line),
+                                                    vcursors(_cursor.vcursors)  // copy internal data
+{
+    std::list<VoiceCursor>::const_iterator temp_cur(_cursor.vcursors.begin());
+    cursor = vcursors.begin();
+    while (temp_cur != _cursor.cursor)
+    {
+        ++cursor;
+        ++temp_cur;
+    };
+}
 
 // initialize the cursor at the beginning of a given score
 void UserCursor::set_score(Document::Score& _score) throw(Error)
 {
-    score = &_score;                                    // set score reference
+    score = &_score.score;                              // set score reference
     page = pageset->get_page(_score.start_page);        // get first page
     if (page == pageset->pages.end()) goto on_error;    // skip to error handling
     {
-    const std::list<PageSet::PlateInfo>::iterator pi = page->get_plate_by_score(_score.score);
+    const std::list<Pageset::PlateInfo>::iterator pi = page->get_plate_by_score(_score.score);
     if (pi == page->plates.end()) goto on_error;        // skip to error handling
     plateinfo = &*pi;                                   // get plate information
     }
@@ -481,55 +495,62 @@ void UserCursor::set_score(Document::Score& _score) throw(Error)
     throw Error("Unable to find the given score in the page-set.");
 }
 
-// set cursor to graphical position (on the current page)
-void UserCursor::set_pos(Position<mpx_t> pos, const PressParam& press_param, const ViewportParam& viewport)
+// set cursor to graphical position (on given page, at 100% Zoom)
+void UserCursor::set_pos(Pageset::Iterator new_page, Position<mpx_t> pos, const ViewportParam& viewport)
 {
-    pos.x = _round((1000.0 * pos.x) / press_param.scale - pageset->page_layout.margin.left);
-    pos.y = _round((1000.0 * pos.y) / press_param.scale - pageset->page_layout.margin.top);
+    // set on-page root (substract page margin)
+    pos.x -= pageset->page_layout.margin.left;
+    pos.y -= pageset->page_layout.margin.top;
     
     // find PLATE
-    PageSet::PlateInfo* new_pinfo = NULL;
-    for (std::list<PageSet::PlateInfo>::iterator p = page->plates.begin(); pos.y >= 0 && p != page->plates.end(); ++p)
+    Pageset::PlateInfo* new_pinfo = NULL;
+    for (std::list<Pageset::PlateInfo>::iterator p = new_page->plates.begin(); pos.y >= 0 && p != new_page->plates.end(); ++p)
     {
-        if (p->dimension.contains(pos)) {new_pinfo = &*p; break;};
-        pos.y -= pageset->page_layout.height + press_param.page_distance;
+        if (p->dimension.contains(pos))
+        {
+            new_pinfo = &*p;
+            break;
+        };
     };
-    if (!new_pinfo) return;                     // if no plate is found at the position, abort
-    pos -= new_pinfo->dimension.position;       // calculate position relative to plate
+    if (!new_pinfo) return;                         // if no plate is found at the position, abort
+    pos -= new_pinfo->dimension.position;           // calculate position relative to plate
     
     // find on-plate LINE
-    bool check = false;                         // success indicator
+    bool check = false;                             // success indicator
     for (std::list<Plate::pLine>::iterator l = new_pinfo->plate->lines.begin(); l != new_pinfo->plate->lines.end(); ++l)
-    {                                           // search all lines for a match
+    {                                               // search all lines for a match
         if (l->gphBox.contains(pos)) {line = l; check = true; break;};
     };
-    if (!check) return;                         // if no line is found at the position, abort
-    plateinfo = new_pinfo;                      // set new plateinfo
+    if (!check) return;                             // if no line is found at the position, abort
+    page = new_page;                                // set new page
+    plateinfo = new_pinfo;                          // set new plateinfo
+    score = const_cast<Score*>(plateinfo->score);   // set score
+    // (const-cast not unexpected, because there is a non-const instance within document)
     
     // find STAFF and approximate horizontal position
-    const Staff* staff = NULL;                  // staff reference
-    mpx_t head_height = 0;                      // head height
-    mpx_t bottom_diff = 0, old_bottom_diff = 0; // distance from staff bottom (current/last)
-    int   line_cnt = 0;                         // staff line count
-    prepare_voices();                           // prepare cursors for the chosen line
+    const Staff* staff = NULL;                      // staff reference
+    mpx_t head_height = 0;                          // head height
+    mpx_t bottom_diff = 0, old_bottom_diff = 0;     // distance from staff bottom (current/last)
+    int   line_cnt = 0;                             // staff line count
+    prepare_voices();                               // prepare cursors for the chosen line
     for (std::list<VoiceCursor>::iterator i = vcursors.begin(); i != vcursors.end(); ++i)
-    {                                           // iterate the voices
+    {                                               // iterate the voices
         head_height = viewport.umtopx_v(i->pvoice->begin.staff().head_height);  // calculate head-height
         line_cnt    = i->pvoice->begin.staff().line_count;                      // get line count
         bottom_diff = pos.y - i->pvoice->basePos.y - line_cnt * head_height;    // calculate distance from bottom line
-        if (bottom_diff < 0)                        // as soon as we finally get below the given position
-        {                                           // (we search from the top down)
-            staff = &i->pvoice->begin.staff();          // get staff (the one immediately below)
-            if (   i != vcursors.begin()                // if this is not the topmost voice...
+        if (bottom_diff < 0)                            // as soon as we finally get below the given position
+        {                                               // (we search from the top down)
+            staff = &i->pvoice->begin.staff();              // get staff (the one immediately below)
+            if (   i != vcursors.begin()                    // if this is not the topmost voice...
                 && old_bottom_diff < i->pvoice->basePos.y - head_height - pos.y)
-            {                                           // ...and the previous staff is closer to the position
+            {                                               // ...and the previous staff is closer to the position
                 staff = &(--i)->pvoice->begin.staff();                  // use previous staff
                 head_height = viewport.umtopx_v(staff->head_height);    // reset head-height
                 line_cnt    = staff->line_count;                        // reset line-count
             };
-            break;                                      // done
+            break;                                          // done
         };
-        old_bottom_diff = bottom_diff;              // if we continue the search, save the distance
+        old_bottom_diff = bottom_diff;                  // if we continue the search, save the distance
     };
     if (!staff) staff = &vcursors.back().pvoice->begin.staff(); // if none is found, default to first
     set_x_rough(pos.x);                                         // roughly set the horizontal position
@@ -555,13 +576,6 @@ void UserCursor::set_pos(Position<mpx_t> pos, const PressParam& press_param, con
 //  access methods
 // ----------------
 
-// return the voice
-const Voice& UserCursor::get_voice() const throw(NotValidException)
-{
-    if (cursor == vcursors.end()) throw NotValidException();
-    return cursor->note.voice();
-}
-
 // return the staff
 const Staff& UserCursor::get_staff() const throw(NotValidException)
 {
@@ -569,11 +583,11 @@ const Staff& UserCursor::get_staff() const throw(NotValidException)
     return cursor->note.staff();
 }
 
-// return the on-plate voice
-const Plate::pVoice& UserCursor::get_pvoice() const throw(NotValidException)
+// return the voice
+const Voice& UserCursor::get_voice() const throw(NotValidException)
 {
     if (cursor == vcursors.end()) throw NotValidException();
-    return *cursor->pvoice;
+    return cursor->note.voice();
 }
 
 // return the score-cursor
@@ -581,6 +595,13 @@ const Cursor& UserCursor::get_cursor() const throw(NotValidException)
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->note;
+}
+
+// return the on-plate voice
+const Plate::pVoice& UserCursor::get_pvoice() const throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return *cursor->pvoice;
 }
 
 // return the on-plate note
@@ -603,7 +624,7 @@ const ScoreDimension& UserCursor::get_dimension() const throw(NotValidException)
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).dimension
-                                       : score->score.layout.dimension;
+                                       : score->layout.dimension;
 }
 
 // return objects attached to the page
@@ -611,7 +632,7 @@ const MovableList& UserCursor::get_attached() const throw(NotValidException)
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).attached
-                                       : score->score.layout.attached;
+                                       : score->layout.attached;
 }
 
 // return the current time-stamp
@@ -715,11 +736,11 @@ bool UserCursor::has_prev_line() const throw(NotValidException)
     if (!ready()) throw NotValidException();
     if (line != plateinfo->plate->lines.begin())    // if there is a previous line on the page
         return true;                                //     return "true"
-    std::list<PageSet::pPage>::iterator p = page;   // otherwise search the previous pages
+    std::list<Pageset::pPage>::iterator p = page;   // otherwise search the previous pages
     while (p != pageset->pages.begin())
     {
         --p;
-        if (p->get_plate_by_score(score->score) != p->plates.end())
+        if (p->get_plate_by_score(*score) != p->plates.end())
             return true;
     };
     return false;
@@ -731,10 +752,10 @@ bool UserCursor::has_next_line() const throw(NotValidException)
     if (!ready()) throw NotValidException();
     if (line != --plateinfo->plate->lines.end())    // if there is a next line on the page
         return true;                                //     return "true"
-    std::list<PageSet::pPage>::iterator p = page;   // otherwise search the next pages
+    std::list<Pageset::pPage>::iterator p = page;   // otherwise search the next pages
     while (++p != pageset->pages.end())
     {
-        if (p->get_plate_by_score(score->score) != p->plates.end())
+        if (p->get_plate_by_score(*score) != p->plates.end())
             return true;
     };
     return false;
@@ -816,8 +837,8 @@ void UserCursor::prev_line() throw(NotValidException, InvalidMovement)
     if (line == plateinfo->plate->lines.begin())    // if it is on the previous page
     {
         // search previous pages
-        std::list<PageSet::pPage>::iterator p = page;                       // page iterator
-        std::list<PageSet::PlateInfo>::iterator pinfo = p->plates.end();    // page info
+        std::list<Pageset::pPage>::iterator p = page;                       // page iterator
+        std::list<Pageset::PlateInfo>::iterator pinfo = p->plates.end();    // page info
         
         while (p != pageset->pages.begin())
         {
@@ -853,8 +874,8 @@ void UserCursor::next_line() throw(NotValidException, InvalidMovement)
     if (++line == plateinfo->plate->lines.end())    // if it is on the next page
     {
         // search previous pages
-        std::list<PageSet::pPage>::iterator p = page;                       // page iterator
-        std::list<PageSet::PlateInfo>::iterator pinfo = p->plates.end();    // page info
+        std::list<Pageset::pPage>::iterator p = page;                       // page iterator
+        std::list<Pageset::PlateInfo>::iterator pinfo = p->plates.end();    // page info
         
         while (++p != pageset->pages.end())
         {

@@ -319,10 +319,10 @@ void Press::render(Renderer& renderer, const Plate& plate, const Position<mpx_t>
 }
 
 // render a page through the given renderer
-void Press::render(Renderer& renderer, const PageSet::pPage& page, const PageSet& pageset, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::render(Renderer& renderer, const Pageset::pPage& page, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException)
 {
     // render scores
-    for (std::list<PageSet::PlateInfo>::const_iterator i = page.plates.begin(); i != page.plates.end(); ++i)
+    for (std::list<Pageset::PlateInfo>::const_iterator i = page.plates.begin(); i != page.plates.end(); ++i)
     {
         render(renderer, *i->plate, Position<mpx_t>(_round(scale(i->dimension.position.x)) + offset.x,
                                                     _round(scale(i->dimension.position.y)) + offset.y));
@@ -341,7 +341,7 @@ void Press::render(Renderer& renderer, const PageSet::pPage& page, const PageSet
 }
 
 // render page decoration
-void Press::render_decor(Renderer& renderer, const PageSet& pageset, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::render_decor(Renderer& renderer, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException)
 {
     // draw shadow
     if (parameters.draw_shadow)

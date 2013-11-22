@@ -294,9 +294,10 @@ class SCOREPRESS_API Plate
     typedef Plate_pLine       pLine;        // on-plate line object (list of voices)
     
     // list typedefs
-    typedef std::list<pNote>  NoteList;
-    typedef std::list<pVoice> VoiceList;
-    typedef std::list<pLine>  LineList;
+    typedef std::list<pNote>   NoteList;
+    typedef std::list<pVoice>  VoiceList;
+    typedef std::list<pLine>   LineList;
+    typedef LineList::iterator Iterator;
     
     // lines on the plate
     LineList lines;

@@ -158,8 +158,6 @@ struct SCOREPRESS_API StyleParam
 //
 struct SCOREPRESS_API PressParam
 {
-    enum Layout {ONEPAGE, TWOPAGE, TWOPAGE_JOINED, ONEPAGE_NODIST, TWOPAGE_NODIST};
-    
     unsigned int scale;             // printing scale (in promille)
     
     bool         draw_shadow;       // draw page shadow
@@ -167,10 +165,8 @@ struct SCOREPRESS_API PressParam
     unsigned int shadow_offset;     // size of the page shadows      (in mpx)
     bool         draw_margin;       // draw page margin
     unsigned int margin_color;      // color of page margin          (in rgba, little endian)
-    unsigned int page_distance;     // distance between pages        (in mpx)
     unsigned int cursor_width;      // cursor line-width             (in mpx)
     unsigned int cursor_distance;   // cursor distance from the note (in micrometer; should be less than "min-distance")
-    Layout       multipage_layout;  // multipage layout
     
     bool draw_notebounds;           // draw boundary boxes of notes
     bool draw_attachbounds;         // draw boundary boxes of attachable objects
@@ -189,7 +185,6 @@ struct SCOREPRESS_API PressParam
                    shadow_offset(5000),
                    draw_margin(true),
                    margin_color(0xFFA0A0A0),
-                   page_distance(20000),
                    cursor_width(2000),
                    cursor_distance(400),
                    draw_notebounds(false),

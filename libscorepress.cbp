@@ -188,6 +188,24 @@
 			<Option target="shared" />
 			<Option target="static" />
 		</Unit>
+		<Unit filename="include/scorepress/file_format.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/file_reader.hh">
+			<Option target="shared" />
+			<Option target="static" />
+		</Unit>
+		<Unit filename="include/scorepress/file_writer.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
 		<Unit filename="include/scorepress/fraction.hh">
 			<Option target="shared" />
 			<Option target="static" />
@@ -351,6 +369,13 @@
 			<Option target="static" />
 		</Unit>
 		<Unit filename="src/error.cpp" />
+		<Unit filename="src/file_format.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
 		<Unit filename="src/fraction.cpp">
 			<Option target="shared" />
 			<Option target="static" />

@@ -47,7 +47,7 @@ AC_ARG_ENABLE([doxygen],
 AC_ARG_ENABLE([fraction-check],
             [AS_HELP_STRING([--enable-fraction-check], [enable overflow check for rational numbers])],
             [with_sizecheck="$withval"],
-            [with_sizecheck=no])
+            [with_sizecheck="no"])
 AC_ARG_ENABLE([debug],
             [AS_HELP_STRING([--enable-debug], [enable debugging with GDB])],
             [with_debug="$withval"],

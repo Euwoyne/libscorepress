@@ -38,7 +38,7 @@ inline int _round(const double d) {return static_cast<int>(d + 0.5);}
 // engrave the on-page attachables
 void Engraver::engrave_attachables(const Document& data)
 {
-    std::list<PageSet::pPage>::iterator p = pageset->pages.begin();
+    std::list<Pageset::pPage>::iterator p = pageset->pages.begin();
     unsigned int pageno = 0;
     const std::list<Document::Attached> attached = data.get_attached();
     for (std::list<Document::Attached>::const_iterator a = attached.begin(); a != attached.end(); ++a)
@@ -75,7 +75,7 @@ void Engraver::engrave_attachables(const Document& data)
 }
 
 // constructor (given target-plate and sprite-library)
-Engraver::Engraver(PageSet& _pageset, const Sprites& _sprites, const StyleParam& _style, const ViewportParam& _viewport) :
+Engraver::Engraver(Pageset& _pageset, const Sprites& _sprites, const StyleParam& _style, const ViewportParam& _viewport) :
     pageset(&_pageset),
     sprites(&_sprites),
     style(&_style),

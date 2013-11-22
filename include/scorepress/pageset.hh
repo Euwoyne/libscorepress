@@ -30,17 +30,17 @@ namespace ScorePress
 {
 //  CLASSES
 // ---------
-class SCOREPRESS_LOCAL PageSet;     // set of plates for all pages of a document
+class SCOREPRESS_LOCAL Pageset;     // set of plates for all pages of a document
 
 
 //
-//     class PageSet
+//     class Pageset
 //    ===============
 //
 // A set of plates used to render one document,
 // subdivided by sets of plates for each page.
 //
-class SCOREPRESS_LOCAL PageSet
+class SCOREPRESS_LOCAL Pageset
 {
  public:
     // dimension of the page
@@ -84,26 +84,38 @@ class SCOREPRESS_LOCAL PageSet
     {
      public:
         unsigned int pageno;                // pagenumber relative to the score-object's beginning
+        unsigned int start_page;            // start-page of the score (see Document::Score)
         const Score* score;                 // pointer to the score object
         const ScoreDimension dimension;     // score dimension
         const RefPtr<Plate> plate;          // plate object for the given page of the given score
         
-        PlateInfo(const unsigned int _pno, const Score& _score, const ScoreDimension& _dim);    // constructor
+        PlateInfo(const unsigned int pageno, const unsigned int start_page, const Score& score, const ScoreDimension& dim); // constructor
     };
     
     // all rendering information for one page
     class pPage
     {
      public:
-        std::list<PlateInfo> plates;                // plates for each visible score-object
-        std::list<Plate::pAttachable> attachables;  // independent movable objects on the page
+        // typedefs
+        typedef std::list<PlateInfo>           PlateList;
+        typedef std::list<PlateInfo>::iterator Iterator;
+        typedef std::list<Plate::pAttachable>  AttachableList;
+        
+     public:
+        PlateList      plates;          // plates for each visible score-object
+        AttachableList attachables;     // independent movable objects on the page
         
         // find a plate belonging to a given score on this page
-        std::list<PlateInfo>::iterator get_plate_by_score(const Score& score);
+        Iterator get_plate_by_score(const Score& score);
         
         // find a plate containing the given graphical coordinate (relative to the page)
-        std::list<PlateInfo>::iterator get_plate_by_pos(const Position<>& pos);
+        Iterator get_plate_by_pos(const Position<>& pos);
     };
+    
+    // typedefs
+    typedef std::list<pPage>                 PageList;
+    typedef std::list<pPage>::iterator       Iterator;
+    typedef std::list<pPage>::const_iterator const_Iterator;
     
     // page layout
     PageDimension page_layout;
@@ -113,14 +125,14 @@ class SCOREPRESS_LOCAL PageSet
     mpx_t stem_width;   // default stem-width
     
     // list of all pages within the document
-    std::list<pPage> pages;
+    PageList pages;
     inline void erase() {pages.clear();}
     
     // remove plates of the given score from all pages 
     void erase_score(const Score& score);
     
     // get the page with the given index (creating non-existing pages)
-    std::list<pPage>::iterator get_page(unsigned int pageno);
+    Iterator get_page(unsigned int pageno);
     
     // remove empty pages from the end of the pageset
     void remove_empty_pages();
