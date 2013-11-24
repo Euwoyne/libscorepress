@@ -60,22 +60,38 @@ Pageset::pPage::Iterator Pageset::pPage::get_plate_by_score(const Score& score)
     return plates.end();    // if it cannot be found, return invalid iterator
 }
 
+Pageset::pPage::const_Iterator Pageset::pPage::get_plate_by_score(const Score& score) const
+{
+    for (const_Iterator i = plates.begin(); i != plates.end(); ++i)   // check each plate
+    {
+        if (i->score == &score) return i;   // if it refers to the given score, return
+    };
+    return plates.end();    // if it cannot be found, return invalid iterator
+}
+
 // find a plate containing the given graphical coordinate (relative to the page)
-Pageset::pPage::Iterator Pageset::pPage::get_plate_by_pos(const Position<>& pos)
+Pageset::pPage::Iterator Pageset::pPage::get_plate_by_pos(const Position<mpx_t>& pos)
 {
     for (Iterator i = plates.begin(); i != plates.end(); ++i)   // check each plate
     {
-        if (i->dimension.position.x <= pos.x && // if the given position is within the score object
-            i->dimension.position.x + static_cast<int>(i->dimension.width) >= pos.x &&
-            i->dimension.position.y <= pos.y &&
-            i->dimension.position.y + static_cast<int>(i->dimension.height) >= pos.y)
-            return i;       // return the iterator
+        if (i->dimension.contains(pos)) // if the given position is within the score object
+            return i;                   // return the iterator
+    };
+    return plates.end();    // if it cannot be found, return invalid iterator
+}
+
+Pageset::pPage::const_Iterator Pageset::pPage::get_plate_by_pos(const Position<mpx_t>& pos) const
+{
+    for (const_Iterator i = plates.begin(); i != plates.end(); ++i)   // check each plate
+    {
+        if (i->dimension.contains(pos)) // if the given position is within the score object
+            return i;                   // return the iterator
     };
     return plates.end();    // if it cannot be found, return invalid iterator
 }
 
 // remove plates of the given score from all pages 
-void Pageset::erase_score(const Score& score)
+void Pageset::erase(const Score& score)
 {
     Pageset::pPage::Iterator info;      // plate to be removed
     for (Iterator i = pages.begin(); i != pages.end(); ++i)    // for each page
@@ -96,6 +112,19 @@ Pageset::Iterator Pageset::get_page(unsigned int pageno)
     }
     do pages.push_back(pPage()); while (idx++ < pageno);    // append enough pages to be able to return requested page
     return --pages.end();                                   // return page
+}
+
+// get the first page with the fiven score object
+Pageset::Iterator Pageset::get_first_page(const Score& score)
+{
+    pPage::Iterator plate;
+    for (Iterator i = pages.begin(); i != pages.end(); ++i) // iterate through pages
+    {
+        plate = i->get_plate_by_score(score);   // look for the score
+        if (plate != i->plates.end())
+            return i;
+    };
+    return pages.end();
 }
 
 // remove empty pages from the end of the pageset

@@ -97,19 +97,22 @@ class SCOREPRESS_LOCAL Pageset
     {
      public:
         // typedefs
-        typedef std::list<PlateInfo>           PlateList;
-        typedef std::list<PlateInfo>::iterator Iterator;
-        typedef std::list<Plate::pAttachable>  AttachableList;
+        typedef std::list<PlateInfo>                 PlateList;
+        typedef std::list<PlateInfo>::iterator       Iterator;
+        typedef std::list<PlateInfo>::const_iterator const_Iterator;
+        typedef std::list<Plate::pAttachable>        AttachableList;
         
      public:
         PlateList      plates;          // plates for each visible score-object
         AttachableList attachables;     // independent movable objects on the page
         
         // find a plate belonging to a given score on this page
-        Iterator get_plate_by_score(const Score& score);
+        Iterator       get_plate_by_score(const Score& score);
+        const_Iterator get_plate_by_score(const Score& score) const;
         
         // find a plate containing the given graphical coordinate (relative to the page)
-        Iterator get_plate_by_pos(const Position<>& pos);
+        Iterator       get_plate_by_pos(const Position<mpx_t>& pos);
+        const_Iterator get_plate_by_pos(const Position<mpx_t>& pos) const;
     };
     
     // typedefs
@@ -126,13 +129,14 @@ class SCOREPRESS_LOCAL Pageset
     
     // list of all pages within the document
     PageList pages;
-    inline void erase() {pages.clear();}
+    inline void clear() {pages.clear();}
     
     // remove plates of the given score from all pages 
-    void erase_score(const Score& score);
+    void erase(const Score& score);
     
     // get the page with the given index (creating non-existing pages)
     Iterator get_page(unsigned int pageno);
+    Iterator get_first_page(const Score& score);
     
     // remove empty pages from the end of the pageset
     void remove_empty_pages();

@@ -215,9 +215,9 @@
   
   <!-- ARTICULATION SYMBOLS -->
   <g id="dot">
-    <path d="M 3 0
-             A 3 3  0 0 0  3 6
-             A 3 3  0 0 0  3 0"
+    <path d="M 3.5 0
+             A 3.5 3.5  0 0 0  3.5 7
+             A 3.5 3.5  0 0 0  3.5 0"
     />
   </g>
   <g id="accent">

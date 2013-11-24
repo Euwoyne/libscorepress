@@ -81,6 +81,8 @@ class SCOREPRESS_API Engine : public Logging
     };
     
  private:
+    typedef std::map<const Score*, EditCursor> CursorMap;
+    
     Document*      document;    // the document this engine operates on
     Pageset        pageset;     // target pageset
     Engraver       engraver;    // engraver instance
@@ -88,10 +90,14 @@ class SCOREPRESS_API Engine : public Logging
     StyleParam     style;       // default style parameters (usually overwritten by document)
     ViewportParam  viewport;    // viewport parameters
     InterfaceParam interface;   // interface parameters
+    CursorMap      cursors;     // cursor map (one cursor per score-object)
     
  protected:
     // calculate page base position for the given multipage-layout
     const Position<mpx_t> page_pos(const unsigned int pageno, const MultipageLayout layout);
+    
+    Pageset::PlateInfo& select_plate(const Position<mpx_t>& pos, Page& page);                   // get plateinfo by position (on page)
+    Pageset::PlateInfo& select_plate(const Position<mpx_t>& pos, const MultipageLayout layout); // get plateinfo by position (muti-page)
     
  public:
     Engine(Document& document, Sprites& sprites);   // constructor (specifying the document the engine will operate on)
@@ -99,7 +105,7 @@ class SCOREPRESS_API Engine : public Logging
     // setup
     void set_document(Document& document);                      // change the associated document
     void set_resolution(unsigned int hppm, unsigned int vppm);  // change screen resolution (viewport parameters)
-    void engrave();                                             // engrave document (calculates pageset)
+    void engrave();                                             // engrave document (calculates pageset, invalidates cursors)
     
     // redering
     void render_page(Renderer& renderer, const Page page, const Position<mpx_t>& offset, bool decor = false);                       // single page (at pos)
@@ -108,38 +114,40 @@ class SCOREPRESS_API Engine : public Logging
     void render_cursor(Renderer& renderer, const UserCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset);  // cursor (with layout)
     
     // internal data access
-    Document&       get_document();                                     // the document this engine operates on
-    EngraverParam&  get_engraver_parameters();                          // default engraver parameters
-    PressParam&     get_press_parameters();                             // press parameters
-    StyleParam&     get_style_parameters();                             // default style parameters
-    InterfaceParam& get_interface_parameters();                         // interface parameters
-    ViewportParam&  get_viewport();                                     // viewport parameters
+    Document&        get_document();                                    // the document this engine operates on
+    EngraverParam&   get_engraver_parameters();                         // default engraver parameters
+    PressParam&      get_press_parameters();                            // press parameters
+    StyleParam&      get_style_parameters();                            // default style parameters
+    InterfaceParam&  get_interface_parameters();                        // interface parameters
+    ViewportParam&   get_viewport();                                    // viewport parameters
     
     // dimension information
-    mpx_t           page_width()  const;                                // graphical page width  (in millipixel)
-    mpx_t           page_height() const;                                // graphical page height (in millipixel)
-    unsigned int    page_count()  const;                                // page count
-    unsigned int    layout_width(const MultipageLayout layout)  const;  // width of complete layout  (in pixel)
-    unsigned int    layout_height(const MultipageLayout layout) const;  // height of complete layout (in pixel)
+    mpx_t            page_width()  const;                               // graphical page width  (in millipixel)
+    mpx_t            page_height() const;                               // graphical page height (in millipixel)
+    unsigned int     page_count()  const;                               // page count
+    unsigned int     layout_width(const MultipageLayout layout)  const; // width of complete layout  (in pixel)
+    unsigned int     layout_height(const MultipageLayout layout) const; // height of complete layout (in pixel)
     
     // plate access
-    void            plate_dump() const;                                 // write plate-content to stdout
+    void             plate_dump() const;                                // write plate-content to stdout
     
     // cursor interface
-    const Page      select_page(const unsigned int page);                                   // calculate page-iterator by index
-    const Page      select_page(const Position<mpx_t>& pos, const MultipageLayout layout);  // calculate page-iterator by position
+    const Page       select_page(const unsigned int page);                                      // calculate page-iterator by index
+    const Page       select_page(Position<mpx_t>& pos, const MultipageLayout layout);           // calculate page-iterator by position (transform pos to on-page pos)
+    const Page       select_page(const Position<mpx_t>& pos, const MultipageLayout layout);     // calculate page-iterator by position
     
-    EditCursor      create_cursor()                                                         throw(Error, UserCursor::Error);    // create cursor (front of first score)
-    EditCursor      create_cursor(Document::Score& score)                                   throw(Error, UserCursor::Error);    // create cursor (front of given score)
-    EditCursor      create_cursor(const Position<mpx_t>& pos, const MultipageLayout layout) throw(Error, UserCursor::Error);    // create cursor (multi-page position)
-    EditCursor      create_cursor(const Position<mpx_t>& pos, Page& page)                   throw(Error, UserCursor::Error);    // create cursor (on-page position)
+    Document::Score& select_score(const Position<mpx_t>& pos, Page& page);                      // get score by position (on page)
+    Document::Score& select_score(const Position<mpx_t>& pos, const MultipageLayout layout);    // get score by position (muti-page)
     
-    EditCursor&     set_cursor(EditCursor& cursor, const Position<mpx_t>& pos, const MultipageLayout layout) throw(Error, UserCursor::Error);   // set cursor (multi-page position)
-    EditCursor&     set_cursor(EditCursor& cursor, const Position<mpx_t>& pos, Page& page)                   throw(Error, UserCursor::Error);   // set cursor (on-page position)
+    EditCursor&      get_cursor()                                                  throw(Error, UserCursor::Error); // get cursor (front of first score)
+    EditCursor&      get_cursor(Document::Score& score)                            throw(Error, UserCursor::Error); // get cursor (front of given score)
+    EditCursor&      get_cursor(Position<mpx_t> pos, Page& page)                   throw(Error, UserCursor::Error); // get cursor (on-page position)
+    EditCursor&      get_cursor(Position<mpx_t> pos, const MultipageLayout layout) throw(Error, UserCursor::Error); // get cursor (multi-page position)
+    // NOTE: Ownership of the returned cursors stays with the engine. Any copies, that are not owned by the engine, might behave strangely on reengrave.
     
     // logging control
-    void            log_set(Log& log);
-    void            log_unset();
+    void             log_set(Log& log);
+    void             log_unset();
 };
 
 // inline method implementations
@@ -147,7 +155,7 @@ inline MultipageLayout::MultipageLayout(MultipageJoin _join, MultipageOrientatio
 
 inline Engine::Page::Page(unsigned int _idx, Pageset::Iterator _it) : idx(_idx), it(_it) {}
 
-inline void Engine::set_document(Document& _document)                    {document = &_document; pageset.erase();}
+inline void Engine::set_document(Document& _document)                    {document = &_document; pageset.clear(); cursors.clear();}
 inline void Engine::set_resolution(unsigned int hppm, unsigned int vppm) {viewport.hppm = hppm; viewport.vppm = vppm;}
 
 inline Document&       Engine::get_document()             {return *document;}

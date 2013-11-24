@@ -167,8 +167,8 @@
                     <x>0</x>
                     <y>3</y>
                 </anchor>
-                <distance>3</distance>
-                <offset>4</offset>
+                <distance>4</distance>
+                <offset>5</offset>
             </dot>
             <articulation type="staccato">
                 <path>dot</path>

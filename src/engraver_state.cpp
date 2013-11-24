@@ -1118,7 +1118,7 @@ EngraverState::EngraverState(const Score&         _score,
                                                                end_time(0)
 {
     // prepare the pageset
-    pageset->erase_score(_score);   // erase the plates
+    pageset->erase(_score);         // erase the plates
     if (pick.eos()) return;         // ignore empty score
     
     // initialize local variables

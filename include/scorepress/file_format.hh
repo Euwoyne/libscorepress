@@ -17,11 +17,12 @@
   permissions and limitations under the Licence.
 */
 
-#ifndef SCOREPRESS_FILEPARSER_HH
-#define SCOREPRESS_FILEPARSER_HH
+#ifndef SCOREPRESS_FILEFORMAT_HH
+#define SCOREPRESS_FILEFORMAT_HH
 
 #include <string>
 #include "file_reader.hh"   // FileReader
+#include "file_writer.hh"   // FileWriter
 #include "export.hh"
 
 namespace ScorePress

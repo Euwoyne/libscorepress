@@ -455,12 +455,12 @@ void UserCursor::set_x_voice(const mpx_t x)
 
 // constructor (initializing the cursor at the beginning of the given score)
 UserCursor::UserCursor(Document& _document, Pageset& _pageset)
-    : document(&_document), pageset(&_pageset), score(NULL), plateinfo(NULL) {}
+    : document(&_document), pageset(&_pageset), score(NULL), plateinfo(NULL), cursor(vcursors.begin()) {}
 
 // copy constructor
 UserCursor::UserCursor(const UserCursor& _cursor) : document(_cursor.document), pageset(_cursor.pageset), score(_cursor.score),
                                                     page(_cursor.page), plateinfo(_cursor.plateinfo), line(_cursor.line),
-                                                    vcursors(_cursor.vcursors)  // copy internal data
+                                                    vcursors(_cursor.vcursors), cursor(vcursors.begin())    // copy internal data
 {
     std::list<VoiceCursor>::const_iterator temp_cur(_cursor.vcursors.begin());
     cursor = vcursors.begin();
@@ -472,13 +472,13 @@ UserCursor::UserCursor(const UserCursor& _cursor) : document(_cursor.document), 
 }
 
 // initialize the cursor at the beginning of a given score
-void UserCursor::set_score(Document::Score& _score) throw(Error)
+void UserCursor::set_score(Score& _score, unsigned int start_page) throw(Error)
 {
-    score = &_score.score;                              // set score reference
-    page = pageset->get_page(_score.start_page);        // get first page
+    score = &_score;                                    // set score reference
+    page = pageset->get_page(start_page);               // get first page
     if (page == pageset->pages.end()) goto on_error;    // skip to error handling
     {
-    const std::list<Pageset::PlateInfo>::iterator pi = page->get_plate_by_score(_score.score);
+    const std::list<Pageset::PlateInfo>::iterator pi = page->get_plate_by_score(_score);
     if (pi == page->plates.end()) goto on_error;        // skip to error handling
     plateinfo = &*pi;                                   // get plate information
     }
@@ -503,17 +503,9 @@ void UserCursor::set_pos(Pageset::Iterator new_page, Position<mpx_t> pos, const 
     pos.y -= pageset->page_layout.margin.top;
     
     // find PLATE
-    Pageset::PlateInfo* new_pinfo = NULL;
-    for (std::list<Pageset::PlateInfo>::iterator p = new_page->plates.begin(); pos.y >= 0 && p != new_page->plates.end(); ++p)
-    {
-        if (p->dimension.contains(pos))
-        {
-            new_pinfo = &*p;
-            break;
-        };
-    };
-    if (!new_pinfo) return;                         // if no plate is found at the position, abort
-    pos -= new_pinfo->dimension.position;           // calculate position relative to plate
+    Pageset::pPage::Iterator new_pinfo = new_page->get_plate_by_pos(pos);
+    if (new_pinfo == new_page->plates.end()) return;    // if no plate is found at the position, abort
+    pos -= new_pinfo->dimension.position;               // calculate position relative to plate
     
     // find on-plate LINE
     bool check = false;                             // success indicator
@@ -523,7 +515,7 @@ void UserCursor::set_pos(Pageset::Iterator new_page, Position<mpx_t> pos, const 
     };
     if (!check) return;                             // if no line is found at the position, abort
     page = new_page;                                // set new page
-    plateinfo = new_pinfo;                          // set new plateinfo
+    plateinfo = &*new_pinfo;                        // set new plateinfo
     score = const_cast<Score*>(plateinfo->score);   // set score
     // (const-cast not unexpected, because there is a non-const instance within document)
     

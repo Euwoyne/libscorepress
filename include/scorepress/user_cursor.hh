@@ -132,6 +132,8 @@ class SCOREPRESS_API UserCursor : public Logging
     UserCursor(const UserCursor& cursor);                                   // copy constructor
     
     void set_score(Document::Score& score) throw(Error);                    // initialize the cursor at the beginning of a given score
+    void set_score(Score& score, unsigned int start_page) throw(Error);     // initialize the cursor at the beginning of a given score
+    
     void set_pos(Position<mpx_t>, const ViewportParam&);                    // set cursor to graphical position (on current page, at 100% Zoom)
     void set_pos(Pageset::Iterator, Position<mpx_t>, const ViewportParam&); // set cursor to graphical position (on given page, at 100% Zoom)
     
@@ -205,6 +207,7 @@ inline bool UserCursor::VoiceCursor::at_end()   const {return (pnote->at_end() |
 inline const Newline& UserCursor::VoiceCursor::get_layout() const
     {return line_layout.ready() ? static_cast<Newline&>(*line_layout) : note.staff().layout;}
 
+inline void UserCursor::set_score(Document::Score& _score) throw (Error)            {set_score(_score.score, _score.start_page);}
 inline void UserCursor::set_pos(Position<mpx_t> pos, const ViewportParam& viewport) {set_pos(page, pos, viewport);}
 
 inline const Score&          UserCursor::get_score()  const {return *score;}

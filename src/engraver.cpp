@@ -92,7 +92,7 @@ void Engraver::engrave(const Score& score, const unsigned int start_page)
 // engrave the document
 void Engraver::engrave(const Document& document)
 {
-    pageset->erase();
+    pageset->clear();
     pageset->page_layout.set(document.page_layout, *viewport);
     pageset->head_height = viewport->umtopx_v(document.head_height);
     pageset->stem_width = viewport->umtopx_h(document.stem_width);

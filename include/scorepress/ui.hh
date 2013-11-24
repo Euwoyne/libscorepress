@@ -21,6 +21,7 @@
 #define SCOREPRESS_UI_HH
 
 #include "file_reader.hh"   // FileReader, DocumentReader
+#include "file_writer.hh"   // FileWriter, DocumentWriter
 #include "export.hh"
 
 namespace ScorePress

@@ -410,12 +410,12 @@ void Press::render(Renderer& renderer, const UserCursor& cursor, const Position<
     if (renderer.has_rect_invert())
     {
         renderer.rect_invert(
-            (scale(x) + offset.x) / 1000.0 - parameters.cursor_width / 2000.0, (scale(y) + offset.y) / 1000.0,
-            (scale(x) + offset.x) / 1000.0 + parameters.cursor_width / 2000.0, (scale(y + h) + offset.y) / 1000.0);
+            (scale(x) + offset.x) / 1000.0 - scale(parameters.cursor_width) / 2000.0, (scale(y) + offset.y) / 1000.0,
+            (scale(x) + offset.x) / 1000.0 + scale(parameters.cursor_width) / 2000.0, (scale(y + h) + offset.y) / 1000.0);
     }
     else
     {
-        renderer.set_line_width(parameters.cursor_width / 1000.0);
+        renderer.set_line_width(scale(parameters.cursor_width) / 1000.0);
         renderer.move_to((scale(x) + offset.x) / 1000.0, (scale(y) + offset.y) / 1000.0);
         renderer.line_to((scale(x) + offset.x) / 1000.0, (scale(y + h) + offset.y) / 1000.0);
         renderer.stroke();

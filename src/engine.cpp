@@ -51,6 +51,36 @@ const Position<mpx_t> Engine::page_pos(const unsigned int pageno, const Multipag
     return Position<mpx_t>();
 }
 
+// get plateinfo by position (on page)
+Pageset::PlateInfo& Engine::select_plate(const Position<mpx_t>& pos, Page& page)
+{
+    // seach the plate
+    Pageset::pPage::Iterator pinfo = page.it->get_plate_by_pos(pos);
+    return (pinfo == page.it->plates.end()) ? page.it->plates.back() : *pinfo;
+}
+
+// get plateinfo by position (muti-page)
+Pageset::PlateInfo& Engine::select_plate(const Position<mpx_t>& pos, const MultipageLayout layout)
+{
+    // get page
+    Pageset::Iterator page;
+    unsigned int i = 0;
+    Position<mpx_t> pagepos;
+    const Position<mpx_t> pagedim(page_width(), page_height());
+    for (page = pageset.pages.begin(); page != pageset.pages.end(); ++page, ++i)
+    {
+        pagepos = page_pos(i, layout);
+        if (   pos.x >= pagepos.x             && pos.y >= pagepos.y
+            && pos.x <  pagepos.x + pagedim.x && pos.y <  pagepos.y + pagedim.y)
+                break;
+    };
+    if (page == pageset.pages.end()) --page;
+    
+    // seach the plate
+    Pageset::pPage::Iterator pinfo = page->get_plate_by_pos(pos);
+    return (pinfo == page->plates.end()) ? page->plates.back() : *pinfo;
+}
+
 // constructor (specifying the document the engine will operate on)
 Engine::Engine(Document& _document, Sprites& sprites) : document(&_document),
                                                         engraver(pageset, sprites, style, viewport),
@@ -60,6 +90,7 @@ Engine::Engine(Document& _document, Sprites& sprites) : document(&_document),
 void Engine::engrave()
 {
     engraver.engrave(*document);
+    cursors.clear();
 }
 
 // render a single page at the given offset
@@ -170,13 +201,33 @@ void Engine::plate_dump() const
     };
 }
 
+// calculate page-iterator by position  (transform pos to on-page pos)
+const Engine::Page Engine::select_page(Position<mpx_t>& pos, const MultipageLayout layout)
+{
+    unsigned int i = 0;
+    Position<mpx_t> pagepos;
+    const Position<mpx_t> pagedim(page_width(), page_height());
+    for (Pageset::Iterator p = pageset.pages.begin(); p != pageset.pages.end(); ++p, ++i)
+    {
+        pagepos = page_pos(i, layout);
+        if (   pos.x >= pagepos.x             && pos.y >= pagepos.y
+            && pos.x <  pagepos.x + pagedim.x && pos.y <  pagepos.y + pagedim.y)
+        {
+                pos -= pagepos;
+                return Page(i, p);
+        };
+    };
+    pos -= pagepos;
+    return Page(--i, --pageset.pages.end());
+}
+
 // calculate page-iterator by position
 const Engine::Page Engine::select_page(const Position<mpx_t>& pos, const MultipageLayout layout)
 {
     unsigned int i = 0;
     Position<mpx_t> pagepos;
     const Position<mpx_t> pagedim(page_width(), page_height());
-    for (std::list<Pageset::pPage>::iterator p = pageset.pages.begin(); p != pageset.pages.end(); ++p, ++i)
+    for (Pageset::Iterator p = pageset.pages.begin(); p != pageset.pages.end(); ++p, ++i)
     {
         pagepos = page_pos(i, layout);
         if (   pos.x >= pagepos.x             && pos.y >= pagepos.y
@@ -186,68 +237,111 @@ const Engine::Page Engine::select_page(const Position<mpx_t>& pos, const Multipa
     return Page(--i, --pageset.pages.end());
 }
 
+// get score by position (on page)
+Document::Score& Engine::select_score(const Position<mpx_t>& pos, Page& page)
+{
+    // seach the plate
+    Pageset::pPage::const_Iterator pinfo = page.it->get_plate_by_pos(pos);
+    if (pinfo == page.it->plates.end())
+        pinfo = --page.it->plates.end();
+    
+    // search the score
+    for (Document::ScoreList::iterator score = document->scores.begin(); score != document->scores.end(); ++score)
+        if (&score->score == pinfo->score)
+            return *score;
+    
+    // if no score is found, throw error
+    throw Error("Unable to find the selected score (on-plate) in the document.");
+}
+
+// get score by position (muti-page)
+Document::Score& Engine::select_score(const Position<mpx_t>& pos, const MultipageLayout layout)
+{
+    // get page
+    Pageset::Iterator page;
+    unsigned int i = 0;
+    Position<mpx_t> pagepos;
+    const Position<mpx_t> pagedim(page_width(), page_height());
+    for (page = pageset.pages.begin(); page != pageset.pages.end(); ++page, ++i)
+    {
+        pagepos = page_pos(i, layout);
+        if (   pos.x >= pagepos.x             && pos.y >= pagepos.y
+            && pos.x <  pagepos.x + pagedim.x && pos.y <  pagepos.y + pagedim.y)
+                break;
+    };
+    if (page == pageset.pages.end()) --page;
+    
+    // seach the plate
+    Pageset::pPage::const_Iterator pinfo = page->get_plate_by_pos(pos);
+    if (pinfo == page->plates.end())
+        pinfo = --page->plates.end();
+    
+    // search the score
+    for (Document::ScoreList::iterator score = document->scores.begin(); score != document->scores.end(); ++score)
+        if (&score->score == pinfo->score)
+            return *score;
+    
+    // if no score is found, throw error
+    throw Error("Unable to find the selected score (on-plate) in the document.");
+}
+
 // create cursor (front of first score)
-EditCursor Engine::create_cursor() throw(Error, UserCursor::Error)
+EditCursor& Engine::get_cursor() throw(Error, UserCursor::Error)
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
-    EditCursor cursor(*document, pageset, interface, engraver);
-    cursor.set_score(document->scores.front());
-    cursor.log_set(*this);
-    return cursor;
+    CursorMap::iterator cur = cursors.find(&document->scores.front().score);
+    if (cur != cursors.end()) return cur->second;
+    cur = cursors.insert(CursorMap::value_type(&document->scores.front().score, EditCursor(*document, pageset, interface, engraver))).first;
+    cur->second.set_score(document->scores.front());
+    cur->second.log_set(*this);
+    return cur->second;
 }
 
 // create cursor (front of given score)
-EditCursor Engine::create_cursor(Document::Score& score) throw(Error, UserCursor::Error)
+EditCursor& Engine::get_cursor(Document::Score& score) throw(Error, UserCursor::Error)
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
-    EditCursor cursor(*document, pageset, interface, engraver);
-    cursor.set_score(score);
-    cursor.log_set(*this);
-    return cursor;
-}
-
-// create cursor (multi-page position)
-EditCursor Engine::create_cursor(const Position<mpx_t>& pos, const MultipageLayout layout) throw(Error, UserCursor::Error)
-{
-    if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
-    if (pageset.pages.empty()) engrave();
-    EditCursor cursor(*document, pageset, interface, engraver);
-    Page page(select_page(pos, layout));
-    cursor.set_pos(page.it, ((pos - page_pos(page.idx, layout)) * 1000) / static_cast<int>(press.parameters.scale), viewport);
-    cursor.log_set(*this);
-    return cursor;
+    CursorMap::iterator cur = cursors.find(&score.score);
+    if (cur != cursors.end()) return cur->second;
+    cur = cursors.insert(CursorMap::value_type(&score.score, EditCursor(*document, pageset, interface, engraver))).first;
+    cur->second.set_score(score);
+    cur->second.log_set(*this);
+    return cur->second;
 }
 
 // create cursor (on-page position)
-EditCursor Engine::create_cursor(const Position<mpx_t>& pos, Page& page) throw(Error, UserCursor::Error)
+EditCursor& Engine::get_cursor(Position<mpx_t> pos, Page& page) throw(Error, UserCursor::Error)
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
-    EditCursor cursor(*document, pageset, interface, engraver);
-    cursor.set_pos(page.it, (pos * 1000) / static_cast<int>(press.parameters.scale), viewport);
-    cursor.log_set(*this);
-    return cursor;
+    Document::Score* const score(&select_score(pos, page));
+    const std::pair<CursorMap::iterator,bool> ret(cursors.insert(CursorMap::value_type(&score->score, EditCursor(*document, pageset, interface, engraver))));
+    if (ret.second)
+    {
+        ret.first->second.log_set(*this);
+        ret.first->second.set_score(*score);
+    };
+    ret.first->second.set_pos(page.it, (pos * 1000) / static_cast<int>(press.parameters.scale), viewport);
+    return ret.first->second;
 }
 
-// set cursor (multi-page position)
-EditCursor& Engine::set_cursor(EditCursor& cursor, const Position<mpx_t>& pos, const MultipageLayout layout) throw(Error, UserCursor::Error)
+// create cursor (multi-page position)
+EditCursor& Engine::get_cursor(Position<mpx_t> pos, const MultipageLayout layout) throw(Error, UserCursor::Error)
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
     Page page(select_page(pos, layout));
-    cursor.set_pos(page.it, ((pos - page_pos(page.idx, layout)) * 1000) / static_cast<int>(press.parameters.scale), viewport);
-    return cursor;
-}
-
-// set cursor (on-page position)
-EditCursor& Engine::set_cursor(EditCursor& cursor, const Position<mpx_t>& pos, Page& page) throw(Error, UserCursor::Error)
-{
-    if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
-    if (pageset.pages.empty()) engrave();
-    cursor.set_pos(page.it, (pos * 1000) / static_cast<int>(press.parameters.scale), viewport);
-    return cursor;
+    Document::Score* const score(&select_score(pos, page));
+    const std::pair<CursorMap::iterator,bool> ret(cursors.insert(CursorMap::value_type(&score->score, EditCursor(*document, pageset, interface, engraver))));
+    if (ret.second)
+    {
+        ret.first->second.log_set(*this);
+        ret.first->second.set_score(*score);
+    };
+    ret.first->second.set_pos(page.it, (pos * 1000) / static_cast<int>(press.parameters.scale), viewport);
+    return ret.first->second;
 }
 
 // logging control

@@ -1660,7 +1660,7 @@ void Rest::engrave(EngraverState& engraver) const
         // adjust vertical flag-positions
         for (std::list< Position<mpx_t> >::iterator i = pnote.absolutePos.begin(); i != --pnote.absolutePos.end(); ++i)
         {
-            i->x += (slope * (pnote.absolutePos.back().y - i->y)) / (pnote.absolutePos.back().y - pnote.absolutePos.front().y) - 1;
+            i->x += _round(slope * (static_cast<double>(pnote.absolutePos.back().y - i->y) / (pnote.absolutePos.back().y - pnote.absolutePos.front().y)) - 1000);
             
             // update boundary box
             pnote.gphBox.extend(Plate::GphBox(*i, sprite_width, sprite_height));
@@ -1700,6 +1700,7 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
 
     const double sprite_scale = (state.head_height * appearance.scale)
                               / (1000.0 * renderer.get_sprites().head_height(note.sprite));
+    const double app_scale = state.parameters.do_scale(sprite_scale * appearance.scale) / 1.0e6;
     
     // if we have a short rest, that is flagged
     if (this->val.exp < VALUE_BASE - 2)
@@ -1710,8 +1711,8 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
             renderer.draw_sprite(note.sprite,
                                  (state.parameters.do_scale(p->x) + state.offset.x) / 1000.0,
                                  (state.parameters.do_scale(p->y) + state.offset.y) / 1000.0,
-                                  state.parameters.do_scale(sprite_scale * appearance.scale) / 1000.0,
-                                  state.parameters.do_scale(sprite_scale * appearance.scale) / 1000.0);
+                                  app_scale,
+                                  app_scale);
         };
         
         // draw base piece
@@ -1722,12 +1723,11 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
                                 renderer.get_sprites()[note.sprite.setid].flags_base),
                         (state.parameters.do_scale(note.absolutePos.back().x) + state.offset.x) / 1000.0,
                         (state.parameters.do_scale(note.absolutePos.back().y) + state.offset.y) / 1000.0,
-                        state.parameters.do_scale(sprite_scale * appearance.scale) / 1000.0,
-                        state.parameters.do_scale(sprite_scale * appearance.scale) / 1000.0);
+                         app_scale,
+                         app_scale);
         };
         
         // draw stem
-        const double app_scale = state.parameters.do_scale(sprite_scale * appearance.scale) / 1000.0;
         SpriteInfo& info = renderer.get_sprites()[note.sprite];
         renderer.set_line_width(state.stem_width * sprite_scale);         // set line width
         renderer.move_to((state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0 + info.real["stem.top.x1"]    * app_scale,
@@ -1748,8 +1748,8 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
         renderer.draw_sprite(note.sprite,
                              (state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0,
                              (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0,
-                             state.parameters.do_scale(sprite_scale * appearance.scale) / 1.0e6,
-                             state.parameters.do_scale(sprite_scale * appearance.scale) / 1.0e6);
+                              state.parameters.do_scale(sprite_scale * appearance.scale) / 1.0e6,
+                              state.parameters.do_scale(sprite_scale * appearance.scale) / 1.0e6);
     };
     
     // render dots
