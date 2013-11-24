@@ -25,11 +25,13 @@
 #include "file_writer.hh"   // FileWriter
 #include "export.hh"
 
+// libxml2 prototype
+struct _xmlTextReader;
+
 namespace ScorePress
 {
 //  CLASSES
 // ---------
-struct               xmlReaderForMemory;    // libxml2 prototype
 class SCOREPRESS_API XMLFileReader;         // document-reader implementation for the default XML-format
 
 
@@ -41,13 +43,13 @@ class SCOREPRESS_API XMLFileReader : public DocumentReader
 {
  protected:
     // throwing functions (combining the given data to a error message, which is then thrown)
-    void mythrow(const char* trns, const std::string& filename) throw(IOException);
-    void mythrow(const char* trns, const std::string& symbol, const std::string& filename, const int line, const int column) throw(FormatError);
-    void mythrow(const char* trns, const std::string& filename, const int line, const int column) throw(FormatError);
+    static void mythrow(const char* trns, const std::string& filename) throw(IOException);
+    static void mythrow(const char* trns, const std::string& symbol, const std::string& filename, const int line, const int column) throw(FormatError);
+    static void mythrow(const char* trns, const std::string& filename, const int line, const int column) throw(FormatError);
     
  private:
-    xmlReaderForMemory* parser;
-    std::string         filename;
+    _xmlTextReader* parser;
+    std::string     filename;
     
  public:
     XMLFileReader();                                // constructor

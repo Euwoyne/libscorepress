@@ -22,6 +22,7 @@
 
 #include <string>          // std::string
 #include <list>            // std::list
+#include "basetypes.hh"    // mpx_t, tone_t, value_t, Position, Color, Font
 #include "smartptr.hh"     // SmartPtr
 #include "refptr.hh"       // RefPtr
 #include "fraction.hh"     // Fraction
@@ -41,10 +42,6 @@ class Plate_pNote;          // pNote prototype (see "plate.hh")
 class Plate_pAttachable;    // pAttachable prototype (see "plate.hh")
 
 // BASE CLASSES
-template <typename T>
-class                 Position;     // graphical position (2-dimensional vector)
-struct SCOREPRESS_API Color;        // RGBA-color structure
-struct SCOREPRESS_API Font;         // font structure
 class  SCOREPRESS_API Appearance;   // graphical appearance properties (visibility, color, scale)
 class  SCOREPRESS_API Class;        // abstract base class for all classes
 
@@ -93,10 +90,6 @@ class SCOREPRESS_API Slur;            // legato slur (a symbol, rendered as a cu
 class SCOREPRESS_API Hairpin;         // crescendo and diminuendo "hairpin" symbols
 
 // TYPE DEFINTIONS
-typedef int           mpx_t;       // milli-pixel (graphical positioning)
-typedef unsigned char tone_t;      // note-number (as defined for the MIDI standard: a' = 69)
-typedef Fraction      value_t;     // note-values will be represented by exact fractions ("double" is too imprecise)
-
 typedef SmartPtr<Movable,     CloneTrait> MovablePtr;       // smart pointer to movable object
 typedef SmartPtr<Head,        CloneTrait> HeadPtr;          // smart pointer to head
 typedef SmartPtr<StaffObject, CloneTrait> StaffObjectPtr;   // smart pointer to staff-object
@@ -108,39 +101,11 @@ typedef std::list<Articulation>           ArticulationList; // list of articulat
 typedef std::list<StaffObjectPtr>         StaffObjectList;  // list of smart pointers to staff-objects
 typedef std::list<VoiceObjectPtr>         VoiceObjectList;  // list of smart pointers to note-objects
 
-// note value base exponent (i.e. the exponent of a whole note)
-static const int VALUE_BASE = 7;
-
 
 //
 //     BASE CLASSES
 //    ==============
 //
-
-// graphical position (2-dimensional vector)
-template <typename T = int> class Position
-{
- public:
-    T x; T y;
-    Position(const T _x = 0, const T _y = 0) : x(_x), y(_y) {};
-    Position& operator += (const Position& p) {x += p.x; y += p.y; return *this;};
-    Position& operator -= (const Position& p) {x -= p.x; y -= p.y; return *this;};
-    Position& operator *= (const T& p) {x *= p; y *= p; return *this;};
-    Position& operator /= (const T& p) {x /= p; y /= p; return *this;};
-};
-
-template <typename T> Position<T> operator + (const Position<T>& p, const Position<T>& q) {return Position<T>(p.x + q.x, p.y + q.y);}
-template <typename T> Position<T> operator - (const Position<T>& p, const Position<T>& q) {return Position<T>(p.x - q.x, p.y - q.y);}
-template <typename T> Position<T> operator * (const Position<T>& p, const T& q) {return Position<T>(p.x * q, p.y * q);}
-template <typename T> Position<T> operator * (const T& p, const Position<T>& q) {return Position<T>(p * q.x, p * q.y);}
-template <typename T> Position<T> operator / (const Position<T>& p, const T& q) {return Position<T>(p.x / q, p.y / q);}
-
-// RGBA-color structure
-struct SCOREPRESS_API Color{unsigned char r; unsigned char g; unsigned char b; unsigned char a;};
-extern SCOREPRESS_API bool operator == (const Color& c1, const Color& c2);
-
-// font structure
-struct SCOREPRESS_API Font{std::string family; double size; bool bold; bool italic; bool underline; Color color;};
 
 // graphical appearance properties (visibility, color, scale)
 class SCOREPRESS_API Appearance

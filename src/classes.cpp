@@ -69,12 +69,6 @@ const std::string ScorePress::classname(Class::classType type)
     };
 }
 
-// RGBA-color structure (equality operator)
-bool ScorePress::operator == (const Color& c1, const Color& c2)
-{
-    return (c1.r == c2.r) && (c1.g == c2.g) && (c1.b == c2.b) && (c1.a == c2.a);
-}
-
 // rendering method (SpriteObject)
 void SpriteObject::render(Renderer& renderer, const Plate::pAttachable& object, const PressState& state) const
 {

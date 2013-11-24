@@ -63,7 +63,8 @@ class SCOREPRESS_API FileWriter
     
  public:
     // constructor
-    FileReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    FileWriter(const std::string& name);
+    FileWriter(const std::string& name, const std::string& mime_type, const std::string& file_extension);
     
     // type information access
     const std::string&             get_name() const;
@@ -82,12 +83,16 @@ class SCOREPRESS_API FileWriter
 };
 
 // inline method implementations
-inline const std::string&             FileReader::get_name()            const {return name;}
-inline const std::vector<std::string> FileReader::get_mime_types()      const {return mime_types;}
-inline const std::vector<std::string> FileReader::get_file_extensions() const {return file_extensions;}
+inline FileWriter::FileWriter(const std::string& _name) : name(_name) {}
+inline FileWriter::FileWriter(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
+            : name(_name), mime_types(1, mime_type), file_extensions(1, file_extension) {}
 
-inline void FileReader::add_mime_type(const std::string mime)           {mime_types.push_back(mime);}
-inline void FileReader::add_file_extension(const std::string extension) {file_extensions.push_back(extension);}
+inline const std::string&             FileWriter::get_name()            const {return name;}
+inline const std::vector<std::string> FileWriter::get_mime_types()      const {return mime_types;}
+inline const std::vector<std::string> FileWriter::get_file_extensions() const {return file_extensions;}
+
+inline void FileWriter::add_mime_type(const std::string mime)           {mime_types.push_back(mime);}
+inline void FileWriter::add_file_extension(const std::string extension) {file_extensions.push_back(extension);}
 
 
 //
@@ -100,8 +105,23 @@ inline void FileReader::add_file_extension(const std::string extension) {file_ex
 class SCOREPRESS_API DocumentWriter : public FileWriter
 {
  public:
+    // constructor
+    DocumentWriter(const std::string& name);
+    DocumentWriter(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    
+    // virtual writer interface
+    virtual void open(const char* filename) = 0;                // open file for reading
+    virtual void close() = 0;                                   // close file
+    
+    virtual bool is_open() const = 0;                           // check if a file is opened
+    virtual const char* get_filename() const = 0;               // return the filename (or NULL)
+    
     virtual void write_document(const Document& source) = 0;    // document writer
 };
+
+inline DocumentWriter::DocumentWriter(const std::string& _name) : FileWriter(_name) {}
+inline DocumentWriter::DocumentWriter(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
+            : FileWriter(_name, mime_type, file_extension) {}
 
 
 //
@@ -114,11 +134,26 @@ class SCOREPRESS_API DocumentWriter : public FileWriter
 class SCOREPRESS_API ParameterWriter : public FileWriter
 {
  public:
+    // constructor
+    ParameterWriter(const std::string& name);
+    ParameterWriter(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    
+    // virtual writer interface
+    virtual void open(const char* filename) = 0;    // open file for writing
+    virtual void close() = 0;                       // close file
+    
+    virtual bool is_open() const = 0;               // check if a file is opened
+    virtual const char* get_filename() const = 0;   // return the filename (or NULL)
+    
     virtual void write_parameter(const EngraverParam&  engraver_param,
                                  const PressParam&     press_param,
                                  const StyleParam&     style_param,
                                  const InterfaceParam& interface_param) = 0;
 };
+
+inline ParameterWriter::ParameterWriter(const std::string& _name) : FileWriter(_name) {}
+inline ParameterWriter::ParameterWriter(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
+            : FileWriter(_name, mime_type, file_extension) {}
 }
 
 #endif

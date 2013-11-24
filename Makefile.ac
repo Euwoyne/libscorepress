@@ -119,6 +119,7 @@ cfiles := ${srcdir}/main.cpp           \
           ${srcdir}/classes.cpp        \
           ${srcdir}/log.cpp            \
           ${srcdir}/fraction.cpp       \
+          ${srcdir}/parameters.cpp     \
           ${srcdir}/error.cpp          \
           ${srcdir}/file_format.cpp    \
           ${srcdir}/config.cpp
@@ -140,6 +141,7 @@ hfiles := ${headerdir}/engine.hh         \
           ${headerdir}/sprite_id.hh      \
           ${headerdir}/score.hh          \
           ${headerdir}/classes.hh        \
+          ${headerdir}/basetypes.hh      \
           ${headerdir}/log.hh            \
           ${headerdir}/fraction.hh       \
           ${headerdir}/config.hh         \
@@ -177,7 +179,9 @@ sofiles := ${builddir}/main.s.o           \
            ${builddir}/classes.s.o        \
            ${builddir}/log.s.o            \
            ${builddir}/fraction.s.o       \
+           ${builddir}/parameters.s.o     \
            ${builddir}/error.s.o          \
+           ${builddir}/file_format.s.o    \
            ${builddir}/config.s.o
 
 afiles := ${builddir}/main.o           \
@@ -200,7 +204,9 @@ afiles := ${builddir}/main.o           \
           ${builddir}/classes.o        \
           ${builddir}/log.o            \
           ${builddir}/fraction.o       \
+          ${builddir}/parameters.o     \
           ${builddir}/error.o          \
+          ${builddir}/file_format.o    \
           ${builddir}/config.o
 
 docfiles := @srcdir@/AUTHORS       \
@@ -224,13 +230,14 @@ deps_error_hh          := ${headerdir}/error.hh
 deps_fraction_hh       := ${headerdir}/fraction.hh
 deps_log_hh            := ${headerdir}/log.hh
 deps_meta_hh           := ${headerdir}/meta.hh
-deps_parameters_hh     := ${headerdir}/parameters.hh
 deps_refptr_hh         := ${headerdir}/refptr.hh
 deps_smartptr_hh       := ${headerdir}/smartptr.hh
 deps_sprite_id_hh      := ${headerdir}/sprite_id.hh
 deps_undefined_hh      := ${headerdir}/undefined.hh
+deps_basetypes_hh      := ${headerdir}/basetypes.hh ${deps_fraction_hh}
+deps_parameters_hh     := ${headerdir}/parameters.hh ${deps_basetypes_hh}
 deps_sprites_hh        := ${headerdir}/sprites.hh ${deps_sprite_id_hh}
-deps_classes_hh        := ${headerdir}/classes.hh ${deps_smartptr_hh} ${deps_refptr_hh} ${deps_fraction_hh} ${deps_sprite_id_hh}
+deps_classes_hh        := ${headerdir}/classes.hh ${deps_basetypes_hh} ${deps_smartptr_hh} ${deps_refptr_hh} ${deps_fraction_hh} ${deps_sprite_id_hh}
 deps_context_hh        := ${headerdir}/context.hh ${deps_classes_hh} ${deps_error_hh}
 deps_stem_info_hh      := ${headerdir}/stem_info.hh ${deps_classes_hh}
 deps_engrave_info_hh   := ${headerdir}/engrave_info.hh ${deps_stem_info_hh} ${deps_score_hh} ${deps_plate_hh}
@@ -266,6 +273,7 @@ deps_fraction_cpp       := ${srcdir}/fraction.cpp ${deps_fraction_hh}
 deps_log_cpp            := ${srcdir}/log.cpp ${deps_log_hh}
 deps_main_cpp           := ${srcdir}/main.cpp
 deps_pageset_cpp        := ${srcdir}/pageset.cpp ${deps_pageset_hh}
+deps_parameters_cpp     := ${srcdir}/parameters.cpp ${deps_parameters_hh}
 deps_pick_cpp           := ${srcdir}/pick.cpp ${deps_pick_hh} ${deps_log_hh} ${deps_undefined_hh}
 deps_plate_cpp          := ${srcdir}/plate.cpp ${deps_plate_hh} ${deps_undefined_hh}
 deps_press_cpp          := ${srcdir}/press.cpp ${deps_press_hh} ${deps_log_hh} ${deps_undefined_hh}
@@ -487,12 +495,12 @@ unisntall-ps:
 # clean
 clean:
 	@echo "Cleaning \"${PACKAGE_TARNAME}\""
-	@echo "  Deleting:       object-files..."
+	@echo "  Deleting:  object-files..."
 	@-rm -f  ${afiles}
 	@-rm -f  ${builddir}/${afile}
 	@-rm -f  ${sofiles}
 	@-rm -f  ${builddir}/${sofile}
-	@echo "  Deleting:       documentation-files..."
+	@echo "  Deleting:  documentation-files..."
 	@-rm -rf ${builddir}/html
 	@-rm -rf ${builddir}/latex
 	@-rm -rf ${builddir}/man
@@ -503,7 +511,7 @@ clean:
 	@test -d ${builddir} && (rmdir ${builddir} 2> /dev/null || echo "  WARNING: \"${builddir}\" is not empty") || :
 
 distclean: clean
-	@echo "  Deleting:       configuration..."
+	@echo "  Deleting:  configuration..."
 	@-rm -f ${headerdir}/config.hh
 	@-rm -f ${doxyfile}
 	@-rm -f @srcdir@/config.log
@@ -544,13 +552,13 @@ ${builddir} ${libdir} ${includedir}/${basename} ${includedir2}/${basename} ${dat
 ${builddir}/${sofile}:  ${srcfiles}
 						@echo "Making:  ${sofile}"
 						@${MAKE} -s ${sofiles}
-						@echo "  Linking:        ${sofile}..."
+						@echo "  Linking:   ${sofile}..."
 						@${CXX} -shared -Wl,-soname,${soname} -lc ${sofiles} -o ${builddir}/${sofile} ${XMLLIBS} ${FLAGS}
 
 ${builddir}/${afile}:   ${srcfiles}
 						@echo "Making:  ${afile}"
 						@${MAKE} -s ${afiles}
-						@echo "  Linking:        ${afile}..."
+						@echo "  Linking:   ${afile}..."
 						@${AR} ${builddir}/${afile} ${afiles}
 
 #
@@ -558,156 +566,170 @@ ${builddir}/${afile}:   ${srcfiles}
 #
 
 ${builddir}/main.o:			${deps_main_cpp}
-							echo "  Compiling:      main.cpp..."
+							echo "  Compiling: main.cpp..."
 							${CXX} -c ${srcdir}/main.cpp -o ${builddir}/main.o ${FLAGS}
 ${builddir}/main.s.o:		${deps_main_cpp}
-							echo "  Compiling:      main.cpp..."
+							echo "  Compiling: main.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/main.cpp -o ${builddir}/main.s.o ${FLAGS}
 
 ${builddir}/engine.o:		${deps_engine_cpp}
-							echo "  Compiling:      engine.cpp..."
+							echo "  Compiling: engine.cpp..."
 							${CXX} -c ${srcdir}/engine.cpp -o ${builddir}/engine.o ${FLAGS}
 ${builddir}/engine.s.o:		${deps_engine_cpp}
-							echo "  Compiling:      engine.cpp..."
+							echo "  Compiling: engine.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/engine.cpp -o ${builddir}/engine.s.o ${FLAGS}
 
 ${builddir}/press.o:		${deps_press_cpp}
-							echo "  Compiling:      press.cpp..."
+							echo "  Compiling: press.cpp..."
 							${CXX} -c ${srcdir}/press.cpp -o ${builddir}/press.o ${FLAGS}
 ${builddir}/press.s.o:		${deps_press_cpp}
-							echo "  Compiling:      press.cpp..."
+							echo "  Compiling: press.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/press.cpp -o ${builddir}/press.s.o ${FLAGS}
 
 ${builddir}/engraver.o:		${deps_engraver_cpp}
-							echo "  Compiling:      engraver.cpp..."
+							echo "  Compiling: engraver.cpp..."
 							${CXX} -c ${srcdir}/engraver.cpp -o ${builddir}/engraver.o ${FLAGS}
 ${builddir}/engraver.s.o:	${deps_engraver_cpp}
-							echo "  Compiling:      engraver.cpp..."
+							echo "  Compiling: engraver.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/engraver.cpp -o ${builddir}/engraver.s.o ${FLAGS}
 
 ${builddir}/engraver_state.o:	${deps_engraver_state_cpp}
-								echo "  Compiling:      engraver_state.cpp..."
+								echo "  Compiling: engraver_state.cpp..."
 								${CXX} -c ${srcdir}/engraver_state.cpp -o ${builddir}/engraver_state.o ${FLAGS}
 ${builddir}/engraver_state.s.o:	${deps_engraver_state_cpp}
-								echo "  Compiling:      engraver_state.cpp..."
+								echo "  Compiling: engraver_state.cpp..."
 								${CXX} ${SOFLAGS} -c ${srcdir}/engraver_state.cpp -o ${builddir}/engraver_state.s.o ${FLAGS}
 
 ${builddir}/engrave_info.o:		${deps_engrave_info_cpp}
-								echo "  Compiling:      engrave_info.cpp..."
+								echo "  Compiling: engrave_info.cpp..."
 								${CXX} -c ${srcdir}/engrave_info.cpp -o ${builddir}/engrave_info.o ${FLAGS}
 ${builddir}/engrave_info.s.o:	${deps_engrave_info_cpp}
-								echo "  Compiling:      engrave_info.cpp..."
+								echo "  Compiling: engrave_info.cpp..."
 								${CXX} ${SOFLAGS} -c ${srcdir}/engrave_info.cpp -o ${builddir}/engrave_info.s.o ${FLAGS}
 
 ${builddir}/context.o:		${deps_context_cpp}
-							echo "  Compiling:      context.cpp..."
+							echo "  Compiling: context.cpp..."
 							${CXX} -c ${srcdir}/context.cpp -o ${builddir}/context.o ${FLAGS}
 ${builddir}/context.s.o:	${deps_context_cpp}
-							echo "  Compiling:      context.cpp..."
+							echo "  Compiling: context.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/context.cpp -o ${builddir}/context.s.o ${FLAGS}
 
 ${builddir}/pageset.o:		${deps_pageset_cpp}
-							echo "  Compiling:      pageset.cpp..."
+							echo "  Compiling: pageset.cpp..."
 							${CXX} -c ${srcdir}/pageset.cpp -o ${builddir}/pageset.o ${FLAGS}
 ${builddir}/pageset.s.o:	${deps_pageset_cpp}
-							echo "  Compiling:      pageset.cpp..."
+							echo "  Compiling: pageset.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/pageset.cpp -o ${builddir}/pageset.s.o ${FLAGS}
 
 ${builddir}/plate.o:		${deps_plate_cpp}
-							echo "  Compiling:      plate.cpp..."
+							echo "  Compiling: plate.cpp..."
 							${CXX} -c ${srcdir}/plate.cpp -o ${builddir}/plate.o ${FLAGS}
 ${builddir}/plate.s.o:		${deps_plate_cpp}
-							echo "  Compiling:      plate.cpp..."
+							echo "  Compiling: plate.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/plate.cpp -o ${builddir}/plate.s.o ${FLAGS}
 
 ${builddir}/cursor.o:		${deps_cursor_cpp}
-							echo "  Compiling:      cursor.cpp..."
+							echo "  Compiling: cursor.cpp..."
 							${CXX} -c ${srcdir}/cursor.cpp -o ${builddir}/cursor.o ${FLAGS}
 ${builddir}/cursor.s.o:		${deps_cursor_cpp}
-							echo "  Compiling:      cursor.cpp..."
+							echo "  Compiling: cursor.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/cursor.cpp -o ${builddir}/cursor.s.o ${FLAGS}
 
 ${builddir}/user_cursor.o:		${deps_user_cursor_cpp}
-								echo "  Compiling:      user_cursor.cpp..."
+								echo "  Compiling: user_cursor.cpp..."
 								${CXX} -c ${srcdir}/user_cursor.cpp -o ${builddir}/user_cursor.o ${FLAGS}
 ${builddir}/user_cursor.s.o:	${deps_user_cursor_cpp}
-								echo "  Compiling:      user_cursor.cpp..."
+								echo "  Compiling: user_cursor.cpp..."
 								${CXX} ${SOFLAGS} -c ${srcdir}/user_cursor.cpp -o ${builddir}/user_cursor.s.o ${FLAGS}
 
 ${builddir}/edit_cursor.o:		${deps_edit_cursor_cpp}
-								echo "  Compiling:      edit_cursor.cpp..."
+								echo "  Compiling: edit_cursor.cpp..."
 								${CXX} -c ${srcdir}/edit_cursor.cpp -o ${builddir}/edit_cursor.o ${FLAGS}
 ${builddir}/edit_cursor.s.o:	${deps_edit_cursor_cpp}
-								echo "  Compiling:      edit_cursor.cpp..."
+								echo "  Compiling: edit_cursor.cpp..."
 								${CXX} ${SOFLAGS} -c ${srcdir}/edit_cursor.cpp -o ${builddir}/edit_cursor.s.o ${FLAGS}
 
 ${builddir}/pick.o:			${deps_pick_cpp}
-							echo "  Compiling:      pick.cpp..."
+							echo "  Compiling: pick.cpp..."
 							${CXX} -c ${srcdir}/pick.cpp -o ${builddir}/pick.o ${FLAGS}
 ${builddir}/pick.s.o:		${deps_pick_cpp}
-							echo "  Compiling:      pick.cpp..."
+							echo "  Compiling: pick.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/pick.cpp -o ${builddir}/pick.s.o ${FLAGS}
 
 ${builddir}/renderer.o:		${deps_renderer_cpp}
-							echo "  Compiling:      renderer.cpp..."
+							echo "  Compiling: renderer.cpp..."
 							${CXX} -c ${srcdir}/renderer.cpp -o ${builddir}/renderer.o ${XMLFLAGS} ${FLAGS}
 ${builddir}/renderer.s.o:	${deps_renderer_cpp}
-							echo "  Compiling:      renderer.cpp..."
+							echo "  Compiling: renderer.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/renderer.cpp -o ${builddir}/renderer.s.o ${XMLFLAGS} ${FLAGS}
 
 ${builddir}/sprites.o:		${deps_sprites_cpp}
-							echo "  Compiling:      sprites.cpp..."
+							echo "  Compiling: sprites.cpp..."
 							${CXX} -c ${srcdir}/sprites.cpp -o ${builddir}/sprites.o ${FLAGS}
 ${builddir}/sprites.s.o:	${deps_sprites_cpp}
-							echo "  Compiling:      sprites.cpp..."
+							echo "  Compiling: sprites.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/sprites.cpp -o ${builddir}/sprites.s.o ${FLAGS}
 
 ${builddir}/sprite_id.o:	${deps_sprite_id_cpp}
-							echo "  Compiling:      sprite_id.cpp..."
+							echo "  Compiling: sprite_id.cpp..."
 							${CXX} -c ${srcdir}/sprite_id.cpp -o ${builddir}/sprite_id.o ${FLAGS}
 ${builddir}/sprite_id.s.o:	${deps_sprite_id_cpp}
-							echo "  Compiling:      sprite_id.cpp..."
+							echo "  Compiling: sprite_id.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/sprite_id.cpp -o ${builddir}/sprite_id.s.o ${FLAGS}
 
 ${builddir}/score.o:		${deps_score_cpp}
-							echo "  Compiling:      score.cpp..."
+							echo "  Compiling: score.cpp..."
 							${CXX} -c ${srcdir}/score.cpp -o ${builddir}/score.o ${FLAGS}
 ${builddir}/score.s.o:		${deps_score_cpp}
-							echo "  Compiling:      score.cpp..."
+							echo "  Compiling: score.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/score.cpp -o ${builddir}/score.s.o ${FLAGS}
 
 ${builddir}/classes.o:		${deps_classes_cpp}
-							echo "  Compiling:      classes.cpp..."
+							echo "  Compiling: classes.cpp..."
 							${CXX} -c ${srcdir}/classes.cpp -o ${builddir}/classes.o ${FLAGS}
 ${builddir}/classes.s.o:	${deps_classes_cpp}
-							echo "  Compiling:      classes.cpp..."
+							echo "  Compiling: classes.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/classes.cpp -o ${builddir}/classes.s.o ${FLAGS}
 
 ${builddir}/log.o:			${deps_log_cpp}
-							echo "  Compiling:      log.cpp..."
+							echo "  Compiling: log.cpp..."
 							${CXX} -c ${srcdir}/log.cpp -o ${builddir}/log.o ${FLAGS}
 ${builddir}/log.s.o:		${deps_log_cpp}
-							echo "  Compiling:      log.cpp..."
+							echo "  Compiling: log.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/log.cpp -o ${builddir}/log.s.o ${FLAGS}
 
 ${builddir}/fraction.o:		${deps_fraction_cpp}
-							echo "  Compiling:      fraction.cpp..."
+							echo "  Compiling: fraction.cpp..."
 							${CXX} -c ${srcdir}/fraction.cpp -o ${builddir}/fraction.o ${FLAGS} ${FRACT_SIZECHECK}
 ${builddir}/fraction.s.o:	${deps_fraction_cpp}
-							echo "  Compiling:      fraction.cpp..."
+							echo "  Compiling: fraction.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/fraction.cpp -o ${builddir}/fraction.s.o ${FLAGS} ${FRACT_SIZECHECK}
 
+${builddir}/parameters.o:	${deps_parameters_cpp}
+							echo "  Compiling: parameters.cpp..."
+							${CXX} -c ${srcdir}/parameters.cpp -o ${builddir}/parameters.o ${FLAGS}
+${builddir}/parameters.s.o:	${deps_parameters_cpp}
+							echo "  Compiling: parameters.cpp..."
+							${CXX} ${SOFLAGS} -c ${srcdir}/parameters.cpp -o ${builddir}/parameters.s.o ${FLAGS}
+
 ${builddir}/error.o:		${deps_error_cpp}
-							echo "  Compiling:      error.cpp..."
+							echo "  Compiling: error.cpp..."
 							${CXX} -c ${srcdir}/error.cpp -o ${builddir}/error.o ${FLAGS}
 ${builddir}/error.s.o:		${deps_error_cpp}
-							echo "  Compiling:      error.cpp..."
+							echo "  Compiling: error.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/error.cpp -o ${builddir}/error.s.o ${FLAGS}
 
+${builddir}/file_format.o:		${deps_file_format_cpp}
+								echo "  Compiling: file_format.cpp..."
+								${CXX} -c ${srcdir}/file_format.cpp -o ${builddir}/file_format.o ${XMLFLAGS} ${FLAGS}
+${builddir}/file_format.s.o:	${deps_file_format_cpp}
+								echo "  Compiling: file_format.cpp..."
+								${CXX} ${SOFLAGS} -c ${srcdir}/file_format.cpp -o ${builddir}/file_format.s.o ${XMLFLAGS} ${FLAGS}
+
 ${builddir}/config.o:		${deps_config_cpp}
-							echo "  Compiling:      config.cpp..."
+							echo "  Compiling: config.cpp..."
 							${CXX} -c ${srcdir}/config.cpp -o ${builddir}/config.o ${FLAGS} ${CONFIGFLAGS}
 ${builddir}/config.s.o:		${deps_config_cpp}
-							echo "  Compiling:      config.cpp..."
+							echo "  Compiling: config.cpp..."
 							${CXX} ${SOFLAGS} -c ${srcdir}/config.cpp -o ${builddir}/config.s.o ${FLAGS} ${CONFIGFLAGS}
 

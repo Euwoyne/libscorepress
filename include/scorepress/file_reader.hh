@@ -64,6 +64,7 @@ class SCOREPRESS_API FileReader
     
  public:
     // constructor
+    FileReader(const std::string& name);
     FileReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
     
     // type information access
@@ -83,6 +84,10 @@ class SCOREPRESS_API FileReader
 };
 
 // inline method implementations
+inline FileReader::FileReader(const std::string& _name) : name(_name) {}
+inline FileReader::FileReader(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
+            : name(_name), mime_types(1, mime_type), file_extensions(1, file_extension) {}
+
 inline const std::string&             FileReader::get_name()            const {return name;}
 inline const std::vector<std::string> FileReader::get_mime_types()      const {return mime_types;}
 inline const std::vector<std::string> FileReader::get_file_extensions() const {return file_extensions;}
@@ -101,6 +106,11 @@ inline void FileReader::add_file_extension(const std::string extension) {file_ex
 class SCOREPRESS_API DocumentReader : public FileReader
 {
  public:
+    // constructor
+    DocumentReader(const std::string& name);
+    DocumentReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    
+    // virtual parser interface
     virtual void open(const char* filename) = 0;        // open file for reading
     virtual void close() = 0;                           // close file
     
@@ -109,6 +119,10 @@ class SCOREPRESS_API DocumentReader : public FileReader
     
     virtual void parse_document(Document& target) = 0;  // document parser
 };
+
+inline DocumentReader::DocumentReader(const std::string& _name) : FileReader(_name) {}
+inline DocumentReader::DocumentReader(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
+            : FileReader(_name, mime_type, file_extension) {}
 
 
 //
@@ -121,6 +135,11 @@ class SCOREPRESS_API DocumentReader : public FileReader
 class SCOREPRESS_API ParameterReader : public FileReader
 {
  public:
+    // constructor
+    ParameterReader(const std::string& name);
+    ParameterReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    
+    // virtual parser interface
     virtual void open(const char* filename) = 0;    // open file for reading
     virtual void close() = 0;                       // close file
     
@@ -132,6 +151,10 @@ class SCOREPRESS_API ParameterReader : public FileReader
                                  StyleParam&     style_param,
                                  InterfaceParam& interface_param) = 0;
 };
+
+inline ParameterReader::ParameterReader(const std::string& _name) : FileReader(_name) {}
+inline ParameterReader::ParameterReader(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
+            : FileReader(_name, mime_type, file_extension) {}
 }
 
 #endif

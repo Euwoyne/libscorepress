@@ -344,6 +344,7 @@ mpx_t Pick::width(const Sprites& spr, const StaffObject* obj, const mpx_t height
 // caluclate the width specified by the value of the note
 mpx_t Pick::value_width(const value_t& value, const EngraverParam& param, const ViewportParam& viewport)
 {
+    // TODO: geometric formula: c1 * base^(c2 * f(value)) + c3 * f(value)^exp + c4 * const
     return _round(((param.exponent == 1000L) ?
             ((value.real() / (1L << VALUE_BASE)) * param.linear_coeff * viewport.hppm) / 1e3 :
             (pow((value.real() / (1L << VALUE_BASE)), param.exponent / 1.0e3) * param.linear_coeff * viewport.hppm) / 1e3

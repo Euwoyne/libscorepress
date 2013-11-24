@@ -182,7 +182,7 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                 attr = xmlTextReaderGetAttribute(parser, STR_CAST("id"));
                 if (attr == NULL) mythrow("Missing \"id\"-attribute for <symbols>-tag (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 spriteset.info["id"] = XML_CAST(attr);
-                free(attr);
+                xmlFree(attr);
                 
                 // changing state
                 state = SYMBOLS;
@@ -210,7 +210,7 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     attr = xmlTextReaderGetAttribute(parser, STR_CAST("unit"));
                     if (attr == NULL) mythrow("Missing \"unit\"-attribute for <sprites> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     spriteset.head_height = atoi(XML_CAST(attr));
-                    free(attr);
+                    xmlFree(attr);
                     
                     // parse the sprite information
                     state = SPRITES;
@@ -234,7 +234,7 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                 if (xmlStrEqual(tag, STR_CAST("author")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
                 {
                     spriteset.info["author"].clear();
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.info["author"].append(XML_CAST(xmlTextReaderConstValue(parser)));
@@ -248,11 +248,11 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                 else if (xmlStrEqual(tag, STR_CAST("copyright")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
                 {
                     spriteset.info["copyright"].clear();
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.info["copyright"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     tag = xmlTextReaderConstName(parser);
                     if (xmlStrEqual(tag, STR_CAST("copyright")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </copyright> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
@@ -262,11 +262,11 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                 else if (xmlStrEqual(tag, STR_CAST("license")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
                 {
                     spriteset.info["license"].clear();
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.info["license"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     tag = xmlTextReaderConstName(parser);
                     if (xmlStrEqual(tag, STR_CAST("license")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </license> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
@@ -276,11 +276,11 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                 else if (xmlStrEqual(tag, STR_CAST("description")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
                 {
                     spriteset.info["description"].clear();
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.info["description"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     tag = xmlTextReaderConstName(parser);
                     if (xmlStrEqual(tag, STR_CAST("description")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </description> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
@@ -365,12 +365,12 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     }
                     else    // illegal head type (throw error message)
                     {
-                        free(attr); // free attribute buffer
+                        xmlFree(attr);  // free attribute buffer
                         mythrow("Illegal value of \"type\"-attribute for <head> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // free attribute buffer
-                    free(attr);
+                    xmlFree(attr);
                 }
                 
                 // <flag> sprite
@@ -398,12 +398,12 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     }
                     else    // illegal flag type (throw error message)
                     {
-                        free(attr); // free attribute buffer
+                        xmlFree(attr);  // free attribute buffer
                         mythrow("Illegal value of \"type\"-attribute for <rest> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // free attribute buffer
-                    free(attr);
+                    xmlFree(attr);
                 }
                 
                 // <rest> sprite
@@ -454,12 +454,12 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     }
                     else    // illegal rest type (throw error message)
                     {
-                        free(attr); // free attribute buffer
+                        xmlFree(attr);  // free attribute buffer
                         mythrow("Illegal value of \"type\"-attribute for <rest> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // free attribute buffer
-                    free(attr);
+                    xmlFree(attr);
                 }
                 
                 // <accidental> sprite
@@ -533,12 +533,12 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     }
                     else    // illegal accidental type (throw error message)
                     {
-                        free(attr); // free attribute buffer
+                        xmlFree(attr);  // free attribute buffer
                         mythrow("Illegal value of \"type\"-attribute for <accidental> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // free attribute buffer
-                    free(attr);
+                    xmlFree(attr);
                     
                     // goto <accidental> section parser
                     state = ACCIDENTAL;
@@ -584,7 +584,7 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().text[" class "] = "articulation.";     // set class
                     spriteset.back().text[" class "].append(XML_CAST(attr));
                     spriteset.ids[spriteset.back().text[" class "]] = spriteset.size() - 1;
-                    free(attr);             // free attribute buffer
+                    xmlFree(attr);          // free attribute buffer
                     state = ARTICULATION;   // goto <articulation> section parser
                 }
                 
@@ -597,7 +597,7 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.push_back(SpriteInfo(SpriteInfo::CLEF));      // create sprite
                     spriteset.back().text[" class "] = "clef.";             // set class
                     spriteset.back().text[" class "].append(XML_CAST(attr));
-                    free(attr);             // free attribute buffer
+                    xmlFree(attr);          // free attribute buffer
                     state = CLEF;           // goto <clef> section parser
                 }
                 
@@ -626,7 +626,7 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().text[" class "] = "timesig.";  // set class
                     spriteset.back().text[" class "].append(XML_CAST(attr));
                     
-                    free(attr);             // free attribute buffer
+                    xmlFree(attr);          // free attribute buffer
                 }
                 
                 // end tag </base>
@@ -650,13 +650,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -721,13 +721,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -745,13 +745,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().text["overlay"].clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().text["overlay"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </overlay>
@@ -766,14 +766,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                 {
                     // check for already read distance and empty tag
                     if (spriteset.back().real.find("distance") != spriteset.back().real.end()) mythrow("Unexpected <distance> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;     // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -839,13 +839,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -868,14 +868,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                 {
                     // check for already read <line> and empty tag
                     if (spriteset.back().real.find("line") != spriteset.back().real.end()) mythrow("Unexpected <line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -919,13 +919,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -943,13 +943,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().text["restbase"].clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().text["restbase"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </restbase>
@@ -972,14 +972,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                 {
                     // check for already read <line> and empty tag
                     if (spriteset.back().real.find("line") != spriteset.back().real.end()) mythrow("Unexpected <line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1002,14 +1002,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                 {
                     // check for already read <slope> and empty tag
                     if (spriteset.back().real.find("slope") != spriteset.back().real.end()) mythrow("Unexpected <slope> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1065,13 +1065,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -1096,14 +1096,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("offset") != spriteset.back().real.end()) mythrow("Unexpected second <offset> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1141,13 +1141,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -1172,14 +1172,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("hmin") != spriteset.back().real.end()) mythrow("Unexpected second <hmin> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1197,14 +1197,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("hmax") != spriteset.back().real.end()) mythrow("Unexpected second <hmax> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1222,14 +1222,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("low") != spriteset.back().real.end()) mythrow("Unexpected second <low> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1247,14 +1247,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("high") != spriteset.back().real.end()) mythrow("Unexpected second <high> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1292,13 +1292,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -1323,14 +1323,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("line") != spriteset.back().real.end()) mythrow("Unexpected second <line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1377,13 +1377,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -1408,14 +1408,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("distance") != spriteset.back().real.end()) mythrow("Unexpected second <distance> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1433,14 +1433,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("offset") != spriteset.back().real.end()) mythrow("Unexpected second <offset> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1497,13 +1497,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -1528,14 +1528,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("offset") != spriteset.back().real.end()) mythrow("Unexpected second <offset> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1553,14 +1553,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().integer.find("valuemod") != spriteset.back().integer.end()) mythrow("Unexpected second <valuemod> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1578,14 +1578,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().integer.find("volumemod") != spriteset.back().integer.end()) mythrow("Unexpected second <volumemod> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1628,13 +1628,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -1659,14 +1659,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().integer.find("basenote") != spriteset.back().integer.end()) mythrow("Unexpected second <basenote> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1684,14 +1684,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("line") != spriteset.back().real.end()) mythrow("Unexpected second <line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1752,13 +1752,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -1775,14 +1775,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().integer.find("digit") != spriteset.back().integer.end()) mythrow("Unexpected second <digit> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1836,13 +1836,13 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     spriteset.back().path.clear();
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read content (text node)
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // check for end tag </path>
@@ -1859,14 +1859,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().integer.find("enum") != spriteset.back().integer.end()) mythrow("Unexpected second <enum> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1884,14 +1884,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().integer.find("denom") != spriteset.back().integer.end()) mythrow("Unexpected second <denom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -1997,14 +1997,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                          mythrow("Unexpected <x> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -2025,14 +2025,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                          mythrow("Unexpected <y> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -2094,14 +2094,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                          mythrow("Unexpected <sharp> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -2120,14 +2120,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                          mythrow("Unexpected <flat> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -2180,14 +2180,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find("stem.minlen") != spriteset.back().real.end()) mythrow("Unexpected second <minlen> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -2226,14 +2226,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find((state == RESTSTEMTOPPOS) ? "stem.top.x1" : "stem.bottom.x1") != spriteset.back().real.end()) mythrow("Unexpected <x1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -2251,14 +2251,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find((state == RESTSTEMTOPPOS) ? "stem.top.y1" : "stem.bottom.y1") != spriteset.back().real.end()) mythrow("Unexpected <y1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -2276,14 +2276,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find((state == RESTSTEMTOPPOS) ? "stem.top.x2" : "stem.bottom.x2") != spriteset.back().real.end()) mythrow("Unexpected <x2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number
@@ -2301,14 +2301,14 @@ void Renderer::parse(const char* spriteinfo, const std::string& _filename, const
                     if (spriteset.back().real.find((state == RESTSTEMTOPPOS) ? "stem.top.y2" : "stem.bottom.y2") != spriteset.back().real.end()) mythrow("Unexpected <y2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // empty tag?
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     
                     // read the tag content
                     std::string buffer;         // content buffer
                     while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
                     {
                         buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\")", filename);
+                        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
                     
                     // parse the number

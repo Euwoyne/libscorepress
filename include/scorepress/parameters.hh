@@ -20,6 +20,7 @@
 #ifndef SCOREPRESS_PARAMETERS_HH
 #define SCOREPRESS_PARAMETERS_HH
 
+#include "basetypes.hh" // mpx_t, Position<>
 #include "export.hh"
 
 namespace ScorePress
@@ -49,7 +50,7 @@ class SCOREPRESS_API ViewportParam
     inline mpx_t umtopx_h(const double um) const {return static_cast<mpx_t>((um * hppm) / 1e3 + .5);};
     inline mpx_t umtopx_v(const double um) const {return static_cast<mpx_t>((um * vppm) / 1e3 + .5);};
     
-    ViewportParam() : hppm(3780), vppm(3780) {};    // default to 96dpi
+    inline ViewportParam() : hppm(3780), vppm(3780) {};     // default to 96dpi
 };
 
 //
@@ -89,26 +90,7 @@ struct SCOREPRESS_API EngraverParam
     Position<> tiedown_control2;
     
     // default parameters
-    EngraverParam() : min_distance(1200),
-                      default_distance(1400),
-                      barline_distance(3200),
-                      accidental_space(500),
-                      exponent(1000),
-                      constant_coeff(250),
-                      linear_coeff(60000),
-                      max_justification(2000),
-                      newline_time_reset(true),
-                      auto_barlines(true),
-                      remember_accidentals(true),
-                      beam_group(VALUE_BASE - 2),
-                      tieup_offset1(100, -700),
-                      tieup_offset2(-100, -700),
-                      tieup_control1(1500, -600),
-                      tieup_control2(-1500, -600),
-                      tiedown_offset1(100, -300),
-                      tiedown_offset2(-100, -300),
-                      tiedown_control1(1500, 600),
-                      tiedown_control2(-1500, 600) {};
+    EngraverParam();
 };
 
 //
@@ -136,17 +118,7 @@ struct SCOREPRESS_API StyleParam
     unsigned int ledger_thickness;  // line-width for the ledger-lines (in micrometer)
     
     // default parameters
-    StyleParam() : stem_width(250),
-                   ledger_length(1400),
-                   flag_distance(1000),
-                   beam_distance(200),
-                   beam_height(600),
-                   shortbeam_length(1000),
-                   shortbeam_short(500),
-                   line_thickness(200),
-                   bar_thickness(400),
-                   tie_thickness(300),
-                   ledger_thickness(300) {};
+    StyleParam();
 };
 
 //
@@ -179,23 +151,7 @@ struct SCOREPRESS_API PressParam
     unsigned int eov_color;             // color of end-of-voice objects (in rgba, little endian)
     
     // default parameters
-    PressParam() : scale(1000),
-                   draw_shadow(true),
-                   shadow_color(0x80000000),
-                   shadow_offset(5000),
-                   draw_margin(true),
-                   margin_color(0xFFA0A0A0),
-                   cursor_width(2000),
-                   cursor_distance(400),
-                   draw_notebounds(false),
-                   draw_attachbounds(false),
-                   draw_linebounds(false),
-                   draw_eov(false),
-                   notebounds_color(0xFF0000FF),
-                   virtualbounds_color(0xFF0000C0),
-                   attachbounds_color(0xFFFF0000),
-                   linebounds_color(0xFF00FF00),
-                   eov_color(0xFF800080) {}
+    PressParam();
     
     // apply scale
     inline double do_scale(const double coord) const {return (scale * coord) / 1000.0;};
@@ -228,14 +184,7 @@ struct SCOREPRESS_API InterfaceParam
     unsigned int autobeam_slope;    // default slope of automatic beams (in promille of head-height)
     
     // default parameters
-    InterfaceParam() : input_base(LOWER_C),
-                       relative_accidentals(true),
-                       prefer_natural(true),
-                       stem_length(3000),
-                       accidental_offset(0),
-                       dot_offset(),
-                       newline_distance(3000),
-                       autobeam_slope(500) {};
+    InterfaceParam();
 };
 
 } // end namespace
