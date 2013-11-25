@@ -117,6 +117,13 @@
 		<Unit filename="doc/undefined.dox">
 			<Option target="doc" />
 		</Unit>
+		<Unit filename="include/scorepress/basetypes.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
+		</Unit>
 		<Unit filename="include/scorepress/classes.hh">
 			<Option target="shared" />
 			<Option target="static" />
@@ -391,6 +398,13 @@
 		<Unit filename="src/pageset.cpp">
 			<Option target="shared" />
 			<Option target="static" />
+		</Unit>
+		<Unit filename="src/parameters.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="clear" />
 		</Unit>
 		<Unit filename="src/pick.cpp">
 			<Option target="shared" />

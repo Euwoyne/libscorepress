@@ -705,7 +705,8 @@ static bool engrave_head(Head&          head,           // head to be engraved
         int offset = _round((-sprite_width * head.appearance.scale) / 1000.0);
         target.add_offset(offset);
         target.absolutePos.front().x -= offset;
-        unscaledPos += offset;
+        engraver.add_offset(offset);
+        unscaledPos.x += 2 * offset;
     };
     
     // add accidental
