@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2013 Dominik Lehmann
+  Copyright (C) 2014 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -1329,13 +1329,16 @@ void Chord::render(Renderer& renderer, const Plate::pNote& note, const PressStat
     };
     
     // render stem
-    renderer.set_color(stem_color.r, stem_color.g, stem_color.b, stem_color.a);
-    renderer.set_line_width(state.parameters.do_scale(state.stem_width) / 1000.0);  // set line width
-    renderer.move_to((state.parameters.do_scale(note.stem.x)    + state.offset.x) / 1000.0,
-                     (state.parameters.do_scale(note.stem.base) + state.offset.y) / 1000.0);
-    renderer.line_to((state.parameters.do_scale(note.stem.x)    + state.offset.x) / 1000.0,
-                     (state.parameters.do_scale(note.stem.top)  + state.offset.y) / 1000.0);
-    renderer.stroke();
+    if (val.exp != VALUE_BASE)  // no stem for whole notes
+    {
+        renderer.set_color(stem_color.r, stem_color.g, stem_color.b, stem_color.a);
+        renderer.set_line_width(state.parameters.do_scale(state.stem_width) / 1000.0);  // set line width
+        renderer.move_to((state.parameters.do_scale(note.stem.x)    + state.offset.x) / 1000.0,
+                         (state.parameters.do_scale(note.stem.base) + state.offset.y) / 1000.0);
+        renderer.line_to((state.parameters.do_scale(note.stem.x)    + state.offset.x) / 1000.0,
+                         (state.parameters.do_scale(note.stem.top)  + state.offset.y) / 1000.0);
+        renderer.stroke();
+    };
     
     // render beam
     this->render_beam(renderer, note, state);

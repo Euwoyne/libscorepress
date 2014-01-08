@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2013 Dominik Lehmann
+  Copyright (C) 2014 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -290,8 +290,8 @@ void Press::render(Renderer& renderer, const Plate& plate, const Position<mpx_t>
         // clip to the line
         renderer.clip(static_cast<int>((scale(line->gphBox.pos.x) + offset.x) / 1000),
                       static_cast<int>((scale(line->gphBox.pos.y) + offset.y) / 1000),
-                      static_cast<int>(scale(line->gphBox.width)  / 1000),
-                      static_cast<int>(scale(line->gphBox.height) / 1000));
+                      static_cast<int>(scale(line->gphBox.width)  / 1000) + 1,
+                      static_cast<int>(scale(line->gphBox.height) / 1000) + 1);
         
         // iterate through the on-plate voices
         for (Plate::VoiceList::const_iterator pvoice = line->voices.begin(); pvoice != line->voices.end(); ++pvoice)

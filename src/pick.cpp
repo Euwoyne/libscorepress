@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2013 Dominik Lehmann
+  Copyright (C) 2014 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -588,7 +588,10 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
             
             // set newline time
             for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
+            {
+                i->ypos = 0;
                 if (i->time > _newline_time) _newline_time = i->time;
+            };
             if (param->newline_time_reset)
                 for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
                     i->ntime = _newline_time;
@@ -601,7 +604,7 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         _next_layout.set(engravedNote.voice(), obj);        // set new line layout
         _next_layout.set_first_voice(engravedNote.voice());
         
-        // reset "pos" and add newline-distance to "ypos"
+        // reset "pos" and "ypos"
         nextNote.pos = viewport->umtopx_h(param->min_distance + obj.indent);
         nextNote.ypos = 0;
         

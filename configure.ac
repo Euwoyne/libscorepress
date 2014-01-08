@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 #
 #  ScorePress - Music Engraving Software  (libscorepress)
-#  Copyright (C) 2013 Dominik Lehmann
+#  Copyright (C) 2014 Dominik Lehmann
 #  
 #  Licensed under the EUPL, Version 1.1 or - as soon they
 #  will be approved by the European Commission - subsequent

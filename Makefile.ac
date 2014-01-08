@@ -1,7 +1,7 @@
 
 #
 #  ScorePress - Music Engraving Software  (libscorepress)
-#  Copyright (C) 2013 Dominik Lehmann
+#  Copyright (C) 2014 Dominik Lehmann
 #  
 #  Licensed under the EUPL, Version 1.1 or - as soon they
 #  will be approved by the European Commission - subsequent
@@ -26,7 +26,7 @@ SH        := @SH@
 CXX       := @CXX@
 AR        := @AR@ rcs
 LN        := @LN_S@
-LDCONFIG  := @LDCONFIG@ -n
+LDCONFIG  := @LDCONFIG@
 INSTALL   := @INSTALL@
 INSTALLU  := @INSTALL_DATA@
 SED       := @SED@
@@ -460,7 +460,7 @@ uninstall-headers:
 	@test -d ${includedir} && echo "Removing:  Headers" || :
 	@-rm -rf ${includedir}
 
-uninstall-doc: uninstall-man uninstall-html uninstall-pdf uninstall-dvi unisntall-ps
+uninstall-doc: uninstall-man uninstall-html uninstall-pdf uninstall-dvi uninstall-ps
 	@-test -d ${docdir} && echo "Removing:  Base Documentation" || :
 	@-rm -f ${docdir}/AUTHORS
 	@-rm -f ${docdir}/CC-BY-SA.pdf
@@ -487,7 +487,7 @@ uninstall-dvi:
 	@-rm -f ${docdir}/refman.dvi
 	@-rmdir ${docdir} 2> /dev/null || :
 
-unisntall-ps:
+uninstall-ps:
 	@test -f ${docdir}/refman.ps && echo "Removing:  Documentation (PS)" || :
 	@-rm -f ${docdir}/refman.ps
 	@-rmdir ${docdir} 2> /dev/null || :
@@ -507,7 +507,7 @@ clean:
 	@-rm -f  ${builddir}/refman.pdf
 	@-rm -f  ${builddir}/refman.dvi
 	@-rm -f  ${builddir}/refman.ps
-	@echo "  Deleting:       build directory..."
+	@echo "  Deleting:  build directory..."
 	@test -d ${builddir} && (rmdir ${builddir} 2> /dev/null || echo "  WARNING: \"${builddir}\" is not empty") || :
 
 distclean: clean

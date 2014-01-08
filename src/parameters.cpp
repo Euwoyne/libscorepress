@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2013 Dominik Lehmann
+  Copyright (C) 2014 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -25,9 +25,9 @@ EngraverParam::EngraverParam() : min_distance(1200),
                                  default_distance(1400),
                                  barline_distance(3200),
                                  accidental_space(500),
-                                 exponent(590),
+                                 exponent(1000),
                                  constant_coeff(250),
-                                 linear_coeff(2000),
+                                 linear_coeff(500),
                                  max_justification(2000),
                                  newline_time_reset(true),
                                  auto_barlines(true),

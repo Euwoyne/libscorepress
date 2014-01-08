@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2013 Dominik Lehmann
+  Copyright (C) 2014 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -228,9 +228,16 @@ void EngraverState::engrave()
         pvoice->context.set_buffer_xpos(pnote->gphBox.right());
     };
     
+    // insert barline
+    if (param->auto_barlines && pvoice->context.beat(cursor.ntime) == 0L && barcnt < pvoice->context.bar(cursor.ntime))
+    {
+        barcnt = pvoice->context.bar(cursor.ntime); // set bar counter
+        pick.insert_barline(Barline::singlebar);    // insert barline to be engraved
+    }
+    
     // check for end of voice
-    if (   !cursor.has_next()          && cursor.remaining_duration <= 0L
-        && !cursor->is(Class::NEWLINE) && pick.eov())
+    else if (   !cursor.has_next()          && cursor.remaining_duration <= 0L
+             && !cursor->is(Class::NEWLINE) && pick.eov())
     {
         // check dangling ties
         if (!tieinfo[&cursor.voice()].empty())
@@ -241,19 +248,15 @@ void EngraverState::engrave()
         // add end-of-voice indicator object
         pvoice->notes.push_back(Plate::pNote(pos, cursor));
         pvoice->notes.back().note.to_end();
-        pvoice->notes.back().gphBox.pos.x = pnote->gphBox.right() + 2 * viewport->umtopx_h(param->min_distance);
+        if (cursor->is(Class::BARLINE))
+            pvoice->notes.back().gphBox.pos.x = pnote->gphBox.pos.x + 1;
+        else
+            pvoice->notes.back().gphBox.pos.x = pnote->gphBox.right() + 2 * viewport->umtopx_h(param->min_distance);
         pvoice->notes.back().gphBox.pos.y = pvoice->basePos.y;
         pvoice->notes.back().gphBox.width = 1000;
         pvoice->notes.back().gphBox.height = head_height * (cursor.staff().line_count - 1);
         pvoice->notes.back().absolutePos.front() = pvoice->notes.back().gphBox.pos;
     }
-    
-    // insert barline
-    else if (param->auto_barlines && pvoice->context.beat(cursor.ntime) == 0L && barcnt < pvoice->context.bar(cursor.ntime))
-    {
-        barcnt = pvoice->context.bar(cursor.ntime); // set bar counter
-        pick.insert_barline(Barline::singlebar);    // insert barline to be engraved
-    };
 }
 
 // calculate line-end information/line's rightmost border (see "Plate::pLine::line_end")
