@@ -40,14 +40,6 @@ LIBS_ORI="$LIBS"
 
 # check commandline arguments
 #AC_PRESERVE_HELP_ORDER
-AC_ARG_ENABLE([doxygen],
-            [AS_HELP_STRING([--enable-doxygen], [enable 'make doc' with doxygen])],
-            [with_doxygen="$withval"],
-            [with_doxygen="no"])
-AC_ARG_ENABLE([fraction-check],
-            [AS_HELP_STRING([--enable-fraction-check], [enable overflow check for rational numbers])],
-            [with_sizecheck="$withval"],
-            [with_sizecheck="no"])
 AC_ARG_ENABLE([debug],
             [AS_HELP_STRING([--enable-debug], [enable debugging with GDB])],
             [with_debug="$withval"],
@@ -56,25 +48,32 @@ AC_ARG_ENABLE([profile],
             [AS_HELP_STRING([--enable-profile], [enable profiling with GProf])],
             [with_profile="$withval"],
             [with_profile="no"])
+AC_ARG_ENABLE([fraction-check],
+            [AS_HELP_STRING([--enable-fraction-check], [enable overflow check for rational numbers])],
+            [with_sizecheck="$withval"],
+            [with_sizecheck="no"])
+AC_ARG_ENABLE([doxygen],
+            [AS_HELP_STRING([--enable-doxygen], [enable 'make doc' with doxygen])],
+            [with_doxygen="$withval"],
+            [with_doxygen="no"])
 AC_ARG_WITH([libxml2],
             [AS_HELP_STRING([--with-libxml2], [location of the libxml2 headers [/usr/include/libxml2]])],
             [with_libxml2="$withval"],
             [with_libxml2="auto"])
 
-AS_IF([test "x$with_sizecheck" != "xno"],
-    [AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_ON}])],
-    [AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_OFF}])])
-
 AS_IF([test "x$with_debug" != "xno"],
     [AC_DEFINE([LIBSCOREPRESS_DEBUG], [1])],
     [AC_DEFINE([LIBSCOREPRESS_DEBUG], [0])])
-AC_SUBST([MODE], [RELEASE])
 
+AC_SUBST([MODE], [RELEASE])
 AS_IF([test "x$with_profile" != "xno"],
     [AC_SUBST([MODE], [PROFILE])])
-
 AS_IF([test "x$with_debug" != "xno"],
     [AC_SUBST([MODE], [DEBUG])])
+
+AS_IF([test "x$with_sizecheck" != "xno"],
+    [AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_ON}])],
+    [AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_OFF}])])
 
 # check shell
 AS_IF([test "x$SHELL" != "x"],
@@ -86,7 +85,7 @@ AC_PROG_CXX
 
 # set compiler specific flags
 if test "x$CXX" = "xgcc" || test "x$CXX" = "xg++"; then
-    AC_CHECK_PROG([DEBUG], [gdb], [-ggdb], [])
+    AC_CHECK_PROG([DEBUG], [gdb], [-ggdb], [-g])
     AC_SUBST([DEBUG],      ["$DEBUG -fno-inline"])
     AC_SUBST([PROFILE],    ["-O2 -fno-omit-frame-pointer"])
     AC_SUBST([RELEASE],    ["-O2 -fomit-frame-pointer"])
@@ -154,6 +153,7 @@ if test -z "$MAKEINDEX"; then AC_SUBST([MAKEINDEX], [:]) fi
 if test "x$with_libxml2" != "xauto"; then
     AC_SUBST([LIBXML_CFLAGS], [-I$with_libxml2])
     AC_SUBST([LIBXML_LIBS], [-lxml2])
+    AC_SUBST([USER_LIBXML], [$with_libxml2])
 elif test -n "$PKGCONFIG" -a `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; then
     AC_SUBST([LIBXML_CFLAGS], [`\${PKGCONFIG} libxml-2.0 --cflags`])
     AC_SUBST([LIBXML_LIBS], [`\${PKGCONFIG} libxml-2.0 --libs`])

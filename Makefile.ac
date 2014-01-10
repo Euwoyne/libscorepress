@@ -22,18 +22,20 @@
 #
 
 # programs
-SH        := @SH@
-CXX       := @CXX@
-AR        := @AR@ rcs
-LN        := @LN_S@
-LDCONFIG  := @LDCONFIG@
-INSTALL   := @INSTALL@
-INSTALLU  := @INSTALL_DATA@
-SED       := @SED@
-PKGCONFIG := @PKGCONFIG@
-DOXYGEN   := @DOXYGEN@
-LATEX     := @LATEX@ -interaction=batchmode
-MAKEINDEX := @MAKEINDEX@ -q
+SHELL            = @SHELL@
+SH              := @SH@
+CXX             := @CXX@
+AR              := @AR@ rcs
+LN              := @LN_S@
+LDCONFIG        := @LDCONFIG@
+INSTALL         := @INSTALL@
+INSTALL_DATA    := @INSTALL_DATA@
+INSTALL_PROGRAM := @INSTALL_PROGRAM@
+SED             := @SED@
+PKGCONFIG       := @PKGCONFIG@
+DOXYGEN         := @DOXYGEN@
+LATEX           := @LATEX@ -interaction=batchmode
+MAKEINDEX       := @MAKEINDEX@ -q
 
 # target filenames
 PACKAGE_TARNAME := @PACKAGE_TARNAME@
@@ -48,26 +50,32 @@ afile    := @PACKAGE_NAME@.a
 prefix      := @prefix@
 exec_prefix := @exec_prefix@
 datarootdir := @datarootdir@
-datadir     := @datadir@/${PACKAGE_TARNAME}
+datadir     := @datadir@
+datadir_pkg := ${datadir}/${PACKAGE_TARNAME}
 distdir     := @PACKAGE_NAME@-@PACKAGE_VERSION@
 
-srcdir      := @srcdir@/src
-headerdir   := @srcdir@/include/${basename}
-datasrc     := @srcdir@/data
-docsrc      := @srcdir@/doc
+srcdir      := @srcdir@
+headerdir   := ${srcdir}/include/${basename}
+cppsrc      := ${srcdir}/src
+datasrc     := ${srcdir}/data
+docsrc      := ${srcdir}/doc
 builddir    := @builddir@/build
 doxyfile    := ${docsrc}/Doxyfile
 doxy_ac     := ${docsrc}/Doxyfile.ac
 
-libdir      := @libdir@
-includedir  := @includedir@/@PACKAGE_NAME@-@PACKAGE_VERSION@
-includedir2 := @oldincludedir@/@PACKAGE_NAME@-@PACKAGE_VERSION@
-mandir      := @mandir@/man3
-docdir      := @docdir@
-htmldir     := @htmldir@/html
-dvidir      := @dvidir@
-pdfdir      := @pdfdir@
-psdir       := @psdir@
+libdir            := @libdir@
+includedir        := @includedir@
+oldincludedir     := @oldincludedir@
+includedir_pkg    := ${includedir}/@PACKAGE_NAME@-@PACKAGE_VERSION@
+oldincludedir_pkg := ${oldincludedir}/@PACKAGE_NAME@-@PACKAGE_VERSION@
+mandir            := @mandir@
+man3dir           := ${mandir}/man3
+manext            := .3
+docdir            := @docdir@
+htmldir           := @htmldir@
+dvidir            := @dvidir@
+pdfdir            := @pdfdir@
+psdir             := @psdir@
 
 # compiler flags
 XMLFLAGS := @LIBXML_CFLAGS@
@@ -87,42 +95,45 @@ PROFILE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS @PROFILE_SO@
 RELEASE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS @RELEASE_SO@
 SOFLAGS    := @SOFLAGS@ ${${MODE}_SO}
 
-CONFIGFLAGS := -DDATADIR="\"${datadir}\""
-USER_FLAGS := @CFLAGS@
-USER_LIBS  := @LDFLAGS@ @LIBS@
+CONFIGFLAGS  := -DDATADIR="\"${DESTDIR}${datadir_pkg}\""
+USER_CFLAGS  := @CFLAGS@
+USER_FLAGS   := @CFLAGS@ ${CFLAGS}
+USER_LIBS    := @LIBS@
+USER_LDFLAGS := @LDFLAGS@
+USER_LIBXML  := @USER_LIBXML@
 
 FLAGS   := ${WARNINGS} ${CTRLFLAGS} ${${MODE}} -I${headerdir} ${USER_FLAGS}
-LIBS    := ${XMLLIBS} ${USER_LIBS}
+LIBS    := ${XMLLIBS} ${USER_LIBS} ${USER_LDFLAGS}
 
 SIZECHECK_ON    := -DSIZECHECK @FSIZECHECK@
 SIZECHECK_OFF   :=
 FRACT_SIZECHECK := @FRACT_SIZECHECK@
 
 # file lists
-cfiles := ${srcdir}/main.cpp           \
-          ${srcdir}/engine.cpp         \
-          ${srcdir}/press.cpp          \
-          ${srcdir}/engraver.cpp       \
-          ${srcdir}/engraver_state.cpp \
-          ${srcdir}/engrave_info.cpp   \
-          ${srcdir}/context.cpp        \
-          ${srcdir}/pageset.cpp        \
-          ${srcdir}/plate.cpp          \
-          ${srcdir}/pick.cpp           \
-          ${srcdir}/cursor.cpp         \
-          ${srcdir}/user_cursor.cpp    \
-          ${srcdir}/edit_cursor.cpp    \
-          ${srcdir}/renderer.cpp       \
-          ${srcdir}/sprites.cpp        \
-          ${srcdir}/sprite_id.cpp      \
-          ${srcdir}/score.cpp          \
-          ${srcdir}/classes.cpp        \
-          ${srcdir}/log.cpp            \
-          ${srcdir}/fraction.cpp       \
-          ${srcdir}/parameters.cpp     \
-          ${srcdir}/error.cpp          \
-          ${srcdir}/file_format.cpp    \
-          ${srcdir}/config.cpp
+cfiles := ${cppsrc}/main.cpp           \
+          ${cppsrc}/engine.cpp         \
+          ${cppsrc}/press.cpp          \
+          ${cppsrc}/engraver.cpp       \
+          ${cppsrc}/engraver_state.cpp \
+          ${cppsrc}/engrave_info.cpp   \
+          ${cppsrc}/context.cpp        \
+          ${cppsrc}/pageset.cpp        \
+          ${cppsrc}/plate.cpp          \
+          ${cppsrc}/pick.cpp           \
+          ${cppsrc}/cursor.cpp         \
+          ${cppsrc}/user_cursor.cpp    \
+          ${cppsrc}/edit_cursor.cpp    \
+          ${cppsrc}/renderer.cpp       \
+          ${cppsrc}/sprites.cpp        \
+          ${cppsrc}/sprite_id.cpp      \
+          ${cppsrc}/score.cpp          \
+          ${cppsrc}/classes.cpp        \
+          ${cppsrc}/log.cpp            \
+          ${cppsrc}/fraction.cpp       \
+          ${cppsrc}/parameters.cpp     \
+          ${cppsrc}/error.cpp          \
+          ${cppsrc}/file_format.cpp    \
+          ${cppsrc}/config.cpp
 
 hfiles := ${headerdir}/engine.hh         \
           ${headerdir}/press.hh          \
@@ -209,20 +220,20 @@ afiles := ${builddir}/main.o           \
           ${builddir}/file_format.o    \
           ${builddir}/config.o
 
-docfiles := @srcdir@/AUTHORS       \
-            @srcdir@/LICENCE.pdf   \
-            @srcdir@/README        \
+docfiles := ${srcdir}/AUTHORS       \
+            ${srcdir}/LICENCE.pdf   \
+            ${srcdir}/README        \
             ${datasrc}/CC-BY-SA.pdf
 
-distfiles := @srcdir@/AUTHORS      \
-             @srcdir@/configure    \
-             @srcdir@/install-sh   \
-             @srcdir@/LICENCE.pdf  \
-             @srcdir@/Makefile.ac  \
-             @srcdir@/README       \
-             @srcdir@/data         \
-             @srcdir@/doc          \
-             @srcdir@/src
+distfiles := ${srcdir}/AUTHORS      \
+             ${srcdir}/configure    \
+             ${srcdir}/install-sh   \
+             ${srcdir}/LICENCE.pdf  \
+             ${srcdir}/Makefile.ac  \
+             ${srcdir}/README       \
+             ${srcdir}/data         \
+             ${srcdir}/doc          \
+             ${srcdir}/src
 
 # header dependency list
 deps_config_hh         := ${headerdir}/config.hh
@@ -258,30 +269,30 @@ deps_file_writer_hh    := ${headerdir}/file_writer.hh ${deps_score_hh}
 deps_file_format_hh    := ${headerdir}/file_format.hh ${deps_file_reader_hh} ${deps_file_writer_hh}
 deps_ui_hh             := ${headerdir}/ui.hh ${deps_file_reader_hh} ${deps_file_writer_hh}
 
-deps_classes_cpp        := ${srcdir}/classes.cpp ${deps_classes_hh} ${deps_engraver_state_hh} ${deps_log_hh} ${deps_undefined_hh}
-deps_config_cpp         := ${srcdir}/config.cpp ${deps_config_hh}
-deps_context_cpp        := ${srcdir}/context.cpp ${deps_context_hh}
-deps_cursor_cpp         := ${srcdir}/cursor.cpp ${deps_cursor_hh}
-deps_error_cpp          := ${srcdir}/error.cpp ${deps_error_hh}
-deps_edit_cursor_cpp    := ${srcdir}/edit_cursor.cpp ${deps_edit_cursor_hh} ${deps_log_hh}
-deps_engine_cpp         := ${srcdir}/engine.cpp ${deps_engine_hh} ${deps_log_hh}
-deps_engrave_info_cpp   := ${srcdir}/engrave_info.cpp ${deps_engrave_info_hh} ${deps_log_hh}
-deps_engraver_cpp       := ${srcdir}/engraver.cpp ${deps_engraver_hh} ${deps_engraver_state_hh} ${deps_log_hh} ${deps_undefined_hh}
-deps_engraver_state_cpp := ${srcdir}/engraver_state.cpp ${deps_engraver_state_hh} ${deps_log_hh} ${deps_undefined_hh}
-deps_file_format_cpp    := ${srcdir}/file_format.cpp ${deps_file_format_hh}
-deps_fraction_cpp       := ${srcdir}/fraction.cpp ${deps_fraction_hh}
-deps_log_cpp            := ${srcdir}/log.cpp ${deps_log_hh}
-deps_main_cpp           := ${srcdir}/main.cpp
-deps_pageset_cpp        := ${srcdir}/pageset.cpp ${deps_pageset_hh}
-deps_parameters_cpp     := ${srcdir}/parameters.cpp ${deps_parameters_hh}
-deps_pick_cpp           := ${srcdir}/pick.cpp ${deps_pick_hh} ${deps_log_hh} ${deps_undefined_hh}
-deps_plate_cpp          := ${srcdir}/plate.cpp ${deps_plate_hh} ${deps_undefined_hh}
-deps_press_cpp          := ${srcdir}/press.cpp ${deps_press_hh} ${deps_log_hh} ${deps_undefined_hh}
-deps_renderer_cpp       := ${srcdir}/renderer.cpp ${deps_renderer_hh}
-deps_score_cpp          := ${srcdir}/score.cpp ${deps_score_hh}
-deps_sprite_id_cpp      := ${srcdir}/sprite_id.cpp ${deps_sprite_id_hh} ${deps_undefined_hh}
-deps_sprites_cpp        := ${srcdir}/sprites.cpp ${deps_sprites_hh} ${deps_undefined_hh}
-deps_user_cursor_cpp    := ${srcdir}/user_cursor.cpp ${deps_user_cursor_hh} ${deps_log_hh}
+deps_classes_cpp        := ${cppsrc}/classes.cpp ${deps_classes_hh} ${deps_engraver_state_hh} ${deps_log_hh} ${deps_undefined_hh}
+deps_config_cpp         := ${cppsrc}/config.cpp ${deps_config_hh}
+deps_context_cpp        := ${cppsrc}/context.cpp ${deps_context_hh}
+deps_cursor_cpp         := ${cppsrc}/cursor.cpp ${deps_cursor_hh}
+deps_error_cpp          := ${cppsrc}/error.cpp ${deps_error_hh}
+deps_edit_cursor_cpp    := ${cppsrc}/edit_cursor.cpp ${deps_edit_cursor_hh} ${deps_log_hh}
+deps_engine_cpp         := ${cppsrc}/engine.cpp ${deps_engine_hh} ${deps_log_hh}
+deps_engrave_info_cpp   := ${cppsrc}/engrave_info.cpp ${deps_engrave_info_hh} ${deps_log_hh}
+deps_engraver_cpp       := ${cppsrc}/engraver.cpp ${deps_engraver_hh} ${deps_engraver_state_hh} ${deps_log_hh} ${deps_undefined_hh}
+deps_engraver_state_cpp := ${cppsrc}/engraver_state.cpp ${deps_engraver_state_hh} ${deps_log_hh} ${deps_undefined_hh}
+deps_file_format_cpp    := ${cppsrc}/file_format.cpp ${deps_file_format_hh}
+deps_fraction_cpp       := ${cppsrc}/fraction.cpp ${deps_fraction_hh}
+deps_log_cpp            := ${cppsrc}/log.cpp ${deps_log_hh}
+deps_main_cpp           := ${cppsrc}/main.cpp
+deps_pageset_cpp        := ${cppsrc}/pageset.cpp ${deps_pageset_hh}
+deps_parameters_cpp     := ${cppsrc}/parameters.cpp ${deps_parameters_hh}
+deps_pick_cpp           := ${cppsrc}/pick.cpp ${deps_pick_hh} ${deps_log_hh} ${deps_undefined_hh}
+deps_plate_cpp          := ${cppsrc}/plate.cpp ${deps_plate_hh} ${deps_undefined_hh}
+deps_press_cpp          := ${cppsrc}/press.cpp ${deps_press_hh} ${deps_log_hh} ${deps_undefined_hh}
+deps_renderer_cpp       := ${cppsrc}/renderer.cpp ${deps_renderer_hh}
+deps_score_cpp          := ${cppsrc}/score.cpp ${deps_score_hh}
+deps_sprite_id_cpp      := ${cppsrc}/sprite_id.cpp ${deps_sprite_id_hh} ${deps_undefined_hh}
+deps_sprites_cpp        := ${cppsrc}/sprites.cpp ${deps_sprites_hh} ${deps_undefined_hh}
+deps_user_cursor_cpp    := ${cppsrc}/user_cursor.cpp ${deps_user_cursor_hh} ${deps_log_hh}
 
 
 #
@@ -294,7 +305,7 @@ deps_user_cursor_cpp    := ${srcdir}/user_cursor.cpp ${deps_user_cursor_hh} ${de
         install-alldoc  install-doc  install-man  install-html  install-pdf  install-dvi  install-ps \
         uninstall  uninstall-shared  uninstall-static uninstall-data uninstall-headers               \
         uninstall-doc  uninstall-man  uninstall-html  uninstall-pdf  uninstall-dvi  uninstall-ps     \
-        clean  distclean  help                                                                       \
+        clean  distclean  help  configinfo                                                           \
         dist dist-gzip dist-bzip2 dist-zip deb
 
 # compile
@@ -307,25 +318,30 @@ install:     install-shared install-static install-data install-doc
 install-dev: install-shared install-static install-data install-doc    install-headers
 install-all: install-shared install-static install-data install-alldoc install-headers
 
-install-shared: ${builddir} ${builddir}/${sofile} ${libdir}
+install-shared: ${builddir} ${builddir}/${sofile} ${DESTDIR}${libdir}
+	$(NORMAL_INSTALL)
 	@echo "Installing:  ${sofile}"
-	@${INSTALL} ${builddir}/${sofile} ${libdir}
-	@-${LN} -f ${libdir}/${sofile} ${libdir}/${sobase}
-	@${LDCONFIG} -n ${libdir}
+	@${INSTALL_PROGRAM} ${builddir}/${sofile} ${DESTDIR}${libdir}
+	@-${LN} -f ${DESTDIR}${libdir}/${sofile} ${DESTDIR}${libdir}/${sobase}
+	$(POST_INSTALL)
+	@${LDCONFIG} -n ${DESTDIR}${libdir}
 
-install-static: ${builddir} ${builddir}/${afile} ${libdir}
+install-static: ${builddir} ${builddir}/${afile} ${DESTDIR}${libdir}
+	$(NORMAL_INSTALL)
 	@echo "Installing:  ${afile}"
-	@cp ${builddir}/${afile} ${libdir}/${afile}
+	@cp ${builddir}/${afile} ${DESTDIR}${libdir}/${afile}
 
-install-data: ${datadir}/dtd ${datadir}/symbol
+install-data: ${DESTDIR}${datadir_pkg}/dtd ${DESTDIR}${datadir_pkg}/symbol
+	$(NORMAL_INSTALL)
 	@echo "Installing:  Symbols"
-	@${INSTALLU} -t ${datadir}/symbol ${datasrc}/symbol/*
+	@${INSTALL_DATA} -t ${DESTDIR}${datadir_pkg}/symbol ${datasrc}/symbol/*
 	@echo "Installing:  libscorepress.symbols.dtd"
-	@${INSTALLU} -t ${datadir}/dtd ${datasrc}/dtd/*
+	@${INSTALL_DATA} -t ${DESTDIR}${datadir_pkg}/dtd ${datasrc}/dtd/*
 
-install-headers: ${includedir}/${basename}
+install-headers: ${DESTDIR}${includedir_pkg}/${basename}
+	$(NORMAL_INSTALL)
 	@echo "Installing:  Headers"
-	@${INSTALL} -t ${includedir}/${basename} ${headerdir}/*.hh
+	@${INSTALL_PROGRAM} -t ${DESTDIR}${includedir_pkg}/${basename} ${headerdir}/*.hh
 
 # documentation
 ${doxyfile}: ${doxy_ac}
@@ -333,7 +349,7 @@ ${doxyfile}: ${doxy_ac}
 	@${SED} -e 's|@PACKAGE_NAME[@]|@PACKAGE_NAME@|g'       \
 	        -e 's|@PACKAGE_VERSION[@]|@PACKAGE_VERSION@|g' \
 	        -e 's|@OUTPUT_DIR[@]|${builddir}|g'            \
-	        -e 's|@SOURCE_DIR[@]|${srcdir}|g'              \
+	        -e 's|@SOURCE_DIR[@]|${cppsrc}|g'              \
 	        -e 's|@HEADER_DIR[@]|${headerdir}|g'           \
 	        -e 's|@DOC_DIR[@]|${docsrc}|g'                 \
 	        -e 's|@LATEX[@]|${LATEX}|g'                    \
@@ -347,16 +363,17 @@ man: ${builddir}/man/man3
 ${builddir}/man/man3: ${doxyfile} ${builddir}
 	@echo "Generating:  Manpages..."
 	@if test "${DOXYGEN}" = ":"; then                               \
-	     echo "                FAILED (no DoxyGen installed)";      \
+	     echo "    FAILED (no DoxyGen installed)";                  \
 	 else                                                           \
 	     (cat ${doxyfile}; echo "GENERATE_MAN=yes") | ${DOXYGEN} -; \
+	     (cd ${builddir}/man/man3; gzip * 2> /dev/null)             \
 	 fi
 
 html: ${builddir}/html
 ${builddir}/html: ${doxyfile} ${builddir}
 	@echo "Generating:  Documentation (HTML)..."
 	@if test "${DOXYGEN}" = ":"; then                                \
-	     echo "                FAILED (no DoxyGen installed)";       \
+	     echo "    FAILED (no DoxyGen installed)";                   \
 	 else                                                            \
 	     (cat ${doxyfile}; echo "GENERATE_HTML=yes") | ${DOXYGEN} -; \
 	 fi
@@ -365,10 +382,10 @@ ${builddir}/html: ${doxyfile} ${builddir}
 pdf: ${builddir}/refman.pdf
 ${builddir}/refman.pdf: ${doxyfile} ${builddir}
 	@echo "Generating:  Documentation (PDF)..."
-	@if test "${DOXYGEN}" = ":"; then                                 \
-	     echo "                FAILED (no DoxyGen installed)";        \
-	 else                                                             \
-	     (cat ${doxyfile}; echo "GENERATE_LATEX=yes";            \
+	@if test "${DOXYGEN}" = ":"; then                       \
+	     echo "    FAILED (no DoxyGen installed)";          \
+	 else                                                   \
+	     (cat ${doxyfile}; echo "GENERATE_LATEX=yes";       \
 	                       echo "LATEX_CMD_NAME=\"${LATEX} --output-format pdf\"") | ${DOXYGEN} -; \
 	 fi
 	@if test -d ${builddir}/latex; then                     \
@@ -376,17 +393,17 @@ ${builddir}/refman.pdf: ${doxyfile} ${builddir}
 	     if test -e ${builddir}/latex/refman.pdf; then      \
 	         cp ${builddir}/latex/refman.pdf ${builddir};   \
 	     else                                               \
-	         echo "                FAILED (LaTeX failure)"; \
+	         echo "    FAILED (LaTeX failure)";             \
 	     fi;                                                \
 	 fi
 
 dvi: ${builddir}/refman.dvi
 ${builddir}/refman.dvi: ${doxyfile} ${builddir}
 	@echo "Generating:  Documentation (DVI)..."
-	@if test "${DOXYGEN}" = ":"; then                            \
-	     echo "                FAILED (no DoxyGen installed)";   \
-	 else                                                        \
-	     (cat ${doxyfile}; echo "GENERATE_LATEX=yes";            \
+	@if test "${DOXYGEN}" = ":"; then                       \
+	     echo "    FAILED (no DoxyGen installed)";          \
+	 else                                                   \
+	     (cat ${doxyfile}; echo "GENERATE_LATEX=yes";       \
 	                       echo "LATEX_CMD_NAME=\"${LATEX} --output-format dvi\"") | ${DOXYGEN} -; \
 	 fi
 	@if test -d ${builddir}/latex; then                     \
@@ -394,103 +411,127 @@ ${builddir}/refman.dvi: ${doxyfile} ${builddir}
 	     if test -e ${builddir}/latex/refman.dvi; then      \
 	         cp ${builddir}/latex/refman.dvi ${builddir};   \
 	     else                                               \
-	         echo "                FAILED (LaTeX failure)"; \
+	         echo "    FAILED (LaTeX failure)";             \
 	     fi;                                                \
 	 fi
 
 ps: ${builddir}/refman.ps
 ${builddir}/refman.ps: ${builddir}/refman.dvi
-	@echo "Generating:  Documentation (PS)..."
-	@(cd ${builddir}/latex && dvips -q refman.dvi) > /dev/null;
-	@if test -e ${builddir}/latex/refman.ps; then       \
-	     cp ${builddir}/latex/refman.ps ${builddir};    \
-	 else                                               \
-	     echo "                FAILED (dvips failure)"; \
+	@if test -e ${builddir}/refman.dvi; then             \
+	     echo -n "Generating:  Documentation (PS)...";   \
+	     (cd ${builddir}/latex && dvips -q refman.dvi) > /dev/null; \
+	     if test -e ${builddir}/latex/refman.ps; then    \
+	         cp ${builddir}/latex/refman.ps ${builddir}; \
+	         echo;                                       \
+	     else                                            \
+	         echo "    FAILED (dvips failure)";          \
+	     fi;                                             \
 	 fi
 
 install-alldoc: install-doc install-man install-html install-pdf install-dvi install-ps
 
-install-doc: ${docdir}
+install-doc: ${DESTDIR}${docdir}
+	$(NORMAL_INSTALL)
 	@echo "Installing:  Base Documentation"
-	@${INSTALLU} ${docfiles} ${docdir}
+	@${INSTALL_DATA} ${docfiles} ${DESTDIR}${docdir}
 
-install-man: ${mandir}
+install-man: ${DESTDIR}${man3dir} man
+	$(NORMAL_INSTALL)
 	@echo "Installing:  Manpages"
-	@test -d ${builddir}/man/man3 && (cd ${builddir}/man/man3 && gzip * 2> /dev/null) || echo "  ERROR: Documentation not built. Please run \"make man\"."
-	@test -d ${builddir}/man/man3 && ${INSTALLU} ${builddir}/man/man3/ScorePress_* ${mandir} || :
+	@test -d ${builddir}/man/man3 && ${INSTALL_DATA} ${builddir}/man/man3/ScorePress_* ${DESTDIR}${man3dir} \
+	                              || echo "    ERROR: Documentation not built. Please run \"make man\"."
 
-install-html: ${htmldir}
+install-html: ${DESTDIR}${htmldir}/html html
+	$(NORMAL_INSTALL)
 	@echo "Installing:  Documentation (HTML)"
-	@test -d ${builddir}/html && ${INSTALLU} ${builddir}/html/* ${htmldir} || echo "  ERROR: Documentation not built. Please run \"make html\"."
-	@-${LN} ${htmldir}/index.html @htmldir@/index.html
+	@-test -d ${builddir}/html && ${INSTALL_DATA} ${builddir}/html/* ${DESTDIR}${htmldir}/html \
+	                           || echo "    ERROR: Documentation not built. Please run \"make html\"."
+	@-test -d ${builddir}/html && ${LN} ${DESTDIR}${htmldir}/html/index.html ${DESTDIR}${htmldir}/index.html
 
-install-pdf: ${pdfdir}
+install-pdf: ${DESTDIR}${pdfdir} pdf
+	$(NORMAL_INSTALL)
 	@echo "Installing:  Documentation (PDF)"
-	@test -f ${builddir}/refman.pdf && ${INSTALLU} ${builddir}/refman.pdf ${pdfdir} || echo "  ERROR: Documentation not built. Please run \"make pdf\"."
+	@test -f ${builddir}/refman.pdf && ${INSTALL_DATA} ${builddir}/refman.pdf ${DESTDIR}${pdfdir} \
+	                                || echo "    ERROR: Documentation not built. Please run \"make pdf\"."
 
-install-dvi: ${dvidir}
+install-dvi: ${DESTDIR}${dvidir} dvi
+	$(NORMAL_INSTALL)
 	@echo "Installing:  Documentation (DVI)"
-	@test -f ${builddir}/refman.dvi && ${INSTALLU} ${builddir}/refman.dvi ${dvidir} || echo "  ERROR: Documentation not built. Please run \"make dvi\"."
+	@test -f ${builddir}/refman.dvi && ${INSTALL_DATA} ${builddir}/refman.dvi ${DESTDIR}${dvidir} \
+	                                || echo "    ERROR: Documentation not built. Please run \"make dvi\"."
 
-install-ps: ${psdir}
+install-ps: ${DESTDIR}${psdir} ps
+	$(NORMAL_INSTALL)
 	@echo "Installing:  Documentation (PS)"
-	@test -f ${builddir}/refman.ps && ${INSTALLU} ${builddir}/refman.ps ${psdir} || echo "  ERROR: Documentation not built. Please run \"make ps\"."
+	@test -f ${builddir}/refman.ps && ${INSTALL_DATA} ${builddir}/refman.ps ${DESTDIR}${psdir} \
+	                               || echo "    ERROR: Documentation not built. Please run \"make ps\"."
 
 
 # uninstall
 uninstall: uninstall-shared uninstall-static uninstall-data uninstall-headers uninstall-doc
 
 uninstall-shared:
-	@test -f ${libdir}/${sobase} -o -f ${libdir}/${soname} -o -f ${libdir}/${sofile} && echo "Removing:  Shared Libraries" || :
-	@-rm -f ${libdir}/${sobase}
-	@-rm -f ${libdir}/${soname}
-	@-rm -f ${libdir}/${sofile}
+	$(NORMAL_UNINSTALL)
+	@test -f ${DESTDIR}${libdir}/${sobase} -o -f ${DESTDIR}${libdir}/${soname} -o -f ${DESTDIR}${libdir}/${sofile} && echo "Removing:  Shared Libraries" || :
+	@-rm -f ${DESTDIR}${libdir}/${sobase}
+	@-rm -f ${DESTDIR}${libdir}/${soname}
+	@-rm -f ${DESTDIR}${libdir}/${sofile}
 
 uninstall-static:
-	@test -f ${libdir}/${afile} && echo "Removing:  Static Libraries" || :
-	@-rm -f ${libdir}/${afile}
+	$(NORMAL_UNINSTALL)
+	@test -f ${DESTDIR}${libdir}/${afile} && echo "Removing:  Static Libraries" || :
+	@-rm -f ${DESTDIR}${libdir}/${afile}
 
 uninstall-data:
-	@-test -d ${datadir} && echo "Removing:  Base Data" || :
-	@-rm -rf ${datadir}/symbol
-	@-rm -rf ${datadir}/dtd
-	@test -d ${datadir} && (rmdir ${datadir} 2> /dev/null || echo "  WARNING: \"${datadir}\" is not empty") || :
+	$(NORMAL_UNINSTALL)
+	@-test -d ${DESTDIR}${datadir_pkg} && echo "Removing:  Base Data" || :
+	@-rm -rf ${DESTDIR}${datadir_pkg}/symbol
+	@-rm -rf ${DESTDIR}${datadir_pkg}/dtd
+	@test -d ${DESTDIR}${datadir_pkg} && (rmdir ${DESTDIR}${datadir_pkg} 2> /dev/null \
+	                                  || echo "    WARNING: \"${DESTDIR}${datadir_pkg}\" is not empty") || :
 
 uninstall-headers:
-	@test -d ${includedir} && echo "Removing:  Headers" || :
-	@-rm -rf ${includedir}
+	$(NORMAL_UNINSTALL)
+	@test -d ${DESTDIR}${includedir_pkg} && echo "Removing:  Headers" || :
+	@-rm -rf ${DESTDIR}${includedir_pkg}
 
 uninstall-doc: uninstall-man uninstall-html uninstall-pdf uninstall-dvi uninstall-ps
-	@-test -d ${docdir} && echo "Removing:  Base Documentation" || :
-	@-rm -f ${docdir}/AUTHORS
-	@-rm -f ${docdir}/CC-BY-SA.pdf
-	@-rm -f ${docdir}/LICENCE.pdf
-	@-rm -f ${docdir}/README
-	@test -d ${docdir} && (rmdir ${docdir} 2> /dev/null || echo "  WARNING: \"${docdir}\" is not empty") || :
+	$(NORMAL_UNINSTALL)
+	@-test -d ${DESTDIR}${docdir} && echo "Removing:  Base Documentation" || :
+	@-rm -f ${DESTDIR}${docdir}/AUTHORS
+	@-rm -f ${DESTDIR}${docdir}/CC-BY-SA.pdf
+	@-rm -f ${DESTDIR}${docdir}/LICENCE.pdf
+	@-rm -f ${DESTDIR}${docdir}/README
+	@test -d ${DESTDIR}${docdir} && (rmdir ${DESTDIR}${docdir} 2> /dev/null || echo "    WARNING: \"${DESTDIR}${docdir}\" is not empty") || :
 
 uninstall-man:
-	@test -f ${mandir}/ScorePress_Engraver.3.gz && echo "Removing:  Manpages" || :
-	@-rm -f ${mandir}/ScorePress_*
+	$(NORMAL_UNINSTALL)
+	@test -f ${DESTDIR}${man3dir}/ScorePress_Engraver.3.gz && echo "Removing:  Manpages" || :
+	@-rm -f ${DESTDIR}${man3dir}/ScorePress_*
 
 uninstall-html:
-	@test -d ${htmldir} && echo "Removing:  Documentation (HTML)" || :
-	@-rm -f @htmldir@/index.html
-	@-rm -rf ${htmldir}
+	$(NORMAL_UNINSTALL)
+	@test -d ${DESTDIR}${htmldir}/html && echo "Removing:  Documentation (HTML)" || :
+	@-rm -f ${DESTDIR}${htmldir}/index.html
+	@-rm -rf ${DESTDIR}${htmldir}/html
 	
 uninstall-pdf:
-	@test -f ${docdir}/refman.pdf && echo "Removing:  Documentation (PDF)" || :
-	@-rm -f ${docdir}/refman.pdf
-	@-rmdir ${docdir} 2> /dev/null || :
+	$(NORMAL_UNINSTALL)
+	@test -f ${DESTDIR}${docdir}/refman.pdf && echo "Removing:  Documentation (PDF)" || :
+	@-rm -f ${DESTDIR}${docdir}/refman.pdf
+	@-rmdir ${DESTDIR}${docdir} 2> /dev/null || :
 
 uninstall-dvi:
-	@test -f ${docdir}/refman.dvi && echo "Removing:  Documentation (DVI)" || :
-	@-rm -f ${docdir}/refman.dvi
-	@-rmdir ${docdir} 2> /dev/null || :
+	$(NORMAL_UNINSTALL)
+	@test -f ${DESTDIR}${docdir}/refman.dvi && echo "Removing:  Documentation (DVI)" || :
+	@-rm -f ${DESTDIR}${docdir}/refman.dvi
+	@-rmdir ${DESTDIR}${docdir} 2> /dev/null || :
 
 uninstall-ps:
-	@test -f ${docdir}/refman.ps && echo "Removing:  Documentation (PS)" || :
-	@-rm -f ${docdir}/refman.ps
-	@-rmdir ${docdir} 2> /dev/null || :
+	$(NORMAL_UNINSTALL)
+	@test -f ${DESTDIR}${docdir}/refman.ps && echo "Removing:  Documentation (PS)" || :
+	@-rm -f ${DESTDIR}${docdir}/refman.ps
+	@-rmdir ${DESTDIR}${docdir} 2> /dev/null || :
 
 # clean
 clean:
@@ -508,18 +549,84 @@ clean:
 	@-rm -f  ${builddir}/refman.dvi
 	@-rm -f  ${builddir}/refman.ps
 	@echo "  Deleting:  build directory..."
-	@test -d ${builddir} && (rmdir ${builddir} 2> /dev/null || echo "  WARNING: \"${builddir}\" is not empty") || :
+	@test -d ${builddir} && (rmdir ${builddir} 2> /dev/null || echo "    WARNING: \"${builddir}\" is not empty") || :
 
 distclean: clean
 	@echo "  Deleting:  configuration..."
 	@-rm -f ${headerdir}/config.hh
-	@-rm -f ${doxyfile}
-	@-rm -f @srcdir@/config.log
-	@-rm -f @srcdir@/config.status
-	@-rm -f @srcdir@/Makefile
+	@-rm -f ${doxyfile} 
+	@-rm -f ${cppsrc}/config.log
+	@-rm -f ${cppsrc}/config.status
+	@-rm -f ${cppsrc}/Makefile
 
 help:
 	@echo "No Help Available"
+
+configinfo:
+	@echo "DIRECTORIES:"
+	@echo "  srcdir:        ${srcdir}"
+	@echo
+	@echo "  prefix:        ${prefix}"
+	@echo "  exec_prefix:   ${exec_prefix}"
+	@echo "  datarootdir:   ${datarootdir}"
+	@echo "  datadir:       ${datadir}"
+	@echo
+	@echo "  libdir:        ${libdir}"
+	@echo "  includedir:    ${includedir}"
+	@echo "  oldincludedir: ${oldincludedir}"
+	@echo "  mandir:        ${mandir}"
+	@echo "  docdir:        ${docdir}"
+	@echo "  htmldir:       ${htmldir}"
+	@echo "  dvidir:        ${dvidir}"
+	@echo "  pdfdir:        ${pdfdir}"
+	@echo "  psdir:         ${psdir}"
+	@echo
+	@echo "COMPILER FLAGS:"
+	@if test -n "${USER_CFLAGS}";  then echo "  CFLAGS:   ${USER_CFLAGS}";  fi
+	@if test -n "${USER_LIBS}";    then echo "  LIBS:     ${USER_LIBS}";    fi
+	@if test -n "${USER_LDFLAGS}"; then echo "  LDFLAGS:  ${USER_LDFLAGS}"; fi
+	@echo
+	@echo "CONFIGURE OPTIONS:"
+	@if test "${MODE}" = "DEBUG";   then echo "  --enable-debug";   fi
+	@if test "${MODE}" = "PROFILE"; then echo "  --enable-profile"; fi
+	@if test "${FRACT_SIZECHECK}" = "SIZECHECK_ON";                          \
+	                                then echo "  --enable-fraction-check"; fi
+	@if test "${DOXYGEN}" != ":";   then echo "  --enable-doxygen";        fi
+	@if test -n "${USER_LIBXML}";   then echo "  --with-libxml2=${USER_LIBXML}"; fi
+	@echo
+
+confargs := --srcdir=${srcdir}               \
+	        --prefix=${prefix}               \
+            --exec_prefix=${exec_prefix}     \
+            --datarootdir=${datarootdir}     \
+            --datadir=${datadir}             \
+            --libdir=${libdir}               \
+            --includedir=${includedir}       \
+            --oldincludedir=${oldincludedir} \
+            --mandir=${mandir}               \
+            --docdir=${docdir}               \
+            --htmldir=${htmldir}             \
+            --dvidir=${dvidir}               \
+            --pdfdir=${pdfdir}               \
+            --psdir=${psdir}
+
+Makefile:
+	@echo -n "${confargs} " > /tmp/$$.confargs
+	@if test "${MODE}" = "DEBUG";   then echo -n "--enable-debug "   >> /tmp/$$.confargs; fi
+	@if test "${MODE}" = "PROFILE"; then echo -n "--enable-profile " >> /tmp/$$.confargs; fi
+	@if test "${FRACT_SIZECHECK}" = "SIZECHECK_ON"; \
+	                                then echo -n "--enable-fraction-check "       >> /tmp/$$.confargs; fi
+	@if test "${DOXYGEN}" != ":";   then echo -n "--enable-doxygen "              >> /tmp/$$.confargs; fi
+	@if test -n "${USER_LIBXML}";   then echo -n "--with-libxml2=${USER_LIBXML} " >> /tmp/$$.confargs; fi
+	
+	@echo -n > /tmp/$$.envvars
+	@if test -n "${USER_CFLAGS}";  then echo -n "CFLAGS=${USER_CFLAGS} "   >> /tmp/$$.envvars; fi
+	@if test -n "${USER_LIBS}";    then echo -n "LIBS=${USER_LIBS} "       >> /tmp/$$.envvars; fi
+	@if test -n "${USER_LDFLAGS}"; then echo -n "LDFLAGS=${USER_LDFLAGS} " >> /tmp/$$.envvars; fi
+	
+	@echo "Running configure script..."
+	@`cat /tmp/$$.envvars` ${srcdir}/configure `cat /tmp/$$.confargs`
+
 
 # distributions
 dist: ${srcfiles} ${distdir}
@@ -540,9 +647,12 @@ deb: ${srcfiles}
 	@echo "Debian Packaging not implemented yet."
 
 # directories
-${builddir} ${libdir} ${includedir}/${basename} ${includedir2}/${basename} ${datadir} ${datadir}/dtd ${datadir}/symbol ${docdir} ${mandir} ${htmldir} ${distdir}:
-#@echo "[[Creating directory:  $@]]"
-	@-mkdir -p $@ 2> /dev/null || echo "  ERROR: cannot create directory \"$@\""
+${DESTDIR} ${builddir} ${distdir}:
+	$(NORMAL_INSTALL)
+	@-mkdir -p $@ 2> /dev/null || echo "    ERROR: cannot create directory \"$@\""
+${DESTDIR}/%:
+	$(NORMAL_INSTALL)
+	@-mkdir -p $@ 2> /dev/null || echo "    ERROR: cannot create directory \"$@\""
 
 
 #
@@ -567,169 +677,169 @@ ${builddir}/${afile}:   ${srcfiles}
 
 ${builddir}/main.o:			${deps_main_cpp}
 							echo "  Compiling: main.cpp..."
-							${CXX} -c ${srcdir}/main.cpp -o ${builddir}/main.o ${FLAGS}
+							${CXX} -c ${cppsrc}/main.cpp -o ${builddir}/main.o ${FLAGS}
 ${builddir}/main.s.o:		${deps_main_cpp}
 							echo "  Compiling: main.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/main.cpp -o ${builddir}/main.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/main.cpp -o ${builddir}/main.s.o ${FLAGS}
 
 ${builddir}/engine.o:		${deps_engine_cpp}
 							echo "  Compiling: engine.cpp..."
-							${CXX} -c ${srcdir}/engine.cpp -o ${builddir}/engine.o ${FLAGS}
+							${CXX} -c ${cppsrc}/engine.cpp -o ${builddir}/engine.o ${FLAGS}
 ${builddir}/engine.s.o:		${deps_engine_cpp}
 							echo "  Compiling: engine.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/engine.cpp -o ${builddir}/engine.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/engine.cpp -o ${builddir}/engine.s.o ${FLAGS}
 
 ${builddir}/press.o:		${deps_press_cpp}
 							echo "  Compiling: press.cpp..."
-							${CXX} -c ${srcdir}/press.cpp -o ${builddir}/press.o ${FLAGS}
+							${CXX} -c ${cppsrc}/press.cpp -o ${builddir}/press.o ${FLAGS}
 ${builddir}/press.s.o:		${deps_press_cpp}
 							echo "  Compiling: press.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/press.cpp -o ${builddir}/press.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/press.cpp -o ${builddir}/press.s.o ${FLAGS}
 
 ${builddir}/engraver.o:		${deps_engraver_cpp}
 							echo "  Compiling: engraver.cpp..."
-							${CXX} -c ${srcdir}/engraver.cpp -o ${builddir}/engraver.o ${FLAGS}
+							${CXX} -c ${cppsrc}/engraver.cpp -o ${builddir}/engraver.o ${FLAGS}
 ${builddir}/engraver.s.o:	${deps_engraver_cpp}
 							echo "  Compiling: engraver.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/engraver.cpp -o ${builddir}/engraver.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/engraver.cpp -o ${builddir}/engraver.s.o ${FLAGS}
 
 ${builddir}/engraver_state.o:	${deps_engraver_state_cpp}
 								echo "  Compiling: engraver_state.cpp..."
-								${CXX} -c ${srcdir}/engraver_state.cpp -o ${builddir}/engraver_state.o ${FLAGS}
+								${CXX} -c ${cppsrc}/engraver_state.cpp -o ${builddir}/engraver_state.o ${FLAGS}
 ${builddir}/engraver_state.s.o:	${deps_engraver_state_cpp}
 								echo "  Compiling: engraver_state.cpp..."
-								${CXX} ${SOFLAGS} -c ${srcdir}/engraver_state.cpp -o ${builddir}/engraver_state.s.o ${FLAGS}
+								${CXX} ${SOFLAGS} -c ${cppsrc}/engraver_state.cpp -o ${builddir}/engraver_state.s.o ${FLAGS}
 
 ${builddir}/engrave_info.o:		${deps_engrave_info_cpp}
 								echo "  Compiling: engrave_info.cpp..."
-								${CXX} -c ${srcdir}/engrave_info.cpp -o ${builddir}/engrave_info.o ${FLAGS}
+								${CXX} -c ${cppsrc}/engrave_info.cpp -o ${builddir}/engrave_info.o ${FLAGS}
 ${builddir}/engrave_info.s.o:	${deps_engrave_info_cpp}
 								echo "  Compiling: engrave_info.cpp..."
-								${CXX} ${SOFLAGS} -c ${srcdir}/engrave_info.cpp -o ${builddir}/engrave_info.s.o ${FLAGS}
+								${CXX} ${SOFLAGS} -c ${cppsrc}/engrave_info.cpp -o ${builddir}/engrave_info.s.o ${FLAGS}
 
 ${builddir}/context.o:		${deps_context_cpp}
 							echo "  Compiling: context.cpp..."
-							${CXX} -c ${srcdir}/context.cpp -o ${builddir}/context.o ${FLAGS}
+							${CXX} -c ${cppsrc}/context.cpp -o ${builddir}/context.o ${FLAGS}
 ${builddir}/context.s.o:	${deps_context_cpp}
 							echo "  Compiling: context.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/context.cpp -o ${builddir}/context.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/context.cpp -o ${builddir}/context.s.o ${FLAGS}
 
 ${builddir}/pageset.o:		${deps_pageset_cpp}
 							echo "  Compiling: pageset.cpp..."
-							${CXX} -c ${srcdir}/pageset.cpp -o ${builddir}/pageset.o ${FLAGS}
+							${CXX} -c ${cppsrc}/pageset.cpp -o ${builddir}/pageset.o ${FLAGS}
 ${builddir}/pageset.s.o:	${deps_pageset_cpp}
 							echo "  Compiling: pageset.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/pageset.cpp -o ${builddir}/pageset.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/pageset.cpp -o ${builddir}/pageset.s.o ${FLAGS}
 
 ${builddir}/plate.o:		${deps_plate_cpp}
 							echo "  Compiling: plate.cpp..."
-							${CXX} -c ${srcdir}/plate.cpp -o ${builddir}/plate.o ${FLAGS}
+							${CXX} -c ${cppsrc}/plate.cpp -o ${builddir}/plate.o ${FLAGS}
 ${builddir}/plate.s.o:		${deps_plate_cpp}
 							echo "  Compiling: plate.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/plate.cpp -o ${builddir}/plate.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/plate.cpp -o ${builddir}/plate.s.o ${FLAGS}
 
 ${builddir}/cursor.o:		${deps_cursor_cpp}
 							echo "  Compiling: cursor.cpp..."
-							${CXX} -c ${srcdir}/cursor.cpp -o ${builddir}/cursor.o ${FLAGS}
+							${CXX} -c ${cppsrc}/cursor.cpp -o ${builddir}/cursor.o ${FLAGS}
 ${builddir}/cursor.s.o:		${deps_cursor_cpp}
 							echo "  Compiling: cursor.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/cursor.cpp -o ${builddir}/cursor.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/cursor.cpp -o ${builddir}/cursor.s.o ${FLAGS}
 
 ${builddir}/user_cursor.o:		${deps_user_cursor_cpp}
 								echo "  Compiling: user_cursor.cpp..."
-								${CXX} -c ${srcdir}/user_cursor.cpp -o ${builddir}/user_cursor.o ${FLAGS}
+								${CXX} -c ${cppsrc}/user_cursor.cpp -o ${builddir}/user_cursor.o ${FLAGS}
 ${builddir}/user_cursor.s.o:	${deps_user_cursor_cpp}
 								echo "  Compiling: user_cursor.cpp..."
-								${CXX} ${SOFLAGS} -c ${srcdir}/user_cursor.cpp -o ${builddir}/user_cursor.s.o ${FLAGS}
+								${CXX} ${SOFLAGS} -c ${cppsrc}/user_cursor.cpp -o ${builddir}/user_cursor.s.o ${FLAGS}
 
 ${builddir}/edit_cursor.o:		${deps_edit_cursor_cpp}
 								echo "  Compiling: edit_cursor.cpp..."
-								${CXX} -c ${srcdir}/edit_cursor.cpp -o ${builddir}/edit_cursor.o ${FLAGS}
+								${CXX} -c ${cppsrc}/edit_cursor.cpp -o ${builddir}/edit_cursor.o ${FLAGS}
 ${builddir}/edit_cursor.s.o:	${deps_edit_cursor_cpp}
 								echo "  Compiling: edit_cursor.cpp..."
-								${CXX} ${SOFLAGS} -c ${srcdir}/edit_cursor.cpp -o ${builddir}/edit_cursor.s.o ${FLAGS}
+								${CXX} ${SOFLAGS} -c ${cppsrc}/edit_cursor.cpp -o ${builddir}/edit_cursor.s.o ${FLAGS}
 
 ${builddir}/pick.o:			${deps_pick_cpp}
 							echo "  Compiling: pick.cpp..."
-							${CXX} -c ${srcdir}/pick.cpp -o ${builddir}/pick.o ${FLAGS}
+							${CXX} -c ${cppsrc}/pick.cpp -o ${builddir}/pick.o ${FLAGS}
 ${builddir}/pick.s.o:		${deps_pick_cpp}
 							echo "  Compiling: pick.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/pick.cpp -o ${builddir}/pick.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/pick.cpp -o ${builddir}/pick.s.o ${FLAGS}
 
 ${builddir}/renderer.o:		${deps_renderer_cpp}
 							echo "  Compiling: renderer.cpp..."
-							${CXX} -c ${srcdir}/renderer.cpp -o ${builddir}/renderer.o ${XMLFLAGS} ${FLAGS}
+							${CXX} -c ${cppsrc}/renderer.cpp -o ${builddir}/renderer.o ${XMLFLAGS} ${FLAGS}
 ${builddir}/renderer.s.o:	${deps_renderer_cpp}
 							echo "  Compiling: renderer.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/renderer.cpp -o ${builddir}/renderer.s.o ${XMLFLAGS} ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/renderer.cpp -o ${builddir}/renderer.s.o ${XMLFLAGS} ${FLAGS}
 
 ${builddir}/sprites.o:		${deps_sprites_cpp}
 							echo "  Compiling: sprites.cpp..."
-							${CXX} -c ${srcdir}/sprites.cpp -o ${builddir}/sprites.o ${FLAGS}
+							${CXX} -c ${cppsrc}/sprites.cpp -o ${builddir}/sprites.o ${FLAGS}
 ${builddir}/sprites.s.o:	${deps_sprites_cpp}
 							echo "  Compiling: sprites.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/sprites.cpp -o ${builddir}/sprites.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/sprites.cpp -o ${builddir}/sprites.s.o ${FLAGS}
 
 ${builddir}/sprite_id.o:	${deps_sprite_id_cpp}
 							echo "  Compiling: sprite_id.cpp..."
-							${CXX} -c ${srcdir}/sprite_id.cpp -o ${builddir}/sprite_id.o ${FLAGS}
+							${CXX} -c ${cppsrc}/sprite_id.cpp -o ${builddir}/sprite_id.o ${FLAGS}
 ${builddir}/sprite_id.s.o:	${deps_sprite_id_cpp}
 							echo "  Compiling: sprite_id.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/sprite_id.cpp -o ${builddir}/sprite_id.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/sprite_id.cpp -o ${builddir}/sprite_id.s.o ${FLAGS}
 
 ${builddir}/score.o:		${deps_score_cpp}
 							echo "  Compiling: score.cpp..."
-							${CXX} -c ${srcdir}/score.cpp -o ${builddir}/score.o ${FLAGS}
+							${CXX} -c ${cppsrc}/score.cpp -o ${builddir}/score.o ${FLAGS}
 ${builddir}/score.s.o:		${deps_score_cpp}
 							echo "  Compiling: score.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/score.cpp -o ${builddir}/score.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/score.cpp -o ${builddir}/score.s.o ${FLAGS}
 
 ${builddir}/classes.o:		${deps_classes_cpp}
 							echo "  Compiling: classes.cpp..."
-							${CXX} -c ${srcdir}/classes.cpp -o ${builddir}/classes.o ${FLAGS}
+							${CXX} -c ${cppsrc}/classes.cpp -o ${builddir}/classes.o ${FLAGS}
 ${builddir}/classes.s.o:	${deps_classes_cpp}
 							echo "  Compiling: classes.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/classes.cpp -o ${builddir}/classes.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/classes.cpp -o ${builddir}/classes.s.o ${FLAGS}
 
 ${builddir}/log.o:			${deps_log_cpp}
 							echo "  Compiling: log.cpp..."
-							${CXX} -c ${srcdir}/log.cpp -o ${builddir}/log.o ${FLAGS}
+							${CXX} -c ${cppsrc}/log.cpp -o ${builddir}/log.o ${FLAGS}
 ${builddir}/log.s.o:		${deps_log_cpp}
 							echo "  Compiling: log.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/log.cpp -o ${builddir}/log.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/log.cpp -o ${builddir}/log.s.o ${FLAGS}
 
 ${builddir}/fraction.o:		${deps_fraction_cpp}
 							echo "  Compiling: fraction.cpp..."
-							${CXX} -c ${srcdir}/fraction.cpp -o ${builddir}/fraction.o ${FLAGS} ${FRACT_SIZECHECK}
+							${CXX} -c ${cppsrc}/fraction.cpp -o ${builddir}/fraction.o ${FRACT_SIZECHECK} ${FLAGS}
 ${builddir}/fraction.s.o:	${deps_fraction_cpp}
 							echo "  Compiling: fraction.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/fraction.cpp -o ${builddir}/fraction.s.o ${FLAGS} ${FRACT_SIZECHECK}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/fraction.cpp -o ${builddir}/fraction.s.o ${FRACT_SIZECHECK} ${FLAGS}
 
 ${builddir}/parameters.o:	${deps_parameters_cpp}
 							echo "  Compiling: parameters.cpp..."
-							${CXX} -c ${srcdir}/parameters.cpp -o ${builddir}/parameters.o ${FLAGS}
+							${CXX} -c ${cppsrc}/parameters.cpp -o ${builddir}/parameters.o ${FLAGS}
 ${builddir}/parameters.s.o:	${deps_parameters_cpp}
 							echo "  Compiling: parameters.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/parameters.cpp -o ${builddir}/parameters.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/parameters.cpp -o ${builddir}/parameters.s.o ${FLAGS}
 
 ${builddir}/error.o:		${deps_error_cpp}
 							echo "  Compiling: error.cpp..."
-							${CXX} -c ${srcdir}/error.cpp -o ${builddir}/error.o ${FLAGS}
+							${CXX} -c ${cppsrc}/error.cpp -o ${builddir}/error.o ${FLAGS}
 ${builddir}/error.s.o:		${deps_error_cpp}
 							echo "  Compiling: error.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/error.cpp -o ${builddir}/error.s.o ${FLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/error.cpp -o ${builddir}/error.s.o ${FLAGS}
 
 ${builddir}/file_format.o:		${deps_file_format_cpp}
 								echo "  Compiling: file_format.cpp..."
-								${CXX} -c ${srcdir}/file_format.cpp -o ${builddir}/file_format.o ${XMLFLAGS} ${FLAGS}
+								${CXX} -c ${cppsrc}/file_format.cpp -o ${builddir}/file_format.o ${XMLFLAGS} ${FLAGS}
 ${builddir}/file_format.s.o:	${deps_file_format_cpp}
 								echo "  Compiling: file_format.cpp..."
-								${CXX} ${SOFLAGS} -c ${srcdir}/file_format.cpp -o ${builddir}/file_format.s.o ${XMLFLAGS} ${FLAGS}
+								${CXX} ${SOFLAGS} -c ${cppsrc}/file_format.cpp -o ${builddir}/file_format.s.o ${XMLFLAGS} ${FLAGS}
 
 ${builddir}/config.o:		${deps_config_cpp}
 							echo "  Compiling: config.cpp..."
-							${CXX} -c ${srcdir}/config.cpp -o ${builddir}/config.o ${FLAGS} ${CONFIGFLAGS}
+							${CXX} -c ${cppsrc}/config.cpp -o ${builddir}/config.o ${CONFIGFLAGS} ${FLAGS}
 ${builddir}/config.s.o:		${deps_config_cpp}
 							echo "  Compiling: config.cpp..."
-							${CXX} ${SOFLAGS} -c ${srcdir}/config.cpp -o ${builddir}/config.s.o ${FLAGS} ${CONFIGFLAGS}
+							${CXX} ${SOFLAGS} -c ${cppsrc}/config.cpp -o ${builddir}/config.s.o ${CONFIGFLAGS} ${FLAGS}
 

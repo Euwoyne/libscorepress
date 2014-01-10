@@ -107,8 +107,10 @@ class SCOREPRESS_API EditCursor : public UserCursor
     void insert_pagebreak() throw(NotValidException, NoScoreException, Error);
     
     // remove an object
-    void remove()       throw(NotValidException);                                       // remove a note
-    void remove_voice() throw(NotValidException, Cursor::IllegalObjectTypeException);   // remove a voice
+    void remove()           throw(NotValidException);                                       // remove a note
+    void remove_voice()     throw(NotValidException, Cursor::IllegalObjectTypeException);   // remove a voice
+    void remove_newline()   throw(NotValidException);                                       // remove newline
+    void remove_pagebreak() throw(NotValidException);                                       // remove pagebreak
     
     // get the line layout object (non-constant)
     const Newline& get_layout() const throw(NotValidException);
