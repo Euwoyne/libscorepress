@@ -2873,11 +2873,11 @@ $as_echo "no" >&6; }
 fi
 
 
-    DEBUG="$DEBUG -fno-inline"
+    DEBUG="$DEBUG -fno-inline -Werror"
 
     PROFILE="-O2 -fno-omit-frame-pointer"
 
-    RELEASE="-O2 -fomit-frame-pointer"
+    RELEASE="-O2"
 
 
     PROFILE_SO="-fvisibility=hidden -fvisibility-inlines-hidden"
@@ -3378,10 +3378,12 @@ elif test -n "$PKGCONFIG" -a `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; th
 
     LIBXML_LIBS=`\${PKGCONFIG} libxml-2.0 --libs`
 
+
 else
     LIBXML_CFLAGS=-I/usr/include/libxml2
 
     LIBXML_LIBS=-lxml2
+
 
 fi
 

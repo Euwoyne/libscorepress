@@ -22,7 +22,7 @@
 #
 
 # programs
-SHELL            = @SHELL@
+SHELL           := @SHELL@
 SH              := @SH@
 CXX             := @CXX@
 AR              := @AR@ rcs
@@ -55,8 +55,8 @@ datadir_pkg := ${datadir}/${PACKAGE_TARNAME}
 distdir     := @PACKAGE_NAME@-@PACKAGE_VERSION@
 
 srcdir      := @srcdir@
-headerdir   := ${srcdir}/include/${basename}
 cppsrc      := ${srcdir}/src
+headerdir   := ${srcdir}/include/${basename}
 datasrc     := ${srcdir}/data
 docsrc      := ${srcdir}/doc
 builddir    := @builddir@/build
@@ -97,7 +97,7 @@ SOFLAGS    := @SOFLAGS@ ${${MODE}_SO}
 
 CONFIGFLAGS  := -DDATADIR="\"${DESTDIR}${datadir_pkg}\""
 USER_CFLAGS  := @CFLAGS@
-USER_FLAGS   := @CFLAGS@ ${CFLAGS}
+USER_FLAGS   := ${USER_CFLAGS} ${CFLAGS}
 USER_LIBS    := @LIBS@
 USER_LDFLAGS := @LDFLAGS@
 USER_LIBXML  := @USER_LIBXML@
@@ -555,10 +555,11 @@ distclean: clean
 	@echo "  Deleting:  configuration..."
 	@-rm -f ${headerdir}/config.hh
 	@-rm -f ${doxyfile} 
-	@-rm -f ${cppsrc}/config.log
-	@-rm -f ${cppsrc}/config.status
-	@-rm -f ${cppsrc}/Makefile
+	@-rm -f ${srcdir}/config.log
+	@-rm -f ${srcdir}/config.status
+	@-rm -f ${srcdir}/Makefile
 
+# user information
 help:
 	@echo "No Help Available"
 
@@ -625,7 +626,7 @@ Makefile:
 	@if test -n "${USER_LDFLAGS}"; then echo -n "LDFLAGS=${USER_LDFLAGS} " >> /tmp/$$.envvars; fi
 	
 	@echo "Running configure script..."
-	@`cat /tmp/$$.envvars` ${srcdir}/configure `cat /tmp/$$.confargs`
+	@(eval `cat /tmp/$$.envvars` ${srcdir}/configure `cat /tmp/$$.confargs`)
 
 
 # distributions

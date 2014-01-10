@@ -86,9 +86,9 @@ AC_PROG_CXX
 # set compiler specific flags
 if test "x$CXX" = "xgcc" || test "x$CXX" = "xg++"; then
     AC_CHECK_PROG([DEBUG], [gdb], [-ggdb], [-g])
-    AC_SUBST([DEBUG],      ["$DEBUG -fno-inline"])
+    AC_SUBST([DEBUG],      ["$DEBUG -fno-inline -Werror"])
     AC_SUBST([PROFILE],    ["-O2 -fno-omit-frame-pointer"])
-    AC_SUBST([RELEASE],    ["-O2 -fomit-frame-pointer"])
+    AC_SUBST([RELEASE],    ["-O2"])
     AC_SUBST([DEBUG_SO],   [])
     AC_SUBST([PROFILE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
     AC_SUBST([RELEASE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
@@ -157,9 +157,11 @@ if test "x$with_libxml2" != "xauto"; then
 elif test -n "$PKGCONFIG" -a `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; then
     AC_SUBST([LIBXML_CFLAGS], [`\${PKGCONFIG} libxml-2.0 --cflags`])
     AC_SUBST([LIBXML_LIBS], [`\${PKGCONFIG} libxml-2.0 --libs`])
+    AC_SUBST([USER_LIBXML], [])
 else
     AC_SUBST([LIBXML_CFLAGS], [-I/usr/include/libxml2])
     AC_SUBST([LIBXML_LIBS], [-lxml2])
+    AC_SUBST([USER_LIBXML], [])
 fi
 
 CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
