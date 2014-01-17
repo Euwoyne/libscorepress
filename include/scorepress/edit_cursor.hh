@@ -60,7 +60,7 @@ class SCOREPRESS_API EditCursor : public UserCursor
     };
     
  private:
-    enum SCOREPRESS_LOCAL MoveMode {NONE, INSERT, REMOVE, NEWLINE, PAGEBREAK, RMNEWLINE};   // cursor move mode
+    enum SCOREPRESS_LOCAL MoveMode {NONE, INSERT, REMOVE, NEWLINE, PAGEBREAK, RMNEWLINE, RMPAGEBREAK};   // cursor move mode
     
     // interface parameters
     const InterfaceParam* param;
@@ -107,10 +107,11 @@ class SCOREPRESS_API EditCursor : public UserCursor
     void insert_pagebreak() throw(NotValidException, NoScoreException, Error);
     
     // remove an object
-    void remove()           throw(NotValidException);                                       // remove a note
+    void remove()           throw(NotValidException);   // remove a note
     void remove_voice()     throw(NotValidException, Cursor::IllegalObjectTypeException);   // remove a voice
-    void remove_newline()   throw(NotValidException);                                       // remove newline
-    void remove_pagebreak() throw(NotValidException);                                       // remove pagebreak
+    void remove_newline()   throw(NotValidException);   // remove newline/pagebreak
+    void remove_pagebreak() throw(NotValidException);   // convert pagebreak to newline
+    void remove_break()     throw(NotValidException);   // remove newlines, convert pagebreak
     
     // get the line layout object (non-constant)
     const Newline& get_layout() const throw(NotValidException);

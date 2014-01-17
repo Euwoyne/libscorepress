@@ -588,10 +588,7 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
             
             // set newline time
             for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-            {
-                i->ypos = 0;
                 if (i->time > _newline_time) _newline_time = i->time;
-            };
             if (param->newline_time_reset)
                 for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
                     i->ntime = _newline_time;
@@ -606,8 +603,6 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         
         // reset "pos" and "ypos"
         nextNote.pos = viewport->umtopx_h(param->min_distance + obj.indent);
-        nextNote.ypos = 0;
-        
         if (param->newline_time_reset || !obj.visible)
             nextNote.ntime = _newline_time;
         
@@ -703,6 +698,8 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
     // calculate note position
     if (nextNote->is(Class::NEWLINE))       // if we got a newline/pagebreak
     {
+        if (nextNote->is(Class::PAGEBREAK))
+            nextNote.ypos = 0;
         if (engravedNote->is(Class::NEWLINE))
         {
             if (engravedNote.time == nextNote.time)

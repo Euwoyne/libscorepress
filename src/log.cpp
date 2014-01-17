@@ -55,6 +55,7 @@ bool Log::open(const char* filename)
         file.clear();
         return false;
     };
+    file << "\n ~~~ ScorePress Log ~~~ \n";
     return true;
 }
 

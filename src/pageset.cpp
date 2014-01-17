@@ -99,6 +99,7 @@ void Pageset::erase(const Score& score)
         info = i->get_plate_by_score(score);                // get the plate for the given score
         if (info != i->plates.end()) i->plates.erase(info); // if it exists, remove the plate
     };
+    remove_empty_pages();               // remove pages left empty
 }
 
 // get the page with the given index (creating non-existing pages)

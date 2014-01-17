@@ -254,6 +254,12 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     if (!engraver) return;
     if (!has_score()) throw NoScoreException();
     
+    // handle pagebreak removal
+    if (mode == PAGEBREAK)          // if a pagebreak was inserted
+        ++plateinfo->pageno;        //     the cursor is now on the new page
+    else if (mode == RMPAGEBREAK)   // if a pagebreak was removed
+        --plateinfo->pageno;        //     the cursor is now on the previous page
+    
     // save plate information (plateinfo and pnote/pvoice will be invalidated)
     const unsigned int pageno = plateinfo->pageno;          // current page number (relative to score's beginning)
     const unsigned int start_page = plateinfo->start_page;  // the score's start-page number
@@ -305,6 +311,8 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     
     {
     // initialize cursor
+    if (mode == RMNEWLINE || mode == RMPAGEBREAK)
+        prepare_layout(*cursor, *voice);
     prepare_plate(*cursor, *voice);
     
     // iterate the line to find the on-plate note
@@ -344,6 +352,8 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
         };
         
         // initialize cursor
+        if (mode == RMNEWLINE || mode == RMPAGEBREAK)
+            prepare_layout(*c, *v);
         prepare_plate(*c, *v);
         
         // iterate the line to find the on-plate note
@@ -606,6 +616,78 @@ void EditCursor::remove_voice() throw(NotValidException, Cursor::IllegalObjectTy
     
     // reengrave score
     reengrave(REMOVE);
+}
+
+// remove newline/pagebreak
+void EditCursor::remove_newline() throw(NotValidException)
+{
+    if (!ready()) throw NotValidException();        // check cursor
+    if (   line == plateinfo->plate->lines.begin()  // if we are at the scores front
+        && page == pageset->pages.begin())          //   (i.e. first line/first page)
+            return;                                 //      do nothing
+    home();                                         // goto line front
+    
+    // prepare voice begin update
+    Plate::Iterator pline(line);    // previous line (to get voice begins)
+    --pline;                        // move to previous line
+    
+    // for each voice
+    for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
+    {
+        Cursor note(cur->note);
+        if (!note.has_prev()) continue; // that does not begin here
+        --note;                         // check out the object before the first note in line
+        if (note->is(Class::NEWLINE))   // ignore non-newlines
+        {
+            note.remove();              // remove the newline object
+            
+            // change on-plate begin cursor (for correct reengraving)
+            Plate::pLine::Iterator voice = pline->get_voice(cur->note.voice());
+            if (voice != pline->voices.end())
+                cur->pvoice->begin = voice->begin;
+        };
+    };
+    
+    // reengrave score
+    reengrave(RMNEWLINE);
+}
+
+// convert pagebreak to newline
+void EditCursor::remove_pagebreak() throw(NotValidException)
+{
+    if (!ready()) throw NotValidException();        // check cursor
+    if (page == pageset->pages.begin())             // if we are at the scores front
+        return;                                     //     do nothing
+    home();                                         // goto line front
+    
+    // for each voice
+    for (std::list<VoiceCursor>::iterator cur = vcursors.begin(); cur != vcursors.end(); ++cur)
+    {
+        Cursor note(cur->note);
+        if (!note.has_prev()) continue;     // that does not begin here
+        --note;                             // check out the object before the first note in line
+        if (note->is(Class::PAGEBREAK))     // ignore non-pagebreaks
+        {
+            // change pagebreak object to newline
+            if (note.is_main())
+                note.get_staffobject() = StaffObjectPtr(new Newline(static_cast<Pagebreak&>(*note)));
+            else
+                note.get_voiceobject() = VoiceObjectPtr(new Newline(static_cast<Pagebreak&>(*note)));
+        };
+    };
+    
+    // reengrave score
+    reengrave(RMPAGEBREAK);
+}
+
+// remove newline, convert pagebreak
+void EditCursor::remove_break() throw(NotValidException)
+{
+    if (!plateinfo) throw NotValidException();      // check cursor
+    if (line != plateinfo->plate->lines.begin())    // if we are not at the page front
+        return remove_newline();                    //     remove newline
+    else                                            // otherwise 
+        return remove_pagebreak();                  //     remove pagebreak, create newline
 }
 
 // get the line layout object (non-constant)

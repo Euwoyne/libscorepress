@@ -1,0 +1,16 @@
+libscorepress - TODO List
+=========================
+
+BUGS:
+  user_cursor.cpp   empty voices should line up with noteobject
+
+INCOMPLETE:
+  renderer.cpp      parse <movable> section
+  file_format.cpp   document parsing
+
+UNTESTED:
+
+FEATURES:
+  classes.hh        tremolo implementation
+  score.hh          user defined brace scale parameters
+

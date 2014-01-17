@@ -230,31 +230,46 @@ void UserCursor::prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice)
         newvoice.ntime += get_value(newvoice.pnote->get_note());
 }
 
+// set "VoiceCursor" layout data  (helper function for "prepare_voice" and EditCursor::reengrave)
+Cursor UserCursor::prepare_layout(VoiceCursor& newvoice, Plate::pVoice& pvoice)
+{
+    // calculate note (casts away const, but not unexpected, since this object got a non-const reference to the score)
+    Cursor note;
+    if (pvoice.begin.is_main())
+        note.set(const_cast<Staff&>(pvoice.begin.staff()));
+    else
+        note.set(const_cast<Staff&>(pvoice.begin.staff()),
+                 const_cast<SubVoice&>(static_cast<const SubVoice&>(pvoice.begin.voice())));
+    
+    // search for the front note
+    newvoice.line_layout.reset();
+    newvoice.page_layout.reset();
+    while (!note.at_end() && note != pvoice.begin)
+    {
+        if (note->is(Class::PAGEBREAK))     // search for page layout
+            newvoice.page_layout = note;
+        if (note->is(Class::NEWLINE))       // search for line layout
+            newvoice.line_layout = note;
+        ++note;
+    };
+    
+    if (note != pvoice.begin)       // on failing the search
+    {                                   // issue warning
+        log_warn("Unable to find on-plate voice front in score. (class: UserCursor)");
+        note.reset();                   // return fail
+    };
+    
+    // return begin note
+    return note;
+}
+
 // set "VoiceCursor" data (helper function for "prepare_voices")
 bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
 {
-    // calculate note (casts away const, but not unexpected, since this object got a non-const reference to the score)
-    if (pvoice.begin.is_main())
-        newvoice.note.set(const_cast<Staff&>(pvoice.begin.staff()));
-    else
-        newvoice.note.set(const_cast<Staff&>(pvoice.begin.staff()),
-                          const_cast<SubVoice&>(static_cast<const SubVoice&>(pvoice.begin.voice())));
-    
-    // search for the front note
-    while (!newvoice.note.at_end() && newvoice.note != pvoice.begin)
-    {
-        if (newvoice.note->is(Class::PAGEBREAK))    // search for page layout
-            newvoice.page_layout = newvoice.note;
-        if (newvoice.note->is(Class::NEWLINE))      // search for line layout
-            newvoice.line_layout = newvoice.note;
-        ++newvoice.note;
-    };
-    
-    if (newvoice.note != pvoice.begin)      // on failing the search
-    {                                           // issue warning
-        log_warn("Unable to find on-plate voice front in score. (class: UserCursor)");
-        return false;                           // return fail
-    };
+    // find front note and prepare layout
+    newvoice.note = prepare_layout(newvoice, pvoice);
+    if (!newvoice.note.ready())
+        return false;
     
     // prepare on-plate data
     prepare_plate(newvoice, pvoice);
@@ -845,7 +860,8 @@ void UserCursor::prev_line() throw(NotValidException, InvalidMovement)
         // set data
         page = p;
         plateinfo = &*pinfo;
-        line = plateinfo->plate->lines.begin();
+        line = plateinfo->plate->lines.end();
+        --line;
     }
     else --line;    // if there is a previous line on the plate, just use it
     

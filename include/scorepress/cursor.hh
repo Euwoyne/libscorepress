@@ -66,10 +66,14 @@ class SCOREPRESS_API Cursor
     Cursor(Staff& staff, SubVoice& voice);
     
     // iterator interface
-    inline StaffObject& operator * () const    // return the Staff-Object the cursor points to
+    inline StaffObject& operator * () const         // return the Staff-Object the cursor points to
         {return (_staff == _voice) ? **_main : **_sub;};
-    inline StaffObject* operator-> () const    // return a pointer to the Staff-Object the cursor points to
+    inline StaffObject* operator-> () const         // return a pointer to the Staff-Object the cursor points to
         {return (_staff == _voice) ?  &**_main :  &**_sub;};
+    inline StaffObjectPtr& get_staffobject() const  // return smart-pointer to object
+        {if (_staff != _voice) throw IllegalObjectTypeException(); return *_main;}
+    inline VoiceObjectPtr& get_voiceobject() const  // return smart-pointer to object
+        {if (_staff == _voice) throw IllegalObjectTypeException(); return *_sub;}
     
     Cursor& operator ++ ();             // increment operator; move cursor to the next note (prefix)
     Cursor& operator -- ();             // decrement operator; move cursor to the previous note (prefix)
@@ -141,6 +145,10 @@ class SCOREPRESS_API const_Cursor
         {return (_staff == _voice) ? **_main : **_sub;};
     inline const StaffObject* operator-> () const  // return a pointer to the Staff-Object the cursor points to
         {return (_staff == _voice) ?  &**_main :  &**_sub;};
+    inline const StaffObjectPtr& get_staffobject() const  // return smart-pointer to object
+        {if (_staff != _voice) throw Cursor::IllegalObjectTypeException(); return *_main;}
+    inline const VoiceObjectPtr& get_voiceobject() const  // return smart-pointer to object
+        {if (_staff == _voice) throw Cursor::IllegalObjectTypeException(); return *_sub;}
     
     const_Cursor& operator ++ ();       // increment operator; move cursor to the next note (prefix)
     const_Cursor& operator -- ();       // decrement operator; move cursor to the previous note (prefix)
