@@ -39,31 +39,62 @@ class SCOREPRESS_API XMLFileReader;         // document-reader implementation fo
 //     class XMLFileReader
 //    =====================
 //
-class SCOREPRESS_API XMLFileReader : public DocumentReader
+class SCOREPRESS_API XMLFileReader : virtual public FileReader
 {
+ public:
+    // error class thrown on syntax errors within the sprites meta information
+    class SCOREPRESS_API ExpectedEOF : public FileReader::FormatError
+        {public: ExpectedEOF(const std::string& msg) : FileReader::FormatError(msg) {};};
+    
  protected:
     // throwing functions (combining the given data to a error message, which is then thrown)
     static void mythrow(const char* trns, const std::string& filename) throw(IOException);
     static void mythrow(const char* trns, const std::string& symbol, const std::string& filename, const int line, const int column) throw(FormatError);
     static void mythrow(const char* trns, const std::string& filename, const int line, const int column) throw(FormatError);
+    static void mythrow_eof(const char* trns, const std::string& filename, const int line, const int column) throw(ExpectedEOF);
     
- private:
+ protected:
     _xmlTextReader* parser;
     std::string     filename;
     
  public:
-    XMLFileReader();                                // constructor
-    ~XMLFileReader();                               // destructor
+    XMLFileReader(const std::string& name);
+    virtual ~XMLFileReader();
     
-    virtual void open(const char* filename);        // open file for reading
-    virtual void close();                           // close file
+    virtual void open(const char* data, const std::string& filename);   // use memory for reading
+    virtual void open(const std::string& filename);                     // open file for reading
+    virtual void close();                                               // close file
     
-    virtual bool is_open() const;                   // check if a file is opened
-    virtual const char* get_filename() const;       // return the filename (or NULL)
+    void xopen(_xmlTextReader* reader, const std::string& filename);    // use existing libxml2 text-reader instance
+    void xclose();                                                      // reset instance, do not close reader
     
-    virtual void parse_document(Document& target);  // document parser
+    virtual bool is_open() const;                       // check if a file is opened
+    virtual const char* get_filename() const;           // return the filename (or NULL)
+};
+
+//
+//     class XMLDocumentReader
+//    =========================
+//
+class SCOREPRESS_API XMLDocumentReader : public DocumentReader, public XMLFileReader
+{
+ public:
+    XMLDocumentReader();                                // constructor
+    virtual void parse_document(Document& target);      // document parser
+};
+
+//
+//     class XMLSpritesetReader
+//    ==========================
+//
+class SCOREPRESS_API XMLSpritesetReader : public SpritesetReader, public XMLFileReader
+{
+ public:
+    XMLSpritesetReader();                                   // constructor
+    virtual void parse_spriteset(SpriteSet&      target,    // sprite-set parser
+                                 const Renderer& renderer,
+                                 const size_t    setid);
 };
 }
-
 #endif
 

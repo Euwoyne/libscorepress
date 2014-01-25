@@ -139,18 +139,32 @@ class SCOREPRESS_API SpriteSet : public std::vector<SpriteInfo>
     size_t undefined_symbol;    // symbol for undefined sprites
     
     // public methods
-    SpriteSet();    // default constructor (initializing ids with UNDEFINED)
-    void clear();   // erase the vector and reset sprite-ids
-
-    inline       SpriteInfo& operator[] (const size_t& idx);
-    inline const SpriteInfo& operator[] (const size_t& idx) const;
+    SpriteSet();                        // default constructor (initializing ids with UNDEFINED)
+    void clear();                       // erase the vector and reset sprite-ids
+    
+    size_t index(const std::string& id) const;              // get index by sprite-id
+    
+          SpriteInfo& get(const std::string& id);           // get info by sprite-id
+    const SpriteInfo& get(const std::string& id) const;
+    
+          SpriteInfo& operator[] (const size_t& idx);       // get info by index
+    const SpriteInfo& operator[] (const size_t& idx) const;
 };
 
+// get info by sprite-id
+inline SpriteInfo& SpriteSet::get(const std::string& id) {
+    return SpriteSet::operator[](index(id));}
+
+inline const SpriteInfo& SpriteSet::get(const std::string& id) const {
+    return SpriteSet::operator[](index(id));}
+
+// get info by index
 inline SpriteInfo& SpriteSet::operator[] (const size_t& idx) {
     return std::vector<SpriteInfo>::operator[]((idx < size()) ? idx : undefined_symbol);}
 
 inline const SpriteInfo& SpriteSet::operator[] (const size_t& idx) const {
     return std::vector<SpriteInfo>::operator[]((idx < size()) ? idx : undefined_symbol);}
+
 
 //
 //     class Sprites

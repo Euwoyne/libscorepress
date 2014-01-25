@@ -24,6 +24,7 @@
 #include <vector>        // std::vector
 #include "score.hh"      // Document
 #include "parameters.hh" // EngraverParam, PressParam, StyleParam, InterfaceParam
+#include "sprites.hh"    // SpriteSet
 #include "error.hh"      // Error
 #include "export.hh"
 
@@ -32,8 +33,9 @@ namespace ScorePress
 //  CLASSES
 // ---------
 class SCOREPRESS_API FileReader;        // abstract base-class for file-parsers (reader interface)
-class SCOREPRESS_API DocumentReader;    // abstract base-class for document-parsers (reader interface)
-class SCOREPRESS_API ParameterReader;   // abstract base-class for parameter-parsers (reader interface)
+class SCOREPRESS_API DocumentReader;    // abstract base-class for document-parsers
+class SCOREPRESS_API ParameterReader;   // abstract base-class for parameter-parsers
+class SCOREPRESS_API SpritesetReader;   // abstract base-class for spriteset-description-parsers
 
 
 //
@@ -72,15 +74,16 @@ class SCOREPRESS_API FileReader
     const std::vector<std::string> get_mime_types() const;
     const std::vector<std::string> get_file_extensions() const;
     
-    void add_mime_type(const std::string mime);             // add mime-type
-    void add_file_extension(const std::string extension);   // add file-extension
+    void add_mime_type(const std::string& mime);            // add mime-type
+    void add_file_extension(const std::string& extension);  // add file-extension
     
     // virtual parser interface
-    virtual void open(const char* filename) = 0;    // open file for reading
-    virtual void close() = 0;                       // close file
+    virtual void open(const char* data, const std::string& filename) = 0;   // use memory for reading
+    virtual void open(const std::string& filename) = 0;     // open file for reading
+    virtual void close() = 0;                               // close file
     
-    virtual bool is_open() const = 0;               // check if a file is opened
-    virtual const char* get_filename() const = 0;   // return the filename (or NULL)
+    virtual bool is_open() const = 0;                       // check if a file is opened
+    virtual const char* get_filename() const = 0;           // return the filename (or NULL)
 };
 
 // inline method implementations
@@ -92,8 +95,8 @@ inline const std::string&             FileReader::get_name()            const {r
 inline const std::vector<std::string> FileReader::get_mime_types()      const {return mime_types;}
 inline const std::vector<std::string> FileReader::get_file_extensions() const {return file_extensions;}
 
-inline void FileReader::add_mime_type(const std::string mime)           {mime_types.push_back(mime);}
-inline void FileReader::add_file_extension(const std::string extension) {file_extensions.push_back(extension);}
+inline void FileReader::add_mime_type(const std::string& mime)           {mime_types.push_back(mime);}
+inline void FileReader::add_file_extension(const std::string& extension) {file_extensions.push_back(extension);}
 
 
 //
@@ -103,7 +106,7 @@ inline void FileReader::add_file_extension(const std::string extension) {file_ex
 // The DocumentReader adds a parser-function for Documents to the FileReader
 // interface.
 //
-class SCOREPRESS_API DocumentReader : public FileReader
+class SCOREPRESS_API DocumentReader : virtual public FileReader
 {
  public:
     // constructor
@@ -111,12 +114,6 @@ class SCOREPRESS_API DocumentReader : public FileReader
     DocumentReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
     
     // virtual parser interface
-    virtual void open(const char* filename) = 0;        // open file for reading
-    virtual void close() = 0;                           // close file
-    
-    virtual bool is_open() const = 0;                   // check if a file is opened
-    virtual const char* get_filename() const = 0;       // return the filename (or NULL)
-    
     virtual void parse_document(Document& target) = 0;  // document parser
 };
 
@@ -132,7 +129,7 @@ inline DocumentReader::DocumentReader(const std::string& _name, const std::strin
 // The ParameterReader adds a parser-function for all parameter structures to
 // the FileReader interface.
 //
-class SCOREPRESS_API ParameterReader : public FileReader
+class SCOREPRESS_API ParameterReader : virtual public FileReader
 {
  public:
     // constructor
@@ -140,12 +137,6 @@ class SCOREPRESS_API ParameterReader : public FileReader
     ParameterReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
     
     // virtual parser interface
-    virtual void open(const char* filename) = 0;    // open file for reading
-    virtual void close() = 0;                       // close file
-    
-    virtual bool is_open() const = 0;               // check if a file is opened
-    virtual const char* get_filename() const = 0;   // return the filename (or NULL)
-    
     virtual void parse_parameter(EngraverParam&  engraver_param,
                                  PressParam&     press_param,
                                  StyleParam&     style_param,
@@ -155,7 +146,31 @@ class SCOREPRESS_API ParameterReader : public FileReader
 inline ParameterReader::ParameterReader(const std::string& _name) : FileReader(_name) {}
 inline ParameterReader::ParameterReader(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
             : FileReader(_name, mime_type, file_extension) {}
-}
 
+
+//
+//     class SpritesetReader
+//    =======================
+//
+// The SpritesetReader adds a parser-function for SpriteSets to the FileReader
+// interface.
+//
+class SCOREPRESS_API SpritesetReader : virtual public FileReader
+{
+ public:
+    // constructor
+    SpritesetReader(const std::string& name);
+    SpritesetReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    
+    // virtual parser interface
+    virtual void parse_spriteset(SpriteSet&      target,    // sprite-set parser
+                                 const Renderer& renderer,
+                                 const size_t    setid) = 0;
+};
+
+inline SpritesetReader::SpritesetReader(const std::string& _name) : FileReader(_name) {}
+inline SpritesetReader::SpritesetReader(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
+            : FileReader(_name, mime_type, file_extension) {}
+}
 #endif
 

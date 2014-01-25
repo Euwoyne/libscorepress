@@ -1523,8 +1523,8 @@ void Chord::render_beam(Renderer& renderer, const Plate::pNote& note, const Pres
             renderer.get_sprites()[note.sprite.setid].flags_note);
         if (flag_id.spriteid == UNDEFINED) flag_id.set(0, renderer.get_sprites().front().flags_note);
         
-        SpriteInfo& info = renderer.get_sprites()[flag_id];     // get flag sprite
-        mpx_t flag_height = info.height * 1000;                 // get sprite height
+        const SpriteInfo& info = renderer.get_sprites()[flag_id];   // get flag sprite
+        const mpx_t flag_height = info.height * 1000;               // get sprite height
         
         // calculate sprite position offset
         Position<mpx_t> flag_anchor;            // flag-anchor position
@@ -1726,16 +1726,16 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
         };
         
         // draw stem
-        SpriteInfo& info = renderer.get_sprites()[note.sprite];
+        const SpriteInfo& info = renderer.get_sprites()[note.sprite];
         renderer.set_line_width(state.stem_width * sprite_scale);         // set line width
-        renderer.move_to((state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0 + info.real["stem.top.x1"]    * app_scale,
-                         (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0 + info.real["stem.top.y1"]    * app_scale);
-        renderer.line_to((state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0 + info.real["stem.top.x2"]    * app_scale,
-                         (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0 + info.real["stem.top.y2"]    * app_scale);
-        renderer.line_to((state.parameters.do_scale(note.absolutePos.back().x)  + state.offset.x) / 1000.0 + info.real["stem.bottom.x2"] * app_scale,
-                         (state.parameters.do_scale(note.absolutePos.back().y)  + state.offset.y) / 1000.0 + info.real["stem.bottom.y2"] * app_scale);
-        renderer.line_to((state.parameters.do_scale(note.absolutePos.back().x)  + state.offset.x) / 1000.0 + info.real["stem.bottom.x1"] * app_scale,
-                         (state.parameters.do_scale(note.absolutePos.back().y)  + state.offset.y) / 1000.0 + info.real["stem.bottom.y1"] * app_scale);
+        renderer.move_to((state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0 + info.real.find("stem.top.x1")->second    * app_scale,
+                         (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0 + info.real.find("stem.top.y1")->second    * app_scale);
+        renderer.line_to((state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0 + info.real.find("stem.top.x2")->second    * app_scale,
+                         (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0 + info.real.find("stem.top.y2")->second    * app_scale);
+        renderer.line_to((state.parameters.do_scale(note.absolutePos.back().x)  + state.offset.x) / 1000.0 + info.real.find("stem.bottom.x2")->second * app_scale,
+                         (state.parameters.do_scale(note.absolutePos.back().y)  + state.offset.y) / 1000.0 + info.real.find("stem.bottom.y2")->second * app_scale);
+        renderer.line_to((state.parameters.do_scale(note.absolutePos.back().x)  + state.offset.x) / 1000.0 + info.real.find("stem.bottom.x1")->second * app_scale,
+                         (state.parameters.do_scale(note.absolutePos.back().y)  + state.offset.y) / 1000.0 + info.real.find("stem.bottom.y1")->second * app_scale);
         renderer.fill();
         renderer.stroke();
     }

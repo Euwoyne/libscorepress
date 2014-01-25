@@ -100,7 +100,8 @@ class SCOREPRESS_API Engine : public Logging
     Pageset::PlateInfo& select_plate(const Position<mpx_t>& pos, const MultipageLayout layout); // get plateinfo by position (muti-page)
     
  public:
-    Engine(Document& document, Sprites& sprites);   // constructor (specifying the document the engine will operate on)
+    // constructor (specifying the document the engine will operate on)
+    Engine(Document& document, const Sprites& sprites);
     
     // setup
     void set_document(Document& document);                      // change the associated document

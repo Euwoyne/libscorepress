@@ -158,3 +158,10 @@ void SpriteSet::clear()
     info.clear();
 }
 
+// get index by sprite-id
+size_t SpriteSet::index(const std::string& id) const
+{
+    const std::map<std::string, size_t>::const_iterator i(ids.find(id));
+    return (i == ids.end()) ? UNDEFINED : i->second;
+}
+

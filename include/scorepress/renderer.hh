@@ -23,8 +23,9 @@
 #include <string>       // std::string
 #include <map>          // std::map
 
-#include "sprites.hh"   // Sprites, cSpriteSet, SpriteId
-#include "error.hh"     // Score::Error
+#include "sprites.hh"       // Sprites, SpriteSet, SpriteId
+#include "file_reader.hh"   // FileReader
+#include "error.hh"         // Score::Error
 #include "export.hh"
 
 namespace ScorePress
@@ -40,43 +41,44 @@ class SCOREPRESS_API Renderer;  // abstract vector-graphics and svg-sprites-rend
 //
 // This is a (partially) abstract renderer interface.
 // It is used by the engine to render the prepared score, such that the engine
-// is independent of the used frontend. Furthermore this class implements a
-// parser for the sprite-file's meta-information, preparing a "Sprites"
-// object.
+// is independent of the used frontend.
 //
-class SCOREPRESS_API Renderer
+class SCOREPRESS_API Renderer : public FileReader
 {
  public:
-    // error class thrown on syntax errors within the sprites meta information
-    class SCOREPRESS_API Error : public ScorePress::Error {public: Error(const std::string& msg);};
-    
     // text alignment enumeration
     enum enuAlignment {ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER};
     
  protected:
-    // throwing functions (combining the given data to a error message, which is then thrown)
-    void mythrow(const char* trns, const std::string& filename) throw(Error);
-    void mythrow(const char* trns, const std::string& symbol, const std::string& filename, const int line, const int column) throw(Error);
-    void mythrow(const char* trns, const std::string& filename, const int line, const int column) throw(Error);
-    
     Sprites sprites;    // sprites collection
     
-    // parser for the svg's meta-information (filename only used for error msgs)
-    void parse(const char* spriteinfo, const std::string& filename, const size_t setid) throw(Error);
+ public:
+    // sprite-set interface
+    void             erase_sprites();                           // erase the sprites collection
+    const Sprites&   get_sprites() const;                       // return the sprites collection
+    const SpriteSet& get_spriteset(const size_t setid) const;   // return a spriteset
+    void             dump() const;                              // dump sprite info to stdout
+    virtual ~Renderer();                                        // virtual destructor
     
  public:
-    inline void erase_sprites() {sprites.clear();};     // erase the sprites collection
-    inline Sprites& get_sprites() {return sprites;};    // return the sprites collection
-    void dump() const;                                  // dump sprite info to stdout
-    virtual ~Renderer() {};                             // virtual destructor
+    // constructors
+    Renderer(const std::string& name);
+    Renderer(const std::string& name, const std::string& mime_type, const std::string& file_extension);
     
- protected:
-    // path existance method
-    virtual bool exist(const std::string& path, const size_t setid) = 0;
+    // file-reader interface
+    virtual void open(const char* data, const std::string& filename);   // add spriteset from memory (calls load)
+    virtual void open(const std::string& filename);                     // add spriteset from file (calls load)
+    
+    virtual bool is_open() const;                                       // check if a file is opened (always FALSE)
+    virtual const char* get_filename() const;                           // return the filename (always NULL)
     
  public:
     // renderer methods (to be implemented by actual renderer)
-    virtual bool ready() const = 0;         // is the object ready to render?
+    virtual size_t load(const char* data, const std::string& filename) = 0;
+    virtual size_t load(const std::string& filename) = 0;               // add spriteset from file
+    virtual bool   ready() const = 0;                                   // is the object ready to render?
+    virtual bool   exist(const std::string& sprite) const = 0;          // does the sprite exist?
+    virtual bool   exist(const std::string& sprite, const size_t setid) const = 0;
     
     // sprite rendering
     virtual void draw_sprite(const ScorePress::SpriteId sprite_id, double x, double y) = 0;
@@ -132,6 +134,23 @@ class SCOREPRESS_API Renderer
                              double  x2, double  y2,
                              double  w0, double  w1);
 };
+
+// constructors
+inline Renderer::Renderer(const std::string& _name) : FileReader(_name) {}
+inline Renderer::Renderer(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
+                                                    : FileReader(_name, mime_type, file_extension) {}
+
+// sprite-set interface
+inline void             Renderer::erase_sprites()                         {sprites.clear();}
+inline const Sprites&   Renderer::get_sprites()                     const {return sprites;}
+inline const SpriteSet& Renderer::get_spriteset(const size_t setid) const {return sprites[setid];}
+
+// file reader interface
+inline void        Renderer::open(const char* ptr, const std::string& fn) {load(ptr, fn);}
+inline void        Renderer::open(const std::string& filename)            {load(filename);}
+inline void        Renderer::close()                                      {}
+inline bool        Renderer::is_open() const                              {return false;}
+inline const char* Renderer::get_filename() const                         {return NULL;}
 
 } // end namespace
 

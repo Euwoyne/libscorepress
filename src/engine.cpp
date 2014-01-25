@@ -82,9 +82,9 @@ Pageset::PlateInfo& Engine::select_plate(const Position<mpx_t>& pos, const Multi
 }
 
 // constructor (specifying the document the engine will operate on)
-Engine::Engine(Document& _document, Sprites& sprites) : document(&_document),
-                                                        engraver(pageset, sprites, style, viewport),
-                                                        press(style, viewport) {}
+Engine::Engine(Document& _document, const Sprites& sprites) : document(&_document),
+                                                              engraver(pageset, sprites, style, viewport),
+                                                              press(style, viewport) {}
 
 // engrave document (calculates pageset)
 void Engine::engrave()
