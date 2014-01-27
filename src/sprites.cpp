@@ -112,7 +112,13 @@ SpriteSet::SpriteSet() :
 // erase the vector and reset sprite-ids
 void SpriteSet::clear()
 {
+    std::vector<SpriteInfo>::clear();
+    file.clear();
+    title.clear();
+    info.clear();
     head_height = 0;
+    timesig_digit_space = 0;
+    ids.clear();
     
     heads_longa = UNDEFINED;
     heads_breve = UNDEFINED;
@@ -153,9 +159,6 @@ void SpriteSet::clear()
     digits_time[9] = UNDEFINED;
     
     undefined_symbol = UNDEFINED;
-    
-    std::vector<SpriteInfo>::clear();
-    info.clear();
 }
 
 // get index by sprite-id

@@ -58,7 +58,7 @@ class SCOREPRESS_API XMLFileReader : virtual public FileReader
     std::string     filename;
     
  public:
-    XMLFileReader(const std::string& name);
+    XMLFileReader();
     virtual ~XMLFileReader();
     
     virtual void open(const char* data, const std::string& filename);   // use memory for reading
@@ -91,9 +91,9 @@ class SCOREPRESS_API XMLSpritesetReader : public SpritesetReader, public XMLFile
 {
  public:
     XMLSpritesetReader();                                   // constructor
-    virtual void parse_spriteset(SpriteSet&      target,    // sprite-set parser
-                                 const Renderer& renderer,
-                                 const size_t    setid);
+    virtual void parse_spriteset(SpriteSet&   target,       // sprite-set parser
+                                 Renderer&    renderer,
+                                 const size_t setid);
 };
 }
 #endif

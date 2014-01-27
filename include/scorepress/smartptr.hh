@@ -26,7 +26,7 @@ namespace ScorePress
 // ---------
 template <typename T, template <typename> class trait>
 class SmartPtr;                             // a simple deep-copy smart pointer
-template <typename T> struct StdTrait;      // clone-trait class for "new"
+template <typename T> struct StdTrait;      // clone-trait class for "T::T"
 template <typename T> struct CloneTrait;    // clone-trait class for "T::clone"
 template <typename T> struct CopyTrait;     // clone-trait class for "T::copy"
 

@@ -68,6 +68,7 @@ class SCOREPRESS_API FileReader
     // constructor
     FileReader(const std::string& name);
     FileReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    virtual ~FileReader() {};
     
     // type information access
     const std::string&             get_name() const;
@@ -163,9 +164,9 @@ class SCOREPRESS_API SpritesetReader : virtual public FileReader
     SpritesetReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
     
     // virtual parser interface
-    virtual void parse_spriteset(SpriteSet&      target,    // sprite-set parser
-                                 const Renderer& renderer,
-                                 const size_t    setid) = 0;
+    virtual void parse_spriteset(SpriteSet&   target,       // sprite-set parser
+                                 Renderer&    renderer,
+                                 const size_t setid) = 0;
 };
 
 inline SpritesetReader::SpritesetReader(const std::string& _name) : FileReader(_name) {}

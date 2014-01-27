@@ -96,6 +96,7 @@ class SCOREPRESS_API SpriteSet : public std::vector<SpriteInfo>
 {
  public:
     // set information
+    std::string file;                           // source file
     std::string title;                          // set title
     std::map<std::string, std::string> info;    // meta information
     unsigned int head_height;                   // the sprite set's internal head-height (in pixel)

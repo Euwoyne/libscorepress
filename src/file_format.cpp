@@ -82,7 +82,7 @@ void XMLFileReader::mythrow_eof(const char* trns, const std::string& filename, c
 
 
 // constructor
-XMLFileReader::XMLFileReader(const std::string& _name) : FileReader(_name), parser(NULL), filename("") {}
+XMLFileReader::XMLFileReader() : FileReader("XMl File", "application/xml", "xml"), parser(NULL) {}
 
 // destructor
 XMLFileReader::~XMLFileReader()
@@ -159,7 +159,7 @@ const char* XMLFileReader::get_filename() const
 //  document parser
 // =================
 //
-XMLDocumentReader::XMLDocumentReader() : FileReader("ScorePress XML"), DocumentReader("ScorePress XML"), XMLFileReader("ScorePress XML")
+XMLDocumentReader::XMLDocumentReader() : FileReader("ScorePress XML"), DocumentReader("ScorePress XML")
 {
     add_mime_type("application/x-scorepress+xml");
     add_mime_type("application/xml");
@@ -412,14 +412,14 @@ void XMLDocumentReader::parse_document(Document& target)
 // This class implements a parser for the sprite-file's meta-information,
 // preparing a "Spriteset" object.
 //
-XMLSpritesetReader::XMLSpritesetReader() : FileReader("ScorePress Spriteset"), SpritesetReader("ScorePress Spriteset"), XMLFileReader("ScorePress Spriteset")
+XMLSpritesetReader::XMLSpritesetReader() : FileReader("ScorePress Spriteset"), SpritesetReader("ScorePress Spriteset")
 {
     add_mime_type("application/xml");
     add_mime_type("text/xml");
     add_file_extension("*.xml");
 }
 
-void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, const Renderer& renderer, const size_t setid)
+void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& renderer, const size_t setid)
 {
     // check, if a file is open
     if (!parser)
@@ -427,6 +427,7 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, const Renderer& r
     
     // erase spriteset
     spriteset.clear();
+    spriteset.file = filename;
     
     // strip the filename of its path (for the use in error messages)
     const std::string err_file = (filename.rfind('/') != std::string::npos) ?
@@ -2660,3 +2661,4 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, const Renderer& r
     if (parser_return == -1)    // if there occured an XML-syntax error
         mythrow("XML-Syntax Error in description (in file \"%s\", near EOF)", filename);
 }
+

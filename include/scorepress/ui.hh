@@ -22,6 +22,7 @@
 
 #include "file_reader.hh"   // FileReader, DocumentReader
 #include "file_writer.hh"   // FileWriter, DocumentWriter
+#include "renderer.hh"      // Renderer
 #include "export.hh"
 
 namespace ScorePress
@@ -45,6 +46,7 @@ class SCOREPRESS_API UI
     virtual void register_save_format(DocumentWriter& writer) = 0;
     virtual void register_import_format(DocumentReader& reader) = 0;
     virtual void register_export_format(DocumentWriter& writer) = 0;
+    virtual void register_renderer(Renderer& renderer) = 0;
 };
 
 } // end namespace
