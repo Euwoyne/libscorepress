@@ -465,7 +465,6 @@ void EngraverState::engrave_stems()
                         it->gphBox.extend(Position<mpx_t>(it->stem.x, it->stem.top));
                     }
                     else it->stem.top = _round(top);
-                    free(it->stem_info);
                 };
             };
             
@@ -492,7 +491,7 @@ void EngraverState::engrave_stems()
                 time += static_cast<const NoteObject&>(it->get_note()).value();
                 if (it->get_note().is(Class::CHORD))
                 {
-                    beam_info.apply(static_cast<const Chord&>(it->get_note()), it, time, param->beam_group);
+                    beam_info.apply2(static_cast<const Chord&>(it->get_note()), it, time, param->beam_group);
                 };
             };
         };
@@ -1312,8 +1311,8 @@ void EngraverState::engrave_beam(const Chord& chord, const StemInfo& info)
 {
     BeamInfoMap::iterator i = beaminfo.find(&*pvoice);
     if (i == beaminfo.end())
-        i = beaminfo.insert(BeamInfoMap::value_type(&*pvoice, BeamGroupInfo(*pvoice))).first;
-    i->second.apply(chord, param->beam_group, info);
+        i = beaminfo.insert(BeamInfoMap::value_type(&*pvoice, BeamInfo(*pvoice))).first;
+    i->second.apply1(chord, param->beam_group, info);
 }
 
 // add the given offset in front of the note to be engraved

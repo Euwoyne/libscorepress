@@ -32,14 +32,13 @@ namespace ScorePress
 //  CLASSES
 // ---------
 class   SCOREPRESS_LOCAL BeamInfo;       // beam-information structure
-class   SCOREPRESS_LOCAL BeamGroupInfo;  // beam-group-information structure (prepare beam engraving)
 struct  SCOREPRESS_LOCAL TieInfo;        // tie-information structure
 struct  SCOREPRESS_LOCAL DurableInfo;    // durable-information structure
 struct  SCOREPRESS_LOCAL SpaceInfo;      // space-info structure
 struct  SCOREPRESS_LOCAL LineInfo;       // line-info structure
-typedef std::map<Plate::pVoice*, BeamGroupInfo> BeamInfoMap;    // beam-information for every voice
-typedef std::map<tone_t, TieInfo>               TieInfoChord;   // tie-information for every tone
-typedef std::map<const Voice*, TieInfoChord>    TieInfoMap;     // tie-information for every voice
+typedef std::map<Plate::pVoice*, BeamInfo>   BeamInfoMap;   // beam-information for every voice
+typedef std::map<tone_t, TieInfo>            TieInfoChord;  // tie-information for every tone
+typedef std::map<const Voice*, TieInfoChord> TieInfoMap;    // tie-information for every voice
 
 
 //
@@ -53,68 +52,43 @@ typedef std::map<const Voice*, TieInfoChord>    TieInfoMap;     // tie-informati
 class SCOREPRESS_LOCAL BeamInfo
 {
  private:
-    Plate::pVoice& voice;                                   // the host voice
-    std::list<Plate::pNote>::iterator beam[VALUE_BASE - 2]; // the first note for every beam
-                                                            //   (highest index being the top beam)
-    std::list<Plate::pNote>::iterator last_pnote;           // the last processed note (for the finish algorithm)
-    const Chord*                      last_chord;           // the last processed chord instance (for the finish)
+    Plate::pVoice& voice;                           // the host voice
+    Plate::pVoice::Iterator beam[VALUE_BASE - 2];   // the first note for every beam
+                                                    //   (highest index being the top beam)
+    Plate::pVoice::Iterator last_pnote;             // the last processed note (for the finish algorithm)
+    const Chord*            last_chord;             // the last processed chord instance (for the finish)
     
+    // helper functions
     void set(size_t beam_idx, size_t end_idx, Plate::pNote& start, const Plate::pNote& end, const Plate::pNote& cur);
+    void calculate_beam(size_t i, Plate::pNote& pnote, const Plate::pNote& end, size_t& s, bool short_left);
     
-    void start(unsigned int exp, std::list<Plate::pNote>::iterator pnote);  // start necessary beams
-    void set(unsigned int exp, std::list<Plate::pNote>::iterator pnote);    // end unnecessary beams
-    void stop(unsigned int exp, std::list<Plate::pNote>::iterator end);     // end all beams at this note
+    void start(unsigned int exp, Plate::pVoice::Iterator pnote);  // start necessary beams
+    void set(unsigned int exp, Plate::pVoice::Iterator pnote);    // end unnecessary beams
+    void stop(unsigned int exp, Plate::pVoice::Iterator end);     // end all beams at this note
+    
+    // create beam information
+    void apply(const Chord&             chord,      // current chord
+               Plate::pVoice::Iterator& pnote,      // corresponding on-plate note
+               const StemInfo*          stem_info,  // stem-info for current note (saved to plate or erased from plate)
+               const bool               has_beam,   // does the note have a beam?
+               const unsigned int       exp);       // effective value exponent
     
  public:
-    void cut(std::list<Plate::pNote>::iterator pnote);                      // end each beam on the previous note
+    void cut(Plate::pVoice::Iterator pnote);    // end each beam on the previous note
     
  public:
     // constructor
     BeamInfo(Plate::pVoice& voice);
     
-    // calculate beam information
+    // create beam information (first pass; only top beam)
     // (first version expecting the "object" to correspond to the last note in the "voice")
-    void apply(const Chord& object, const unsigned char beam_group);
-    void apply(const Chord& object, std::list<Plate::pNote>::iterator pnote, const value_t end_time, const unsigned char beam_group);
+    void apply1(const Chord& object, const unsigned char beam_group, const StemInfo& info);
+    void apply1(const Chord& object, Plate::pVoice::Iterator pnote, const unsigned char beam_group, const StemInfo& info);
     
-    // end all beams
-    void finish();
-};
-
-
-//
-//   class BeamGroupInfo
-//  =====================
-//
-// Inforation about beam groups (i.e. only top beam).
-// This is used during the engraving to prepare the real
-// engraving of the beams during line-postprocessing.
-//
-class SCOREPRESS_LOCAL BeamGroupInfo
-{
- private:
-    Plate::pVoice& voice;                           // the host voice
-    std::list<Plate::pNote>::iterator beam[VALUE_BASE - 2];         // the first note of the top beam
-    std::list<Plate::pNote>::iterator last_pnote;   // the last processed note (for the finish algorithm)
-    const Chord*                      last_chord;   // the last processed chord instance (for the finish)
-    
-    void set(size_t beam_idx, size_t end_idx, Plate::pNote& start, const Plate::pNote& end, const Plate::pNote& cur);
-    
-    void start(unsigned int exp);                                           // start necessary beams
-    void set(unsigned int exp, std::list<Plate::pNote>::iterator pnote);    // end unnecessary beams
-    void stop(unsigned int exp, std::list<Plate::pNote>::iterator end);     // end all existing beams at this note
-    
- public:
-    void cut(std::list<Plate::pNote>::iterator pnote);                      // end each beam on the previous note
-    
- public:
-    // constructor
-    BeamGroupInfo(Plate::pVoice& voice);
-    
-    // calculate beam information
+    // calculate beam information (second pass; all beams)
     // (first version expecting the "object" to correspond to the last note in the "voice")
-    void apply(const Chord& object, const unsigned char beam_group, const StemInfo& info);
-    void apply(const Chord& object, std::list<Plate::pNote>::iterator pnote, const unsigned char beam_group, const StemInfo& info);
+    void apply2(const Chord& object, const unsigned char beam_group);
+    void apply2(const Chord& object, Plate::pVoice::Iterator pnote, const value_t time, const unsigned char beam_group);
     
     // end all beams
     void finish();

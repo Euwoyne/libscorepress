@@ -2,8 +2,6 @@ libscorepress - TODO List
 =========================
 
 BUGS:
-  user_cursor.cpp   empty voices should line up with noteobject
-  engrave_info.cpp  prevent short 8th beam
 
 INCOMPLETE:
   file_format.cpp   parse <movable> section
