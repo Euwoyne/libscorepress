@@ -94,16 +94,19 @@ DEBUG_SO   := @DEBUG_SO@
 PROFILE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS @PROFILE_SO@
 RELEASE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS @RELEASE_SO@
 SOFLAGS    := @SOFLAGS@ ${${MODE}_SO}
+RPATHFLAG  := @RPATHFLAG@
+RPATH      := @RPATH@
 
 CONFIGFLAGS  := -DDATADIR="\"${datadir_pkg}\""
 USER_CFLAGS  := @CFLAGS@
 USER_FLAGS   := ${USER_CFLAGS} ${CFLAGS}
 USER_LIBS    := @LIBS@
 USER_LDFLAGS := @LDFLAGS@
+USER_RPATH   := @USER_RPATH@
 USER_LIBXML  := @USER_LIBXML@
 
 FLAGS   := ${WARNINGS} ${CTRLFLAGS} ${${MODE}} -I${headerdir} ${USER_FLAGS}
-LIBS    := ${XMLLIBS} ${USER_LIBS} ${USER_LDFLAGS}
+LIBS    := ${XMLLIBS} ${RPATH} ${USER_LIBS} ${USER_LDFLAGS} ${RPATHFLAG}${USER_RPATH}
 
 SIZECHECK_ON    := -DSIZECHECK @FSIZECHECK@
 SIZECHECK_OFF   :=
@@ -594,6 +597,7 @@ configinfo:
 	                                then echo "  --enable-fraction-check"; fi
 	@if test "${DOXYGEN}" != ":";   then echo "  --enable-doxygen";        fi
 	@if test -n "${USER_LIBXML}";   then echo "  --with-libxml2=${USER_LIBXML}"; fi
+	@if test -n "${USER_RPATH}";    then echo "  --with-rpath=${USER_RPATH}";    fi
 	@echo
 
 confargs := --srcdir=${srcdir}               \

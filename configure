@@ -622,6 +622,7 @@ ac_includes_default="\
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 CFLAGS
+RPATH
 EGREP
 GREP
 CXXCPP
@@ -642,6 +643,7 @@ INSTALL_PROGRAM
 CTRLFLAGS
 WARNINGS
 FSIZECHECK
+RPATHFLAG
 SOFLAGS
 RELEASE_SO
 PROFILE_SO
@@ -657,6 +659,7 @@ LDFLAGS
 CXXFLAGS
 CXX
 SH
+USER_RPATH
 FRACT_SIZECHECK
 MODE
 PACKAGE_VERSION_MAIN
@@ -706,6 +709,7 @@ enable_profile
 enable_fraction_check
 enable_doxygen
 with_libxml2
+with_rpath
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1336,6 +1340,8 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-libxml2          location of the libxml2 headers
                           [/usr/include/libxml2]
+  --with-rpath            add the given path to the runtime library search
+                          path
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -2250,6 +2256,17 @@ else
 fi
 
 
+# Check whether --with-rpath was given.
+if test "${with_rpath+set}" = set; then :
+  withval=$with_rpath; with_rpath="$withval"
+else
+  with_rpath=""
+fi
+
+
+MODE=RELEASE
+
+
 if test "x$with_debug" != "xno"; then :
   $as_echo "#define LIBSCOREPRESS_DEBUG 1" >>confdefs.h
 
@@ -2257,9 +2274,6 @@ else
   $as_echo "#define LIBSCOREPRESS_DEBUG 0" >>confdefs.h
 
 fi
-
-MODE=RELEASE
-
 if test "x$with_profile" != "xno"; then :
   MODE=PROFILE
 
@@ -2268,7 +2282,6 @@ if test "x$with_debug" != "xno"; then :
   MODE=DEBUG
 
 fi
-
 if test "x$with_sizecheck" != "xno"; then :
   FRACT_SIZECHECK=\${SIZECHECK_ON}
 
@@ -2276,6 +2289,9 @@ else
   FRACT_SIZECHECK=\${SIZECHECK_OFF}
 
 fi
+
+USER_RPATH=$with_rpath
+
 
 # check shell
 if test "x$SHELL" != "x"; then :
@@ -2886,6 +2902,12 @@ fi
 
     SOFLAGS="-fPIC -lc"
 
+    if test "x$with_rpath" == "xno"; then :
+
+else
+  RPATHFLAG="-Wl,-rpath,"
+
+fi
     FSIZECHECK="-Wno-long-long"
 
     WARNINGS="-W                   \\
@@ -4090,6 +4112,33 @@ if test "x$ac_cv_func_xmlReaderForMemory" = xyes; then :
 else
   as_fn_error $? "library 'libxml2' does not provide the 'xmlReader' interface" "$LINENO" 5
 fi
+
+
+# create rpath
+RPATH=
+if test -n "$RPATHFLAG"; then
+    buffer=$LIBXML_LIBS
+    for path in $buffer $USER_LIBXML; do
+        path=$(expr "$path" : "-L\(.*\)")
+        if test -n "$path"; then
+            LIBXML_LIBS="$LIBXML_LIBS $RPATHFLAG$path"
+        fi
+    done
+    LIBXML_LIBS=$LIBXML_LIBS
+
+
+    if test "x$with_rpath" != "xno" -a "x$with_rpath" != "xyes" -a "x$with_rpath" != "x"; then
+        RPATH="$RPATHFLAG$with_rpath"
+    fi
+
+    for path in $LDFLAGS; do
+        path=$(expr "$path" : "-L\(.*\)")
+        if test -n "$path"; then
+            RPATH="$RPATH $RPATHFLAG$path"
+        fi
+    done
+fi
+RPATH=$RPATH
 
 
 # generate output

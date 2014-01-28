@@ -65,6 +65,7 @@ class SCOREPRESS_LOCAL BeamInfo
     void start(unsigned int exp, Plate::pVoice::Iterator pnote);  // start necessary beams
     void set(unsigned int exp, Plate::pVoice::Iterator pnote);    // end unnecessary beams
     void stop(unsigned int exp, Plate::pVoice::Iterator end);     // end all beams at this note
+    void cut(Plate::pVoice::Iterator pnote);                      // end each beam on the previous note
     
     // create beam information
     void apply(const Chord&             chord,      // current chord
@@ -72,9 +73,6 @@ class SCOREPRESS_LOCAL BeamInfo
                const StemInfo*          stem_info,  // stem-info for current note (saved to plate or erased from plate)
                const bool               has_beam,   // does the note have a beam?
                const unsigned int       exp);       // effective value exponent
-    
- public:
-    void cut(Plate::pVoice::Iterator pnote);    // end each beam on the previous note
     
  public:
     // constructor
