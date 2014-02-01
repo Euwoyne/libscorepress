@@ -600,7 +600,7 @@ class SCOREPRESS_API SubVoice : public Voice
     VoiceObjectList notes; // content of the voice (no staff objects; i.e. clefs and key/time signatures)
     
  public:
-    SubVoice(Voice* _parent) : parent(_parent), on_top(false) {};
+    SubVoice(Voice& _parent) : parent(&_parent), on_top(false) {};
     virtual bool is(classType type) const {return ((type == SUBVOICE) || Voice::is(type));};
     virtual classType classtype() const {return SUBVOICE;};
     virtual SubVoice* clone() const {return new SubVoice(*this);};

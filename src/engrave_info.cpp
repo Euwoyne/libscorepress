@@ -300,3 +300,4 @@ void BeamInfo::finish()
     // end existing beams
     stop(last_chord->val.exp, last_pnote);
 }
+

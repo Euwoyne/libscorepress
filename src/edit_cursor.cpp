@@ -547,7 +547,7 @@ void EditCursor::remove() throw(NotValidException)
     cursor->note.remove();                          // remove the note
     
     // migrate subvoice and durable objects to next note
-    if (!cursor->note.at_end())                     // if there is a next note
+    if (!cursor->note.at_end() && !cursor->note->is(Class::NEWLINE))    // if there is a next note
     {
         // migrate subvoice
         if (   cursor->note->is(Class::NOTEOBJECT)              // if this note can hold a subvoice
@@ -688,6 +688,33 @@ void EditCursor::remove_break() throw(NotValidException)
         return remove_newline();                    //     remove newline
     else                                            // otherwise 
         return remove_pagebreak();                  //     remove pagebreak, create newline
+}
+
+// add empty voice
+void EditCursor::add_voice() throw(NotValidException, Cursor::IllegalObjectTypeException)
+{
+    if (!ready()) throw NotValidException();        // check cursor
+    for (;;)
+    {
+        while (!cursor->at_end() && !cursor->note->is(Class::NOTEOBJECT))
+            next();
+        if (cursor->at_end()) throw Cursor::IllegalObjectTypeException();
+        if (static_cast<NoteObject&>(*cursor->note).subvoice)
+        {
+            next_voice();
+        }
+        else
+        {
+            static_cast<NoteObject&>(*cursor->note).subvoice = RefPtr<SubVoice>(new SubVoice(cursor->note.voice()));
+            std::list<VoiceCursor>::iterator inspos(cursor);
+            vcursors.insert(++inspos, VoiceCursor())->note.set(
+                cursor->note.staff(),
+                *static_cast<NoteObject&>(*cursor->note).subvoice);
+            reengrave(NONE);
+            ++cursor;
+            return;
+        };
+    };
 }
 
 // get the line layout object (non-constant)
