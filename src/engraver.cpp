@@ -40,37 +40,39 @@ void Engraver::engrave_attachables(const Document& data)
 {
     std::list<Pageset::pPage>::iterator p = pageset->pages.begin();
     unsigned int pageno = 0;
-    const std::list<Document::Attached> attached = data.get_attached();
-    for (std::list<Document::Attached>::const_iterator a = attached.begin(); a != attached.end(); ++a)
+    for (Document::AttachedMap::const_iterator apage = data.attached.begin(); apage != data.attached.end(); ++apage)
     {
-        while (pageno < a->page) {++pageno; ++p;};
-        p->attachables.push_back(Plate::pAttachable(*a->object,
-                                                 Position<mpx_t>(viewport->umtopx_h(a->object->position.x),
-                                                                 viewport->umtopx_v(a->object->position.y))));
-        if (a->object->is(Class::TEXTAREA))
+        for (MovableList::const_iterator a = apage->second.begin(); a != apage->second.end(); ++a)
         {
-            const TextArea& obj = *static_cast<const TextArea*>(a->object);
-            p->attachables.back().gphBox.pos = p->attachables.back().absolutePos;
-            p->attachables.back().gphBox.width = _round((viewport->umtopx_h(obj.width) * obj.appearance.scale) / 1000.0);
-            p->attachables.back().gphBox.height = _round((viewport->umtopx_h(obj.height) * obj.appearance.scale) / 1000.0);
-        }
-        else if (a->object->is(Class::CUSTOMSYMBOL))
-        {
-            const CustomSymbol& obj = *static_cast<const CustomSymbol*>(a->object);
-            const SpriteId sprite_id =
-                (obj.sprite.setid == UNDEFINED) ?
-                    SpriteId(0, sprites->front().undefined_symbol) :
-                    ((obj.sprite.spriteid == UNDEFINED) ?
-                        SpriteId(obj.sprite.setid, (*sprites)[obj.sprite.setid].undefined_symbol) :
-                        obj.sprite);
-            const double scale =  (data.head_height / sprites->head_height(sprite_id))
-                                * (obj.appearance.scale / 1000.0);
-            
-            p->attachables.back().gphBox.pos    = p->attachables.back().absolutePos;
-            p->attachables.back().gphBox.width  = _round(scale * (*sprites)[sprite_id].width);
-            p->attachables.back().gphBox.height = _round(scale * (*sprites)[sprite_id].height);
-        }
-        else log_warn(("On-page object type \"" + classname(a->object->classtype()) + "\" not implemented yet. (class: Engraver)").c_str());
+            while (pageno < apage->first) {++pageno; ++p;};
+            p->attached.push_back(Plate::pNote::AttachablePtr(new Plate::pAttachable(
+                            **a, Position<mpx_t>(viewport->umtopx_h((*a)->position.x),
+                                                viewport->umtopx_v((*a)->position.y)))));
+            if ((*a)->is(Class::TEXTAREA))
+            {
+                const TextArea& obj = *static_cast<const TextArea*>(&**a);
+                p->attached.back()->gphBox.pos = p->attached.back()->absolutePos;
+                p->attached.back()->gphBox.width = _round((viewport->umtopx_h(obj.width) * obj.appearance.scale) / 1000.0);
+                p->attached.back()->gphBox.height = _round((viewport->umtopx_h(obj.height) * obj.appearance.scale) / 1000.0);
+            }
+            else if ((*a)->is(Class::CUSTOMSYMBOL))
+            {
+                const CustomSymbol& obj = *static_cast<const CustomSymbol*>(&**a);
+                const SpriteId sprite_id =
+                    (obj.sprite.setid == UNDEFINED) ?
+                        SpriteId(0, sprites->front().undefined_symbol) :
+                        ((obj.sprite.spriteid == UNDEFINED) ?
+                            SpriteId(obj.sprite.setid, (*sprites)[obj.sprite.setid].undefined_symbol) :
+                            obj.sprite);
+                const double scale =  (data.head_height / sprites->head_height(sprite_id))
+                                    * (obj.appearance.scale / 1000.0);
+                
+                p->attached.back()->gphBox.pos    = p->attached.back()->absolutePos;
+                p->attached.back()->gphBox.width  = _round(scale * (*sprites)[sprite_id].width);
+                p->attached.back()->gphBox.height = _round(scale * (*sprites)[sprite_id].height);
+            }
+            else log_warn(("On-page object type \"" + classname((*a)->classtype()) + "\" not implemented yet. (class: Engraver)").c_str());
+        };
     };
 }
 

@@ -248,6 +248,50 @@ bool EditCursor::for_each_chord_in_beam_do(VoiceCursor& cur, void (*func)(Chord&
 EditCursor::EditCursor(Document& doc, Pageset& pset, const InterfaceParam& _param) : UserCursor(doc, pset), param(&_param), engraver(NULL) {}
 EditCursor::EditCursor(Document& doc, Pageset& pset, const InterfaceParam& _param, Engraver& _engraver) : UserCursor(doc, pset), param(&_param), engraver(&_engraver) {}
 
+//  access methods
+// ----------------
+
+// return objects attached to the note
+MovableList& EditCursor::get_attached() throw(NotValidException)
+{
+    if (cursor == vcursors.end())     throw NotValidException();
+    return cursor->note->get_visible().attached;
+}
+
+// return on-plate attached-object info
+Plate::pNote::AttachableList& EditCursor::get_pattached() throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->pnote->attached;
+}
+
+// return the line layout
+Newline& EditCursor::get_layout() throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->line_layout.ready() ? static_cast<Newline&>(*cursor->line_layout)
+                                       : cursor->note.staff().layout;
+}
+
+// return the score dimension
+ScoreDimension& EditCursor::get_dimension() throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).dimension
+                                       : score->layout.dimension;
+}
+
+// return objects attached to the page
+MovableList& EditCursor::get_page_attached() throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).attached
+                                       : score->layout.attached;
+}
+
+//  engraver interface
+// --------------------
+
 // reengrave the score and update this cursor (all iterators and pVoice::begin must be valid when calling this!)
 void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
 {
@@ -384,6 +428,9 @@ void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
     update_voices();
     if (mode == INSERT && !at_end()) next();
 }
+
+//  insertion interface
+// ---------------------
 
 // insert an object (inserting transfers the objects ownership to the voice-object within the score)
 void EditCursor::insert(StaffObject* const object) throw(NotValidException, Cursor::IllegalObjectTypeException)
@@ -533,6 +580,9 @@ void EditCursor::insert_pagebreak() throw(NotValidException, NoScoreException, E
     
     reengrave(PAGEBREAK);
 }
+
+//  deletion interface
+// --------------------
 
 // remove a note
 void EditCursor::remove() throw(NotValidException)
@@ -715,13 +765,6 @@ void EditCursor::add_voice() throw(NotValidException, Cursor::IllegalObjectTypeE
             return;
         };
     };
-}
-
-// get the line layout object (non-constant)
-const Newline& EditCursor::get_layout() const throw(NotValidException)
-{
-    if (cursor == vcursors.end()) throw NotValidException();
-    return cursor->get_layout();
 }
 
 static void _add_stem_length(Chord& chord, const int pohh, int*)

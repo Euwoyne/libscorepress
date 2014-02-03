@@ -102,6 +102,18 @@ void Pageset::erase(const Score& score)
     remove_empty_pages();               // remove pages left empty
 }
 
+// append a new page to the list (and return iterator)
+Pageset::Iterator Pageset::add_page()
+{
+    if (pages.empty())
+    {
+        pages.push_back(pPage(0));
+        return pages.begin();
+    };
+    pages.push_back(pPage(pages.back().pageno + 1));
+    return --pages.end();
+}
+
 // get the page with the given index (creating non-existing pages)
 Pageset::Iterator Pageset::get_page(unsigned int pageno)
 {
@@ -109,9 +121,9 @@ Pageset::Iterator Pageset::get_page(unsigned int pageno)
     for (Iterator i = pages.begin(); i != pages.end(); ++i) // iterate through pages
     {
         if (idx == pageno) return i;    // if we have got the correct page, return
-        idx++;                          // count the page
+        ++idx;                          // count the page
     }
-    do pages.push_back(pPage()); while (idx++ < pageno);    // append enough pages to be able to return requested page
+    do pages.push_back(pPage(++idx)); while (idx < pageno); // append enough pages to be able to return requested page
     return --pages.end();                                   // return page
 }
 
@@ -131,7 +143,7 @@ Pageset::Iterator Pageset::get_first_page(const Score& score)
 // remove empty pages from the end of the pageset
 void Pageset::remove_empty_pages()
 {
-    while (!pages.empty() && pages.back().plates.empty() && pages.back().attachables.empty())
+    while (!pages.empty() && pages.back().plates.empty() && pages.back().attached.empty())
     {
         pages.pop_back();
     };

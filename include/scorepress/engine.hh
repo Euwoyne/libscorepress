@@ -91,6 +91,7 @@ class SCOREPRESS_API Engine : public Logging
     ViewportParam  viewport;    // viewport parameters
     InterfaceParam interface;   // interface parameters
     CursorMap      cursors;     // cursor map (one cursor per score-object)
+    ObjectCursor   object_cur;  // object cursor
     
  protected:
     // calculate page base position for the given multipage-layout
@@ -113,6 +114,7 @@ class SCOREPRESS_API Engine : public Logging
     void render_all(Renderer& renderer, const MultipageLayout layout, const Position<mpx_t>& offset, bool decor = false);           // all pages (with layout)
     void render_cursor(Renderer& renderer, const UserCursor& cursor, const Position<mpx_t>& page_pos);                              // cursor (with page root)
     void render_cursor(Renderer& renderer, const UserCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset);  // cursor (with layout)
+    void render_selection(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& page_pos);
     
     // internal data access
     Document&        get_document();                                    // the document this engine operates on
@@ -133,17 +135,21 @@ class SCOREPRESS_API Engine : public Logging
     void             plate_dump() const;                                // write plate-content to stdout
     
     // cursor interface
-    const Page       select_page(const unsigned int page);                                      // calculate page-iterator by index
-    const Page       select_page(Position<mpx_t>& pos, const MultipageLayout layout);           // calculate page-iterator by position (transform pos to on-page pos)
-    const Page       select_page(const Position<mpx_t>& pos, const MultipageLayout layout);     // calculate page-iterator by position
+    const Page select_page(const unsigned int page);                                    // calculate page-iterator by index
+    const Page select_page(Position<mpx_t>& pos, const MultipageLayout layout);         // calculate page-iterator by position (transform pos to on-page pos)
+    const Page select_page(const Position<mpx_t>& pos, const MultipageLayout layout);   // calculate page-iterator by position
     
-    Document::Score& select_score(const Position<mpx_t>& pos, Page& page);                      // get score by position (on page)
-    Document::Score& select_score(const Position<mpx_t>& pos, const MultipageLayout layout);    // get score by position (muti-page)
+    Document::Score& select_score(const Position<mpx_t>& pos, const Page& page);        // get score by position (on page)
+    Document::Score& select_score(Position<mpx_t> pos, const MultipageLayout layout);   // get score by position (muti-page)
     
-    EditCursor&      get_cursor()                                                  throw(Error, UserCursor::Error); // get cursor (front of first score)
-    EditCursor&      get_cursor(Document::Score& score)                            throw(Error, UserCursor::Error); // get cursor (front of given score)
-    EditCursor&      get_cursor(Position<mpx_t> pos, Page& page)                   throw(Error, UserCursor::Error); // get cursor (on-page position)
-    EditCursor&      get_cursor(Position<mpx_t> pos, const MultipageLayout layout) throw(Error, UserCursor::Error); // get cursor (multi-page position)
+    EditCursor& get_cursor()                                                  throw(Error, UserCursor::Error); // get cursor (front of first score)
+    EditCursor& get_cursor(Document::Score& score)                            throw(Error, UserCursor::Error); // get cursor (front of given score)
+    EditCursor& get_cursor(Position<mpx_t> pos, const Page& page)             throw(Error, UserCursor::Error); // get cursor (on-page position)
+    EditCursor& get_cursor(Position<mpx_t> pos, const MultipageLayout layout) throw(Error, UserCursor::Error); // get cursor (multi-page position)
+    
+    ObjectCursor& selected_object()                                       throw(Error); // get currently selected object
+    bool select_object(const Position<mpx_t>& pos, const Page& page)      throw(Error); // get object by position (on page)
+    bool select_object(Position<mpx_t> pos, const MultipageLayout layout) throw(Error); // get object by position (multi-page)
     // NOTE: Ownership of the returned cursors stays with the engine. Any copies, that are not owned by the engine, might behave strangely on reengrave.
     
     // logging control
@@ -171,6 +177,8 @@ inline mpx_t           Engine::page_height() const        {return (viewport.umto
 inline size_t          Engine::page_count()  const        {return pageset.pages.size();}
 
 inline const Engine::Page Engine::select_page(const unsigned int page) {return Page(page, pageset.get_page(page));}
+inline bool               Engine::select_object(Position<mpx_t> pos, const MultipageLayout layout) throw(Error) {
+                                return select_object(pos, select_page(pos, layout));}
 
 } // end namespace
 

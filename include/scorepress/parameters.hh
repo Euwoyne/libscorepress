@@ -149,6 +149,7 @@ struct SCOREPRESS_API PressParam
     unsigned int attachbounds_color;    // color of boundary boxes       (in rgba, little endian)
     unsigned int linebounds_color;      // color of boundary boxes       (in rgba, little endian)
     unsigned int eov_color;             // color of end-of-voice objects (in rgba, little endian)
+    unsigned int decor_color;           // color of selection decoration (in rgba, little endian)
     
     // default parameters
     PressParam();

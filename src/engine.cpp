@@ -238,7 +238,7 @@ const Engine::Page Engine::select_page(const Position<mpx_t>& pos, const Multipa
 }
 
 // get score by position (on page)
-Document::Score& Engine::select_score(const Position<mpx_t>& pos, Page& page)
+Document::Score& Engine::select_score(const Position<mpx_t>& pos, const Page& page)
 {
     // seach the plate
     Pageset::pPage::const_Iterator pinfo = page.it->get_plate_by_pos(pos);
@@ -255,21 +255,10 @@ Document::Score& Engine::select_score(const Position<mpx_t>& pos, Page& page)
 }
 
 // get score by position (muti-page)
-Document::Score& Engine::select_score(const Position<mpx_t>& pos, const MultipageLayout layout)
+Document::Score& Engine::select_score(Position<mpx_t> pos, const MultipageLayout layout)
 {
     // get page
-    Pageset::Iterator page;
-    unsigned int i = 0;
-    Position<mpx_t> pagepos;
-    const Position<mpx_t> pagedim(page_width(), page_height());
-    for (page = pageset.pages.begin(); page != pageset.pages.end(); ++page, ++i)
-    {
-        pagepos = page_pos(i, layout);
-        if (   pos.x >= pagepos.x             && pos.y >= pagepos.y
-            && pos.x <  pagepos.x + pagedim.x && pos.y <  pagepos.y + pagedim.y)
-                break;
-    };
-    if (page == pageset.pages.end()) --page;
+    Pageset::Iterator page(select_page(pos, layout).it);
     
     // seach the plate
     Pageset::pPage::const_Iterator pinfo = page->get_plate_by_pos(pos);
@@ -312,7 +301,7 @@ EditCursor& Engine::get_cursor(Document::Score& score) throw(Error, UserCursor::
 }
 
 // create cursor (on-page position)
-EditCursor& Engine::get_cursor(Position<mpx_t> pos, Page& page) throw(Error, UserCursor::Error)
+EditCursor& Engine::get_cursor(Position<mpx_t> pos, const Page& page) throw(Error, UserCursor::Error)
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
@@ -342,6 +331,79 @@ EditCursor& Engine::get_cursor(Position<mpx_t> pos, const MultipageLayout layout
     };
     ret.first->second.set_pos(page.it, (pos * 1000) / static_cast<int>(press.parameters.scale), viewport);
     return ret.first->second;
+}
+
+ObjectCursor& Engine::selected_object() throw(Error)
+{
+    return object_cur;
+}
+
+// get object by position (on page)
+bool Engine::select_object(const Position<mpx_t>& pos, const Page& page) throw(Error)
+{
+    ObjectCursor buffer;
+    
+    // search for object on page
+    for (Pageset::pPage::AttachableList::iterator a = page.it->attached.begin(); a != page.it->attached.end(); ++a)
+    {
+        if (!(*a)->object->is(Class::MOVABLE)) continue;
+        if ((*a)->contains(pos))
+        {
+            buffer.set_parent(*document, *page.it);
+            buffer.select(*static_cast<const Movable*>((*a)->object));
+            if (!buffer.ready() || buffer.end())
+                return false;
+            object_cur = buffer;
+            return true;
+        };
+    };
+    
+    // search for object within plates
+    Pageset::pPage::const_Iterator pinfo = page.it->get_plate_by_pos(pos);
+    if (pinfo == page.it->plates.end())
+        pinfo = --page.it->plates.end();
+    
+    // search the score
+    Document::ScoreList::iterator score = document->scores.begin();
+    for (; score != document->scores.end(); ++score)
+        if (&score->score == pinfo->score)
+            break;
+    if (score == document->scores.end()) return false;
+    
+    // search the object
+    for (Plate::Iterator l = pinfo->plate->lines.begin(); l != pinfo->plate->lines.end(); ++l)
+    {
+        if (!l->contains(pos)) continue;
+        for (Plate::pLine::Iterator v = l->voices.begin(); v != l->voices.end(); ++v)
+        {
+            for (Plate::pVoice::Iterator n = v->notes.begin(); n != v->notes.end(); ++n)
+            {
+                if (n->is_inserted()) continue;
+                if (!n->get_note().is(Class::VISIBLEOBJECT)) continue;
+                for (Plate::pNote::AttachableList::iterator a = n->attached.begin(); a != n->attached.end(); ++a)
+                {
+                    if (!(*a)->object->is(Class::MOVABLE)) continue;
+                    if ((*a)->contains(pos))
+                    {
+                        // (casts away const, but not unexpected, since this object got a non-const reference to the document)
+                        if (buffer.set_parent(const_cast<StaffObject&>(n->get_note()).get_visible().attached, n->attached))
+                        {
+                            if (buffer.select(*static_cast<const Movable*>((*a)->object)))
+                            {
+                                if (!buffer.ready() || buffer.end())
+                                    return false;
+                                object_cur = buffer;
+                                return true;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
+    
+    // no object found
+    return false;
 }
 
 // logging control

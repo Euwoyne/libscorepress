@@ -26,6 +26,7 @@
 #include "renderer.hh"      // Renderer
 #include "parameters.hh"    // PressParam, ViewportParam
 #include "user_cursor.hh"   // UserCursor
+#include "object_cursor.hh" // ObjectCursor
 #include "error.hh"         // Error
 #include "log.hh"           // Logging
 #include "export.hh"
@@ -58,7 +59,8 @@ class PressState
     mpx_t                stem_width;    // current stem-width
     
     PressState(const PressParam& parameters, const StyleParam& style, const ViewportParam& viewport);
-    inline void set_style(const StyleParam& new_style) {style = &new_style;};
+    inline void   set_style(const StyleParam& new_style) {style = &new_style;};
+    inline double scale(const double coord) const        {return (parameters.scale * coord) / 1000.0;};
 };
 
 
@@ -118,7 +120,8 @@ class SCOREPRESS_LOCAL Press : public Logging
     void render_decor(Renderer& renderer, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException);
     
     // render a cursor through the given renderer
-    void render(Renderer& renderer, const UserCursor& cursor, const Position<mpx_t> offset) throw (InvalidRendererException, UserCursor::NotValidException);
+    void render(Renderer& renderer, const UserCursor&   cursor, const Position<mpx_t> offset) throw (InvalidRendererException, UserCursor::NotValidException);
+    void render(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t> offset) throw (InvalidRendererException);
 };
 
 } // end namespace

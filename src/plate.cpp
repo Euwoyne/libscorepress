@@ -131,7 +131,7 @@ void Plate_pNote::add_offset(mpx_t offset)
     {
         p->x += offset;
     };
-    for (AttachableList::iterator a = attachables.begin(); a != attachables.end(); ++a)
+    for (AttachableList::iterator a = attached.begin(); a != attached.end(); ++a)
     {
         (*a)->absolutePos.x += offset;
         (*a)->gphBox.pos.x += offset;

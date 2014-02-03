@@ -99,34 +99,3 @@ bool Score::same_group(const Staff& staff1, const Staff& staff2) const throw(Sta
     if (state == 0) throw StaffNotFound();  // if we did not find any of the given staves, throw exception
     return false;                           // otherwise just return "false"
 }
-
-// inserts the given attachable into the list, ordering by page
-void Document::add_attached(Movable* object, unsigned int page)
-{
-    for (std::list<Attached>::iterator i = attached.begin(); i != attached.end(); ++i)  // iterate all objects
-    {
-        if (i->page > page) // if we got the first object on the next page
-        {
-            attached.insert(i, Attached(page, object)); // insert as last object on the page
-            return;                                     // and return
-        };
-    };
-    attached.push_back(Attached(page, object)); // if we never found the given page, just append the object
-}
-
-// removes the attached object pointed to by the iterator (this invalidates the iterator)
-void Document::remove_attached(std::list<Attached>::iterator it)
-{
-    delete it->object;
-    attached.erase(it);
-}
-
-// destructor (deleting attached objects)
-Document::~Document()
-{
-    for (std::list<Attached>::iterator i = attached.begin(); i != attached.end(); ++i)
-    {
-        delete i->object;
-    };
-}
-

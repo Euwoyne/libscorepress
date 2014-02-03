@@ -244,14 +244,14 @@ void XMLDocumentReader::parse_document(Document& target)
             }
             
             // end tag </symbols>
-            else if (xmlStrEqual(tag, STR_CAST("symbols")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+            else if (xmlStrEqual(tag, STR_CAST("document")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
             {
                 // the info should end with that
                 state = END;
             }
             
             // any other tag is illegal here
-            else mythrow("Expected one of <info>, <sprites> or </symbols> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+            else mythrow("Expected one of <meta>, <spritesets> or </documnet> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
             break;
         
         //  <meta> information

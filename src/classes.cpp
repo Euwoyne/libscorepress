@@ -69,6 +69,27 @@ const std::string ScorePress::classname(Class::classType type)
     };
 }
 
+void AttachedObject::render_decor(Renderer& renderer, const Plate_pAttachable& object, const PressState& state) const
+{
+    // render a boundary box
+    renderer.set_line_width(1.0);
+    renderer.set_color(static_cast<unsigned char>(state.parameters.decor_color & 0xFF),
+                       static_cast<unsigned char>((state.parameters.decor_color >> 8) & 0xFF),
+                       static_cast<unsigned char>((state.parameters.decor_color >> 16) & 0xFF),
+                       static_cast<unsigned char>((state.parameters.decor_color >> 24) & 0xFF));
+    renderer.move_to((state.scale(object.gphBox.pos.x) + state.offset.x) / 1000.0,
+                     (state.scale(object.gphBox.pos.y) + state.offset.y) / 1000.0);
+    renderer.line_to((state.scale(object.gphBox.pos.x + object.gphBox.width) + state.offset.x) / 1000.0,
+                     (state.scale(object.gphBox.pos.y) + state.offset.y) / 1000.0);
+    renderer.line_to((state.scale(object.gphBox.pos.x + object.gphBox.width)  + state.offset.x) / 1000.0,
+                     (state.scale(object.gphBox.pos.y + object.gphBox.height) + state.offset.y) / 1000.0);
+    renderer.line_to((state.scale(object.gphBox.pos.x) + state.offset.x) / 1000.0,
+                     (state.scale(object.gphBox.pos.y + object.gphBox.height) + state.offset.y) / 1000.0);
+    renderer.line_to((state.scale(object.gphBox.pos.x) + state.offset.x) / 1000.0,
+                     (state.scale(object.gphBox.pos.y) + state.offset.y) / 1000.0);
+    renderer.stroke();
+}
+
 // rendering method (SpriteObject)
 void SpriteObject::render(Renderer& renderer, const Plate::pAttachable& object, const PressState& state) const
 {
@@ -713,15 +734,15 @@ static bool engrave_head(Head&          head,           // head to be engraved
     if (head.accidental.force || (!no_accidental && staffctx.acc_visible(head)))    // check for visibility
     {
         // create attachable
-        target.attachables.push_back(Plate::pNote::AttachablePtr(new Plate::pAttachable(head.accidental, unscaledPos)));
+        target.attached.push_back(Plate::pNote::AttachablePtr(new Plate::pAttachable(head.accidental, unscaledPos)));
         
         // get sprite-id
-        target.attachables.back()->sprite = Pick::sprite_id(sprites, head.accidental);
+        target.attached.back()->sprite = Pick::sprite_id(sprites, head.accidental);
         
         // get sprite and calculate scale factor
-        const SpriteInfo& sprite = sprites[target.attachables.back()->sprite];
+        const SpriteInfo& sprite = sprites[target.attached.back()->sprite];
         double scale  = head_height /
-                        (sprites.head_height(target.attachables.back()->sprite) * 1000.0);
+                        (sprites.head_height(target.attached.back()->sprite) * 1000.0);
         double head_width = 1000.0 * scale * sprites.head_width(target.sprite);
                scale *= head.accidental.appearance.scale / 1000.0;
         
@@ -733,12 +754,12 @@ static bool engrave_head(Head&          head,           // head to be engraved
         offset   = _round(sprite.get_real("offset") * 1000 * scale);
         
         // apply position offset
-        target.attachables.back()->absolutePos.x -= _round((head.accidental.offset_x * head_width) / 1000.0);
-        target.attachables.back()->absolutePos.x -= _round(sprite.width * 1000 * scale + anchor.x + offset);
-        target.attachables.back()->absolutePos.y -= anchor.y;
+        target.attached.back()->absolutePos.x -= _round((head.accidental.offset_x * head_width) / 1000.0);
+        target.attached.back()->absolutePos.x -= _round(sprite.width * 1000 * scale + anchor.x + offset);
+        target.attached.back()->absolutePos.y -= anchor.y;
         
         // apply offsets due to sprite scaling
-        target.attachables.back()->absolutePos.y += _round(((1.0 - head.accidental.appearance.scale / 1000.0) * head_height) / 2.0);
+        target.attached.back()->absolutePos.y += _round(((1.0 - head.accidental.appearance.scale / 1000.0) * head_height) / 2.0);
         
         // add accidental space
         if (engraver.has_accidental_space())
@@ -756,10 +777,10 @@ static bool engrave_head(Head&          head,           // head to be engraved
                 const mpx_t minpos = voice.context.get_buffer_xpos() + engraver.min_distance();
                 
                 // if it's too close to the current object...
-                if (minpos > target.attachables.back()->absolutePos.x)
+                if (minpos > target.attached.back()->absolutePos.x)
                 {
                     // ...add neccessary distance
-                    engraver.add_offset(minpos - target.attachables.back()->absolutePos.x);
+                    engraver.add_offset(minpos - target.attached.back()->absolutePos.x);
                 };
             }
             else if (voice.context.get_buffer()->is(Class::BARLINE))    // barline
@@ -768,10 +789,10 @@ static bool engrave_head(Head&          head,           // head to be engraved
                 const mpx_t minpos = voice.context.get_buffer_xpos() + engraver.barline_distance();
                 
                 // if it's too close to the current object...
-                if (minpos > target.attachables.back()->absolutePos.x)
+                if (minpos > target.attached.back()->absolutePos.x)
                 {
                     // ...add neccessary distance
-                    engraver.add_offset(minpos - target.attachables.back()->absolutePos.x);
+                    engraver.add_offset(minpos - target.attached.back()->absolutePos.x);
                 };
             }
             else if (voice.context.get_buffer()->is(Class::NOTEOBJECT))    // regular note-object
@@ -782,24 +803,24 @@ static bool engrave_head(Head&          head,           // head to be engraved
                     const mpx_t minpos = voice.context.get_buffer_xpos() + engraver.min_distance();
                     
                     // if it's too close to the current object...
-                    if (minpos > target.attachables.back()->absolutePos.x)
+                    if (minpos > target.attached.back()->absolutePos.x)
                     {
                         // ...add neccessary distance
-                        engraver.add_offset(minpos - target.attachables.back()->absolutePos.x);
+                        engraver.add_offset(minpos - target.attached.back()->absolutePos.x);
                     };
                 };
             };
         }
-        else if (target.attachables.back()->absolutePos.x < engraver.min_distance())
+        else if (target.attached.back()->absolutePos.x < engraver.min_distance())
         {
             // add neccessary distance
-            engraver.add_offset(engraver.min_distance() - target.attachables.back()->absolutePos.x);
+            engraver.add_offset(engraver.min_distance() - target.attached.back()->absolutePos.x);
         };
         
         // calculate the accidental's graphical boundaries
-        target.attachables.back()->gphBox.pos = target.attachables.back()->absolutePos;
-        target.attachables.back()->gphBox.width = _round(sprite.width * 1000 * scale);
-        target.attachables.back()->gphBox.height = _round(sprite.height * 1000 * scale);
+        target.attached.back()->gphBox.pos = target.attached.back()->absolutePos;
+        target.attached.back()->gphBox.width = _round(sprite.width * 1000 * scale);
+        target.attached.back()->gphBox.height = _round(sprite.height * 1000 * scale);
     };
     
     // return cluster-indicator
@@ -928,8 +949,8 @@ void Chord::engrave(EngraverState& engraver) const
         };
         
         // correct accidental position and incorporate the accidental's graphical boundaries into the chord's
-        Plate::pNote::AttachableList::iterator j = pnote.attachables.begin();
-        for (Plate::pNote::AttachableList::iterator i = pnote.attachables.begin(); i != pnote.attachables.end(); ++i)
+        Plate::pNote::AttachableList::iterator j = pnote.attached.begin();
+        for (Plate::pNote::AttachableList::iterator i = pnote.attached.begin(); i != pnote.attached.end(); ++i)
         {
             if (i != j && (*i)->gphBox.overlaps((*j)->gphBox))
             {
@@ -1007,8 +1028,8 @@ void Chord::engrave(EngraverState& engraver) const
         };
         
         // correct accidental position and incorporate the accidental's graphical boundaries into the chord's
-        Plate::pNote::AttachableList::reverse_iterator j = pnote.attachables.rbegin();
-        for (Plate::pNote::AttachableList::reverse_iterator i = pnote.attachables.rbegin(); i != pnote.attachables.rend(); ++i)
+        Plate::pNote::AttachableList::reverse_iterator j = pnote.attached.rbegin();
+        for (Plate::pNote::AttachableList::reverse_iterator i = pnote.attached.rbegin(); i != pnote.attached.rend(); ++i)
         {
             if (stem_info.cluster)
             {
@@ -1220,7 +1241,7 @@ void Chord::engrave(EngraverState& engraver) const
         artoffset   = _round(artsprite.get_real("offset") * scale * this->appearance.scale);
         
         // create attachable
-        pnote.attachables.push_back(
+        pnote.attached.push_back(
             Plate::pNote::AttachablePtr(
                 new Plate::pAttachable(*i,  // articulation object
                     Position<mpx_t>(        // calculate position
@@ -1260,14 +1281,14 @@ void Chord::engrave(EngraverState& engraver) const
         );
         
         // save sprite to plate
-        pnote.attachables.back()->sprite = i->sprite.ready() ?
+        pnote.attached.back()->sprite = i->sprite.ready() ?
                                                i->sprite :
                                                SpriteId(0, sprites[0].undefined_symbol);
         
         // calculate graphical boundaries
-        pnote.attachables.back()->gphBox.pos = pnote.attachables.back()->absolutePos;
-        pnote.attachables.back()->gphBox.width = _round(artsprite.width * scale * chord_scale * i->appearance.scale);
-        pnote.attachables.back()->gphBox.height = _round(artsprite.height * scale * chord_scale * i->appearance.scale);
+        pnote.attached.back()->gphBox.pos = pnote.attached.back()->absolutePos;
+        pnote.attached.back()->gphBox.width = _round(artsprite.width * scale * chord_scale * i->appearance.scale);
+        pnote.attached.back()->gphBox.height = _round(artsprite.height * scale * chord_scale * i->appearance.scale);
     };
     };
     

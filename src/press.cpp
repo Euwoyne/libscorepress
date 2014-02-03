@@ -84,7 +84,7 @@ void Press::render(Renderer& renderer, const Plate::pNote& note)
     };
     
     // render attachables
-    for (Plate::pNote::AttachableList::const_iterator i = note.attachables.begin(); i != note.attachables.end(); ++i)
+    for (Plate::pNote::AttachableList::const_iterator i = note.attached.begin(); i != note.attached.end(); ++i)
     {
         (*i)->object->render(renderer, **i, state);
         if (parameters.draw_attachbounds) draw_boundaries(renderer, **i, parameters.attachbounds_color, state.offset);
@@ -333,10 +333,10 @@ void Press::render(Renderer& renderer, const Pageset::pPage& page, const Pageset
     state.head_height = pageset.head_height;
     
     // render attachables
-    for (std::list<Plate::pAttachable>::const_iterator i = page.attachables.begin(); i != page.attachables.end(); ++i)
+    for (std::list<RefPtr<Plate_pAttachable> >::const_iterator i = page.attached.begin(); i != page.attached.end(); ++i)
     {
-        i->object->render(renderer, *i, state);
-        if (parameters.draw_attachbounds) draw_boundaries(renderer, *i, parameters.attachbounds_color, offset);
+        (*i)->object->render(renderer, **i, state);
+        if (parameters.draw_attachbounds) draw_boundaries(renderer, **i, parameters.attachbounds_color, offset);
     };
 }
 
@@ -420,5 +420,12 @@ void Press::render(Renderer& renderer, const UserCursor& cursor, const Position<
         renderer.line_to((scale(x) + offset.x) / 1000.0, (scale(y + h) + offset.y) / 1000.0);
         renderer.stroke();
     };
+}
+
+void Press::render(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t> offset) throw (InvalidRendererException)
+{
+    state.offset = offset;
+    cursor.get_object().render_decor(renderer, cursor.get_pobject(), state);
+    // TODO: draw note node
 }
 

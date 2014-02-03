@@ -139,10 +139,12 @@ class SCOREPRESS_API UserCursor : public Logging
     void set_pos(Pageset::Iterator, Position<mpx_t>, const ViewportParam&); // set cursor to graphical position (on given page, at 100% Zoom)
     
     // access methods
+    const Document&       get_document()  const;                            // return the document
     const Score&          get_score()     const;                            // return the score-object
     const Staff&          get_staff()     const throw(NotValidException);   // return the staff
     const Voice&          get_voice()     const throw(NotValidException);   // return the voice
     const Cursor&         get_cursor()    const throw(NotValidException);   // return the score-cursor
+    const MovableList&    get_attached()  const throw(NotValidException);   // return objects attached to the note
     
           unsigned int    get_pageno()    const;                            // return the page-number
     const Pageset::pPage& get_page()      const;                            // return the page
@@ -160,9 +162,9 @@ class SCOREPRESS_API UserCursor : public Logging
     size_t staff_voice_count() const throw(NotValidException);  // return the number of voices (in staff)
     
     // layout access
-    const Newline&        get_layout()    const throw(NotValidException);   // return the line layout
-    const ScoreDimension& get_dimension() const throw(NotValidException);   // return the score dimension
-    const MovableList&    get_attached()  const throw(NotValidException);   // return objects attached to the page
+    const Newline&        get_layout()        const throw(NotValidException);   // return the line layout
+    const ScoreDimension& get_dimension()     const throw(NotValidException);   // return the score dimension
+    const MovableList&    get_page_attached() const throw(NotValidException);   // return objects attached to the page
     
     // direction checkers (indicate, if the respective movement would throw an "InvalidMovement" exception)
     bool has_prev()       const throw(NotValidException);       // check, if the cursor can be decremented
@@ -188,8 +190,9 @@ class SCOREPRESS_API UserCursor : public Logging
     StaffContext get_staff_context() const throw(NotValidException);    // context without local accidentals
     
     // is the cursor valid?
-    bool ready() const;
-    bool has_score() const;
+    bool ready() const;         // is the cursor ready to be dereferenced?
+    bool has_score() const;     // is a score set?
+    void reset();               // invalidate cursor
     
     // graphical representation
     mpx_t graphical_x() const                                   throw(NotValidException);   // horizontal position
@@ -211,11 +214,12 @@ inline const Newline& UserCursor::VoiceCursor::get_layout() const
 inline void UserCursor::set_score(Document::Score& _score) throw (Error)            {set_score(_score.score, _score.start_page);}
 inline void UserCursor::set_pos(Position<mpx_t> pos, const ViewportParam& viewport) {set_pos(page, pos, viewport);}
 
-inline const Score&          UserCursor::get_score()  const {return *score;}
-inline       unsigned int    UserCursor::get_pageno() const {return page->plates.front().pageno;}
-inline const Pageset::pPage& UserCursor::get_page()   const {return *page;}
-inline const Plate&          UserCursor::get_plate()  const {return *plateinfo->plate;}
-inline const Plate::pLine&   UserCursor::get_line()   const {return *line;}
+inline const Document&       UserCursor::get_document() const {return *document;}
+inline const Score&          UserCursor::get_score()    const {return *score;}
+inline       unsigned int    UserCursor::get_pageno()   const {return page->plates.front().pageno;}
+inline const Pageset::pPage& UserCursor::get_page()     const {return *page;}
+inline const Plate&          UserCursor::get_plate()    const {return *plateinfo->plate;}
+inline const Plate::pLine&   UserCursor::get_line()     const {return *line;}
 
 inline bool   UserCursor::ready()       const {return (score != NULL && cursor != vcursors.end());}
 inline bool   UserCursor::has_score()   const {return (score != NULL);}

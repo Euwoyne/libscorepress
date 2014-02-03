@@ -487,7 +487,11 @@ UserCursor::UserCursor(const UserCursor& _cursor) : document(_cursor.document), 
 // initialize the cursor at the beginning of a given score
 void UserCursor::set_score(Score& _score, unsigned int start_page) throw(Error)
 {
-    score = &_score;                                    // set score reference
+    // try to find score in the document
+    for (Document::ScoreList::const_iterator s = document->scores.begin(); s != document->scores.end(); ++s)
+        if (&s->score == &_score) score = &_score;      // set score reference
+    if (score != &_score) goto on_error;
+    
     page = pageset->get_page(start_page);               // get first page
     if (page == pageset->pages.end()) goto on_error;    // skip to error handling
     {
@@ -602,6 +606,13 @@ const Cursor& UserCursor::get_cursor() const throw(NotValidException)
     return cursor->note;
 }
 
+// return objects attached to the note
+const MovableList& UserCursor::get_attached() const throw(NotValidException)
+{
+    if (cursor == vcursors.end())     throw NotValidException();
+    return cursor->note->get_visible().attached;
+}
+
 // return the on-plate voice
 const Plate::pVoice& UserCursor::get_pvoice() const throw(NotValidException)
 {
@@ -633,7 +644,7 @@ const ScoreDimension& UserCursor::get_dimension() const throw(NotValidException)
 }
 
 // return objects attached to the page
-const MovableList& UserCursor::get_attached() const throw(NotValidException)
+const MovableList& UserCursor::get_page_attached() const throw(NotValidException)
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).attached
@@ -1033,6 +1044,15 @@ StaffContext UserCursor::get_staff_context() const throw(NotValidException)
     
     // return calculated context
     return out_ctx;
+}
+
+// invalidate the cursor
+void UserCursor::reset()
+{
+    score = NULL;
+    plateinfo = NULL;
+    vcursors.clear();
+    cursor = vcursors.end();
 }
 
 

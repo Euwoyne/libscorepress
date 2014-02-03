@@ -89,12 +89,21 @@ class SCOREPRESS_API EditCursor : public UserCursor
     EditCursor(Document& doc, Pageset& pset, const InterfaceParam& param);
     EditCursor(Document& doc, Pageset& pset, const InterfaceParam& param, Engraver& engraver);
     
+    // access methods (non-constant)
+    MovableList&                  get_attached()  throw(NotValidException); // return objects attached to the note
+    Plate::pNote::AttachableList& get_pattached() throw(NotValidException); // return on-plate attached-object info
+    
+    // layout access (non-constant)
+    Newline&        get_layout()        throw(NotValidException);   // return the line layout
+    ScoreDimension& get_dimension()     throw(NotValidException);   // return the score dimension
+    MovableList&    get_page_attached() throw(NotValidException);   // return objects attached to the page
+    
     // engraver interface
-    bool has_engraver() const;
-    void set_engraver(Engraver& engraver);
-    void remove_engraver();
-    Engraver& get_engraver();
-    const Engraver& get_engraver() const;
+    bool has_engraver() const;                  // does the object have an associated engraver?
+    void set_engraver(Engraver& engraver);      // associate an engrtaver instance with this object
+    void remove_engraver();                     // remove engraver reference
+    Engraver& get_engraver();                   // get engraver instance
+    const Engraver& get_engraver() const;       // get engraver instance (constant)
     
     // reengrave the score and update this cursor (all iterators and pVoice::begin must be valid when calling this!)
     void reengrave(const MoveMode& mode = NONE) throw(NoScoreException, Error);
@@ -117,15 +126,12 @@ class SCOREPRESS_API EditCursor : public UserCursor
     // voice control
     void add_voice() throw(NotValidException, Cursor::IllegalObjectTypeException);  // add empty voice
     
-    // get the line layout object (non-constant)
-    const Newline& get_layout() const throw(NotValidException);
-    
     // stem control
     void add_stem_length(int pohh) throw(Cursor::IllegalObjectTypeException);
     void set_stem_length(int pohh) throw(Cursor::IllegalObjectTypeException);
     void add_stem_slope(int pohh)  throw(Cursor::IllegalObjectTypeException);
     void set_stem_slope(int pohh)  throw(Cursor::IllegalObjectTypeException);
-    void set_stem_dir(bool down)  throw(Cursor::IllegalObjectTypeException);
+    void set_stem_dir(bool down)   throw(Cursor::IllegalObjectTypeException);
     
     void set_stem_length_auto()   throw(Cursor::IllegalObjectTypeException);
     void set_stem_dir_auto()      throw(Cursor::IllegalObjectTypeException);
@@ -134,6 +140,7 @@ class SCOREPRESS_API EditCursor : public UserCursor
     void set_accidental_auto()  throw(Cursor::IllegalObjectTypeException);
 };
 
+// engraver interface
 inline bool            EditCursor::has_engraver() const              {return engraver;}
 inline void            EditCursor::set_engraver(Engraver& _engraver) {engraver = &_engraver;}
 inline void            EditCursor::remove_engraver()                 {engraver = NULL;}

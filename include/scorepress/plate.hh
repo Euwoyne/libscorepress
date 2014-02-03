@@ -191,7 +191,7 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     PositionList   dotPos;          // positions for each dot
     LedgerLineList ledgers;         // ledger lines
     TieList        ties;            // attached ties
-    AttachableList attachables;     // list of attached objects
+    AttachableList attached;        // list of attached objects
     VirtualPtr     virtual_obj;     // virtual object
     
     Stem           stem;                    // stem information

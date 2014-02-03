@@ -185,6 +185,7 @@ class SCOREPRESS_API AttachedObject : virtual public Class
  protected: AttachedObject() {};
  public:
     virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
+    virtual void render_decor(Renderer& renderer, const Plate_pAttachable&, const PressState&) const;
     virtual bool is(classType type) const {return (type == ATTACHEDOBJECT);};
     virtual classType classtype() const {return ATTACHEDOBJECT;};
     virtual AttachedObject* clone() const = 0;

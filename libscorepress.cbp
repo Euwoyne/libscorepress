@@ -234,6 +234,13 @@
 			<Option target="install-static" />
 			<Option target="clear" />
 		</Unit>
+		<Unit filename="include/scorepress/object_cursor.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="uninstall" />
+		</Unit>
 		<Unit filename="include/scorepress/pageset.hh">
 			<Option target="shared" />
 			<Option target="static" />
@@ -394,6 +401,13 @@
 		<Unit filename="src/main.cpp">
 			<Option target="shared" />
 			<Option target="static" />
+		</Unit>
+		<Unit filename="src/object_cursor.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="uninstall" />
 		</Unit>
 		<Unit filename="src/pageset.cpp">
 			<Option target="shared" />

@@ -309,7 +309,7 @@ void EngraverState::apply_offsets()
 void EngraverState::begin_durable(const Durable& source, DurableInfo& target, const Plate::pVoice& voice, Plate::pNote& note)
 {
     // calculate first node position
-    note.attachables.push_back(
+    note.attached.push_back(
     Plate::pNote::AttachablePtr(new Plate::pDurable(
         source,
         Position<mpx_t>(_round(
@@ -329,7 +329,7 @@ void EngraverState::begin_durable(const Durable& source, DurableInfo& target, co
     
     // initialize durable-information to wait for the end-position
     target.source = &source;
-    target.target = &static_cast<Plate::pDurable&>(*note.attachables.back());
+    target.target = &static_cast<Plate::pDurable&>(*note.attached.back());
     target.durationcountdown = source.duration - 1;
 }
 
@@ -576,7 +576,7 @@ void EngraverState::engrave_attachables()
                 // append attachable
                 else
                 {
-                    it->attachables.push_back(
+                    it->attached.push_back(
                         Plate::pNote::AttachablePtr(new Plate::pAttachable(**i,
                         Position<mpx_t>(_round(
                             ((*i)->typeX == Movable::PAGE)   ? viewport->umtopx_h((*i)->position.x) : (
@@ -597,10 +597,10 @@ void EngraverState::engrave_attachables()
                     if ((*i)->is(Class::TEXTAREA))
                     {
                         const TextArea& obj = static_cast<const TextArea&>(**i);
-                        it->attachables.back()->gphBox.pos = it->attachables.back()->absolutePos;
-                        it->attachables.back()->gphBox.width =
+                        it->attached.back()->gphBox.pos = it->attached.back()->absolutePos;
+                        it->attached.back()->gphBox.width =
                             _round((viewport->umtopx_h(obj.width) * obj.appearance.scale) / 1000.0);
-                        it->attachables.back()->gphBox.height =
+                        it->attached.back()->gphBox.height =
                             _round((viewport->umtopx_h(obj.height) * obj.appearance.scale) / 1000.0);
                     }
                     else if ((*i)->is(Class::CUSTOMSYMBOL))
@@ -615,9 +615,9 @@ void EngraverState::engrave_attachables()
                         const double scale =  (head_height / sprites->head_height(sprite_id))
                                             * (obj.appearance.scale / 1000.0);
                         
-                        it->attachables.back()->gphBox.pos    = it->attachables.back()->absolutePos;
-                        it->attachables.back()->gphBox.width  = _round(scale * (*sprites)[sprite_id].width);
-                        it->attachables.back()->gphBox.height = _round(scale * (*sprites)[sprite_id].height);
+                        it->attached.back()->gphBox.pos    = it->attached.back()->absolutePos;
+                        it->attached.back()->gphBox.width  = _round(scale * (*sprites)[sprite_id].width);
+                        it->attached.back()->gphBox.height = _round(scale * (*sprites)[sprite_id].height);
                     };
                 };
             };
@@ -1011,7 +1011,7 @@ void EngraverState::calculate_gphBox(Plate::pLine& line)
         {
             line.gphBox.extend(pnote->gphBox);
             
-            for (Plate::pNote::AttachableList::iterator a = pnote->attachables.begin(); a != pnote->attachables.end(); ++a)
+            for (Plate::pNote::AttachableList::iterator a = pnote->attached.begin(); a != pnote->attached.end(); ++a)
                 line.gphBox.extend((*a)->gphBox);
         };
     };
@@ -1221,10 +1221,7 @@ bool EngraverState::engrave_next()
     if (pagebreak)
     {
         if (++page == pageset->pages.end())
-        {
-            pageset->pages.push_back(Pageset::pPage());
-            page = --pageset->pages.end();
-        };
+            page = pageset->add_page();
         page->plates.push_back(Pageset::PlateInfo(++pagecnt, plateinfo->start_page, pick.get_score(), dimtopx(pick.get_dimension())));
         plateinfo = --page->plates.end();
         plate = page->plates.back().plate;

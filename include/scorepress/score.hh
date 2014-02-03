@@ -128,24 +128,12 @@ class SCOREPRESS_API Document
         Score(unsigned int _page) : start_page(_page) {};
     };
     
-    // attachable object on the page
-    class Attached
-    {
-     public:
-        unsigned int page;  // page which the object is attached to
-        Movable* object;    // attached object
-        
-        Attached(unsigned int _page, Movable* _object) : page(_page), object(_object) {};
-    };
-    
     // list typedefs
-    typedef std::list<Attached> AttachedList;
-    typedef std::list<Score>    ScoreList;
-    
- private:
-    AttachedList   attached;        // objects attached to the document
+    typedef std::map<unsigned int, MovableList> AttachedMap;
+    typedef std::list<Score>                    ScoreList;
     
  public:
+    AttachedMap    attached;        // objects attached to the document
     PageDimension  page_layout;     // page layout
     ScoreList      scores;          // scores within the document
     DocumentMeta   meta;            // meta information
@@ -157,14 +145,10 @@ class SCOREPRESS_API Document
  public:
     // attached object interface
     void add_attached(Movable* object, unsigned int page);  // adds attachable (ownership transferred to this instance)
-    void remove_attached(std::list<Attached>::iterator it); // removes attached object (this invalidates the iterator)
-    const std::list<Attached>& get_attached() const;        // returns an iterator for the attached objects
-    
-    // destructor (deleting attached objects)
-    virtual ~Document();
 };
 
-inline const std::list<Document::Attached>& Document::get_attached() const {return attached;}
+inline void Document::add_attached(Movable* object, unsigned int page) {
+    attached[page].push_back(MovablePtr(object));}
 
 } // end namespace
 
