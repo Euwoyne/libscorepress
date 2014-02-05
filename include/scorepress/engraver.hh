@@ -20,7 +20,7 @@
 #ifndef SCOREPRESS_ENGRAVER_HH
 #define SCOREPRESS_ENGRAVER_HH
 
-#include "score.hh"        // Document, Score
+#include "document.hh"     // Document, Score
 #include "pageset.hh"      // Pageset
 #include "sprites.hh"      // Sprites
 #include "parameters.hh"   // EngraverParam, StyleParam, ViewportParam

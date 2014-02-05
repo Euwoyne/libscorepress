@@ -57,7 +57,7 @@ void EngraverState::engrave()
         else    // for a sub-voice
         {
             std::list<Plate::pVoice>::iterator parent   // get parent voice
-                = pline->get_voice(*static_cast<const SubVoice&>(cursor.voice()).parent);
+                = pline->get_voice(static_cast<const SubVoice&>(cursor.voice()).get_parent());
             
             if (parent != pline->voices.end())  // if it exists
             {
@@ -96,7 +96,7 @@ void EngraverState::engrave()
         if (!got_ctx && cursor.is_sub())    // if no context found and parent-voice exists
         {
             std::list<Plate::pVoice>::iterator parent;     // parent voice
-            parent = pline->get_voice(*static_cast<const SubVoice&>(cursor.voice()).parent); // get parent
+            parent = pline->get_voice(static_cast<const SubVoice&>(cursor.voice()).get_parent()); // get parent
             
             if (parent != pline->voices.end())  // if we got the parent voice
             {
@@ -106,7 +106,7 @@ void EngraverState::engrave()
             }
             else if (pline != plate->lines.begin()) // else try to find it in the previous line
             {
-                parent = (--pline)->get_voice(*static_cast<const SubVoice&>(cursor.voice()).parent);
+                parent = (--pline)->get_voice(static_cast<const SubVoice&>(cursor.voice()).get_parent());
                 if (parent != pline->voices.end())  // if it exists
                 {
                     pvoice->context = parent->context;  // copy the context

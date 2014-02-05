@@ -39,6 +39,13 @@ Cursor::IllegalObjectTypeException::IllegalObjectTypeException()
 // constructors for the "Cursor" class
 Cursor::Cursor() : _staff(NULL), _voice(NULL) {}
 Cursor::Cursor(Staff& s) : _staff(&s), _voice(&s), _main(s.notes.begin()) {}
+Cursor::Cursor(SubVoice& v) : _voice(&v), _sub(v.notes.begin())
+{
+    Voice* s = &v.get_parent();
+    while (s->is(Class::SUBVOICE))
+        s = &static_cast<SubVoice*>(s)->get_parent();
+    _staff = static_cast<Staff*>(s);
+}
 Cursor::Cursor(Staff& s, SubVoice& v) : _staff(&s), _voice(&v), _sub(v.notes.begin()) {}
 
 // increment operator; move cursor to the next note (prefix)
@@ -81,7 +88,7 @@ void Cursor::reset()
 // set cursor to the voice's end
 void Cursor::to_end()
 {
-    if (_staff == _voice) _main = static_cast<MainVoice*>(_voice)->notes.end();
+    if (_staff == _voice) _main = static_cast<Staff*>(_voice)->notes.end();
                           _sub  = static_cast<SubVoice*>(_voice)->notes.end();
 }
 
@@ -91,8 +98,8 @@ size_t Cursor::index() const
     size_t out = 0;
     if (_staff == _voice)
     {
-        for (StaffObjectList::const_iterator i  = static_cast<MainVoice*>(_voice)->notes.begin();
-             i != static_cast<MainVoice*>(_voice)->notes.end() && i != _main;
+        for (StaffObjectList::const_iterator i  = static_cast<Staff*>(_voice)->notes.begin();
+             i != static_cast<Staff*>(_voice)->notes.end() && i != _main;
              ++i)
             ++out;
         return out;
@@ -110,7 +117,7 @@ size_t Cursor::index() const
 // return the length of the voice
 size_t Cursor::voice_length() const
 {
-    if (_staff == _voice) return static_cast<MainVoice*>(_voice)->notes.size();
+    if (_staff == _voice) return static_cast<Staff*>(_voice)->notes.size();
     else                  return static_cast<SubVoice*>(_voice)->notes.size();
 }
 
@@ -146,21 +153,21 @@ bool Cursor::operator != (const const_Cursor& cursor) const
 // check, whether cursor can be incremented
 bool Cursor::has_next() const
 {
-    return (_staff == _voice) ? _main != --static_cast<MainVoice*>(_voice)->notes.end()
+    return (_staff == _voice) ? _main != --static_cast<Staff*>(_voice)->notes.end()
                               : _sub  != --static_cast<SubVoice*>(_voice)->notes.end();
 }
 
 // check, whether cursor can be decremented
 bool Cursor::has_prev() const
 {
-    return (_staff == _voice) ? _main != static_cast<MainVoice*>(_voice)->notes.begin()
+    return (_staff == _voice) ? _main != static_cast<Staff*>(_voice)->notes.begin()
                               : _sub  != static_cast<SubVoice*>(_voice)->notes.begin();
 }
 
 // check, if the cursor is at the end
 bool Cursor::at_end() const
 {
-    return (_staff == _voice) ? _main == static_cast<MainVoice*>(_voice)->notes.end()
+    return (_staff == _voice) ? _main == static_cast<Staff*>(_voice)->notes.end()
                               : _sub  == static_cast<SubVoice*>(_voice)->notes.end();
 }
 
@@ -170,6 +177,17 @@ void Cursor::set(Staff& s)
     _main = s.notes.begin();
     _staff = &s;
     _voice = &s;
+}
+
+void Cursor::set(SubVoice& v)
+{
+    _sub = v.notes.begin();
+    _voice = &v;
+
+    Voice* s = &v.get_parent();
+    while (s->is(Class::SUBVOICE))
+        s = &static_cast<SubVoice*>(s)->get_parent();
+    _staff = static_cast<Staff*>(s);
 }
 
 void Cursor::set(Staff& s, SubVoice& v)
@@ -182,9 +200,9 @@ void Cursor::set(Staff& s, SubVoice& v)
 // insert object before the referenced one
 void Cursor::insert(StaffObject* const object) throw(IllegalObjectTypeException)
 {
-    if (_voice->is(Class::MAINVOICE))
+    if (_voice->is(Class::STAFF))
     {
-        _main = static_cast<MainVoice*>(_voice)->notes.insert(_main, StaffObjectPtr(object));
+        _main = static_cast<Staff*>(_voice)->notes.insert(_main, StaffObjectPtr(object));
     }
     else if (!object->is(Class::VOICEOBJECT)) throw IllegalObjectTypeException();
     else if (_voice->is(Class::SUBVOICE))
@@ -197,7 +215,7 @@ void Cursor::insert(StaffObject* const object) throw(IllegalObjectTypeException)
 void Cursor::remove()
 {
     if (at_end()) return;
-    if (_staff == _voice) static_cast<MainVoice*>(_voice)->notes.erase(_main++);
+    if (_staff == _voice) static_cast<Staff*>(_voice)->notes.erase(_main++);
     else                  static_cast<SubVoice*>(_voice)->notes.erase(_sub++);
 }
 
@@ -215,6 +233,13 @@ void Cursor::remove()
 // constructors for the "const_Cursor" class
 const_Cursor::const_Cursor() : _staff(NULL), _voice(NULL) {}
 const_Cursor::const_Cursor(const Staff& s) : _staff(&s), _voice(&s), _main(s.notes.begin()) {}
+const_Cursor::const_Cursor(const SubVoice& v) : _voice(&v), _sub(v.notes.begin())
+{
+    const Voice* s = &v.get_parent();
+    while (s->is(Class::SUBVOICE))
+        s = &static_cast<const SubVoice*>(s)->get_parent();
+    _staff = static_cast<const Staff*>(s);
+}
 const_Cursor::const_Cursor(const Staff& s, const SubVoice& v) : _staff(&s), _voice(&v), _sub(v.notes.begin()) {}
 const_Cursor::const_Cursor(const Cursor& c) : _staff(c._staff), _voice(c._voice), _main(c._main), _sub(c._sub) {}
 
@@ -258,7 +283,7 @@ void const_Cursor::reset()
 // set cursor to the voice's end
 void const_Cursor::to_end()
 {
-    if (_staff == _voice) _main = static_cast<const MainVoice*>(_voice)->notes.end();
+    if (_staff == _voice) _main = static_cast<const Staff*>(_voice)->notes.end();
                           _sub  = static_cast<const SubVoice*>(_voice)->notes.end();
 }
 
@@ -268,8 +293,8 @@ size_t const_Cursor::index() const
     size_t out = 0;
     if (_staff == _voice)
     {
-        for (StaffObjectList::const_iterator i  = static_cast<const MainVoice*>(_voice)->notes.begin();
-             i != static_cast<const MainVoice*>(_voice)->notes.end() && i != _main;
+        for (StaffObjectList::const_iterator i  = static_cast<const Staff*>(_voice)->notes.begin();
+             i != static_cast<const Staff*>(_voice)->notes.end() && i != _main;
              ++i, ++out);
         return out;
     }
@@ -285,7 +310,7 @@ size_t const_Cursor::index() const
 // return the length of the voice
 size_t const_Cursor::voice_length() const
 {
-    if (_staff == _voice) return static_cast<const MainVoice*>(_voice)->notes.size();
+    if (_staff == _voice) return static_cast<const Staff*>(_voice)->notes.size();
     else                  return static_cast<const SubVoice*>(_voice)->notes.size();
 }
 
@@ -321,8 +346,8 @@ bool const_Cursor::operator != (const const_Cursor& cursor) const
 // check, whether cursor can be incremented
 bool const_Cursor::has_next() const
 {
-    return (_staff == _voice) ? (_main != --static_cast<const MainVoice*>(_voice)->notes.end() &&
-                                 _main !=   static_cast<const MainVoice*>(_voice)->notes.end())
+    return (_staff == _voice) ? (_main != --static_cast<const Staff*>(_voice)->notes.end() &&
+                                 _main !=   static_cast<const Staff*>(_voice)->notes.end())
                               : (_sub  != --static_cast<const SubVoice*>(_voice)->notes.end()  &&
                                  _sub  !=   static_cast<const SubVoice*>(_voice)->notes.end());
 }
@@ -330,14 +355,14 @@ bool const_Cursor::has_next() const
 // check, whether cursor can be decremented
 bool const_Cursor::has_prev() const
 {
-    return (_staff == _voice) ? _main != static_cast<const MainVoice*>(_voice)->notes.begin()
+    return (_staff == _voice) ? _main != static_cast<const Staff*>(_voice)->notes.begin()
                               : _sub  != static_cast<const SubVoice*>(_voice)->notes.begin();
 }
 
 // check, if the cursor is at the end
 bool const_Cursor::at_end() const
 {
-    return (_staff == _voice) ? _main == static_cast<const MainVoice*>(_voice)->notes.end()
+    return (_staff == _voice) ? _main == static_cast<const Staff*>(_voice)->notes.end()
                               : _sub  == static_cast<const SubVoice*>(_voice)->notes.end();
 }
 
@@ -347,6 +372,17 @@ void const_Cursor::set(const Staff& s)
     _main = s.notes.begin();
     _staff = &s;
     _voice = &s;
+}
+
+void const_Cursor::set(const SubVoice& v)
+{
+    _sub = v.notes.begin();
+    _voice = &v;
+    
+    const Voice* s = &v.get_parent();
+    while (s->is(Class::SUBVOICE))
+        s = &static_cast<const SubVoice*>(s)->get_parent();
+    _staff = static_cast<const Staff*>(s);
 }
 
 void const_Cursor::set(const Staff& s, const SubVoice& v)

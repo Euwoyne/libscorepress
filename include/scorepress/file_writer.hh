@@ -22,7 +22,7 @@
 
 #include <string>        // std::string
 #include <vector>        // std::vector
-#include "score.hh"      // Document
+#include "document.hh"   // Document
 #include "parameters.hh" // EngraverParam, PressParam, StyleParam, InterfaceParam
 #include "error.hh"      // Error
 #include "export.hh"

@@ -22,7 +22,8 @@
 
 #include <list>             // std::list
 
-#include "cursor.hh"        // Cursor, Document
+#include "document.hh"      // Document
+#include "cursor.hh"        // Cursor
 #include "pageset.hh"       // Pageset, StaffContext, Plate, value_t
 #include "parameters.hh"    // ViewportParam
 #include "error.hh"         // Error, std::string

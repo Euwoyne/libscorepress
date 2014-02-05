@@ -27,6 +27,7 @@
 #include "refptr.hh"       // RefPtr
 #include "fraction.hh"     // Fraction
 #include "sprite_id.hh"    // SpriteId
+#include "parameters.hh"   // StyleParam
 #include "export.hh"
 
 namespace ScorePress
@@ -72,8 +73,8 @@ class SCOREPRESS_API TiedHead;      // note-head with tie-position information
 
 // VOICE STRUCTURE CLASSES
 class SCOREPRESS_API Voice;         // voice base type
-class SCOREPRESS_API MainVoice;     // main-voice; wrapper for a list of staff-objects
 class SCOREPRESS_API SubVoice;      // sub-voice; wrapper for a list of note-objects
+class SCOREPRESS_API Staff;         // staff; wrapper for a list of staff-objects
 
 // MOVABLE AND ATTACHABLE OBJECTS
 class SCOREPRESS_API Movable;         // base class for movable, attachable objects (position data)
@@ -94,12 +95,14 @@ typedef SmartPtr<Movable,     CloneTrait> MovablePtr;       // smart pointer to 
 typedef SmartPtr<Head,        CloneTrait> HeadPtr;          // smart pointer to head
 typedef SmartPtr<StaffObject, CloneTrait> StaffObjectPtr;   // smart pointer to staff-object
 typedef SmartPtr<VoiceObject, CloneTrait> VoiceObjectPtr;   // smart pointer to note-object
+typedef RefPtr<SubVoice>                  SubVoicePtr;      // smart pointer to sub-voice
 
 typedef std::list<MovablePtr>             MovableList;      // list of smart pointers to movable objects
 typedef std::list<HeadPtr>                HeadList;         // list of smart pointers to heads
 typedef std::list<Articulation>           ArticulationList; // list of articulation symbols
 typedef std::list<StaffObjectPtr>         StaffObjectList;  // list of smart pointers to staff-objects
 typedef std::list<VoiceObjectPtr>         VoiceObjectList;  // list of smart pointers to note-objects
+typedef std::list<SubVoicePtr>            SubVoiceList;     // list of smart pointers to sub-voices
 
 
 //
@@ -136,7 +139,7 @@ class SCOREPRESS_API Class
                     ACCIDENTAL, ARTICULATION,          // SPECIAL ATTACHED OBJECTS
                     HEAD, TIEDHEAD,                    // SPECIAL HEADS
                     
-                    VOICE, MAINVOICE,                  // VOICE STRUCTURE CLASSES
+                    VOICE, STAFF,                      // VOICE STRUCTURE CLASSES
                            SUBVOICE,
                     
                     MOVABLE, TEXTAREA, ANNOTATION,     // MOVABLE AND ATTACHABLE OBJECTS
@@ -395,8 +398,8 @@ class SCOREPRESS_API Pagebreak : public Newline
 class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
 {
  public:
-    RefPtr<SubVoice> subvoice;  // sub voice attached to this note
-    int staff_shift;            // note in different staff (if neq 0)
+    SubVoicePtr subvoice;   // sub voice attached to this note
+    int staff_shift;        // note in different staff (if neq 0)
     
     struct
     {
@@ -580,31 +583,51 @@ class SCOREPRESS_API Voice : public Class
     virtual Voice* clone() const = 0;
 };
 
-// main-voice; wrapper for a list of staff-objects
-class SCOREPRESS_API MainVoice : public Voice
-{
- public:
-    StaffObjectList notes;     // content of the voice
-    
- public:
-    virtual bool is(classType type) const {return ((type == MAINVOICE) || Voice::is(type));};
-    virtual classType classtype() const {return MAINVOICE;};
-    virtual MainVoice* clone() const {return new MainVoice(*this);};
-};
-
 // sub-voice; wrapper for a list of note-objects
 class SCOREPRESS_API SubVoice : public Voice
 {
+ private:
+    Voice* parent;         // parent voice (either a staff or another sub-voice)
+    
  public:
-    Voice* parent;         // parent voice (either a main-voice or another sub-voice)
     bool on_top;           // voice insertion direction (for cursor movement control)
     VoiceObjectList notes; // content of the voice (no staff objects; i.e. clefs and key/time signatures)
     
  public:
     SubVoice(Voice& _parent) : parent(&_parent), on_top(false) {};
+    Voice& get_parent() {return *parent;};
+    const Voice& get_parent() const {return *parent;};
     virtual bool is(classType type) const {return ((type == SUBVOICE) || Voice::is(type));};
     virtual classType classtype() const {return SUBVOICE;};
     virtual SubVoice* clone() const {return new SubVoice(*this);};
+};
+
+// staff; wrapper for a list of staff-objects
+class SCOREPRESS_API Staff : public Voice
+{
+ public:
+    typedef SmartPtr<StyleParam> StyleParamPtr;
+    
+ public:
+    StaffObjectList notes;      // content of the staff
+    SubVoiceList    subvoices;  // sub-voices associated with this staff
+    
+    int offset_y;               // in promille of head-height
+    
+    unsigned int head_height;   // in micrometer
+    unsigned int line_count;    // number of lines in this staff
+    bool long_barlines;         // draw barlines down to the next staff?
+    bool curlybrace;            // curly brace for connecting staves of one instrument?
+    bool bracket;               // angular bracket for grouping instruments?
+    unsigned int brace_pos;     // distance of the brace to the staff 
+    unsigned int bracket_pos;   // distance of the bracket to the staff
+    StyleParamPtr style;        // optional staff specific style parameters
+    Newline layout;             // staff layout on the first page
+    
+    Staff() : offset_y(0), head_height(10), line_count(5), long_barlines(false), curlybrace(false), bracket(false), brace_pos(500), bracket_pos(1000), style(NULL) {}
+    virtual bool is(classType type) const {return ((type == STAFF) || Voice::is(type));};
+    virtual classType classtype() const {return STAFF;};
+    virtual Staff* clone() const {return new Staff(*this);};
 };
 
 

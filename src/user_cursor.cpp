@@ -297,11 +297,11 @@ std::list<UserCursor::VoiceCursor>::iterator UserCursor::prepare_subvoice(const 
     };
     
     // prepare the parent voice
-    parent = find(*static_cast<const SubVoice&>(voice).parent); // find parent
+    parent = find(static_cast<const SubVoice&>(voice).get_parent()); // find parent
     
     if (parent == vcursors.end())                               // if there is no parent, prepare it
-        parent = prepare_subvoice(*static_cast<const SubVoice&>(voice).parent,
-                                  *line->get_voice(*static_cast<const SubVoice&>(voice).parent));
+        parent = prepare_subvoice(static_cast<const SubVoice&>(voice).get_parent(),
+                                  *line->get_voice(static_cast<const SubVoice&>(voice).get_parent()));
     
     if (parent == vcursors.end())                               // if the parent can not be prepared
     {                                                           //     abort!

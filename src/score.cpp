@@ -20,12 +20,6 @@
 #include "score.hh"     // Staff, Score, List, [score classes]
 using namespace ScorePress;
 
-// staff default constructor
-Staff::Staff() : offset_y(0), head_height(10), line_count(5),
-                 long_barlines(false), curlybrace(false), bracket(false),
-                 brace_pos(500), bracket_pos(1000),
-                 style(NULL) {}
-
 // get an iterator for a given staff
 std::list<Staff>::const_iterator Score::get_staff(const Staff& staff) const throw(StaffNotFound)
 {

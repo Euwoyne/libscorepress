@@ -72,7 +72,8 @@ PressParam::PressParam() : scale(1000),
                            virtualbounds_color(0xFF0000C0),
                            attachbounds_color(0xFFFF0000),
                            linebounds_color(0xFF00FF00),
-                           eov_color(0xFF800080) {}
+                           eov_color(0xFF800080),
+                           decor_color(0xFF0000FF) {}
 
 // interface parameters
 InterfaceParam::InterfaceParam() : input_base(LOWER_C),

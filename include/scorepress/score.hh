@@ -25,7 +25,7 @@
 #include "classes.hh"       // [score classes]
 #include "parameters.hh"    // StyleParam
 #include "smartptr.hh"      // SmartPtr
-#include "meta.hh"          // Meta, DocumentMeta
+#include "meta.hh"          // Meta
 #include "error.hh"         // Error
 #include "export.hh"
 
@@ -33,32 +33,8 @@ namespace ScorePress
 {
 //  CLASSES
 // ---------
-class SCOREPRESS_API Staff;        // staff object (inheriting one main-voice)
 class SCOREPRESS_API Score;        // score object (one musical score on consequent pages)
-class SCOREPRESS_API Document;     // document object (several musical scores and score-independent objects)
 
-
-// staff object (inheriting one main-voice)
-class SCOREPRESS_API Staff : public MainVoice
-{
- public:
-    typedef SmartPtr<StyleParam> StyleParamPtr;
-    
- public:
-    int offset_y;               // in promille of head-height
-    
-    unsigned int head_height;   // in micrometer
-    unsigned int line_count;    // number of lines in this staff
-    bool long_barlines;         // draw barlines down to the next staff?
-    bool curlybrace;            // curly brace for connecting staves of one instrument?
-    bool bracket;               // angular bracket for grouping instruments?
-    unsigned int brace_pos;     // distance of the brace to the staff 
-    unsigned int bracket_pos;   // distance of the bracket to the staff
-    StyleParamPtr style;        // optional staff specific style parameters
-    Newline layout;             // staff layout on the first page
-    
-    Staff();                    // default constructor
-};
 
 // score object (one musical score on consequent pages)
 class SCOREPRESS_API Score
@@ -95,60 +71,6 @@ class SCOREPRESS_API Score
     bool same_instrument(const Staff& staff1, const Staff& staff2) const throw(StaffNotFound);
     bool same_group(const Staff& staff1, const Staff& staff2) const throw(StaffNotFound);
 };
-
-// document object (several musical scores and score-independent objects)
-class SCOREPRESS_API Document
-{
- public:
-    // page dimension data
-    class PageDimension
-    {
-     public:
-        unsigned int width;     // in micrometer
-        unsigned int height;    // in micrometer
-        struct
-        {
-            unsigned int top;       // in micrometer
-            unsigned int bottom;    // in micrometer
-            unsigned int left;      // in micrometer
-            unsigned int right;     // in micrometer
-        } margin;
-        
-        // A4: 210 x 297; NE: 231 x 303
-        PageDimension() : width(210000), height(297000) {margin.top = margin.bottom = 15000; margin.left = margin.right = 10000;};
-    };
-    
-    // score object within the document
-    class Score
-    {
-     public:
-        unsigned int start_page;    // document-page number of the first score-page
-        ScorePress::Score score;    // score object
-        
-        Score(unsigned int _page) : start_page(_page) {};
-    };
-    
-    // list typedefs
-    typedef std::map<unsigned int, MovableList> AttachedMap;
-    typedef std::list<Score>                    ScoreList;
-    
- public:
-    AttachedMap    attached;        // objects attached to the document
-    PageDimension  page_layout;     // page layout
-    ScoreList      scores;          // scores within the document
-    DocumentMeta   meta;            // meta information
-    
-    // on-page object parameters
-    unsigned int head_height;       // default head-height (in micrometer)
-    unsigned int stem_width;        // default stem-width  (in micrometer)
-    
- public:
-    // attached object interface
-    void add_attached(Movable* object, unsigned int page);  // adds attachable (ownership transferred to this instance)
-};
-
-inline void Document::add_attached(Movable* object, unsigned int page) {
-    attached[page].push_back(MovablePtr(object));}
 
 } // end namespace
 

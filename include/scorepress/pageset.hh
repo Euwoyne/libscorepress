@@ -23,6 +23,7 @@
 #include <list>            // std::list
 
 #include "plate.hh"        // Plate
+#include "document.hh"     // Document
 #include "parameters.hh"   // ViewportParam
 #include "export.hh"
 

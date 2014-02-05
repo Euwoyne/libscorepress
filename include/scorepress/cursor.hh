@@ -21,7 +21,7 @@
 #define SCOREPRESS_CURSOR_HH
 
 #include <list>        // std::list
-#include "score.hh"    // Staff, Voice, MainVoice, SubVoice, StaffObject, VoiceObject
+#include "classes.hh"  // Staff, Voice, SubVoice, StaffObject, VoiceObject
 #include "error.hh"    // Error
 #include "export.hh"
 
@@ -52,7 +52,7 @@ class SCOREPRESS_API Cursor
     
  private:
     Staff* _staff;         // pointer to the staff hosting the voice
-    Voice* _voice;         // pointer to the voice hosting the cursor (of type "MainVoice" or "SubVoice")
+    Voice* _voice;         // pointer to the voice hosting the cursor (of type "Staff" or "SubVoice")
     
     StaffObjectList::iterator _main;   // iterator to the note (either in a main-voice or
     VoiceObjectList::iterator _sub;    //                       in a sub-voice)
@@ -63,6 +63,7 @@ class SCOREPRESS_API Cursor
     // constructors
     Cursor();
     Cursor(Staff& staff);
+    Cursor(SubVoice& voice);
     Cursor(Staff& staff, SubVoice& voice);
     
     // iterator interface
@@ -105,6 +106,7 @@ class SCOREPRESS_API Cursor
     inline Voice& voice() const {return *_voice;};     // return the voice the cursor points to
     
     void set(Staff& staff);
+    void set(SubVoice& voice);
     void set(Staff& staff, SubVoice& voice);
     
     // modification methods (ownership of inserted object is with the voice object thereafter!)
@@ -137,6 +139,7 @@ class SCOREPRESS_API const_Cursor
     // constructors
     const_Cursor();
     const_Cursor(const Staff& staff);
+    const_Cursor(const SubVoice& voice);
     const_Cursor(const Staff& staff, const SubVoice& voice);
     const_Cursor(const Cursor& cursor);
     
@@ -180,6 +183,7 @@ class SCOREPRESS_API const_Cursor
     inline const Voice& voice() const {return *_voice;};    // return the voice the cursor points to
     
     void set(const Staff& staff);
+    void set(const SubVoice& voice);
     void set(const Staff& staff, const SubVoice& voice);
 };
 

@@ -114,7 +114,10 @@ class SCOREPRESS_API Engine : public Logging
     void render_all(Renderer& renderer, const MultipageLayout layout, const Position<mpx_t>& offset, bool decor = false);           // all pages (with layout)
     void render_cursor(Renderer& renderer, const UserCursor& cursor, const Position<mpx_t>& page_pos);                              // cursor (with page root)
     void render_cursor(Renderer& renderer, const UserCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset);  // cursor (with layout)
-    void render_selection(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& page_pos);
+    void render_selection(Renderer& renderer, const Position<mpx_t>& page_pos);                                                     // object frame (with page root)
+    void render_selection(Renderer& renderer, const MultipageLayout layout, const Position<mpx_t>& offset);                         // object frame (with layout)
+    void render_selection(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& page_pos);                         // object frame (with page root)
+    void render_selection(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& o);  // object frame (with layout)
     
     // internal data access
     Document&        get_document();                                    // the document this engine operates on
@@ -148,8 +151,10 @@ class SCOREPRESS_API Engine : public Logging
     EditCursor& get_cursor(Position<mpx_t> pos, const MultipageLayout layout) throw(Error, UserCursor::Error); // get cursor (multi-page position)
     
     ObjectCursor& selected_object()                                       throw(Error); // get currently selected object
-    bool select_object(const Position<mpx_t>& pos, const Page& page)      throw(Error); // get object by position (on page)
+    bool has_selected_object() const;                                                   // check, if there is a selected object
+    bool select_object(Position<mpx_t> pos, const Page& page)             throw(Error); // get object by position (on page)
     bool select_object(Position<mpx_t> pos, const MultipageLayout layout) throw(Error); // get object by position (multi-page)
+    void deselect_object();                                                             // deselect selected object (if any)
     // NOTE: Ownership of the returned cursors stays with the engine. Any copies, that are not owned by the engine, might behave strangely on reengrave.
     
     // logging control
@@ -162,8 +167,11 @@ inline MultipageLayout::MultipageLayout(MultipageJoin _join, MultipageOrientatio
 
 inline Engine::Page::Page(unsigned int _idx, Pageset::Iterator _it) : idx(_idx), it(_it) {}
 
-inline void Engine::set_document(Document& _document)                    {document = &_document; pageset.clear(); cursors.clear();}
-inline void Engine::set_resolution(unsigned int hppm, unsigned int vppm) {viewport.hppm = hppm; viewport.vppm = vppm;}
+inline void Engine::set_document(Document& _document)              {document = &_document; pageset.clear(); cursors.clear();}
+inline void Engine::set_resolution(unsigned int h, unsigned int v) {viewport.hppm = h; viewport.vppm = v;}
+
+inline void Engine::render_selection(Renderer& r, const Position<mpx_t>& p)                          {render_selection(r, object_cur, p);}
+inline void Engine::render_selection(Renderer& r, const MultipageLayout l, const Position<mpx_t>& o) {render_selection(r, object_cur, l, o);}
 
 inline Document&       Engine::get_document()             {return *document;}
 inline EngraverParam&  Engine::get_engraver_parameters()  {return engraver.parameters;}
@@ -177,8 +185,10 @@ inline mpx_t           Engine::page_height() const        {return (viewport.umto
 inline size_t          Engine::page_count()  const        {return pageset.pages.size();}
 
 inline const Engine::Page Engine::select_page(const unsigned int page) {return Page(page, pageset.get_page(page));}
-inline bool               Engine::select_object(Position<mpx_t> pos, const MultipageLayout layout) throw(Error) {
+inline bool  Engine::has_selected_object() const {return (object_cur.ready() && !object_cur.end());}
+inline bool  Engine::select_object(Position<mpx_t> pos, const MultipageLayout layout) throw(Error) {
                                 return select_object(pos, select_page(pos, layout));}
+inline void  Engine::deselect_object() {object_cur.reset();}
 
 } // end namespace
 

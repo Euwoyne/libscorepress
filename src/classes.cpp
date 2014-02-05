@@ -52,7 +52,7 @@ const std::string ScorePress::classname(Class::classType type)
     case Class::TIEDHEAD:      return "TiedHead";
     
     case Class::VOICE:         return "Voice";
-    case Class::MAINVOICE:     return "MainVoice";
+    case Class::STAFF:         return "Staff";
     case Class::SUBVOICE:      return "SubVoice";
     
     case Class::MOVABLE:       return "Movable";

@@ -141,6 +141,24 @@ void Engine::render_cursor(Renderer& renderer, const UserCursor& cursor, const M
     press.render(renderer, cursor, offset + page_pos(cursor.get_pageno(), layout) + margin_offset);
 }
 
+// render object frame, assuming the given page root position
+void Engine::render_selection(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& _page_pos)
+{
+    if (!cursor.ready() || cursor.end()) return;
+    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
+                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
+    press.render(renderer, cursor, _page_pos + margin_offset);
+}
+
+// render object frame, calculating page positions according to the given layout
+void Engine::render_selection(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset)
+{
+    if (!cursor.ready() || cursor.end()) return;
+    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
+                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
+    press.render(renderer, cursor, offset + page_pos(cursor.get_pageno(), layout) + margin_offset);
+}
+
 // width of complete layout  (in pixel)
 unsigned int Engine::layout_width(const MultipageLayout layout) const
 {
@@ -339,9 +357,16 @@ ObjectCursor& Engine::selected_object() throw(Error)
 }
 
 // get object by position (on page)
-bool Engine::select_object(const Position<mpx_t>& pos, const Page& page) throw(Error)
+bool Engine::select_object(Position<mpx_t> pos, const Page& page) throw(Error)
 {
     ObjectCursor buffer;
+    
+    // scale pos
+    pos = (pos * 1000) / static_cast<int>(press.parameters.scale);
+    
+    // set on-page root (substract page margin)
+    pos.x -= pageset.page_layout.margin.left;
+    pos.y -= pageset.page_layout.margin.top;
     
     // search for object on page
     for (Pageset::pPage::AttachableList::iterator a = page.it->attached.begin(); a != page.it->attached.end(); ++a)
@@ -362,6 +387,7 @@ bool Engine::select_object(const Position<mpx_t>& pos, const Page& page) throw(E
     Pageset::pPage::const_Iterator pinfo = page.it->get_plate_by_pos(pos);
     if (pinfo == page.it->plates.end())
         pinfo = --page.it->plates.end();
+    pos -= pinfo->dimension.position;       // calculate position relative to plate
     
     // search the score
     Document::ScoreList::iterator score = document->scores.begin();
@@ -376,7 +402,7 @@ bool Engine::select_object(const Position<mpx_t>& pos, const Page& page) throw(E
         if (!l->contains(pos)) continue;
         for (Plate::pLine::Iterator v = l->voices.begin(); v != l->voices.end(); ++v)
         {
-            for (Plate::pVoice::Iterator n = v->notes.begin(); n != v->notes.end(); ++n)
+            for (Plate::pVoice::Iterator n = v->notes.begin(); n != v->notes.end() && !n->at_end(); ++n)
             {
                 if (n->is_inserted()) continue;
                 if (!n->get_note().is(Class::VISIBLEOBJECT)) continue;
@@ -386,7 +412,7 @@ bool Engine::select_object(const Position<mpx_t>& pos, const Page& page) throw(E
                     if ((*a)->contains(pos))
                     {
                         // (casts away const, but not unexpected, since this object got a non-const reference to the document)
-                        if (buffer.set_parent(const_cast<StaffObject&>(n->get_note()).get_visible().attached, n->attached))
+                        if (buffer.set_parent(const_cast<StaffObject&>(n->get_note()).get_visible().attached, n->attached, pinfo->pageno))
                         {
                             if (buffer.select(*static_cast<const Movable*>((*a)->object)))
                             {

@@ -636,11 +636,11 @@ void EditCursor::remove_voice() throw(NotValidException, Cursor::IllegalObjectTy
         throw Cursor::IllegalObjectTypeException();
     
     // check for parent type
-    if (static_cast<SubVoice&>(cursor->note.voice()).parent->is(Class::SUBVOICE))
+    if (static_cast<SubVoice&>(cursor->note.voice()).get_parent().is(Class::SUBVOICE))
     {
         // iterate the parent and delete the reference to this voice
-        VoiceObjectList::iterator       i = static_cast<SubVoice*>(static_cast<SubVoice&>(cursor->note.voice()).parent)->notes.begin();
-        const VoiceObjectList::iterator e = static_cast<SubVoice*>(static_cast<SubVoice&>(cursor->note.voice()).parent)->notes.end();
+        VoiceObjectList::iterator       i = static_cast<SubVoice&>(static_cast<SubVoice&>(cursor->note.voice()).get_parent()).notes.begin();
+        const VoiceObjectList::iterator e = static_cast<SubVoice&>(static_cast<SubVoice&>(cursor->note.voice()).get_parent()).notes.end();
         for (; i != e; ++i)
             if ((*i)->is(Class::NOTEOBJECT))
                 if (static_cast<NoteObject&>(**i).subvoice)
@@ -650,8 +650,8 @@ void EditCursor::remove_voice() throw(NotValidException, Cursor::IllegalObjectTy
     else
     {
         // iterate the parent and delete the reference to this voice
-        StaffObjectList::iterator       i = static_cast<MainVoice*>(static_cast<SubVoice&>(cursor->note.voice()).parent)->notes.begin();
-        const StaffObjectList::iterator e = static_cast<MainVoice*>(static_cast<SubVoice&>(cursor->note.voice()).parent)->notes.end();
+        StaffObjectList::iterator       i = static_cast<Staff&>(static_cast<SubVoice&>(cursor->note.voice()).get_parent()).notes.begin();
+        const StaffObjectList::iterator e = static_cast<Staff&>(static_cast<SubVoice&>(cursor->note.voice()).get_parent()).notes.end();
         for (; i != e; ++i)
             if ((*i)->is(Class::NOTEOBJECT))
                 if (static_cast<NoteObject&>(**i).subvoice)
@@ -661,7 +661,7 @@ void EditCursor::remove_voice() throw(NotValidException, Cursor::IllegalObjectTy
     
     // erase the corresponding cursor
     vcursors.erase(cursor);
-    cursor = find(*static_cast<SubVoice&>(cursor->note.voice()).parent);
+    cursor = find(static_cast<SubVoice&>(cursor->note.voice()).get_parent());
     if (cursor == vcursors.end()) --cursor;
     
     // reengrave score
