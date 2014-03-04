@@ -18,7 +18,7 @@
 */
 
 #include "object_cursor.hh"
-
+#include "engraver_state.hh" // EngraverState
 using namespace ScorePress;
 
 // exception classes
@@ -46,7 +46,9 @@ ObjectCursor::ObjectCursor() : pageno(0), list(NULL), plist(NULL) {}
 // set note as parent for objects
 ObjectCursor::ObjectCursor(EditCursor& cursor) : pageno(cursor.get_pageno()),
                                                  list(&cursor.get_attached()),
-                                                 plist(&cursor.get_pattached())
+                                                 plist(&cursor.get_pattached()),
+                                                 pline(&cursor.get_line()),
+                                                 parent(&cursor.get_platenote())
 {
     setup();
 }
@@ -54,14 +56,16 @@ ObjectCursor::ObjectCursor(EditCursor& cursor) : pageno(cursor.get_pageno()),
 // set page as parent for objects
 ObjectCursor::ObjectCursor(Document& document, Pageset::pPage& page) : pageno(page.pageno-1),
                                                                        list(&document.attached[page.pageno-1]),
-                                                                       plist(&page.attached)
+                                                                       plist(&page.attached),
+                                                                       pline(NULL),
+                                                                       parent(NULL)
 {
     setup();
 }
 
 // set miscellaneous lists as parent data
-ObjectCursor::ObjectCursor(MovableList& _list, Plate::pNote::AttachableList& _plist, unsigned int _pageno) :
-        pageno(_pageno), list(&_list), plist(&_plist)
+ObjectCursor::ObjectCursor(VisibleObject& note, Plate::pNote& pnote, unsigned int _pageno) :
+        pageno(_pageno), list(&note.attached), plist(&pnote.attached), parent(&pnote)
 {
     setup();
 }
@@ -72,6 +76,8 @@ bool ObjectCursor::set_parent(EditCursor& cursor)
     pageno = cursor.get_pageno();
     list = &cursor.get_attached();
     plist = &cursor.get_pattached();
+    pline = &cursor.get_line();
+    parent = &cursor.get_platenote();
     return setup();
 }
 
@@ -81,15 +87,19 @@ bool ObjectCursor::set_parent(Document& document, Pageset::pPage& page)
     pageno = page.pageno - 1;
     list = &document.attached[pageno];
     plist = &page.attached;
+    pline = NULL;
+    parent = NULL;
     return setup();
 }
 
 // set miscellaneous lists as parent data
-bool ObjectCursor::set_parent(MovableList& _list, Plate::pNote::AttachableList& _plist, unsigned int _pageno)
+bool ObjectCursor::set_parent(VisibleObject& note, Plate::pNote& pnote, Plate::pLine& line, unsigned int _pageno)
 {
     pageno = _pageno;
-    list = &_list;
-    plist = &_plist;
+    list = &note.attached;
+    plist = &pnote.attached;
+    pline = &line;
+    parent = &pnote;
     return setup();
 }
 
@@ -148,3 +158,25 @@ Plate::pAttachable& ObjectCursor::get_pobject() const
     if (!list || !plist || object == list->end() || pobject == plist->end()) throw NotValidException();
     return **pobject;
 }
+
+// reengraving function
+bool ObjectCursor::reengrave(EngraverState& state)
+{
+    plist = &state.get_target().attached;
+    pline = &state.get_target_line();
+    pobject = plist->begin();
+    while (pobject != plist->end() && (*pobject)->object != &**object)
+        ++pobject;
+    return false;
+}
+
+// setup reengraving trigger
+void ObjectCursor::setup_reengrave(ReengraveInfo& info)
+{
+    if (!parent) throw NotValidException();
+    info.setup_reengrave(**object, *this);
+}
+
+// reengrave finishing function (NOOP)
+void ObjectCursor::finish_reengrave() {}
+

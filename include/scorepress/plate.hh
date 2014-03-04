@@ -27,6 +27,7 @@
 #include "stem_info.hh" // StemInfo
 #include "context.hh"   // VoiceContext, StaffContext
 #include "sprite_id.hh" // SpriteId
+#include "error.hh"     // Error
 #include "export.hh"
 
 namespace ScorePress
@@ -41,6 +42,9 @@ class SCOREPRESS_API Plate_pDurable;    // durable object (attachable with addit
 class SCOREPRESS_API Plate_pNote;       // note object (with attachables, stem and optional barline)
 class SCOREPRESS_API Plate_pVoice;      // voice object (list of notes)
 class SCOREPRESS_API Plate_pLine;       // on-plate line object (list of voices)
+
+// typedefs
+typedef Position<mpx_t> Plate_Pos;
 
 
 //
@@ -58,24 +62,25 @@ class SCOREPRESS_API Plate_pLine;       // on-plate line object (list of voices)
 class SCOREPRESS_API Plate_GphBox
 {
  public:
-    Position<mpx_t> pos;    // position of the top-left corner
-    mpx_t width;            // width of the box
-    mpx_t height;           // height of the box
+    Plate_Pos pos;      // position of the top-left corner
+    mpx_t     width;    // width of the box
+    mpx_t     height;   // height of the box
     
-    Plate_GphBox();         // constructors
-    Plate_GphBox(Position<mpx_t> pos, mpx_t width, mpx_t height);
+    Plate_GphBox();     // constructors
+    Plate_GphBox(Plate_Pos pos, mpx_t width, mpx_t height);
     
     inline mpx_t right()  const {return pos.x + width;};    // calculate the right margin of the box
     inline mpx_t bottom() const {return pos.y + height;};   // calculate the bottom of the box
     
-    bool contains(const Position<mpx_t>& p) const;  // check, if a given point is inside the box
-    bool overlaps(const Plate_GphBox& box);         // check, if a given box overlaps this box
-    void extend(const Position<mpx_t>& p);          // extend box, such that the given point is covered
-    void extend(const Plate_GphBox& box);           // extend box, such that the given box is covered
+    bool contains(const Plate_Pos& p) const;    // check, if a given point is inside the box
+    bool overlaps(const Plate_GphBox& box);     // check, if a given box overlaps this box
+    void extend(const Plate_Pos& p);            // extend box, such that the given point is covered
+    void extend(const Plate_GphBox& box);       // extend box, such that the given box is covered
 };
 
-inline bool Plate_GphBox::contains(const Position<mpx_t>& p) const {
+inline bool Plate_GphBox::contains(const Plate_Pos& p) const {
     return (p.x >= pos.x && p.y >= pos.y && p.x < pos.x + width && p.y < pos.y + height);}
+
 
 // graphical object (base class for all on-plate objects)
 class SCOREPRESS_API Plate_pGraphical
@@ -83,37 +88,48 @@ class SCOREPRESS_API Plate_pGraphical
  public:
     Plate_GphBox gphBox;
     
-    Plate_pGraphical() {};                                              // default constructor
-    Plate_pGraphical(Position<mpx_t> pos, mpx_t width, mpx_t height);   // constructor
-    virtual bool contains(Position<mpx_t> p) const;                     // check if a point is within the object
-    virtual ~Plate_pGraphical() {};                                     // virtual destructor
+    Plate_pGraphical() {};                                      // default constructor
+    Plate_pGraphical(Plate_Pos pos, mpx_t width, mpx_t height); // constructor
+    virtual bool contains(Plate_Pos p) const;                   // check if a point is within the object
+    virtual ~Plate_pGraphical() {};                             // virtual destructor
 };
 
-inline bool Plate_pGraphical::contains(Position<mpx_t> p) const {return gphBox.contains(p);}
+inline bool Plate_pGraphical::contains(Plate_Pos p) const {return gphBox.contains(p);}
+
 
 // attachable object (object pointer, sprite and position)
 class SCOREPRESS_API Plate_pAttachable : public Plate_pGraphical
 {
  public:
-    const AttachedObject* const object;     // original object
-    SpriteId sprite;                        // sprite id
-    Position<mpx_t> absolutePos;            // position of the sprite
+    const AttachedObject* const object; // original object
+    SpriteId sprite;                    // sprite id
+    Plate_Pos absolutePos;              // position of the sprite
     
     struct {unsigned x : 1; unsigned y : 1;} flipped;   // flipped flags
     
-    Plate_pAttachable(const AttachedObject& obj, const Position<mpx_t>& pos);    // constructor
+    Plate_pAttachable(const AttachedObject& obj, const Plate_Pos& pos); // constructor
+    Plate_pAttachable();                                                // default constructor
+    
     virtual bool is_durable() {return false;};
 };
+
+inline Plate_pAttachable::Plate_pAttachable() : object(NULL) {throw MissingDefaultConstructor("Plate::pAttachable");}
+
 
 // durable object (attachable with additional end-position)
 class SCOREPRESS_API Plate_pDurable : public Plate_pAttachable
 {
  public:
-    Position<mpx_t> endPos;
+    Plate_Pos endPos;
     
-    Plate_pDurable(const AttachedObject& obj, const Position<mpx_t>& pos);  // constructor
+    Plate_pDurable(const AttachedObject& obj, const Plate_Pos& pos);    // constructor
+    Plate_pDurable();                                                   // default constructor
+    
     virtual bool is_durable() {return true;};
 };
+
+inline Plate_pDurable::Plate_pDurable() {throw MissingDefaultConstructor("Plate::pDurable");}
+
 
 // note object (with attachables, stem and optional barline)
 class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
@@ -122,10 +138,10 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     // ledger line position information structure
     struct LedgerLines
     {
-        Position<mpx_t> basepos;    // position of the lowest ledger line
-        mpx_t           length;     // length of the ledger lines
-        unsigned int    count;      // number of ledger lines
-        bool            below;      // ledger lines below or above the staff?
+        Plate_Pos    basepos;   // position of the lowest ledger line
+        mpx_t        length;    // length of the ledger lines
+        unsigned int count;     // number of ledger lines
+        bool         below;     // ledger lines below or above the staff?
         
         LedgerLines() : length(0), count(0), below(false) {};
     };
@@ -134,18 +150,18 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     class Tie
     {
      public:
-        Position<mpx_t> pos1;       // begin position
-        Position<mpx_t> pos2;       // end position
-        Position<mpx_t> control1;   // first control point
-        Position<mpx_t> control2;   // second control point
+        Plate_Pos pos1;         // begin position
+        Plate_Pos pos2;         // end position
+        Plate_Pos control1;     // first control point
+        Plate_Pos control2;     // second control point
     };
     
     // virtual object structure
     struct Virtual
     {
      public:
-        SmartPtr<const StaffObject, CloneTrait> object; // virtual object (i.e. non existant in score structure)
-        bool inserted;                                  // inserted or replacing the original object?
+        SmartPtr<const StaffObject, CloneTrait> object;     // virtual object (i.e. non existant in score structure)
+        bool inserted;                                      // inserted or replacing the original object?
         
         Virtual(const StaffObject& object, bool inserted);  // ("object" will be cloned)
     };
@@ -172,7 +188,7 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     };
     
     // list and pointer typedefs
-    typedef std::list< Position<mpx_t> > PositionList;
+    typedef std::list< Plate_Pos >       PositionList;
     typedef RefPtr<Plate_pAttachable>    AttachablePtr;
     typedef std::list<AttachablePtr>     AttachableList;
     typedef std::list<Tie>               TieList;
@@ -201,7 +217,9 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     bool           noflag;                  // is a flag to be rendered?
     
  public:
-    Plate_pNote(const Position<mpx_t>& pos, const const_Cursor& note);  // constructor
+    Plate_pNote(const Plate_Pos& pos, const const_Cursor& note);        // constructor
+    Plate_pNote() {throw MissingDefaultConstructor("Plate::pNote");}    // default constructor
+    
     void add_offset(mpx_t offset);          // add offset to all positions (except to the tie-end)
     void add_tieend_offset(mpx_t offset);   // add offset to tie-end positions
     
@@ -219,6 +237,7 @@ inline       bool         Plate_pNote::is_virtual()  const {return (virtual_obj 
 inline       bool         Plate_pNote::is_inserted() const {return (virtual_obj && virtual_obj->inserted);}
 inline       bool         Plate_pNote::at_end()      const {return (!virtual_obj && note.at_end());}
 
+
 // voice object (list of notes)
 class SCOREPRESS_API Plate_pVoice
 {
@@ -234,23 +253,25 @@ class SCOREPRESS_API Plate_pVoice
     
     struct Bracket : public Plate_pGraphical
     {
-        SpriteId sprite;
-        Position<mpx_t> line_base;
-        Position<mpx_t> line_end;
+        SpriteId  sprite;
+        Plate_Pos line_base;
+        Plate_Pos line_end;
     };
     
  public:
-    Position<mpx_t>  basePos;   // top-right corner of the staff
-    NoteList         notes;     // notes of the voice
-    const_Cursor     begin;     // cursor at the beginning of this voice (in the score object)
-    VoiceContext     context;   // this voice's context at the END of the line (or voice)
-    value_t          time;      // time-stamp of the voice's first note
-    value_t          end_time;  // time-stamp at the voice's last note
-    Brace            brace;     // brace starting here
-    Bracket          bracket;   // bracket starting here
+    Plate_Pos     basePos;      // top-right corner of the staff
+    NoteList      notes;        // notes of the voice
+    const_Cursor  begin;        // cursor at the beginning of this voice (in the score object)
+    VoiceContext  context;      // this voice's context at the END of the line (or voice)
+    value_t       time;         // time-stamp of the voice's first note
+    value_t       end_time;     // time-stamp at the voice's last note
+    Brace         brace;        // brace starting here
+    Bracket       bracket;      // bracket starting here
     
-    Plate_pVoice(const const_Cursor& cursor);   // constructor
+    Plate_pVoice(const const_Cursor& cursor);                           // constructor
+    Plate_pVoice() {throw MissingDefaultConstructor("Plate::pVoice");}  // default constructor
 };
+
 
 // on-plate line object (list of voices)
 class SCOREPRESS_API Plate_pLine : public Plate_pGraphical
@@ -262,12 +283,14 @@ class SCOREPRESS_API Plate_pLine : public Plate_pGraphical
     typedef std::map<const Staff*, StaffContext> StaffContextMap;
     
  public:
-    ScoreContext      context;      // score context (at the end of the line)
-    VoiceList         voices;       // voices within this line
-    StaffContextMap   staffctx;     // staff contexts
-    Position<mpx_t>   basePos;      // top-right corner position
-    mpx_t             line_end;     // line width
-    value_t           end_time;     // time-stamp at the line's end
+    Plate_GphBox    noteBox;        // graphical boundary box (only note objects)
+    Plate_Pos       basePos;        // top-right corner position
+    mpx_t           line_end;       // line width
+    value_t         end_time;       // time-stamp at the line's end
+    
+    VoiceList       voices;         // voices within this line
+    ScoreContext    context;        // score context (at the end of the line)
+    StaffContextMap staffctx;       // staff contexts
     
     Iterator       get_voice(const Voice& voice);       // find a voice in this line
     const_Iterator get_voice(const Voice& voice) const; // (constant version)
@@ -275,9 +298,11 @@ class SCOREPRESS_API Plate_pLine : public Plate_pGraphical
     const_Iterator get_staff(const Staff& staff) const; // (constant version)
     
     void erase();            		// erase the line
+    void calculate_gphBox();        // calculate graphical boundary box
 };
 
 inline void Plate_pLine::erase() {voices.clear();}
+
 
 // plate class
 class SCOREPRESS_API Plate
@@ -285,6 +310,7 @@ class SCOREPRESS_API Plate
  public:
     //  CLASSES
     // ---------
+    typedef Plate_Pos         Pos;          // position class (for mpx_t)
     typedef Plate_GphBox      GphBox;       // graphical object (base class for all on-plate objects)
     typedef Plate_pGraphical  pGraphical;   // graphical object (base class for all on-plate objects)
     typedef Plate_pAttachable pAttachable;  // attachable object (object pointer, sprite and position)
@@ -294,13 +320,19 @@ class SCOREPRESS_API Plate
     typedef Plate_pLine       pLine;        // on-plate line object (list of voices)
     
     // list typedefs
-    typedef std::list<pNote>   NoteList;
-    typedef std::list<pVoice>  VoiceList;
-    typedef std::list<pLine>   LineList;
-    typedef LineList::iterator Iterator;
+    typedef std::list<pNote>    NoteList;
+    typedef std::list<pVoice>   VoiceList;
+    typedef std::list<pLine>    LineList;
+    typedef LineList::iterator  Iterator;
+    typedef LineList::iterator  LineIt;
+    typedef VoiceList::iterator VoiceIt;
+    typedef NoteList::iterator  NoteIt;
     
     // lines on the plate
     LineList lines;
+    
+    // calculate the graphical box for the given bezier spline
+    static GphBox calculate_gphBox(const Pos& p1, const Pos& c1, const Pos& c2, const Pos& p2, const mpx_t w0 = 0, const mpx_t w1 = 0);
     
     // dump the plate content to stdout
     void dump() const;

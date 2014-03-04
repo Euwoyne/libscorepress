@@ -258,7 +258,7 @@ mpx_t Pick::width(const SpriteSet& spr, unsigned int n, const mpx_t height)
 }
 
 // return the width of the staff-object's graphic
-#define __width(idx, type)      \
+#define _width(idx, type)      \
     ((height == 0) ?            \
         spr[idx].width * 1000 : \
         (((spr[idx].width * height) / spr.head_height(idx)) * static_cast<const type*>(obj)->appearance.scale) / 1000)
@@ -269,18 +269,18 @@ mpx_t Pick::width(const Sprites& spr, const StaffObject* obj, const mpx_t height
     
     if (obj->is(Class::CHORD))          // if the object is a chord...
     {
-        return __width(idx, Chord);
+        return _width(idx, Chord);
     }
     else if (obj->is(Class::CLEF))      // if the object is a clef...
     {
-        return __width(idx, Clef);
+        return _width(idx, Clef);
     }
     else if (obj->is(Class::REST))      // if the object is a rest...
     {
         const Rest& rest = *static_cast<const Rest*>(obj);
         
         // if it is a simple rest, just return the width of the sprite
-        if (rest.val.exp >= VALUE_BASE - 2) return __width(sprite_id(spr, obj), Rest);
+        if (rest.val.exp >= VALUE_BASE - 2) return _width(sprite_id(spr, obj), Rest);
 
         // otherwise calculate width of composed graphic
         if (spr[idx].real.find("slope") == spr[idx].real.end()) // if there is no slope,
@@ -300,7 +300,7 @@ mpx_t Pick::width(const Sprites& spr, const StaffObject* obj, const mpx_t height
     }
     else if (obj->is(Class::KEY))       // if the object is a key...
     {   // multiply number with sprite width
-        return static_cast<const Key*>(obj)->number * __width(idx, Key);
+        return static_cast<const Key*>(obj)->number * _width(idx, Key);
     }
     else if (obj->is(Class::TIMESIG))   // if the object is a time-signature...
     {
@@ -312,7 +312,7 @@ mpx_t Pick::width(const Sprites& spr, const StaffObject* obj, const mpx_t height
         {
             const SpriteId& sprite = static_cast<const CustomTimeSig*>(obj)->sprite;
             if (sprite.ready())                     // and if the sprite information is complete
-                return __width(sprite, TimeSig);    //    return width of that sprite
+                return _width(sprite, TimeSig);     //    return width of that sprite
             else if (sprite.setid != UNDEFINED)     // if we only have a set-id
                 setid = sprite.setid;               //    change set-id for normal timesig
             

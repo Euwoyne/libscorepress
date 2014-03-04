@@ -119,6 +119,7 @@ cfiles := ${cppsrc}/main.cpp           \
           ${cppsrc}/engraver.cpp       \
           ${cppsrc}/engraver_state.cpp \
           ${cppsrc}/engrave_info.cpp   \
+          ${cppsrc}/reengrave_info.cpp \
           ${cppsrc}/context.cpp        \
           ${cppsrc}/pageset.cpp        \
           ${cppsrc}/plate.cpp          \
@@ -144,6 +145,7 @@ hfiles := ${headerdir}/engine.hh         \
           ${headerdir}/engraver.hh       \
           ${headerdir}/engraver_state.hh \
           ${headerdir}/engrave_info.hh   \
+          ${headerdir}/reengrave_info.hh \
           ${headerdir}/context.hh        \
           ${headerdir}/pageset.hh        \
           ${headerdir}/plate.hh          \
@@ -181,6 +183,7 @@ sofiles := ${builddir}/main.s.o           \
            ${builddir}/engraver.s.o       \
            ${builddir}/engraver_state.s.o \
            ${builddir}/engrave_info.s.o   \
+           ${builddir}/reengrave_info.s.o \
            ${builddir}/context.s.o        \
            ${builddir}/pageset.s.o        \
            ${builddir}/plate.s.o          \
@@ -207,6 +210,7 @@ afiles := ${builddir}/main.o           \
           ${builddir}/engraver.o       \
           ${builddir}/engraver_state.o \
           ${builddir}/engrave_info.o   \
+          ${builddir}/reengrave_info.o \
           ${builddir}/context.o        \
           ${builddir}/pageset.o        \
           ${builddir}/plate.o          \
@@ -269,10 +273,11 @@ deps_file_reader_hh    := ${headerdir}/file_reader.hh ${deps_document_hh}
 deps_file_writer_hh    := ${headerdir}/file_writer.hh ${deps_document_hh}
 deps_file_format_hh    := ${headerdir}/file_format.hh ${deps_file_reader_hh} ${deps_file_writer_hh}
 deps_engraver_state_hh := ${headerdir}/engraver_state.hh ${deps_pageset_hh} ${deps_pick_hh} ${deps_engrave_info_hh}
+deps_reengrave_info_hh := ${headerdir}/reengrave_info.hh ${deps_engraver_state_hh}
 deps_engraver_hh       := ${headerdir}/engraver.hh ${deps_pageset_hh} ${deps_sprites_hh} ${deps_log_hh}
-deps_user_cursor_hh    := ${headerdir}/user_cursor.hh ${deps_document_hh} ${deps_cursor_hh} ${deps_pageset_hh} ${deps_log_hh}
+deps_user_cursor_hh    := ${headerdir}/user_cursor.hh ${deps_document_hh} ${deps_cursor_hh} ${deps_pageset_hh} ${deps_reengrave_info_hh} ${deps_log_hh}
 deps_edit_cursor_hh    := ${headerdir}/edit_cursor.hh ${deps_user_cursor_hh} ${deps_engraver_hh}
-deps_object_cursor_hh  := ${headerdir}/object_cursor.hh ${deps_user_cursor_hh}
+deps_object_cursor_hh  := ${headerdir}/object_cursor.hh ${deps_edit_cursor_hh}
 deps_renderer_hh       := ${headerdir}/renderer.hh ${deps_sprites_hh} ${deps_file_reader_hh} ${deps_error_hh}
 deps_press_hh          := ${headerdir}/press.hh ${deps_pageset_hh} ${deps_renderer_hh} ${deps_user_cursor_hh}
 deps_engine_hh         := ${headerdir}/engine.hh ${deps_press_hh} ${deps_edit_cursor_hh}
@@ -284,11 +289,12 @@ deps_context_cpp        := ${cppsrc}/context.cpp ${deps_context_hh}
 deps_cursor_cpp         := ${cppsrc}/cursor.cpp ${deps_cursor_hh}
 deps_error_cpp          := ${cppsrc}/error.cpp ${deps_error_hh}
 deps_edit_cursor_cpp    := ${cppsrc}/edit_cursor.cpp ${deps_edit_cursor_hh} ${deps_log_hh}
-deps_object_cursor_cpp  := ${cppsrc}/object_cursor.cpp ${deps_object_cursor_hh}
+deps_object_cursor_cpp  := ${cppsrc}/object_cursor.cpp ${deps_object_cursor_hh} ${deps_engraver_state_hh}
 deps_engine_cpp         := ${cppsrc}/engine.cpp ${deps_engine_hh} ${deps_log_hh}
 deps_engrave_info_cpp   := ${cppsrc}/engrave_info.cpp ${deps_engrave_info_hh} ${deps_log_hh}
 deps_engraver_cpp       := ${cppsrc}/engraver.cpp ${deps_engraver_hh} ${deps_engraver_state_hh} ${deps_log_hh} ${deps_undefined_hh}
 deps_engraver_state_cpp := ${cppsrc}/engraver_state.cpp ${deps_engraver_state_hh} ${deps_log_hh} ${deps_undefined_hh}
+deps_reengrave_info_cpp := ${cppsrc}/reengrave_info.cpp ${deps_reengrave_info_hh}
 deps_file_format_cpp    := ${cppsrc}/file_format.cpp ${deps_file_format_hh}
 deps_fraction_cpp       := ${cppsrc}/fraction.cpp ${deps_fraction_hh}
 deps_log_cpp            := ${cppsrc}/log.cpp ${deps_log_hh}
@@ -302,7 +308,7 @@ deps_renderer_cpp       := ${cppsrc}/renderer.cpp ${deps_renderer_hh}
 deps_score_cpp          := ${cppsrc}/score.cpp ${deps_score_hh}
 deps_sprite_id_cpp      := ${cppsrc}/sprite_id.cpp ${deps_sprite_id_hh} ${deps_undefined_hh}
 deps_sprites_cpp        := ${cppsrc}/sprites.cpp ${deps_sprites_hh} ${deps_undefined_hh}
-deps_user_cursor_cpp    := ${cppsrc}/user_cursor.cpp ${deps_user_cursor_hh} ${deps_log_hh}
+deps_user_cursor_cpp    := ${cppsrc}/user_cursor.cpp ${deps_user_cursor_hh} ${deps_engraver_state_hh}
 
 
 #
@@ -728,6 +734,13 @@ ${builddir}/engrave_info.o:		${deps_engrave_info_cpp}
 ${builddir}/engrave_info.s.o:	${deps_engrave_info_cpp}
 								echo "  Compiling: engrave_info.cpp..."
 								${CXX} ${SOFLAGS} -c ${cppsrc}/engrave_info.cpp -o ${builddir}/engrave_info.s.o ${FLAGS}
+
+${builddir}/reengrave_info.o:	${deps_reengrave_info_cpp}
+								echo "  Compiling: reengrave_info.cpp..."
+								${CXX} -c ${cppsrc}/reengrave_info.cpp -o ${builddir}/reengrave_info.o ${FLAGS}
+${builddir}/reengrave_info.s.o:	${deps_reengrave_info_cpp}
+								echo "  Compiling: reengrave_info.cpp..."
+								${CXX} ${SOFLAGS} -c ${cppsrc}/reengrave_info.cpp -o ${builddir}/reengrave_info.s.o ${FLAGS}
 
 ${builddir}/context.o:		${deps_context_cpp}
 							echo "  Compiling: context.cpp..."

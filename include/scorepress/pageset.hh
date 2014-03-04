@@ -91,6 +91,7 @@ class SCOREPRESS_LOCAL Pageset
         const RefPtr<Plate> plate;          // plate object for the given page of the given score
         
         PlateInfo(const unsigned int pageno, const unsigned int start_page, const Score& score, const ScoreDimension& dim); // constructor
+        PlateInfo() {throw MissingDefaultConstructor("Pageset::PlateInfo");};
     };
     
     // all rendering information for one page
@@ -118,12 +119,16 @@ class SCOREPRESS_LOCAL Pageset
         
         // constructor
         pPage(unsigned int pno) : pageno(pno) {};
+        pPage() {throw MissingDefaultConstructor("Pageset::pPage");};
     };
     
     // typedefs
-    typedef std::list<pPage>                 PageList;
-    typedef std::list<pPage>::iterator       Iterator;
-    typedef std::list<pPage>::const_iterator const_Iterator;
+    typedef std::list<pPage>         PageList;
+    typedef std::list<PlateInfo>     PlateList;
+    typedef PageList::iterator       Iterator;
+    typedef PageList::const_iterator const_Iterator;
+    typedef PageList::iterator       PageIt;
+    typedef PlateList::iterator      PlateIt;
     
     // page layout
     PageDimension page_layout;

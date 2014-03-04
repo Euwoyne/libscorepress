@@ -99,7 +99,7 @@ class SCOREPRESS_API Log
 //
 class SCOREPRESS_API Logging
 {
- protected:
+ private:
     mutable Log* logging_log;
     
  public:

@@ -24,3 +24,8 @@ using namespace ScorePress;
 Error::Error() : std::string("Unknown Error within module \"libscorepress\"") {}
 Error::Error(const std::string msg) : std::string(msg) {}
 
+MissingDefaultConstructor::MissingDefaultConstructor(const std::string classname) : Error("Class ")
+{
+    append(classname); append(" has no default constructor!");
+}
+

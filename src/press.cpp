@@ -205,7 +205,7 @@ void Press::render_staff(Renderer& renderer, const Plate& plate, const Position<
         // render the line's boundary box
         if (parameters.draw_linebounds)
         {
-            draw_boundaries(renderer, *line, parameters.linebounds_color, offset);
+            draw_boundaries(renderer, line->noteBox, parameters.linebounds_color, offset);
             renderer.set_color(0, 0, 0, 255);   // reset color
         };
     };
@@ -216,7 +216,7 @@ Press::Press(const StyleParam& style, const ViewportParam& viewport) : state(par
                                                                        default_style(style) {}
 
 // draw the boundary box of a graphical object
-void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::draw_boundaries(Renderer& renderer, const Plate::GphBox& gphBox, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException)
 {
     // check if the renderer is ready
     if (!renderer.ready()) throw InvalidRendererException();
@@ -227,16 +227,16 @@ void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object,
                        static_cast<unsigned char>((color >> 8) & 0xFF),
                        static_cast<unsigned char>((color >> 16) & 0xFF),
                        static_cast<unsigned char>((color >> 24) & 0xFF));
-    renderer.move_to((scale(object.gphBox.pos.x) + offset.x) / 1000.0, (scale(object.gphBox.pos.y) + offset.y) / 1000.0);
-    renderer.line_to((scale(object.gphBox.pos.x + object.gphBox.width) + offset.x) / 1000.0, (scale(object.gphBox.pos.y) + offset.y) / 1000.0);
-    renderer.line_to((scale(object.gphBox.pos.x + object.gphBox.width) + offset.x) / 1000.0, (scale(object.gphBox.pos.y + object.gphBox.height) + offset.y) / 1000.0);
-    renderer.line_to((scale(object.gphBox.pos.x) + offset.x) / 1000.0, (scale(object.gphBox.pos.y + object.gphBox.height) + offset.y) / 1000.0);
-    renderer.line_to((scale(object.gphBox.pos.x) + offset.x) / 1000.0, (scale(object.gphBox.pos.y) + offset.y) / 1000.0);
+    renderer.move_to((scale(gphBox.pos.x) + offset.x) / 1000.0, (scale(gphBox.pos.y) + offset.y) / 1000.0);
+    renderer.line_to((scale(gphBox.pos.x + gphBox.width) + offset.x) / 1000.0, (scale(gphBox.pos.y) + offset.y) / 1000.0);
+    renderer.line_to((scale(gphBox.pos.x + gphBox.width) + offset.x) / 1000.0, (scale(gphBox.pos.y + gphBox.height) + offset.y) / 1000.0);
+    renderer.line_to((scale(gphBox.pos.x) + offset.x) / 1000.0, (scale(gphBox.pos.y + gphBox.height) + offset.y) / 1000.0);
+    renderer.line_to((scale(gphBox.pos.x) + offset.x) / 1000.0, (scale(gphBox.pos.y) + offset.y) / 1000.0);
     renderer.stroke();
 }
 
 // draw the boundary box of a graphical object (customized color)
-void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, const Color& color, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::draw_boundaries(Renderer& renderer, const Plate::GphBox& gphBox, const Color& color, const Position<mpx_t> offset) throw(InvalidRendererException)
 {
     // check if the renderer is ready
     if (!renderer.ready()) throw InvalidRendererException();
@@ -244,11 +244,11 @@ void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object,
     // render the box
     renderer.set_line_width(1.0);
     renderer.set_color(color.r, color.g, color.b, color.a);
-    renderer.move_to((scale(object.gphBox.pos.x) + offset.x) / 1000.0, (scale(object.gphBox.pos.y) + offset.y) / 1000.0);
-    renderer.line_to((scale(object.gphBox.pos.x + object.gphBox.width) + offset.x) / 1000.0, (scale(object.gphBox.pos.y) + offset.y) / 1000.0);
-    renderer.line_to((scale(object.gphBox.pos.x + object.gphBox.width) + offset.x) / 1000.0, (scale(object.gphBox.pos.y + object.gphBox.height) + offset.y) / 1000.0);
-    renderer.line_to((scale(object.gphBox.pos.x) + offset.x) / 1000.0, (scale(object.gphBox.pos.y + object.gphBox.height) + offset.y) / 1000.0);
-    renderer.line_to((scale(object.gphBox.pos.x) + offset.x) / 1000.0, (scale(object.gphBox.pos.y) + offset.y) / 1000.0);
+    renderer.move_to((scale(gphBox.pos.x) + offset.x) / 1000.0, (scale(gphBox.pos.y) + offset.y) / 1000.0);
+    renderer.line_to((scale(gphBox.pos.x + gphBox.width) + offset.x) / 1000.0, (scale(gphBox.pos.y) + offset.y) / 1000.0);
+    renderer.line_to((scale(gphBox.pos.x + gphBox.width) + offset.x) / 1000.0, (scale(gphBox.pos.y + gphBox.height) + offset.y) / 1000.0);
+    renderer.line_to((scale(gphBox.pos.x) + offset.x) / 1000.0, (scale(gphBox.pos.y + gphBox.height) + offset.y) / 1000.0);
+    renderer.line_to((scale(gphBox.pos.x) + offset.x) / 1000.0, (scale(gphBox.pos.y) + offset.y) / 1000.0);
     renderer.stroke();
 }
 
@@ -340,6 +340,23 @@ void Press::render(Renderer& renderer, const Pageset::pPage& page, const Pageset
     };
 }
 
+// render an attachable through the given renderer
+void Press::render(Renderer& renderer, const Plate::pAttachable& object, const Staff& staff, const Position<mpx_t> offset) throw(InvalidRendererException)
+{
+    // check if the renderer is ready
+    if (!renderer.ready()) throw InvalidRendererException();
+    
+    // setup state
+    state.offset = offset;
+    state.set_style((!!staff.style) ? *staff.style : default_style);
+    state.head_height = state.viewport.umtopx_v(staff.head_height);
+    state.stem_width  = state.viewport.umtopx_h(state.style->stem_width);
+    
+    // render object
+    object.object->render(renderer, object, state);
+}
+
+#include <iostream>
 // render page decoration
 void Press::render_decor(Renderer& renderer, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException)
 {
@@ -422,10 +439,25 @@ void Press::render(Renderer& renderer, const UserCursor& cursor, const Position<
     };
 }
 
-void Press::render(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t> offset) throw (InvalidRendererException)
+void Press::render(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t> offset, const Position<mpx_t>& move_offset) throw (InvalidRendererException)
 {
-    state.offset = offset;
-    cursor.get_object().render_decor(renderer, cursor.get_pobject(), state);
-    // TODO: draw note node
+    const Plate::pAttachable& object = cursor.get_pobject();
+    const Plate::pNote&       note   = cursor.get_parent();
+    
+    state.offset = offset + move_offset;
+    cursor.get_object().render_decor(renderer, object, state);
+    
+    const Position<mpx_t> origin((move_offset.x + scale(object.gphBox.pos.x + object.gphBox.right())  / 2 < scale(note.gphBox.pos.x)) ? object.gphBox.right()  : object.gphBox.pos.x,
+                                 (move_offset.y + scale(object.gphBox.pos.y + object.gphBox.bottom()) / 2 < scale(note.gphBox.pos.y)) ? object.gphBox.bottom() : object.gphBox.pos.y);
+    
+    renderer.set_line_width(1.0);
+    renderer.move_to((scale(note.gphBox.pos.x) + offset.x)       / 1000.0, (scale(note.gphBox.pos.y) + offset.y)       / 1000.0);
+    renderer.line_to((scale(origin.x)          + state.offset.x) / 1000.0, (scale(origin.y)          + state.offset.y) / 1000.0);
+    renderer.stroke();
+    renderer.move_to((scale(origin.x)          + state.offset.x) / 1000.0, (scale(origin.y)          + state.offset.y) / 1000.0);
+    renderer.line_to((scale(origin.x + 3)      + state.offset.x) / 1000.0, (scale(origin.y)          + state.offset.y) / 1000.0);
+    renderer.line_to((scale(origin.x + 3)      + state.offset.x) / 1000.0, (scale(origin.y + 3)      + state.offset.y) / 1000.0);
+    renderer.line_to((scale(origin.x)          + state.offset.x) / 1000.0, (scale(origin.y + 3)      + state.offset.y) / 1000.0);
+    renderer.fill();
 }
 

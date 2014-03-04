@@ -81,19 +81,30 @@ Engraver::Engraver(Pageset& _pageset, const Sprites& _sprites, const StyleParam&
     pageset(&_pageset),
     sprites(&_sprites),
     style(&_style),
-    viewport(&_viewport) {}
+    viewport(&_viewport), running(false) {}
 
 // engrave the whole score
 void Engraver::engrave(const Score& score, const unsigned int start_page)
 {
+    log_debug("engrave (score)");
     EngraverState state(score, start_page, *pageset, *sprites, parameters, *style, *viewport);
-    if (logging_log) state.log_set(*logging_log);
+    state.log_set(*this);
+    while (state.engrave_next());
+}
+
+void Engraver::engrave(const Score& score, const unsigned int start_page, ReengraveInfo& info)
+{
+    log_debug("engrave (score with reengrave-info)");
+    EngraverState state(score, start_page, *pageset, *sprites, parameters, *style, *viewport);
+    state.set_reengrave_info(info);
+    state.log_set(*this);
     while (state.engrave_next());
 }
 
 // engrave the document
 void Engraver::engrave(const Document& document)
 {
+    log_debug("engrave (document)");
     pageset->clear();
     pageset->page_layout.set(document.page_layout, *viewport);
     pageset->head_height = viewport->umtopx_v(document.head_height);
@@ -102,6 +113,21 @@ void Engraver::engrave(const Document& document)
     for (std::list<Document::Score>::const_iterator i = document.scores.begin(); i != document.scores.end(); ++i)
     {
         engrave(i->score, i->start_page);
+    };
+    engrave_attachables(document);
+}
+
+void Engraver::engrave(const Document& document, ReengraveInfo& info)
+{
+    log_debug("engrave (document with reengrave-info)");
+    pageset->clear();
+    pageset->page_layout.set(document.page_layout, *viewport);
+    pageset->head_height = viewport->umtopx_v(document.head_height);
+    pageset->stem_width = viewport->umtopx_h(document.stem_width);
+    
+    for (std::list<Document::Score>::const_iterator i = document.scores.begin(); i != document.scores.end(); ++i)
+    {
+        engrave(i->score, i->start_page, info);
     };
     engrave_attachables(document);
 }

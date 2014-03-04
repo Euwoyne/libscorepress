@@ -17,6 +17,7 @@
   permissions and limitations under the Licence.
 */
 
+#include <cmath>        // sqrt
 #include <iostream>     // std::cout
 
 #include "plate.hh"     // Plate
@@ -24,6 +25,7 @@
                         // this number is interpreted as an undefined value
 using namespace ScorePress;
 
+inline int _round(const double d) {return static_cast<int>(d + 0.5);}
 
 //
 //     class Plate
@@ -36,7 +38,7 @@ using namespace ScorePress;
 
 // box constructors
 Plate_GphBox::Plate_GphBox() : pos(), width(0), height(0) {}
-Plate_GphBox::Plate_GphBox(Position<mpx_t> p, mpx_t w, mpx_t h) : pos(p), width(w), height(h) {}
+Plate_GphBox::Plate_GphBox(Plate::Pos p, mpx_t w, mpx_t h) : pos(p), width(w), height(h) {}
 
 // check, if a given box overlaps this box
 bool Plate_GphBox::overlaps(const Plate_GphBox& box)
@@ -50,7 +52,7 @@ bool Plate_GphBox::overlaps(const Plate_GphBox& box)
 }
 
 // extend box, such that the given point is covered
-void Plate_GphBox::extend(const Position<mpx_t>& p)
+void Plate_GphBox::extend(const Plate::Pos& p)
 {
     if (p.x < pos.x)
     {
@@ -96,22 +98,22 @@ void Plate_GphBox::extend(const Plate_GphBox& box)
 }
 
 // graphical object constructor
-Plate_pGraphical::Plate_pGraphical(Position<mpx_t> pos, mpx_t width, mpx_t height) : gphBox(pos, width, height) {}
+Plate_pGraphical::Plate_pGraphical(Plate::Pos pos, mpx_t width, mpx_t height) : gphBox(pos, width, height) {}
 
 // attachable constructor
-Plate_pAttachable::Plate_pAttachable(const AttachedObject& obj, const Position<mpx_t>& pos) : object(&obj), absolutePos(pos)
+Plate_pAttachable::Plate_pAttachable(const AttachedObject& obj, const Plate::Pos& pos) : object(&obj), absolutePos(pos)
 {
     flipped.x = flipped.y = 0;
 }
 
 // durable constructor
-Plate_pDurable::Plate_pDurable(const AttachedObject& obj, const Position<mpx_t>& pos) : Plate_pAttachable(obj, pos) {}
+Plate_pDurable::Plate_pDurable(const AttachedObject& obj, const Plate::Pos& pos) : Plate_pAttachable(obj, pos) {}
 
 // virtual note constructor
 Plate_pNote::Virtual::Virtual(const StaffObject& _object, bool _inserted) : object(_object.clone()), inserted(_inserted) {}
 
 // note object constructor
-Plate_pNote::Plate_pNote(const Position<mpx_t>& pos, const const_Cursor& n) : note(n), virtual_obj(), stem_info(), noflag(false)
+Plate_pNote::Plate_pNote(const Plate::Pos& pos, const const_Cursor& n) : note(n), virtual_obj(), stem_info(), noflag(false)
 {
     absolutePos.push_back(pos); // append top pos
     stem.x = pos.x;             // initialize zero length stem at pos
@@ -163,7 +165,7 @@ void Plate_pNote::add_tieend_offset(mpx_t offset)
 void Plate_pNote::dump() const
 {
     std::cout << "address      " << this << "\n";
-    std::cout << "type         " << classname(get_note().classtype()) << "\n";
+    std::cout << "type         " << (at_end() ? "[E]" : classname(get_note().classtype())) << "\n";
     std::cout << "sprite       (" << sprite.setid << ", " << sprite.spriteid << ")\n";
     std::cout << "absolutePos ";
     for (PositionList::const_iterator i = absolutePos.begin(); i != absolutePos.end(); ++i)
@@ -241,6 +243,110 @@ Plate_pLine::const_Iterator Plate_pLine::get_staff(const Staff& staff) const
     return voices.end();    // if it cannot be found, return empty iterator
 }
 
+// calculate graphical boundary box
+void Plate_pLine::calculate_gphBox()
+{
+    // setup basic reference points
+    noteBox.pos = basePos;
+    noteBox.width = noteBox.height = 0;
+    noteBox.extend(Position<mpx_t>(line_end, basePos.y));
+    
+    // calculate note-box
+    for (Plate::VoiceIt voice = voices.begin(); voice != voices.end(); ++voice)
+        for (Plate::NoteIt note = voice->notes.begin(); note != voice->notes.end(); ++note)
+            noteBox.extend(note->gphBox);
+    
+    // copy note-box and extend to contain all attaced objects
+    gphBox = noteBox;
+    for (Plate::VoiceIt voice = voices.begin(); voice != voices.end(); ++voice)
+        for (Plate::NoteIt note = voice->notes.begin(); note != voice->notes.end(); ++note)
+            for (Plate::pNote::AttachableList::iterator a = note->attached.begin(); a != note->attached.end(); ++a)
+                gphBox.extend((*a)->gphBox);
+}
+
+// calculate the graphical box for the given bezier spline
+Plate::GphBox Plate::calculate_gphBox(const Plate::Pos& p1, const Plate::Pos& c1, const Plate::Pos& c2, const Plate::Pos& p2, const mpx_t w0, const mpx_t w1)
+{
+    double tx1, tx2, ty1, ty2;  // extreme parameters
+    
+    // calculate extreme parameters (X coordinate)
+    if (p2.x - 3 * c2.x + 3 * c1.x - p1.x != 0) // cubic polynomial
+    {
+        const double px = (c2.x - 2.0 * c1.x + p1.x) / (p2.x - 3.0 * c2.x + 3.0 * c1.x - p1.x);
+        const double qx = (3.0 * (c1.x - p1.x)) / (p2.x - 3.0 * c2.x + 3.0 * c1.x - p1.x);
+        if (px * px - qx >= 0)    // monotonous?
+        {       // non-monotonous => extremum
+            tx1 = -px + sqrt(px * px - qx);
+            tx2 = -px - sqrt(px * px - qx);
+            if (tx1 < 0 || tx1 > 1) tx1 = 0;    // cut to interval [0,1]
+            if (tx2 < 0 || tx2 > 1) tx2 = 0;
+        }
+        else    // monotonous => extremum in endpoint
+        {
+            tx1 = tx2 = 0;
+        };
+    }
+    else if (c2.x - 2 * c1.x + p1.x != 0)   // quadratic polynomial
+    {
+        tx1 = tx2 = -(c1.x - p1.x) / (2.0 * (c2.x - 2.0 * c1.x + p1.x));
+        if (tx1 < 0 || tx1 > 1) tx1 = 0;    // cut to interval [0,1]
+        if (tx2 < 0 || tx2 > 1) tx2 = 0;
+    }
+    else    tx1 = tx2 = 0;  // linear polynomial => extremum in endpoint
+    
+    // calculate extreme parameters (Y coordinate)
+    if (p2.y - 3 * c2.y + 3 * c1.y - p1.y != 0) // cubic polynomial
+    {
+        const double py = (c2.y - 2.0 * c1.y + p1.y) / (p2.y - 3.0 * c2.y + 3.0 * c1.y - p1.y);
+        const double qy = (3.0 * (c1.y - p1.y)) / (p2.y - 3.0 * c2.y + 3.0 * c1.y - p1.y);
+        if (py * py - qy >= 0)     // monotonous?
+        {       // non-monotonous => extremum
+            ty1 = -py + sqrt(py * py - qy);
+            ty2 = -py - sqrt(py * py - qy);
+            if (ty1 < 0 || ty1 > 1) ty1 = 0;    // cut to interval [0,1]
+            if (ty2 < 0 || ty2 > 1) ty2 = 0;
+        }
+        else    // monotonous => extremum in endpoint
+        {
+            ty1 = ty2 = 0;
+        };
+    }
+    else if (c2.y - 2 * c1.y + p1.y != 0)   // quadratic polynomial
+    {
+        ty1 = ty2 = - (c1.y - p1.y) / (2.0 * (c2.y - 2.0 * c1.y + p1.y));
+        if (ty1 < 0 || ty1 > 1) ty1 = 0;    // cut to interval [0,1]
+        if (ty2 < 0 || ty2 > 1) ty2 = 0;
+    }
+    else    ty1 = ty2 = 0;  // linear polynomial => extremum in endpoint
+    
+    // calculate bezier-function values
+    const double x1 = (1-tx1)*(1-tx1)*((1-tx1)*p1.x + 3*tx1*c1.x) + tx1*tx1*(3*(1-tx1)*c2.x + tx1*p2.x);
+    const double x2 = (1-tx2)*(1-tx2)*((1-tx2)*p1.x + 3*tx2*c1.x) + tx2*tx2*(3*(1-tx2)*c2.x + tx2*p2.x);
+    const double y1 = (1-ty1)*(1-ty1)*((1-ty1)*p1.y + 3*ty1*c1.y) + ty1*ty1*(3*(1-ty1)*c2.y + ty1*p2.y);
+    const double y2 = (1-ty2)*(1-ty2)*((1-ty2)*p1.y + 3*ty2*c1.y) + ty2*ty2*(3*(1-ty2)*c2.y + ty2*p2.y);
+    
+    // calculate extremata                                         (and consider line width)
+    const mpx_t Mx = _round((x1 > x2 && x1 > p1.x && x1 > p2.x) ? x1   + 2*(w1-w0)*tx1*(1-tx1)+w0 :
+                           ((x2 > p1.x && x2 > p2.x)            ? x2   + 2*(w1-w0)*tx2*(1-tx2)+w0 :
+                           ((p1.x > p2.x)                       ? p1.x + w0 / 2 :
+                                                            p2.x + w0 / 2 )));
+    const mpx_t mx = _round((x1 < x2 && x1 < p1.x && x1 < p2.x) ? x1   - 2*(w1-w0)*tx1*(1-tx1)-w0 :
+                           ((x2 < p1.x && x2 < p2.x)            ? x2   - 2*(w1-w0)*tx2*(1-tx2)-w0 :
+                           ((p1.x < p2.x)                       ? p1.x - w0 / 2 :
+                                                            p2.x - w0 / 2)));
+    const mpx_t My = _round((y1 > y2 && y1 > p1.y && y1 > p2.y) ? y1   + 2*(w1-w0)*ty1*(1-ty1)+w0 :
+                           ((y2 > p1.y && y2 > p2.y)            ? y2   + 2*(w1-w0)*ty2*(1-ty2)+w0 :
+                           ((p1.y > p2.y)                       ? p1.y + w0 / 2 :
+                                                            p2.y + w0 / 2 )));
+    const mpx_t my = _round((y1 < y2 && y1 < p1.y && y1 < p2.y) ? y1   - 2*(w1-w0)*ty1*(1-ty1)-w0 :
+                           ((y2 < p1.y && y2 < p2.y)            ? y2   - 2*(w1-w0)*ty2*(1-ty2)-w0 :
+                           ((p1.y < p2.y)                       ? p1.y - w0 / 2 :
+                                                            p2.y - w0 / 2 )));
+    
+    // create box
+    return GphBox(Position<mpx_t>(mx, my), Mx - mx, My - my);
+}
+
 // dump the plate content to stdout
 void Plate::dump() const
 {
@@ -253,7 +359,7 @@ void Plate::dump() const
         j = 0;
         for (VoiceList::const_iterator v = l->voices.begin(); v != l->voices.end(); ++v)
         {
-            std::cout << "    Voice " << j++ << ": (" << v->basePos.x << ", " << v->basePos.y << ") t=" << v->time << "\n";
+            std::cout << "    Voice " << j++ << ": (" << v->basePos.x << ", " << v->basePos.y << ") t=" << v->time << "  " << &*v << "\n";
             k = 0;
             for (NoteList::const_iterator n = v->notes.begin(); n != v->notes.end(); ++n)
             {
@@ -278,4 +384,3 @@ void Plate::dump() const
         };
     };
 }
-

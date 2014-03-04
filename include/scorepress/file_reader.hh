@@ -25,7 +25,7 @@
 #include "document.hh"   // Document
 #include "parameters.hh" // EngraverParam, PressParam, StyleParam, InterfaceParam
 #include "sprites.hh"    // SpriteSet
-#include "error.hh"      // Error
+#include "error.hh"      // Error, MissingDefaultConstructor
 #include "export.hh"
 
 namespace ScorePress
@@ -59,7 +59,7 @@ class SCOREPRESS_API FileReader
     class SCOREPRESS_API FormatError : public Error     // thrown, if the file contains illegal syntax
         {public: FormatError(const std::string& msg) : Error(msg) {};};
     
- public:
+ private:
     const std::string        name;              // file-type name
     std::vector<std::string> mime_types;        // file mime-type
     std::vector<std::string> file_extensions;   // extension filter
@@ -68,6 +68,8 @@ class SCOREPRESS_API FileReader
     // constructor
     FileReader(const std::string& name);
     FileReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    FileReader() {throw MissingDefaultConstructor("FileReader");};
+    
     virtual ~FileReader() {};
     
     // type information access
@@ -113,6 +115,7 @@ class SCOREPRESS_API DocumentReader : virtual public FileReader
     // constructor
     DocumentReader(const std::string& name);
     DocumentReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    DocumentReader() {throw MissingDefaultConstructor("DocumentReader");};
     
     // virtual parser interface
     virtual void parse_document(Document& target) = 0;  // document parser
@@ -136,6 +139,7 @@ class SCOREPRESS_API ParameterReader : virtual public FileReader
     // constructor
     ParameterReader(const std::string& name);
     ParameterReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    ParameterReader() {throw MissingDefaultConstructor("ParameterReader");};
     
     // virtual parser interface
     virtual void parse_parameter(EngraverParam&  engraver_param,
@@ -162,6 +166,7 @@ class SCOREPRESS_API SpritesetReader : virtual public FileReader
     // constructor
     SpritesetReader(const std::string& name);
     SpritesetReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    SpritesetReader() {throw MissingDefaultConstructor("SpritesetReader");};
     
     // virtual parser interface
     virtual void parse_spriteset(SpriteSet&   target,       // sprite-set parser

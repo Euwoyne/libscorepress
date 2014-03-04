@@ -50,7 +50,7 @@ void BeamInfo::start(unsigned int exp, Plate::pVoice::Iterator pnote)
 {
     for (size_t i = exp; i < VALUE_BASE - 2; ++i)   // add new beams
     {
-        if (beam[i] != voice.notes.end()) break;    // stop, if further beams exist already
+        if (beam[i] != voice->notes.end()) break;   // stop, if further beams exist already
         beam[i] = pnote;                            // add beam to this note
     };
 }
@@ -64,7 +64,7 @@ inline static bool equal_dir(const Plate::pNote& n1, const Plate::pNote& n2)
 // helper for "set", "stop" and "cut"
 void BeamInfo::calculate_beam(size_t i, Plate::pNote& pnote, const Plate::pNote& end, size_t& s, bool short_left)
 {
-    if (beam[i] != voice.notes.end())   // ...if it exists
+    if (beam[i] != voice->notes.end())  // ...if it exists
     {                                   //   let the beam go up to the given end-note
         if (equal_dir(*beam[i], end))
             set(i, VALUE_BASE - 3 - i + s, *beam[i], end, pnote); 
@@ -90,14 +90,14 @@ void BeamInfo::calculate_beam(size_t i, Plate::pNote& pnote, const Plate::pNote&
                 if (s) --s;
             };
         };
-        beam[i] = voice.notes.end();    //   and remove it from the array
+        beam[i] = voice->notes.end();   //   and remove it from the array
     };
 }
 
 // end all (for the given exponent) unnecessary beams at the previous note
 void BeamInfo::set(unsigned int exp, Plate::pVoice::Iterator pnote)
 {
-    if (pnote == voice.notes.begin()) return;
+    if (pnote == voice->notes.begin()) return;
     Plate::pVoice::Iterator end(pnote);
     --end;
     
@@ -105,16 +105,16 @@ void BeamInfo::set(unsigned int exp, Plate::pVoice::Iterator pnote)
     
     for (size_t i = 0; i < exp; ++i)    // check every beam we don't need...
     {
-        calculate_beam(i, *pnote, *end, s,      // calculate the beam
-               i < exp - 1                      //    if the beam is short, it points to the left, if...
-            && beam[i + 1] != voice.notes.end() // ...there is a beam above, ...
-            && beam[i + 1] != beam[i]);         // ...that only has a connection to the previous note
+        calculate_beam(i, *pnote, *end, s,          // calculate the beam
+               i < exp - 1                          //    if the beam is short, it points to the left, if...
+            && beam[i + 1] != voice->notes.end()    // ...there is a beam above, ...
+            && beam[i + 1] != beam[i]);             // ...that only has a connection to the previous note
     };
     
     // count irregular beam positions (for stem length)
     for (size_t i = exp; i < VALUE_BASE - 3; ++i)
     {
-        if (beam[i] != voice.notes.end())   // if the beam exists...
+        if (beam[i] != voice->notes.end())  // if the beam exists...
         {                                   // ...increment counter on unequal stem direction
             if (!equal_dir(*beam[i], *end))
                 ++s;                        
@@ -137,7 +137,7 @@ void BeamInfo::stop(unsigned int exp, Plate::pVoice::Iterator end)
 // let each beam end on the previous note (indicating that the current symbol does not allow beams)
 void BeamInfo::cut(Plate::pVoice::Iterator pnote)
 {
-    if (pnote == voice.notes.begin()) return;
+    if (pnote == voice->notes.begin()) return;
     Plate::pVoice::Iterator end(pnote);
     --end;
     
@@ -170,22 +170,22 @@ void BeamInfo::apply(const Chord&             chord,      // current chord
             free(pnote->stem_info);
         
         // calculate beams
-        if (beam[exp] == voice.notes.end()) // if there are not sufficient beams attached already
-            start(exp, pnote);              //   add additional beams
-        else if (exp != 0)                  // if there are sufficient beams (and we could need less)
-            set(exp, pnote);                //   end unnecessary beams at the previous note
+        if (beam[exp] == voice->notes.end())    // if there are not sufficient beams attached already
+            start(exp, pnote);                  //   add additional beams
+        else if (exp != 0)                      // if there are sufficient beams (and we could need less)
+            set(exp, pnote);                    //   end unnecessary beams at the previous note
         
         // buffer
-        last_chord = &chord;                // remember last chord
-        last_pnote = pnote;                 // and last pnote
+        last_chord = &chord;                    // remember last chord
+        last_pnote = pnote;                     // and last pnote
     }
-    else if (beam[VALUE_BASE - 3] != voice.notes.end()) // if the note does not have a beam
-    {                                                   // but the array is not empty yet
+    else if (beam[VALUE_BASE - 3] != voice->notes.end())    // if the note does not have a beam
+    {                                                       // but the array is not empty yet
         // erase remembered chord
         last_chord = NULL;
         
         // remove flags
-        for (Plate::pVoice::Iterator i = beam[VALUE_BASE - 3]; i != voice.notes.end(); ++i)
+        for (Plate::pVoice::Iterator i = beam[VALUE_BASE - 3]; i != voice->notes.end(); ++i)
         {
             i->noflag = true;
             if (i == pnote) break;
@@ -198,7 +198,7 @@ void BeamInfo::apply(const Chord&             chord,      // current chord
         }
         else    // otherwise the beams end on this note
         {
-            if (beam[exp] == voice.notes.end())     // if there are not sufficient beams attached already
+            if (beam[exp] == voice->notes.end())    // if there are not sufficient beams attached already
                 start(exp, pnote);                  //   add necessary beams
             set(exp, pnote);            // end unnecessary beams
             stop(exp, pnote);           // end existing beams
@@ -208,23 +208,23 @@ void BeamInfo::apply(const Chord&             chord,      // current chord
 }
 
 // constructor
-BeamInfo::BeamInfo(Plate::pVoice& _voice) : voice(_voice), last_pnote(voice.notes.end()), last_chord(NULL)
+BeamInfo::BeamInfo(Plate::pVoice& _voice) : voice(&_voice), last_pnote(voice->notes.end()), last_chord(NULL)
 {
-    for (size_t i = 0; i < VALUE_BASE - 2; ++i) beam[i] = voice.notes.end();
+    for (size_t i = 0; i < VALUE_BASE - 2; ++i) beam[i] = voice->notes.end();
 }
 
 // create beam information (first pass; only top beam)
 // (first version expecting the "object" to correspond to the last note in the "voice")
 void BeamInfo::apply1(const Chord& object, const unsigned char beam_group, const StemInfo& info)
 {
-    if (voice.notes.empty()) return;
-    apply(object, --voice.notes.end(), &info,
+    if (voice->notes.empty()) return;
+    apply(object, --voice->notes.end(), &info,
     // has_beam =
               object.beam == Chord::FORCE_BEAM              // forced beam
           ||  object.beam == Chord::CUT_BEAM                // cut beam
           || (object.beam == Chord::AUTO_BEAM               // automatic beam
-              &&    voice.end_time.i() / (1 << beam_group)  //      if, this and the next note are in the same beam-group
-                 == (voice.end_time - object.value()).i() / (1 << beam_group)
+              &&    voice->end_time.i() / (1 << beam_group) //      if, this and the next note are in the same beam-group
+                 == (voice->end_time - object.value()).i() / (1 << beam_group)
              ),
     // exp =
           (   object.beam == Chord::CUT_BEAM        // if the beam is cut
@@ -242,8 +242,8 @@ void BeamInfo::apply1(const Chord& object, Plate::pVoice::Iterator pnote, const 
               object.beam == Chord::FORCE_BEAM              // forced beam
           ||  object.beam == Chord::CUT_BEAM                // cut beam
           || (object.beam == Chord::AUTO_BEAM               // automatic beam
-              &&    voice.end_time.i() / (1 << beam_group)  //      if, this and the next note are in the same beam-group
-                 == (voice.end_time - object.value()).i() / (1 << beam_group)
+              &&    voice->end_time.i() / (1 << beam_group) //      if, this and the next note are in the same beam-group
+                 == (voice->end_time - object.value()).i() / (1 << beam_group)
              ),
     // exp =
           (   object.beam == Chord::CUT_BEAM        // if the beam is cut
@@ -257,14 +257,14 @@ void BeamInfo::apply1(const Chord& object, Plate::pVoice::Iterator pnote, const 
 // (expecting the "object" to correspond to the last note in the "voice")
 void BeamInfo::apply2(const Chord& object, const unsigned char beam_group)
 {
-    if (voice.notes.empty()) return;
-    apply(object, --voice.notes.end(), NULL,
+    if (voice->notes.empty()) return;
+    apply(object, --voice->notes.end(), NULL,
     // has_beam =
               object.beam == Chord::FORCE_BEAM              // forced beam
           ||  object.beam == Chord::CUT_BEAM                // cut beam
           || (object.beam == Chord::AUTO_BEAM               // automatic beam
-              &&    voice.end_time.i() / (1 << beam_group)  //      if, this and the next note are in the same beam-group
-                 == (voice.end_time - object.value()).i() / (1 << beam_group)
+              &&    voice->end_time.i() / (1 << beam_group) //      if, this and the next note are in the same beam-group
+                 == (voice->end_time - object.value()).i() / (1 << beam_group)
              ),
     // exp =
           object.val.exp);
@@ -289,7 +289,7 @@ void BeamInfo::apply2(const Chord& object, Plate::pVoice::Iterator pnote, const 
 void BeamInfo::finish()
 {
     if (!last_chord) return;
-    if (beam[VALUE_BASE - 3] == voice.notes.end()) return;
+    if (beam[VALUE_BASE - 3] == voice->notes.end()) return;
     if (beam[VALUE_BASE - 3] == last_pnote) return;
     
     // remove flags

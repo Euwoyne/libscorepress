@@ -20,11 +20,12 @@
 #ifndef SCOREPRESS_ENGRAVER_HH
 #define SCOREPRESS_ENGRAVER_HH
 
-#include "document.hh"     // Document, Score
-#include "pageset.hh"      // Pageset
-#include "sprites.hh"      // Sprites
-#include "parameters.hh"   // EngraverParam, StyleParam, ViewportParam
-#include "log.hh"          // Logging
+#include "document.hh"       // Document, Score
+#include "pageset.hh"        // Pageset
+#include "sprites.hh"        // Sprites
+#include "parameters.hh"     // EngraverParam, StyleParam, ViewportParam
+#include "reengrave_info.hh" // ReengraveInfo
+#include "log.hh"            // Logging
 #include "export.hh"
 
 namespace ScorePress
@@ -47,10 +48,10 @@ class SCOREPRESS_LOCAL Engraver;    // engraver, computing a renderable plate fr
 class SCOREPRESS_LOCAL Engraver : public Logging
 {
  private:
-          Pageset*       pageset;  // target set of pages
-    const Sprites*       sprites;  // pointer to the sprite-library (for the pick)
-    const StyleParam*    style;    // default staff-style
-    const ViewportParam* viewport; // viewport-parameters (see "parameters.hh")
+          Pageset*       pageset;           // target set of pages
+    const Sprites*       sprites;           // pointer to the sprite-library (for the pick)
+    const StyleParam*    style;             // default staff-style
+    const ViewportParam* viewport;          // viewport-parameters (see "parameters.hh")
     
  private:
     void engrave_attachables(const Document& data);    // engrave the on-page attachables
@@ -62,19 +63,23 @@ class SCOREPRESS_LOCAL Engraver : public Logging
     Engraver(Pageset& pageset, const Sprites& sprites, const StyleParam& style, const ViewportParam& viewport);
     
     // set methods
-    inline void set_pageset(Pageset& pageset);                          // set the pageset
-    inline void set_sprites(const Sprites& sprites);                    // set the sprite-library
-    inline void set_style(const StyleParam& style);                     // set the staff-style
-    inline void set_viewport(const ViewportParam& viewport);            // set the viewport
+    void set_pageset(Pageset& pageset);                 // set the pageset
+    void set_sprites(const Sprites& sprites);           // set the sprite-library
+    void set_style(const StyleParam& style);            // set the staff-style
+    void set_viewport(const ViewportParam& viewport);   // set the viewport
     
     // get methods
-    inline const Sprites&       get_sprites();                          // get the sprite-library
-    inline const StyleParam&    get_style();                            // get the staff-style
-    inline const ViewportParam& get_viewport();                         // get the viewport
+    const Sprites&       get_sprites();                 // get the sprite-library
+    const StyleParam&    get_style();                   // get the staff-style
+    const ViewportParam& get_viewport();                // get the viewport
     
     // (engraving deletes and recreates all affected plates!)
     void engrave(const Score& score, const unsigned int start_page);    // engrave the whole score
+    void engrave(const Score& score, const unsigned int start_page, ReengraveInfo& info);
+    
+    bool running;
     void engrave(const Document& document);                             // engrave the document
+    void engrave(const Document& document, ReengraveInfo& info);
 };
 
 // set methods

@@ -146,7 +146,7 @@ class SCOREPRESS_LOCAL Pick : public Logging
 
  public:
     Pick(const Score& score, const EngraverParam& param, const ViewportParam& viewport, const Sprites& sprites);
-        
+    
     // movement methods
     void next(mpx_t width = 0); // pop current note from stack and add next note in voice
     void reset();               // reset cursors to the beginning of the score

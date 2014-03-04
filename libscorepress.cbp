@@ -149,6 +149,13 @@
 			<Option target="install-static" />
 			<Option target="clear" />
 		</Unit>
+		<Unit filename="include/scorepress/document.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="uninstall" />
+		</Unit>
 		<Unit filename="include/scorepress/edit_cursor.hh">
 			<Option target="shared" />
 			<Option target="static" />
@@ -275,6 +282,13 @@
 			<Option target="install-shared" />
 			<Option target="install-static" />
 			<Option target="clear" />
+		</Unit>
+		<Unit filename="include/scorepress/reengrave_info.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="uninstall" />
 		</Unit>
 		<Unit filename="include/scorepress/refptr.hh">
 			<Option target="shared" />
@@ -431,6 +445,13 @@
 		<Unit filename="src/press.cpp">
 			<Option target="shared" />
 			<Option target="static" />
+		</Unit>
+		<Unit filename="src/reengrave_info.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="uninstall" />
 		</Unit>
 		<Unit filename="src/renderer.cpp">
 			<Option target="shared" />

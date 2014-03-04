@@ -47,10 +47,18 @@ class SCOREPRESS_API ViewportParam
     unsigned int hppm;  // horizontal viewport resolution (in pixels per meter)
     unsigned int vppm;  // vertical viewport resolution   (in pixels per meter)
     
-    inline mpx_t umtopx_h(const double um) const {return static_cast<mpx_t>((um * hppm) / 1e3 + .5);};
-    inline mpx_t umtopx_v(const double um) const {return static_cast<mpx_t>((um * vppm) / 1e3 + .5);};
+    // convert micrometer to millipixel (and vice versa)
+    inline mpx_t umtopx_h(const double um)  const {return static_cast<mpx_t>((um * hppm) / 1e3 + .5);};
+    inline mpx_t umtopx_v(const double um)  const {return static_cast<mpx_t>((um * vppm) / 1e3 + .5);};
+    inline int   pxtoum_h(const mpx_t  mpx) const {return (mpx * 1000) / hppm;};
+    inline int   pxtoum_v(const mpx_t  mpx) const {return (mpx * 1000) / hppm;};
     
+    // setup viewport in dpi
     inline ViewportParam() : hppm(3780), vppm(3780) {};     // default to 96dpi
+    
+    inline void set_dpi(double dpi)               {hppm = vppm = static_cast<unsigned int>(dpi / 0.0254 + .5);};
+    inline void set_dpi(double hdpi, double vdpi) {hppm = static_cast<unsigned int>(hdpi / 0.0254 + .5);
+                                                   vppm = static_cast<unsigned int>(vdpi / 0.0254 + .5);};
 };
 
 //

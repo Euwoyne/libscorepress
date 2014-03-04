@@ -120,10 +120,10 @@ Pageset::Iterator Pageset::get_page(unsigned int pageno)
     unsigned int idx = 0;   // page index
     for (Iterator i = pages.begin(); i != pages.end(); ++i) // iterate through pages
     {
-        if (idx == pageno) return i;    // if we have got the correct page, return
+        if (i->pageno == pageno) return i;    // if we have got the correct page, return
         ++idx;                          // count the page
     }
-    do pages.push_back(pPage(++idx)); while (idx < pageno); // append enough pages to be able to return requested page
+    do pages.push_back(pPage(idx)); while (++idx < pageno); // append enough pages to be able to return requested page
     return --pages.end();                                   // return page
 }
 

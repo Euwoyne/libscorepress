@@ -60,12 +60,10 @@ class SCOREPRESS_API EditCursor : public UserCursor
     };
     
  private:
-    enum SCOREPRESS_LOCAL MoveMode {NONE, INSERT, REMOVE, ADDVOICE, 
-                                    NEWLINE, PAGEBREAK, RMNEWLINE, RMPAGEBREAK};   // cursor move mode
-    
     // interface parameters
-    const InterfaceParam* param;
-          Engraver*       engraver;
+    const InterfaceParam& param;
+    const StyleParam&     style;
+    const ViewportParam&  viewport;
     
     // calculate tone from note-name (regarding input method, ignoring accidentals)
     SCOREPRESS_LOCAL tone_t get_tone(const InputNote& note) const throw(NotValidException);
@@ -85,9 +83,12 @@ class SCOREPRESS_API EditCursor : public UserCursor
     static bool for_each_chord_in_beam_do(VoiceCursor&, void (*)(Chord&, const int, int*), const int arg, int* out = NULL);
     
  public:
-    // constructor
-    EditCursor(Document& doc, Pageset& pset, const InterfaceParam& param);
-    EditCursor(Document& doc, Pageset& pset, const InterfaceParam& param, Engraver& engraver);
+    // constructors
+    EditCursor(      Document&       document,
+                     Pageset&        pageset,
+               const InterfaceParam& param,
+               const StyleParam&     style,
+               const ViewportParam&  viewport);
     
     // access methods (non-constant)
     MovableList&                  get_attached()  throw(NotValidException); // return objects attached to the note
@@ -97,16 +98,6 @@ class SCOREPRESS_API EditCursor : public UserCursor
     Newline&        get_layout()        throw(NotValidException);   // return the line layout
     ScoreDimension& get_dimension()     throw(NotValidException);   // return the score dimension
     MovableList&    get_page_attached() throw(NotValidException);   // return objects attached to the page
-    
-    // engraver interface
-    bool has_engraver() const;                  // does the object have an associated engraver?
-    void set_engraver(Engraver& engraver);      // associate an engrtaver instance with this object
-    void remove_engraver();                     // remove engraver reference
-    Engraver& get_engraver();                   // get engraver instance
-    const Engraver& get_engraver() const;       // get engraver instance (constant)
-    
-    // reengrave the score and update this cursor (all iterators and pVoice::begin must be valid when calling this!)
-    void reengrave(const MoveMode& mode = NONE) throw(NoScoreException, Error);
     
     // insert an object (inserting transfers the objects ownership to the voice-object within the score)
     void insert(StaffObject* const object) throw(NotValidException, Cursor::IllegalObjectTypeException);
@@ -133,19 +124,12 @@ class SCOREPRESS_API EditCursor : public UserCursor
     void set_stem_slope(int pohh)  throw(Cursor::IllegalObjectTypeException);
     void set_stem_dir(bool down)   throw(Cursor::IllegalObjectTypeException);
     
-    void set_stem_length_auto()   throw(Cursor::IllegalObjectTypeException);
-    void set_stem_dir_auto()      throw(Cursor::IllegalObjectTypeException);
+    void set_stem_length_auto()    throw(Cursor::IllegalObjectTypeException);
+    void set_stem_dir_auto()       throw(Cursor::IllegalObjectTypeException);
     
     // set auto accidental to current object
-    void set_accidental_auto()  throw(Cursor::IllegalObjectTypeException);
+    void set_accidental_auto() throw(Cursor::IllegalObjectTypeException);
 };
-
-// engraver interface
-inline bool            EditCursor::has_engraver() const              {return engraver;}
-inline void            EditCursor::set_engraver(Engraver& _engraver) {engraver = &_engraver;}
-inline void            EditCursor::remove_engraver()                 {engraver = NULL;}
-inline Engraver&       EditCursor::get_engraver()                    {return *engraver;}
-inline const Engraver& EditCursor::get_engraver() const              {return *engraver;}
 
 } // end namespace
 

@@ -25,6 +25,7 @@
 #include "plate.hh"     // Plate
 #include "stem_info.hh" // StemInfo
 #include "score.hh"     // Score, Voice, TiedHead, Durable, ScoreDimension, tone_t, value_t, mpx_t
+#include "error.hh"     // MissingDefaultConstructor
 #include "export.hh"
 
 namespace ScorePress
@@ -52,7 +53,7 @@ typedef std::map<const Voice*, TieInfoChord> TieInfoMap;    // tie-information f
 class SCOREPRESS_LOCAL BeamInfo
 {
  private:
-    Plate::pVoice& voice;                           // the host voice
+    Plate::pVoice* voice;                           // the host voice
     Plate::pVoice::Iterator beam[VALUE_BASE - 2];   // the first note for every beam
                                                     //   (highest index being the top beam)
     Plate::pVoice::Iterator last_pnote;             // the last processed note (for the finish algorithm)
@@ -77,6 +78,7 @@ class SCOREPRESS_LOCAL BeamInfo
  public:
     // constructor
     BeamInfo(Plate::pVoice& voice);
+    BeamInfo() {throw MissingDefaultConstructor("BeamInfo");};
     
     // create beam information (first pass; only top beam)
     // (first version expecting the "object" to correspond to the last note in the "voice")
@@ -102,9 +104,9 @@ class SCOREPRESS_LOCAL BeamInfo
 //
 struct SCOREPRESS_LOCAL TieInfo
 {
-    const TiedHead* source;    // reference to the head, where the tie began
-    Plate::pNote::Tie* target; // corresponding on-plate tie information (NULL, if non-head anchor)
-    mpx_t refPos;              // horizontal position of the non-head anchor (if present)
+    const TiedHead*    source;  // reference to the head, where the tie began
+    Plate::pNote::Tie* target;  // corresponding on-plate tie information (NULL, if non-head anchor)
+    mpx_t              refPos;  // horizontal position of the non-head anchor (if present)
     
     // default constructor
     TieInfo() : source(NULL), target(NULL), refPos(0) {};
@@ -120,12 +122,13 @@ struct SCOREPRESS_LOCAL TieInfo
 //
 struct SCOREPRESS_LOCAL DurableInfo
 {
-    const Durable* source;     // the durable object
-    Plate::pDurable* target;   // the respective on-plate object
-    size_t durationcountdown;  // number of staff-objects remaining up to the end-node
+    const Durable*   source;            // the durable object
+    Plate::pDurable* target;            // the respective on-plate object
+    Plate::NoteIt    pnote;             // the parent note (on-plate)
+    size_t           durationcountdown; // number of staff-objects remaining up to the end-node
     
     // default constructor
-    DurableInfo() : source(NULL), target(NULL), durationcountdown(0) {};
+    DurableInfo() : source(NULL), target(NULL), pnote(NULL), durationcountdown(0) {};
 };
 
 
@@ -137,9 +140,9 @@ struct SCOREPRESS_LOCAL DurableInfo
 //
 struct SCOREPRESS_LOCAL SpaceInfo
 {
-    value_t accidental_time;       // time-stamp of the last accidental, which required spacing
-    const void* leftcluster_host;  // host object of the last left-cluster, which required spacing
-    value_t rightcluster_time;     // time-stamp of the last right-cluster, which required spacing
+    value_t     accidental_time;    // time-stamp of the last accidental, which required spacing
+    const void* leftcluster_host;   // host object of the last left-cluster, which required spacing
+    value_t     rightcluster_time;  // time-stamp of the last right-cluster, which required spacing
     
     SpaceInfo() : accidental_time(-1), leftcluster_host(NULL), rightcluster_time(-1) {};
 };

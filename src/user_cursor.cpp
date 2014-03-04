@@ -17,9 +17,11 @@
   permissions and limitations under the Licence.
 */
 
-#include <iostream>         // std::cout
+#include <iostream>          // std::cout
+#include <cassert>           // assert
 
-#include "user_cursor.hh"   // UserCursor
+#include "user_cursor.hh"    // UserCursor
+#include "engraver_state.hh" // EngraverState
 using namespace ScorePress;
 
 
@@ -71,6 +73,8 @@ void UserCursor::VoiceCursor::prev() throw(InvalidMovement, Error)
     // check, if we got the note
     if (!pnote->at_end() && (&*pnote->note != &*note || pnote->is_inserted()))
         throw Error("Cannot find previous note on-plate.");
+    
+    assert(pnote->at_end() || !note.at_end());
 }
 
 // to the next note (fails, if "at_end()")
@@ -92,6 +96,8 @@ void UserCursor::VoiceCursor::next() throw(InvalidMovement, Error)
     // check, if we got the note
     if (&*pnote->note != &*note || pnote->is_inserted())
         throw Error("Cannot find next note on-plate.");
+    
+    assert(pnote->at_end() || !note.at_end());
 }
 
 
@@ -101,6 +107,9 @@ void UserCursor::VoiceCursor::next() throw(InvalidMovement, Error)
 // are the objects simultaneous (and equal type)
 bool UserCursor::VoiceCursor::is_simultaneous(const VoiceCursor& cur) const
 {
+    assert(pnote->at_end() || !note.at_end());
+    assert(cur.pnote->at_end() || !cur.note.at_end());
+    
     if (time != cur.time) return false;                                 // unequal time -> FALSE
     if (at_end() && cur.at_end()) return true;                          // both at end -> TRUE
     if (at_end() || cur.at_end()) return true;                          // only one at end -> TRUE
@@ -112,6 +121,9 @@ bool UserCursor::VoiceCursor::is_simultaneous(const VoiceCursor& cur) const
 // is the given object during this one?
 bool UserCursor::VoiceCursor::is_during(const VoiceCursor& cur) const
 {
+    assert(pnote->at_end() || !note.at_end());
+    assert(cur.pnote->at_end() || !cur.note.at_end());
+    
     if (is_simultaneous(cur)) return true;                  // simultaneous -> TRUE
     if (cur.at_end()) return false;                         // non-simultaneous/at-end -> FALSE
     if (!cur.note->is(Class::NOTEOBJECT)) return false;     // non-simultaneous/non-note -> FALSE
@@ -123,6 +135,9 @@ bool UserCursor::VoiceCursor::is_during(const VoiceCursor& cur) const
 // is this object rendered after the given one?
 bool UserCursor::VoiceCursor::is_after(const VoiceCursor& cur) const
 {
+    assert(pnote->at_end() || !note.at_end());
+    assert(cur.pnote->at_end() || !cur.note.at_end());
+    
     if (time == cur.time)   // rendered in order: newline -> clef -> key -> time-signature -> note
     {
         if (at_end() && cur.at_end()) return false;         // both at end -> FALSE
@@ -154,6 +169,9 @@ bool UserCursor::VoiceCursor::is_after(const VoiceCursor& cur) const
 // is this object rendered before the given one?
 bool UserCursor::VoiceCursor::is_before(const VoiceCursor& cur) const
 {
+    assert(pnote->at_end() || !note.at_end());
+    assert(cur.pnote->at_end() || !cur.note.at_end());
+    
     if (time == cur.time)   // rendered in order: newline -> clef -> key -> time-signature -> note
     {
         if (at_end() && cur.at_end()) return false;         // both at end -> FALSE
@@ -181,6 +199,41 @@ bool UserCursor::VoiceCursor::is_before(const VoiceCursor& cur) const
     };
     return (time < cur.time);   // compare time of non-simultaneous objects
 }
+
+// setup reengraving trigger
+void UserCursor::VoiceCursor::setup_reengrave(ReengraveInfo& info)
+{
+    // if at the end
+    if (note.at_end())
+    {
+        if (note.has_prev())    // but the voice is not empty
+        {
+            info.setup_reengrave(*--note, *this);   // reengrave on last note
+            ++note;
+        }
+        else                    // if the voice is empty
+        {
+            info.setup_reengrave(note.voice(), *this);   // reengrave on voice creation
+        };
+    }
+    
+    // otherwise reengrave normally
+    else info.setup_reengrave(*note, *this);
+}
+
+// reengraving function
+bool UserCursor::VoiceCursor::reengrave(EngraverState& state)
+{
+    // update cursor with data from the engraver
+    pnote  =  state.get_target_it();
+    pvoice = &state.get_target_voice();
+    time   =  state.get_time();
+    ntime  =  state.get_ntime();
+    return false;
+}
+
+// reengrave finishing function (NOOP)
+void UserCursor::VoiceCursor::finish_reengrave() {}
 
 
 //     user-cursor methods
@@ -228,9 +281,11 @@ void UserCursor::prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice)
     newvoice.ntime = newvoice.time;
     if (!newvoice.pnote->at_end() && !newvoice.pnote->is_inserted())
         newvoice.ntime += get_value(newvoice.pnote->get_note());
+    
+    assert(newvoice.pnote->at_end() || !newvoice.note.at_end());
 }
 
-// set "VoiceCursor" layout data  (helper function for "prepare_voice" and EditCursor::reengrave)
+// set "VoiceCursor" layout data  (helper function for "prepare_voice" and "finish_reengrave")
 Cursor UserCursor::prepare_layout(VoiceCursor& newvoice, Plate::pVoice& pvoice)
 {
     // calculate note (casts away const, but not unexpected, since this object got a non-const reference to the score)
@@ -334,6 +389,7 @@ std::list<UserCursor::VoiceCursor>::iterator UserCursor::prepare_subvoice(const 
     else    cursor = newvoice;
     
     // return new voice-cursor
+    assert(newvoice->pnote->at_end() || !newvoice->note.at_end());
     return newvoice;
 }
 
@@ -363,7 +419,7 @@ void UserCursor::prepare_voices()
 }
 
 // move the voice-cursors to the corresponding position within the currently referenced voice
-void UserCursor::update_voices()
+void UserCursor::update_cursors()
 {
     for (std::list<VoiceCursor>::iterator i = vcursors.begin(); i != vcursors.end(); ++i)
     {
@@ -396,6 +452,8 @@ void UserCursor::update_voices()
 // calculate the horizontal position for the given cursor (position right of the referenced object; fast)
 mpx_t UserCursor::fast_x(const VoiceCursor& cur) const throw(NotValidException)
 {
+    assert(cur.pnote->at_end() || !cur.note.at_end());
+    
     // calculate horizontal position from the note's "gphBox"
     if (!cur.pvoice) throw NotValidException();
     return cur.pnote->gphBox.right();
@@ -404,6 +462,8 @@ mpx_t UserCursor::fast_x(const VoiceCursor& cur) const throw(NotValidException)
 // calculate the horizontal position for the given cursor (graphical cursor position, regarding simultaneous notes)
 mpx_t UserCursor::graphical_x(const VoiceCursor& cur) const throw(NotValidException)
 {
+    assert(cur.pnote->at_end() || !cur.note.at_end());
+    
     // calculate horizontal position from the note's "gphBox"
     if (!cur.pvoice) throw NotValidException();
     mpx_t x = cur.pnote->gphBox.pos.x;
@@ -463,6 +523,59 @@ void UserCursor::set_x_voice(const mpx_t x)
     {
         next();             // step foreward (in voice)
         newx = fast_x();    // calculate new "newx"
+    };
+}
+
+// select previous line (update line, page and plateinfo)
+void UserCursor::select_prev_line() throw(InvalidMovement)
+{
+    if (line == plateinfo->plate->lines.begin())    // if it is on the previous page
+    {
+        // search previous pages
+        std::list<Pageset::pPage>::iterator p = page;                       // page iterator
+        std::list<Pageset::PlateInfo>::iterator pinfo = p->plates.end();    // page info
+        
+        while (p != pageset->pages.begin())
+        {
+            --p;
+            pinfo = p->get_plate_by_score(*plateinfo->score);   // check for score
+            if (pinfo != p->plates.end()) break;                // return on the first page featuring this score
+        };
+        
+        // if there is no previous page with this score, throw
+        if (pinfo == p->plates.end()) throw InvalidMovement("prev_line");
+        
+        // set data
+        page = p;
+        plateinfo = &*pinfo;
+        line = plateinfo->plate->lines.end();
+        --line;
+    }
+    else --line;    // if there is a previous line on the plate, just use it
+}
+
+// select next line (update line, page and plateinfo)
+void UserCursor::select_next_line() throw(InvalidMovement)
+{
+    if (++line == plateinfo->plate->lines.end())    // if it is on the next page
+    {
+        // search previous pages
+        std::list<Pageset::pPage>::iterator p = page;                       // page iterator
+        std::list<Pageset::PlateInfo>::iterator pinfo = p->plates.end();    // page info
+        
+        while (++p != pageset->pages.end())
+        {
+            pinfo = p->get_plate_by_score(*plateinfo->score);   // check for score
+            if (pinfo != p->plates.end()) break;                // return on the first page featuring this score
+        };
+        
+        // if there is no previous page with this score, throw
+        if (pinfo == p->plates.end()) throw InvalidMovement("next_line");
+        
+        // set data
+        page = p;
+        plateinfo = &*pinfo;
+        line = --plateinfo->plate->lines.end();
     };
 }
 
@@ -528,7 +641,7 @@ void UserCursor::set_pos(Pageset::Iterator new_page, Position<mpx_t> pos, const 
     bool check = false;                             // success indicator
     for (std::list<Plate::pLine>::iterator l = new_pinfo->plate->lines.begin(); l != new_pinfo->plate->lines.end(); ++l)
     {                                               // search all lines for a match
-        if (l->gphBox.contains(pos)) {line = l; check = true; break;};
+        if (l->noteBox.contains(pos)) {line = l; check = true; break;};
     };
     if (!check) return;                             // if no line is found at the position, abort
     page = new_page;                                // set new page
@@ -578,7 +691,7 @@ void UserCursor::set_pos(Pageset::Iterator new_page, Position<mpx_t> pos, const 
     for (int i = 0; i < voice_idx && has_next_voice(); ++i)     // move to the calculated voice
         next_voice();
     set_x_voice(pos.x);                                         // final fine position adjustment within the voice
-    update_voices();                                            // and set other voices
+    update_cursors();                                           // and set other voices
 }
 
 
@@ -786,7 +899,7 @@ void UserCursor::prev() throw(NotValidException, InvalidMovement)
 {
     if (!has_prev()) throw InvalidMovement("prev");
     cursor->prev();
-    update_voices();
+    update_cursors();
 }
 
 // to the next note
@@ -794,7 +907,7 @@ void UserCursor::next() throw(NotValidException, InvalidMovement)
 {
     if (at_end()) throw InvalidMovement("next");
     cursor->next();
-    update_voices();
+    update_cursors();
 }
 
 // to the previous voice
@@ -811,14 +924,14 @@ void UserCursor::prev_voice() throw(NotValidException, InvalidMovement)
         if (i->active)  // if we found an active voice
         {
             cursor = i;     // success
-            update_voices();
+            update_cursors();
             return;
         };
     };
     if (i->active)  // the first voice has to be checked sepeerately
     {
         cursor = i;     // success
-        update_voices();
+        update_cursors();
         return;
     };
     throw InvalidMovement("prev_voice");
@@ -836,7 +949,7 @@ void UserCursor::next_voice() throw(NotValidException, InvalidMovement)
         if (i->active)  // if we found an active voice
         {
             cursor = i;     // success
-            update_voices();
+            update_cursors();
             return;
         };
     };
@@ -850,35 +963,22 @@ void UserCursor::prev_line() throw(NotValidException, InvalidMovement)
     mpx_t x = fast_x();                         // save current position
     
     // select previous line
-    if (line == plateinfo->plate->lines.begin())    // if it is on the previous page
-    {
-        // search previous pages
-        std::list<Pageset::pPage>::iterator p = page;                       // page iterator
-        std::list<Pageset::PlateInfo>::iterator pinfo = p->plates.end();    // page info
-        
-        while (p != pageset->pages.begin())
-        {
-            --p;
-            pinfo = p->get_plate_by_score(*plateinfo->score);   // check for score
-            if (pinfo != p->plates.end()) break;                // return on the first page featuring this score
-        };
-        
-        // if there is no previous page with this score, throw
-        if (pinfo == p->plates.end()) throw InvalidMovement("prev_line");
-        
-        // set data
-        page = p;
-        plateinfo = &*pinfo;
-        line = plateinfo->plate->lines.end();
-        --line;
-    }
-    else --line;    // if there is a previous line on the plate, just use it
+    select_prev_line();
     
     // reset x position from the old line
     set_x_rough(x);                         // rough positioning
     while (has_next_voice()) next_voice();  // move to the last voice
     set_x_voice(x);                         // fine position adjustment
-    update_voices();                        // set other voices
+    update_cursors();                        // set other voices
+}
+
+// to the beginning of the previous line
+void UserCursor::prev_line_home() throw(NotValidException, InvalidMovement)
+{
+    if (!ready()) throw NotValidException();    // validity check
+    
+    select_prev_line(); // select previous line
+    prepare_voices();   // reset positions
 }
 
 // to the next line
@@ -888,32 +988,22 @@ void UserCursor::next_line() throw(NotValidException, InvalidMovement)
     mpx_t x = fast_x();                         // save current position
     
     // select next line
-    if (++line == plateinfo->plate->lines.end())    // if it is on the next page
-    {
-        // search previous pages
-        std::list<Pageset::pPage>::iterator p = page;                       // page iterator
-        std::list<Pageset::PlateInfo>::iterator pinfo = p->plates.end();    // page info
-        
-        while (++p != pageset->pages.end())
-        {
-            pinfo = p->get_plate_by_score(*plateinfo->score);   // check for score
-            if (pinfo != p->plates.end()) break;                // return on the first page featuring this score
-        };
-        
-        // if there is no previous page with this score, throw
-        if (pinfo == p->plates.end()) throw InvalidMovement("next_line");
-        
-        // set data
-        page = p;
-        plateinfo = &*pinfo;
-        line = --plateinfo->plate->lines.end();
-    };
+    select_next_line();
     
     // reset x position from the old line
     set_x_rough(x);                         // rough positioning
     while (has_prev_voice()) prev_voice();  // move to the first voice
     set_x_voice(x);                         // fine position adjustment
-    update_voices();                        // set other voices
+    update_cursors();                        // set other voices
+}
+
+// to the beginning of the next line
+void UserCursor::next_line_home() throw(NotValidException, InvalidMovement)
+{
+    if (!ready()) throw NotValidException();    // validity check
+    
+    select_next_line(); // select next line
+    prepare_voices();   // reset positions
 }
 
 // to the beginning of the line
@@ -974,7 +1064,7 @@ void UserCursor::end() throw(NotValidException)
     
     // move to the end
     cursor->active = true;              // set cursor active
-    update_voices();                    // update other voice cursors
+    update_cursors();                   // update other voice cursors
     while (!cursor->at_end()) next();   // move to the end
 }
 
@@ -1102,17 +1192,118 @@ mpx_t UserCursor::graphical_height(const ViewportParam& viewport) const throw(No
     return h;
 }
 
+// reengraving function
+bool UserCursor::reengrave(EngraverState& state)
+{
+    // update page, plate and line with data from the engraver
+    pageset = &state.get_pageset();
+    page = state.get_target_page_it();
+    plateinfo = &state.get_plateinfo();
+    line = state.get_target_line_it();
+    return true;
+}
+
+// setup reengraving triggers
+void UserCursor::setup_reengrave(ReengraveInfo& info)
+{
+    if (!ready()) throw NotValidException();
+    
+    // add this cursor to the info class (for page, plate and line update)
+    if (cursor->note.at_end())      // if at the end
+    {
+        if (cursor->note.has_prev())    // but the voice is not empty
+        {
+            info.setup_reengrave(*--cursor->note, *this);   // reengrave on last note
+            ++cursor->note;
+        }
+        else                            // if the voice is empty
+        {
+            info.setup_reengrave(cursor->note.voice(), *this);  // reengrave on voice creation
+        };
+    }   // otherwise reengrave normally
+    else info.setup_reengrave(*cursor->note, *this);    
+    
+    // add voice cursors to the info class
+    for (std::list<VoiceCursor>::iterator i = vcursors.begin(); i != vcursors.end(); ++i)
+        i->setup_reengrave(info);
+}
+
+// reengrave finishing function
+void UserCursor::finish_reengrave()
+{
+    // goto next line, if "cursor" was at end (updating took plate on the newline object in the previous line)
+    if (cursor->note.at_end() && has_next_line())
+        select_next_line();
+    
+    // post processing of all voice-cursors
+    for (std::list<VoiceCursor>::iterator i = vcursors.begin(); i != vcursors.end();)
+    {
+        // check the cursors that were at-end
+        if (i->note.at_end())
+        {
+            // move pnote to the end
+            while (!i->pnote->at_end() && i->pnote != i->pvoice->notes.end())
+                ++i->pnote;
+            
+            // if the end is not located on this line (i.e. a linebreak is the last note in the voice)
+            if (i->pnote == i->pvoice->notes.end())
+            {
+                // get voice in correct line
+                Plate::VoiceIt pvoice = line->get_voice(i->note.voice());
+                if (pvoice == line->voices.end())   // if it does not exist
+                {                                   // warn and remove voice-cursor
+                    log_warn("Cannot find on-plate voice after reengraving. (class: UserCursor)");
+                    vcursors.erase(i++);
+                    continue;
+                };
+                
+                // update to the correct voice
+                i->pvoice = &*pvoice;               // set voice
+                i->pnote = pvoice->notes.begin();   // set pnote
+                while (!i->pnote->at_end())         // move pnote to end
+                    ++i->pnote;
+            };
+            
+            // timestamp correction
+            if (i->note.has_prev())
+                i->time = i->ntime;
+            else
+                i->ntime = i->time;
+            
+            // error check
+            assert(i->pnote->at_end());
+        };
+        
+        // update layout
+        prepare_layout(*i, *i->pvoice);
+        ++i;
+     };
+}
+
+// check for missing voice-cursors
+void UserCursor::update_voices()
+{
+    // prepare all sub-voices of the current line (expecting all main-voices to exist)
+    for (std::list<Plate::pVoice>::iterator i = line->voices.begin(); i != line->voices.end(); ++i)
+        static_cast<void>(prepare_subvoice(i->begin.voice(), *i));
+    
+    // move added cursors to correct position
+    update_cursors();
+}
+
 // dump cursor state to stdout
 void UserCursor::dump() const
 {
     for (std::list<VoiceCursor>::const_iterator i = vcursors.begin(); i != vcursors.end(); ++i)
     {
+        assert(i->pnote->at_end() || !i->note.at_end());
         size_t idx = 0;
         for (std::list<Plate::pNote>::const_iterator j = i->pvoice->notes.begin(); j != i->pvoice->notes.end() && j != i->pnote; ++j, ++idx);
         if (!i->active) std::cout << "["; else std::cout << " ";
         std::cout << i->note.index() << "/" << idx << ":";
         if (i->has_prev()) std::cout << "<"; else std::cout << " ";
         if (i->pnote->at_end()) std::cout << "E";
+        else if (i->note.at_end()) std::cout << "ERR";
         else if (i->note->is(Class::NEWLINE)) std::cout << "N";
         else std::cout << "> " << classname(i->note->classtype());
         std::cout << " (@ " << i->time << "-" << i->ntime << ")";

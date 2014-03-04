@@ -1,0 +1,12 @@
+ScorePress - Music Engraving Software  (libscorepress)
+
+Copyright (C) 2014 Dominik Lehmann
+Licensed under the EUPL V.1.1
+
+
+The following libraries are used:
+
+libxml2
+Copyright (C) by Daniel Veillard
+Licensed under the MIT License
+

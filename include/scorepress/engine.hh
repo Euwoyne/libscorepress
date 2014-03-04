@@ -80,7 +80,7 @@ class SCOREPRESS_API Engine : public Logging
         inline const Pageset::pPage& get_data()  const {return *it;};
     };
     
- private:
+ public:    // TODO: make private
     typedef std::map<const Score*, EditCursor> CursorMap;
     
     Document*      document;    // the document this engine operates on
@@ -108,16 +108,20 @@ class SCOREPRESS_API Engine : public Logging
     void set_document(Document& document);                      // change the associated document
     void set_resolution(unsigned int hppm, unsigned int vppm);  // change screen resolution (viewport parameters)
     void engrave();                                             // engrave document (calculates pageset, invalidates cursors)
+    void reengrave();                                           // engrave document (recalculate cursors)
+    void reengrave(UserCursor& cursor);                         // reengrave score  (recalculate cursors)
     
     // redering
-    void render_page(Renderer& renderer, const Page page, const Position<mpx_t>& offset, bool decor = false);                       // single page (at pos)
-    void render_all(Renderer& renderer, const MultipageLayout layout, const Position<mpx_t>& offset, bool decor = false);           // all pages (with layout)
-    void render_cursor(Renderer& renderer, const UserCursor& cursor, const Position<mpx_t>& page_pos);                              // cursor (with page root)
-    void render_cursor(Renderer& renderer, const UserCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset);  // cursor (with layout)
-    void render_selection(Renderer& renderer, const Position<mpx_t>& page_pos);                                                     // object frame (with page root)
-    void render_selection(Renderer& renderer, const MultipageLayout layout, const Position<mpx_t>& offset);                         // object frame (with layout)
-    void render_selection(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& page_pos);                         // object frame (with page root)
-    void render_selection(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& o);  // object frame (with layout)
+    void render_page(Renderer& renderer, const Page page, const Position<mpx_t>& offset, bool decor = false);                         // single page (at pos)
+    void render_all(Renderer& renderer, const MultipageLayout layout, const Position<mpx_t>& offset, bool decor = false);             // all pages (with layout)
+    void render_cursor(Renderer& renderer, const UserCursor& cursor, const Position<mpx_t>& page_pos);                                // cursor (with page root)
+    void render_cursor(Renderer& renderer, const UserCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset);    // cursor (with layout)
+    void render_selection(Renderer& renderer, const Position<mpx_t>& page_pos, const Position<mpx_t>& move_offset);                                          // object frame (with page root)
+    void render_selection(Renderer& renderer, const MultipageLayout layout, const Position<mpx_t>& offset, const Position<mpx_t>& move_offset);              // object frame (with layout)
+    void render_selection(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& page_pos, const Position<mpx_t>& move_offset);              // object frame (with page root)
+    void render_selection(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& o, const Position<mpx_t>& m); // object frame (with layout)
+    void render_object(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& page_pos);                              // selected object (with page root)
+    void render_object(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& o);       // selected object (with layout)
     
     // internal data access
     Document&        get_document();                                    // the document this engine operates on
@@ -150,12 +154,15 @@ class SCOREPRESS_API Engine : public Logging
     EditCursor& get_cursor(Position<mpx_t> pos, const Page& page)             throw(Error, UserCursor::Error); // get cursor (on-page position)
     EditCursor& get_cursor(Position<mpx_t> pos, const MultipageLayout layout) throw(Error, UserCursor::Error); // get cursor (multi-page position)
     
-    ObjectCursor& selected_object()                                       throw(Error); // get currently selected object
+    const ObjectCursor& selected_object()                                 throw(Error); // get currently selected object
     bool has_selected_object() const;                                                   // check, if there is a selected object
     bool select_object(Position<mpx_t> pos, const Page& page)             throw(Error); // get object by position (on page)
     bool select_object(Position<mpx_t> pos, const MultipageLayout layout) throw(Error); // get object by position (multi-page)
     void deselect_object();                                                             // deselect selected object (if any)
     // NOTE: Ownership of the returned cursors stays with the engine. Any copies, that are not owned by the engine, might behave strangely on reengrave.
+    
+    // object interface
+    void move_object(const ObjectCursor& cursor, const Position<mpx_t> offset);         // move object by "offset"
     
     // logging control
     void             log_set(Log& log);
@@ -170,8 +177,8 @@ inline Engine::Page::Page(unsigned int _idx, Pageset::Iterator _it) : idx(_idx),
 inline void Engine::set_document(Document& _document)              {document = &_document; pageset.clear(); cursors.clear();}
 inline void Engine::set_resolution(unsigned int h, unsigned int v) {viewport.hppm = h; viewport.vppm = v;}
 
-inline void Engine::render_selection(Renderer& r, const Position<mpx_t>& p)                          {render_selection(r, object_cur, p);}
-inline void Engine::render_selection(Renderer& r, const MultipageLayout l, const Position<mpx_t>& o) {render_selection(r, object_cur, l, o);}
+inline void Engine::render_selection(Renderer& r, const Position<mpx_t>& p, const Position<mpx_t>& m)                          {render_selection(r, object_cur, p, m);}
+inline void Engine::render_selection(Renderer& r, const MultipageLayout l, const Position<mpx_t>& o, const Position<mpx_t>& m) {render_selection(r, object_cur, l, o, m);}
 
 inline Document&       Engine::get_document()             {return *document;}
 inline EngraverParam&  Engine::get_engraver_parameters()  {return engraver.parameters;}
@@ -186,6 +193,7 @@ inline size_t          Engine::page_count()  const        {return pageset.pages.
 
 inline const Engine::Page Engine::select_page(const unsigned int page) {return Page(page, pageset.get_page(page));}
 inline bool  Engine::has_selected_object() const {return (object_cur.ready() && !object_cur.end());}
+inline const ObjectCursor& Engine::selected_object() throw(Error) {return object_cur;}
 inline bool  Engine::select_object(Position<mpx_t> pos, const MultipageLayout layout) throw(Error) {
                                 return select_object(pos, select_page(pos, layout));}
 inline void  Engine::deselect_object() {object_cur.reset();}

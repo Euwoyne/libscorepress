@@ -65,6 +65,7 @@ const std::string ScorePress::classname(Class::classType type)
     case Class::SLUR:          return "Slur";
     case Class::HAIRPIN:       return "Hairpin";
     
+    case Class::EXTERNAL:      return "Unknown (external)";
     default:                   return "Unknown";
     };
 }

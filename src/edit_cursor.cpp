@@ -25,31 +25,31 @@ using namespace ScorePress;
 inline int _round(const double d) {return static_cast<int>(d + 0.5);}
 inline value_t get_value(const StaffObject* obj) {return (obj->is(Class::NOTEOBJECT)) ? static_cast<const NoteObject*>(obj)->value() : value_t(0);}
 
-static const int tone_off[7]  = {0, 2, 4, 5, 7, 9, 11};    // (tone by offset)
+static const int tone_off[7]  = {0, 2, 4, 5, 7, 9, 11};     // (tone by offset)
 
 // calculate tone from note-name (regarding input method, ignoring accidentals)
 tone_t EditCursor::get_tone(const InputNote& note) const throw(NotValidException)
 {
-    const tone_t& clef_base = get_staff_context().base_note();     // get clef-base note
+    const tone_t& clef_base = get_staff_context().base_note();  // get clef-base note
 
     // set the correct octave
-    int octave = clef_base / 12;                           // calculate octave of the clef-base
-    if (param->input_base <= InterfaceParam::LOWER_B)      // if input-base is to be below the clef-base...
+    int octave = clef_base / 12;                            // calculate octave of the clef-base
+    if (param.input_base <= InterfaceParam::LOWER_B)        // if input-base is to be below the clef-base...
     {
-        if (clef_base % 12 < tone_off[param->input_base%7] && octave > 0)  // ...but it is not yet, ...
-            --octave;                                                      // ...reduce the input-base octave.
+        if (clef_base % 12 < tone_off[param.input_base%7] && octave > 0)    // ...but it is not yet, ...
+            --octave;                                                       // ...reduce the input-base octave.
     }
-    else if (param->input_base <= InterfaceParam::UPPER_B) // if input-base is to be above the clef-base...
+    else if (param.input_base <= InterfaceParam::UPPER_B)   // if input-base is to be above the clef-base...
     {
-        if (clef_base % 12 > tone_off[param->input_base%7] && octave < 32) // ...but it is not yet, ...
-            ++octave;                                                      // ...increase the input-base octave.
+        if (clef_base % 12 > tone_off[param.input_base%7] && octave < 32)   // ...but it is not yet, ...
+            ++octave;                                                       // ...increase the input-base octave.
     }
-    else // (InterfaceParam::NEAREST)                      // if input-base should minimize distance to clef-base...
+    else // (InterfaceParam::NEAREST)                       // if input-base should minimize distance to clef-base...
     {
         const int diff =   (tone_off[note.name] + Accidental::note_modifier[note.accidental]) % 12
-                         - tone_off[clef_base % 12];       // caluclate clef-base to note distance
-        if (diff > 6)        --octave;                     // if we are too high, reduce input-base
-        else if (diff <= -6) ++octave;                     // if we are too low, increase input-base
+                         - tone_off[clef_base % 12];        // caluclate clef-base to note distance
+        if (diff > 6)        --octave;                      // if we are too high, reduce input-base
+        else if (diff <= -6) ++octave;                      // if we are too low, increase input-base
     };
 
     // add offset of chosen tone (according to C major scale)
@@ -61,10 +61,10 @@ HeadPtr EditCursor::create_head(const InputNote& note) const throw(NotValidExcep
 {
     Head* out = new Head;                   // create head instance
     out->tone = get_tone(note);             // calculate whole tone
-    out->dot_offset = param->dot_offset;    // set dot-offset
+    out->dot_offset = param.dot_offset;     // set dot-offset
 
     // apply accidental (respecting the "relative_accidentals" parameter)
-    if (param->relative_accidentals)
+    if (param.relative_accidentals)
     {
         int acc_modifier;       // accidental
 
@@ -94,7 +94,7 @@ HeadPtr EditCursor::create_head(const InputNote& note) const throw(NotValidExcep
         };
 
         out->tone = tone_t(out->tone + acc_modifier);
-        out->accidental.offset_x = param->accidental_offset;
+        out->accidental.offset_x = param.accidental_offset;
     }
 
     // default accidental input mode (does not regard key-signature)
@@ -102,7 +102,7 @@ HeadPtr EditCursor::create_head(const InputNote& note) const throw(NotValidExcep
     {
         out->tone = tone_t(out->tone + Accidental::note_modifier[note.accidental]);
         out->accidental.type = note.accidental;
-        out->accidental.offset_x = param->accidental_offset;
+        out->accidental.offset_x = param.accidental_offset;
     };
 
     // return created head
@@ -112,7 +112,7 @@ HeadPtr EditCursor::create_head(const InputNote& note) const throw(NotValidExcep
 // calculates the automatic stem-length (uses staff reference)
 void EditCursor::set_auto_stem_length(Chord& chord) const throw(NotValidException)
 {
-    // set stem length to param->stem_length, but let the stem at least reach the center line
+    // set stem length to param.stem_length, but let the stem at least reach the center line
     const StaffContext& ctx(get_staff_context());
     switch (get_voice().stem_direction)
     {
@@ -120,20 +120,20 @@ void EditCursor::set_auto_stem_length(Chord& chord) const throw(NotValidExceptio
         chord.stem_length =   ctx.note_offset(*chord.heads.front(), 500)
                             + ctx.note_offset(*chord.heads.back(), 500)
                             - 500 * (cursor->note.staff().line_count - 2);
-        if (chord.stem_length < param->stem_length && chord.stem_length > -param->stem_length)
-            chord.stem_length = (chord.stem_length > 0) ? param->stem_length : -param->stem_length;
+        if (chord.stem_length < param.stem_length && chord.stem_length > -param.stem_length)
+            chord.stem_length = (chord.stem_length > 0) ? param.stem_length : -param.stem_length;
         break;
     case Voice::STEM_UPWARDS:
         chord.stem_length =   ctx.note_offset(*chord.heads.back(), 1000)
                             - 500 * (cursor->note.staff().line_count - 2);
-        if (chord.stem_length < param->stem_length)
-            chord.stem_length = param->stem_length;
+        if (chord.stem_length < param.stem_length)
+            chord.stem_length = param.stem_length;
         break;
     case Voice::STEM_DOWNWARDS:
         chord.stem_length =   ctx.note_offset(*chord.heads.front(), 1000)
                             - 500 * (cursor->note.staff().line_count - 2);
-        if (chord.stem_length > -param->stem_length)
-            chord.stem_length = -param->stem_length;
+        if (chord.stem_length > -param.stem_length)
+            chord.stem_length = -param.stem_length;
         break;
     };
     
@@ -144,14 +144,14 @@ void EditCursor::set_auto_stem_length(Chord& chord) const throw(NotValidExceptio
         {
             if (chord.stem_length < 0)
                 chord.stem_length -=
-                    //engraver->get_style().beam_height
+                    //style.beam_height
                     + (VALUE_BASE - 3 - chord.val.exp)
-                      * (engraver->get_style().beam_distance + engraver->get_style().beam_height);
+                      * (style.beam_distance + style.beam_height);
             else
                 chord.stem_length +=
-                    //engraver->get_style().beam_height
+                    //style.beam_height
                     + (VALUE_BASE - 3 - chord.val.exp)
-                      * (engraver->get_style().beam_distance + engraver->get_style().beam_height);
+                      * (style.beam_distance + style.beam_height);
         }
         else
         {
@@ -244,9 +244,10 @@ bool EditCursor::for_each_chord_in_beam_do(VoiceCursor& cur, void (*func)(Chord&
     return true;
 }
 
-// constructors
-EditCursor::EditCursor(Document& doc, Pageset& pset, const InterfaceParam& _param) : UserCursor(doc, pset), param(&_param), engraver(NULL) {}
-EditCursor::EditCursor(Document& doc, Pageset& pset, const InterfaceParam& _param, Engraver& _engraver) : UserCursor(doc, pset), param(&_param), engraver(&_engraver) {}
+// constructor
+EditCursor::EditCursor(Document& _document, Pageset& _pageset,
+                       const InterfaceParam& _param, const StyleParam& _style, const ViewportParam& _viewport)
+    : UserCursor(_document, _pageset), param(_param), style(_style), viewport(_viewport) {}
 
 //  access methods
 // ----------------
@@ -254,7 +255,7 @@ EditCursor::EditCursor(Document& doc, Pageset& pset, const InterfaceParam& _para
 // return objects attached to the note
 MovableList& EditCursor::get_attached() throw(NotValidException)
 {
-    if (cursor == vcursors.end())     throw NotValidException();
+    if (cursor == vcursors.end()) throw NotValidException();
     return cursor->note->get_visible().attached;
 }
 
@@ -289,146 +290,6 @@ MovableList& EditCursor::get_page_attached() throw(NotValidException)
                                        : score->layout.attached;
 }
 
-//  engraver interface
-// --------------------
-
-// reengrave the score and update this cursor (all iterators and pVoice::begin must be valid when calling this!)
-void EditCursor::reengrave(const MoveMode& mode) throw(NoScoreException, Error)
-{
-    if (!engraver) return;
-    if (!has_score()) throw NoScoreException();
-    
-    // handle pagebreak removal
-    if (mode == PAGEBREAK)          // if a pagebreak was inserted
-        ++plateinfo->pageno;        //     the cursor is now on the new page
-    else if (mode == RMPAGEBREAK)   // if a pagebreak was removed
-        --plateinfo->pageno;        //     the cursor is now on the previous page
-    
-    // save plate information (plateinfo and pnote/pvoice will be invalidated)
-    const unsigned int pageno = plateinfo->pageno;          // current page number (relative to score's beginning)
-    const unsigned int start_page = plateinfo->start_page;  // the score's start-page number
-    const const_Cursor vbegin = cursor->pvoice->begin;      // current cursor voice-begin
-    
-    // engrave the score (invalidates page, plateinfo, line and every "pnote" and "pvoice" of the voice-cursors)
-    engraver->set_pageset(*pageset);
-    engraver->engrave(*score, start_page);
-    
-    // recalculate on-plate references (page and plateinfo)
-    page = pageset->get_page(start_page + pageno);      // get correct page
-    if (page != pageset->pages.end())
-    {
-        plateinfo = &*page->get_plate_by_score(*score); // get plate information
-    };
-    if (page == pageset->pages.end())   // if the page does not exist
-    {
-        score = NULL;       // invalidate cursor
-        vcursors.clear();
-        cursor = vcursors.end();
-        throw Error("Unable to find the given score in the page-set after reengraving.");
-    };
-    
-    // search line and current voice (based on saved pVoice::begin cursor "vbegin")
-    line = plateinfo->plate->lines.begin();     // initialize "line"
-    std::list<Plate::pVoice>::iterator voice;   // voice
-    for (; line != plateinfo->plate->lines.end(); ++line)
-    {
-        // get voice and check for old begin
-        voice = line->get_voice(vbegin.voice());
-        
-        if (voice == line->voices.end()) continue;  // voice exists?
-        if (voice->begin != vbegin)      continue;  // past old begin?
-        if (mode == NEWLINE)                        // on inserted newline, ...
-            if (++line == plateinfo->plate->lines.end()) break; // ...goto next line and break on nonexisting
-        break;
-    };
-    
-    // if we did not find the correct line
-    if (line == plateinfo->plate->lines.end())
-    {
-        line = plateinfo->plate->lines.begin(); // use the first on the plate
-        prepare_voices();                       // prepare voices
-        log_warn("Unable to find the given line on the page after reengraving. Default to first. (class: EditCursor)");
-        return;
-    };
-    
-    if (mode == NEWLINE) return prepare_voices();
-    
-    {
-    // initialize cursor
-    if (mode == RMNEWLINE || mode == RMPAGEBREAK)
-        prepare_layout(*cursor, *voice);
-    prepare_plate(*cursor, *voice);
-    
-    // iterate the line to find the on-plate note
-    while (!cursor->pnote->at_end() && &*cursor->pnote->note != &*cursor->note)
-    {
-        do ++cursor->pnote;                             // increment on-plate iterator
-        while (   !cursor->pnote->at_end()              // ignore inserted objects
-               && cursor->pnote->is_inserted());
-        
-        cursor->time = cursor->ntime;                   // update time-stamp
-        if (!cursor->pnote->at_end())
-            cursor->ntime += get_value(&*cursor->pnote->note);
-    };
-    
-    // if we did not find the note
-    if (&*cursor->pnote->note != &*cursor->note)
-        log_warn("Unable to find current note within the reengraved voice. (class: EditCursor)");
-    }
-    
-    // find on-plate notes for other voices (matching the VoiceCursor::note iterator)
-    {
-    for (std::list<VoiceCursor>::iterator c = vcursors.begin(); c != vcursors.end(); )
-    {
-        if (c == cursor)        // the current cursor has already been prepared
-        {                       // (during the search for the correct line)
-            ++c;                // so ignore it
-            continue;           // and continue
-        };
-        
-        // find on-plate voice
-        std::list<Plate::pVoice>::iterator v;
-        v = line->get_voice(c->note.voice());   // get on-plate voice
-        if (v == line->voices.end())            // check for existance
-        {
-            c = vcursors.erase(c);                  // remove cursors to non-existant voices
-            continue;
-        };
-        
-        // initialize cursor
-        if (mode == RMNEWLINE || mode == RMPAGEBREAK)
-            prepare_layout(*c, *v);
-        prepare_plate(*c, *v);
-        
-        // iterate the line to find the on-plate note
-        while (!c->pnote->at_end() && &*c->pnote->note != &*c->note)
-        {
-            do ++c->pnote;                      // increment on-plate iterator
-            while (   !c->pnote->at_end()       // ignore inserted objects
-                   && c->pnote->is_inserted());
-            
-            c->time = c->ntime;                     // update time-stamp
-            if (!c->pnote->note.at_end())
-                c->ntime += get_value(&*c->pnote->note);
-        };
-        
-        // if we did not find the note
-        if (&*c->pnote->note != &*c->note)
-        {
-            c = vcursors.erase(c);      // remove the cursor
-            log_warn("Unable to find given note within the reengraved voice. (class: EditCursor)");
-            continue;
-        };
-        
-        ++c;
-    };
-    }
-    
-    // check positions and active flags
-    update_voices();
-    if (mode == INSERT && !at_end()) next();
-}
-
 //  insertion interface
 // ---------------------
 
@@ -442,7 +303,6 @@ void EditCursor::insert(StaffObject* const object) throw(NotValidException, Curs
         cursor->pvoice->begin = cursor->note;       // ...set voice begin cursor
     }
     else cursor->note.insert(object);           // otherwise, just insert the new object
-    reengrave(INSERT);                          // reengrave the score
 }
 
 // insert a note
@@ -472,21 +332,18 @@ void EditCursor::insert_head(const InputNote& note) throw(NotValidException, Cur
         if ((*h)->tone == head->tone)   // if the head exists
         {
             chord.heads.erase(h);           // remove the existing head
-            reengrave(NONE);                // reengrave score
             return;                         // stop iterating
         };
         if ((*h)->tone > head->tone)    // if we got a higher tone
         {                                   // insert and set default dot offset
             (*chord.heads.insert(h, head))->dot_offset = (*h)->dot_offset;
             set_auto_stem_length(chord);    // reset stem-length
-            reengrave(NONE);                // reengrave score
             return;                         // stop iterating
         };
     };
     chord.heads.push_back(head);        // add head
     chord.heads.back()->dot_offset = chord.heads.front()->dot_offset;
     set_auto_stem_length(chord);        // reset stem-length
-    reengrave(NONE);                    // reengrave score
 }
 
 // insert a rest
@@ -529,12 +386,10 @@ void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Err
             else cur->note.insert(new Newline(cur->get_layout()));
             
             // set line distance
-            if (first) static_cast<Newline&>(*cur->note).distance = param->newline_distance, first = false;
+            if (first) static_cast<Newline&>(*cur->note).distance = param.newline_distance, first = false;
             static_cast<Newline&>(*cur->note).indent = 0;
         };
     };
-    
-    reengrave(NEWLINE);
 }
 
 // insert pagebreak objects into all active voices
@@ -572,13 +427,11 @@ void EditCursor::insert_pagebreak() throw(NotValidException, NoScoreException, E
             
             // set layout
             static_cast<Pagebreak&>(*cur->note).Newline::operator=(layout);
-            if (first) static_cast<Pagebreak&>(*cur->note).distance = param->newline_distance, first = false;
+            if (first) static_cast<Pagebreak&>(*cur->note).distance = param.newline_distance, first = false;
             static_cast<Pagebreak&>(*cur->note).indent = 0;
             static_cast<Pagebreak&>(*cur->note).dimension = dimension;
         };
     };
-    
-    reengrave(PAGEBREAK);
 }
 
 //  deletion interface
@@ -589,8 +442,8 @@ void EditCursor::remove() throw(NotValidException)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) return;                           // no note at end
-    if (cursor->pvoice->begin == cursor->note)      // if the front note is removed...
-        ++cursor->pvoice->begin;                    //    increment on-plate voice front (needed by "reengrave()")
+    //if (cursor->pvoice->begin == cursor->note)      // if the front note is removed...
+    //    ++cursor->pvoice->begin;                    //    increment on-plate voice front (needed by "reengrave()")
     StaffObject* del_note = cursor->note->clone();
     
     // remove note
@@ -620,9 +473,6 @@ void EditCursor::remove() throw(NotValidException)
         };
     };
     delete del_note;                                // free old note
-    
-    // reengrave score
-    reengrave(REMOVE);
 }
 
 // remove a voice
@@ -663,9 +513,6 @@ void EditCursor::remove_voice() throw(NotValidException, Cursor::IllegalObjectTy
     vcursors.erase(cursor);
     cursor = find(static_cast<SubVoice&>(cursor->note.voice()).get_parent());
     if (cursor == vcursors.end()) --cursor;
-    
-    // reengrave score
-    reengrave(REMOVE);
 }
 
 // remove newline/pagebreak
@@ -697,9 +544,6 @@ void EditCursor::remove_newline() throw(NotValidException)
                 cur->pvoice->begin = voice->begin;
         };
     };
-    
-    // reengrave score
-    reengrave(RMNEWLINE);
 }
 
 // convert pagebreak to newline
@@ -725,9 +569,6 @@ void EditCursor::remove_pagebreak() throw(NotValidException)
                 note.get_voiceobject() = VoiceObjectPtr(new Newline(static_cast<Pagebreak&>(*note)));
         };
     };
-    
-    // reengrave score
-    reengrave(RMPAGEBREAK);
 }
 
 // remove newline, convert pagebreak
@@ -760,9 +601,6 @@ void EditCursor::add_voice() throw(NotValidException, Cursor::IllegalObjectTypeE
             vcursors.insert(++inspos, VoiceCursor())->note.set(
                 cursor->note.staff(),
                 *static_cast<NoteObject&>(*cursor->note).subvoice);
-            reengrave(NONE);
-            ++cursor;
-            return;
         };
     };
 }
@@ -906,7 +744,7 @@ void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException
     
     // calculate the stem direction
     // (we completely avoid beamed notes with different stem directions on end notes)
-    const mpx_t err = _round(engraver->get_viewport().umtopx_v(cursor->note.staff().head_height) / 2.0);
+    const mpx_t err = _round(viewport.umtopx_v(cursor->note.staff().head_height) / 2.0);
     signed char dir = -1;   // -1 - undecided;  0 - default; 1 - up; 2 - down
     VoiceCursor i(b);
     i.next();
@@ -967,9 +805,9 @@ void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException
     if (dir != 0)       // if there are no disturbing notes
     {                   // we can slope the beam
         if (begin_chord.stem_length > end_chord.stem_length)
-            begin_chord.stem_length -= param->autobeam_slope;
+            begin_chord.stem_length -= param.autobeam_slope;
         else if (begin_chord.stem_length < end_chord.stem_length)
-            end_chord.stem_length -= param->autobeam_slope;
+            end_chord.stem_length -= param.autobeam_slope;
     };
 }
 
@@ -1014,7 +852,7 @@ void EditCursor::set_accidental_auto()  throw(Cursor::IllegalObjectTypeException
     const StaffContext& ctx = get_staff_context();
     for (HeadList::iterator head = chord.heads.begin(); head != chord.heads.end(); ++head)
     {
-        (*head)->accidental.type = ctx.guess_accidental((*head)->tone, param->prefer_natural);
+        (*head)->accidental.type = ctx.guess_accidental((*head)->tone, param.prefer_natural);
     };
 }
 

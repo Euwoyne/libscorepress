@@ -24,7 +24,7 @@
 #include <vector>        // std::vector
 #include "document.hh"   // Document
 #include "parameters.hh" // EngraverParam, PressParam, StyleParam, InterfaceParam
-#include "error.hh"      // Error
+#include "error.hh"      // Error, MissingDefaultConstructor
 #include "export.hh"
 
 namespace ScorePress
@@ -63,6 +63,7 @@ class SCOREPRESS_API FileWriter
     
  public:
     // constructor
+    FileWriter() {throw MissingDefaultConstructor("FileWriter");};
     FileWriter(const std::string& name);
     FileWriter(const std::string& name, const std::string& mime_type, const std::string& file_extension);
     

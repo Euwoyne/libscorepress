@@ -45,6 +45,20 @@ class SCOREPRESS_API Error : public std::string
     Error(const std::string msg);   // constructor with specific message
 };
 
+//
+//     class MissingDefaultConstructor
+//    =================================
+//
+// This exception shall be thrown from the default constructor of classes, that
+// do not wish to implement a default constructor.
+// (NOTE: Python bindings require a default constructor to be present).
+//
+class SCOREPRESS_API MissingDefaultConstructor : public Error
+{
+ public:
+    MissingDefaultConstructor(const std::string classname = "???");
+};
+
 }
 
 #endif

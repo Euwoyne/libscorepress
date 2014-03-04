@@ -42,7 +42,7 @@ class SCOREPRESS_API Document
      public:
         unsigned int width;     // in micrometer
         unsigned int height;    // in micrometer
-        struct
+        struct Margin
         {
             unsigned int top;       // in micrometer
             unsigned int bottom;    // in micrometer

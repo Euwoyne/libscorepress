@@ -146,7 +146,9 @@ class SCOREPRESS_API Class
                              PLUGININFO,
                              SYMBOL, CUSTOMSYMBOL,
                                      DURABLE, SLUR,
-                                              HAIRPIN};
+                                              HAIRPIN,
+                    
+                    EXTERNAL};                         // EXTERNALLY DEFINED CLASS
     
  public:
     virtual bool is(classType type) const = 0;
@@ -401,7 +403,7 @@ class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
     SubVoicePtr subvoice;   // sub voice attached to this note
     int staff_shift;        // note in different staff (if neq 0)
     
-    struct
+    struct Value
     {
         unsigned exp  : 4;
         unsigned dots : 3;

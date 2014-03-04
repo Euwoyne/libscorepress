@@ -19,7 +19,7 @@
 
 #include <iostream>
 #include "engine.hh"
-#include "log.hh"
+#include "log.hh"               // Log
 
 using namespace ScorePress;
 
@@ -91,6 +91,37 @@ void Engine::engrave()
 {
     engraver.engrave(*document);
     cursors.clear();
+    object_cur.reset();
+}
+
+// engrave document (recalculate cursors)
+void Engine::reengrave()
+{
+    ReengraveInfo info;
+    for (CursorMap::iterator cur = cursors.begin(); cur != cursors.end(); ++cur)
+        cur->second.setup_reengrave(info);
+    if (object_cur.ready() && !object_cur.end())
+        object_cur.setup_reengrave(info);
+    engraver.engrave(*document, info);
+    info.finish();
+    if (!info.is_empty())
+        log_error("Some cursors could not be updated. (class: Engine)");
+}
+
+// engrave single score (recalculate cursors)
+void Engine::reengrave(UserCursor& cursor)
+{
+    ReengraveInfo info;
+    CursorMap::iterator cur = cursors.find(&cursor.get_score());
+    if (cur != cursors.end() && &cur->second != &cursor)
+        cur->second.setup_reengrave(info);
+    cursor.setup_reengrave(info);
+    if (object_cur.ready() && !object_cur.end())
+        object_cur.setup_reengrave(info);
+    engraver.engrave(cursor.get_score(), cursor.get_start_page(), info);
+    info.finish();
+    if (!info.is_empty())
+        log_error("Some cursors could not be updated. (class: Engine)");
 }
 
 // render a single page at the given offset
@@ -113,7 +144,7 @@ void Engine::render_all(Renderer& renderer, const MultipageLayout layout, const 
     
     Position<mpx_t> off;
     unsigned int pageno = 0;
-    for (std::list<Pageset::pPage>::const_iterator i = pageset.pages.begin(); i != pageset.pages.end(); ++i)
+    for (std::list<Pageset::pPage>::iterator i = pageset.pages.begin(); i != pageset.pages.end(); ++i)
     {
         off = offset + page_pos(pageno++, layout);
         if (decor) press.render_decor(renderer, pageset, off);
@@ -142,21 +173,39 @@ void Engine::render_cursor(Renderer& renderer, const UserCursor& cursor, const M
 }
 
 // render object frame, assuming the given page root position
-void Engine::render_selection(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& _page_pos)
+void Engine::render_selection(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& _page_pos, const Position<mpx_t>& move_offset)
 {
     if (!cursor.ready() || cursor.end()) return;
     Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
                                   (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
-    press.render(renderer, cursor, _page_pos + margin_offset);
+    press.render(renderer, cursor, _page_pos + margin_offset, move_offset);
 }
 
 // render object frame, calculating page positions according to the given layout
-void Engine::render_selection(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset)
+void Engine::render_selection(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset, const Position<mpx_t>& move_offset)
 {
     if (!cursor.ready() || cursor.end()) return;
     Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
                                   (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
-    press.render(renderer, cursor, offset + page_pos(cursor.get_pageno(), layout) + margin_offset);
+    press.render(renderer, cursor, offset + page_pos(cursor.get_pageno(), layout) + margin_offset, move_offset);
+}
+
+// render selected object, assuming the given page root position
+void Engine::render_object(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& _page_pos)
+{
+    if (!cursor.ready() || cursor.end()) return;
+    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
+                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
+    press.render(renderer, cursor.get_pobject(), cursor.get_staff(), _page_pos + margin_offset);
+}
+
+// render selected object, calculating page positions according to the given layout
+void Engine::render_object(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset)
+{
+    if (!cursor.ready() || cursor.end()) return;
+    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
+                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
+    press.render(renderer, cursor.get_pobject(), cursor.get_staff(), offset + page_pos(cursor.get_pageno(), layout) + margin_offset);
 }
 
 // width of complete layout  (in pixel)
@@ -299,7 +348,7 @@ EditCursor& Engine::get_cursor() throw(Error, UserCursor::Error)
     if (pageset.pages.empty()) engrave();
     CursorMap::iterator cur = cursors.find(&document->scores.front().score);
     if (cur != cursors.end()) return cur->second;
-    cur = cursors.insert(CursorMap::value_type(&document->scores.front().score, EditCursor(*document, pageset, interface, engraver))).first;
+    cur = cursors.insert(CursorMap::value_type(&document->scores.front().score, EditCursor(*document, pageset, interface, style, viewport))).first;
     cur->second.set_score(document->scores.front());
     cur->second.log_set(*this);
     return cur->second;
@@ -312,7 +361,7 @@ EditCursor& Engine::get_cursor(Document::Score& score) throw(Error, UserCursor::
     if (pageset.pages.empty()) engrave();
     CursorMap::iterator cur = cursors.find(&score.score);
     if (cur != cursors.end()) return cur->second;
-    cur = cursors.insert(CursorMap::value_type(&score.score, EditCursor(*document, pageset, interface, engraver))).first;
+    cur = cursors.insert(CursorMap::value_type(&score.score, EditCursor(*document, pageset, interface, style, viewport))).first;
     cur->second.set_score(score);
     cur->second.log_set(*this);
     return cur->second;
@@ -324,7 +373,7 @@ EditCursor& Engine::get_cursor(Position<mpx_t> pos, const Page& page) throw(Erro
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
     Document::Score* const score(&select_score(pos, page));
-    const std::pair<CursorMap::iterator,bool> ret(cursors.insert(CursorMap::value_type(&score->score, EditCursor(*document, pageset, interface, engraver))));
+    const std::pair<CursorMap::iterator,bool> ret(cursors.insert(CursorMap::value_type(&score->score, EditCursor(*document, pageset, interface, style, viewport))));
     if (ret.second)
     {
         ret.first->second.log_set(*this);
@@ -341,7 +390,7 @@ EditCursor& Engine::get_cursor(Position<mpx_t> pos, const MultipageLayout layout
     if (pageset.pages.empty()) engrave();
     Page page(select_page(pos, layout));
     Document::Score* const score(&select_score(pos, page));
-    const std::pair<CursorMap::iterator,bool> ret(cursors.insert(CursorMap::value_type(&score->score, EditCursor(*document, pageset, interface, engraver))));
+    const std::pair<CursorMap::iterator,bool> ret(cursors.insert(CursorMap::value_type(&score->score, EditCursor(*document, pageset, interface, style, viewport))));
     if (ret.second)
     {
         ret.first->second.log_set(*this);
@@ -349,11 +398,6 @@ EditCursor& Engine::get_cursor(Position<mpx_t> pos, const MultipageLayout layout
     };
     ret.first->second.set_pos(page.it, (pos * 1000) / static_cast<int>(press.parameters.scale), viewport);
     return ret.first->second;
-}
-
-ObjectCursor& Engine::selected_object() throw(Error)
-{
-    return object_cur;
 }
 
 // get object by position (on page)
@@ -397,12 +441,12 @@ bool Engine::select_object(Position<mpx_t> pos, const Page& page) throw(Error)
     if (score == document->scores.end()) return false;
     
     // search the object
-    for (Plate::Iterator l = pinfo->plate->lines.begin(); l != pinfo->plate->lines.end(); ++l)
+    for (Plate::LineIt l = pinfo->plate->lines.begin(); l != pinfo->plate->lines.end(); ++l)
     {
         if (!l->contains(pos)) continue;
-        for (Plate::pLine::Iterator v = l->voices.begin(); v != l->voices.end(); ++v)
+        for (Plate::VoiceIt v = l->voices.begin(); v != l->voices.end(); ++v)
         {
-            for (Plate::pVoice::Iterator n = v->notes.begin(); n != v->notes.end() && !n->at_end(); ++n)
+            for (Plate::NoteIt n = v->notes.begin(); n != v->notes.end() && !n->at_end(); ++n)
             {
                 if (n->is_inserted()) continue;
                 if (!n->get_note().is(Class::VISIBLEOBJECT)) continue;
@@ -412,7 +456,7 @@ bool Engine::select_object(Position<mpx_t> pos, const Page& page) throw(Error)
                     if ((*a)->contains(pos))
                     {
                         // (casts away const, but not unexpected, since this object got a non-const reference to the document)
-                        if (buffer.set_parent(const_cast<StaffObject&>(n->get_note()).get_visible().attached, n->attached, pinfo->pageno))
+                        if (buffer.set_parent(const_cast<StaffObject&>(n->get_note()).get_visible(), *n, *l, pinfo->pageno))
                         {
                             if (buffer.select(*static_cast<const Movable*>((*a)->object)))
                             {
@@ -430,6 +474,36 @@ bool Engine::select_object(Position<mpx_t> pos, const Page& page) throw(Error)
     
     // no object found
     return false;
+}
+
+// move object by "offset"
+void Engine::move_object(const ObjectCursor& cursor, const Position<mpx_t> offset)
+{
+    // apply offset to on-plate data (no reengave neccessary)
+    const Position<mpx_t> scaled_offset(static_cast<mpx_t>((1000.0 * offset.x) / press.parameters.scale),
+                                        static_cast<mpx_t>((1000.0 * offset.y) / press.parameters.scale));
+    cursor.get_pobject().absolutePos += scaled_offset;
+    if (cursor.get_pobject().is_durable())
+        static_cast<Plate::pDurable&>(cursor.get_pobject()).endPos += scaled_offset;
+    cursor.get_pobject().gphBox.pos += scaled_offset;
+    
+    // calculate offset for score data
+    Movable& object(cursor.get_object());
+    const Position<> real_offset(
+        (object.typeX == Movable::PAGE || object.typeX == Movable::LINE)
+            ? viewport.pxtoum_h(offset.x)
+            : (1000 * offset.x) / viewport.umtopx_h(cursor.get_staff().head_height),
+        (object.typeY == Movable::PAGE || object.typeY == Movable::LINE)
+            ? viewport.pxtoum_v(offset.y)
+            : (1000 * offset.y) / viewport.umtopx_v(cursor.get_staff().head_height)
+    );
+    
+    // apply offset to score data
+    object.position += real_offset;
+    if (object.is(Class::DURABLE)) static_cast<Durable&>(object).end_position += real_offset;
+    
+    // update the line's boundary box (casts away const, but not unexpected, since this object got a non-const reference to the pageset)
+    const_cast<Plate::pLine&>(cursor.get_line()).calculate_gphBox();
 }
 
 // logging control

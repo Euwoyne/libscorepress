@@ -17,7 +17,6 @@
   permissions and limitations under the Licence.
 */
 
-#include <cmath>                // sqrt
 #include <set>                  // std::multiset
 
 #include "engraver_state.hh"    // EngraverState
@@ -128,6 +127,10 @@ void EngraverState::engrave()
             pline->basePos.x = pvoice->basePos.x;
         if (pline->basePos.y > pvoice->basePos.y)
             pline->basePos.y = pvoice->basePos.y;
+        
+        // update external data
+        if (reengrave_info)
+            reengrave_info->update(cursor.voice(), *this);
     };
     
     // update end-time stamp
@@ -148,7 +151,7 @@ void EngraverState::engrave()
     else                               pos.y += viewport->umtopx_v(pick.staff_offset());
     
     pvoice->notes.push_back(Plate::pNote(pos, cursor)); // append the new note to the plate
-    pnote = &pvoice->notes.back();                      // get the on-plate note-object
+    pnote = --pvoice->notes.end();                      // get the on-plate note-object
     if (cursor.virtual_obj)                             // set virtual object
         pnote->virtual_obj = Plate::pNote::VirtualPtr(new Plate::pNote::Virtual(*cursor.virtual_obj, cursor.inserted));
     
@@ -188,28 +191,31 @@ void EngraverState::engrave()
         const RefPtr<SubVoice>& subvoice = static_cast<const NoteObject&>(*cursor).subvoice;
         if (subvoice && subvoice->notes.empty())
         {
-            pVoiceIt newvoice(pvoice);
-            if (subvoice->on_top)
-            {
-                newvoice = pline->voices.insert(newvoice, Plate::pVoice(const_Cursor(cursor.staff(), *subvoice)));
-            }
-            else
-            {
-                ++newvoice;
-                newvoice = pline->voices.insert(newvoice, Plate::pVoice(const_Cursor(cursor.staff(), *subvoice)));
-            };
-            newvoice->context = pvoice->context;
+            // insert new voice
+            Plate::VoiceIt parent(pvoice);
+            if (!subvoice->on_top) ++pvoice;
+            pvoice = pline->voices.insert(pvoice, Plate::pVoice(const_Cursor(cursor.staff(), *subvoice)));
+            pvoice->context = parent->context;
             
             // add position information to the new voice
-            newvoice->basePos = pvoice->basePos;
-            newvoice->time = cursor.time;
-            newvoice->end_time = cursor.time;
+            pvoice->basePos = parent->basePos;
+            pvoice->time = cursor.time;
+            pvoice->end_time = cursor.time;
             
             // add end-of-voice indicator object
-            newvoice->notes.push_back(Plate::pNote(pnote->absolutePos.front(), newvoice->begin));
-            newvoice->notes.back().gphBox.pos = newvoice->notes.back().absolutePos.front();
-            newvoice->notes.back().gphBox.width = 1000;
-            newvoice->notes.back().gphBox.height = head_height * (cursor.staff().line_count - 1);
+            pvoice->notes.push_back(Plate::pNote(pnote->absolutePos.front(), pvoice->begin));
+            pvoice->notes.back().gphBox.pos = pvoice->notes.back().absolutePos.front();
+            pvoice->notes.back().gphBox.width = 1000;
+            pvoice->notes.back().gphBox.height = head_height * (cursor.staff().line_count - 1);
+            
+            // update external data
+            if (reengrave_info)
+            {
+                pnote = --pvoice->notes.end();              // set pnote to end-of-voice indicator
+                reengrave_info->update(*subvoice, *this);   // update external data
+                pvoice = parent;                            // reset on-plate voice
+                pnote = --pvoice->notes.end();              // reset on-plate note-object
+            };
         };
     };
     
@@ -256,7 +262,15 @@ void EngraverState::engrave()
         pvoice->notes.back().gphBox.width = 1000;
         pvoice->notes.back().gphBox.height = head_height * (cursor.staff().line_count - 1);
         pvoice->notes.back().absolutePos.front() = pvoice->notes.back().gphBox.pos;
-    }
+    };
+    
+    // update external data
+    if (reengrave_info)
+    {
+        reengrave_info->update(*cursor, *this);
+        if (reengrave_info->is_empty())
+            reengrave_info = NULL;
+    };
 }
 
 // calculate line-end information/line's rightmost border (see "Plate::pLine::line_end")
@@ -306,55 +320,60 @@ void EngraverState::apply_offsets()
 }
 
 // begin durable on the given note (helper function for attachable engraver)
-void EngraverState::begin_durable(const Durable& source, DurableInfo& target, const Plate::pVoice& voice, Plate::pNote& note)
+void EngraverState::begin_durable(const Durable& source, DurableInfo& info)
 {
     // calculate first node position
-    note.attached.push_back(
+    pnote->attached.push_back(
     Plate::pNote::AttachablePtr(new Plate::pDurable(
         source,
         Position<mpx_t>(_round(
             (source.typeX == Movable::PAGE)   ? viewport->umtopx_h(source.position.x) : (
             (source.typeX == Movable::LINE)   ? pline->basePos.x + viewport->umtopx_h(source.position.x) : (
-            (source.typeX == Movable::STAFF)  ? voice.basePos.x + (head_height * source.position.x) / 1000 : (
-            (source.typeX == Movable::PARENT) ? note.absolutePos.back().x + (head_height * source.position.x) / 1000 :
+            (source.typeX == Movable::STAFF)  ? pvoice->basePos.x + (head_height * source.position.x) / 1000 : (
+            (source.typeX == Movable::PARENT) ? pnote->absolutePos.back().x + (head_height * source.position.x) / 1000 :
             0)))), _round(
             (source.typeY == Movable::PAGE)   ? viewport->umtopx_v(source.position.y) : (
             (source.typeY == Movable::LINE)   ? pline->basePos.y + viewport->umtopx_v(source.position.y) : (
-            (source.typeY == Movable::STAFF)  ? voice.basePos.y + (head_height * source.position.y) / 1000 : (
-            (source.typeY == Movable::PARENT) ? note.absolutePos.back().y + (head_height * source.position.y) / 1000 :
+            (source.typeY == Movable::STAFF)  ? pvoice->basePos.y + (head_height * source.position.y) / 1000 : (
+            (source.typeY == Movable::PARENT) ? pnote->absolutePos.back().y + (head_height * source.position.y) / 1000 :
             0))))
         )
         )
     ));
     
     // initialize durable-information to wait for the end-position
-    target.source = &source;
-    target.target = &static_cast<Plate::pDurable&>(*note.attached.back());
-    target.durationcountdown = source.duration - 1;
+    info.source = &source;
+    info.target = &static_cast<Plate::pDurable&>(*pnote->attached.back());
+    info.pnote  = pnote;
+    info.durationcountdown = source.duration - 1;
 }
 
 // end durable on the given note (helper function for attachable engraver)
-void EngraverState::end_durable(const Durable& source, Plate::pDurable& target, const Plate::pVoice& voice, const Plate::pNote& note)
+void EngraverState::end_durable(DurableInfo& info)
 {
+    // get source and target
+    const Durable&   source(*info.source);
+    Plate::pDurable& target(*info.target);
+    
     // calculate position of the end-node
     target.endPos.x = _round(
         (source.typeX == Movable::PAGE)   ? viewport->umtopx_h(source.end_position.x) : (
         (source.typeX == Movable::LINE)   ? pline->basePos.x + viewport->umtopx_h(source.end_position.x) : (
-        (source.typeX == Movable::STAFF)  ? voice.basePos.x + (head_height * source.end_position.x) / 1000 : (
-        (source.typeX == Movable::PARENT) ? note.absolutePos.back().x + (head_height * source.end_position.x) / 1000 :
+        (source.typeX == Movable::STAFF)  ? pvoice->basePos.x + (head_height * source.end_position.x) / 1000 : (
+        (source.typeX == Movable::PARENT) ? pnote->absolutePos.back().x + (head_height * source.end_position.x) / 1000 :
         0))));
     target.endPos.y = _round(
         (source.typeY == Movable::PAGE)   ? viewport->umtopx_h(source.end_position.y) : (
         (source.typeY == Movable::LINE)   ? pline->basePos.y + viewport->umtopx_h(source.end_position.y) : (
-        (source.typeY == Movable::STAFF)  ? voice.basePos.y + (head_height * source.end_position.y) / 1000 : (
-        (source.typeY == Movable::PARENT) ? note.absolutePos.back().y + (head_height * source.end_position.y) / 1000 :
+        (source.typeY == Movable::STAFF)  ? pvoice->basePos.y + (head_height * source.end_position.y) / 1000 : (
+        (source.typeY == Movable::PARENT) ? pnote->absolutePos.back().y + (head_height * source.end_position.y) / 1000 :
         0))));
     
     // calculate the graphical boundary box
     if (source.is(Class::SLUR))
     {
         const Slur& obj = static_cast<const Slur&>(source);
-        target.gphBox = calculate_gphBox(
+        target.gphBox = Plate::calculate_gphBox(
             target.absolutePos,
             (obj.typeX == Movable::PAGE || obj.typeX == Movable::LINE) ?
                 Position<mpx_t>(
@@ -388,6 +407,17 @@ void EngraverState::end_durable(const Durable& source, Plate::pDurable& target, 
     target.endPos.y = target.absolutePos.y + ((target.endPos.y - target.absolutePos.y) * source.appearance.scale) / 1000;
     target.gphBox.width = _round((target.gphBox.width * source.appearance.scale) / 1000.0);
     target.gphBox.height = _round((target.gphBox.height * source.appearance.scale) / 1000.0);
+    
+    // update external data
+    if (reengrave_info)
+    {
+        const Plate::NoteIt temp(pnote);
+        pnote = info.pnote;
+        reengrave_info->update(source, *this);
+        if (reengrave_info->is_empty())
+            reengrave_info = NULL;
+        pnote = temp;
+    };
 }
 
 // engrave all stems within beams in the current line
@@ -399,10 +429,10 @@ void EngraverState::engrave_stems()
     double top(0.0);        // new stem top position
     
     // iterate the voices
-    for (std::list<Plate::pVoice>::iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
+    for (pvoice = pline->voices.begin(); pvoice != pline->voices.end(); ++pvoice)
     {
-        head_height = viewport->umtopx_v(voice->begin.staff().head_height); // get head height
-        style = &*voice->begin.staff().style;                               // set style
+        head_height = viewport->umtopx_v(pvoice->begin.staff().head_height); // get head height
+        style = &*pvoice->begin.staff().style;                               // set style
         if (!style) style = &default_style;
         
         // iterate the voice
@@ -410,88 +440,88 @@ void EngraverState::engrave_stems()
         
         // correct stem length for notes with beam (I)
         got_beam = false;
-        for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
+        for (pnote = pvoice->notes.begin(); pnote != pvoice->notes.end(); ++pnote)
         {
-            it->beam_begin = voice->notes.end();    // reset beam_begin
+            pnote->beam_begin = pvoice->notes.end();    // reset beam_begin
             
             if (got_beam)   // while on beamed note
             {
                 // set begin iterator
-                it->beam_begin = beam_it;
+                pnote->beam_begin = beam_it;
                 
                 // on the end of the beam
-                if (beam_it->beam[VALUE_BASE - 3]->end == &*it)
+                if (beam_it->beam[VALUE_BASE - 3]->end == &*pnote)
                 {
                     got_beam = false;   // reset beam indicator
                 }
-                else if (it->stem_info)     // correct stems within the beam
+                else if (pnote->stem_info)  // correct stems within the beam
                 {
-                    top = y1 + (it->stem.x - x1) * slope;
-                    if ((it->stem.base > top) != (it->stem.base > it->stem.top))
+                    top = y1 + (pnote->stem.x - x1) * slope;
+                    if ((pnote->stem.base > top) != (pnote->stem.base > pnote->stem.top))
                     {
                         // correct stem position
-                        const SpriteInfo& headsprite = (*sprites)[it->sprite];          // get sprite-info
-                        const double scale = head_height / (sprites->head_height(it->sprite) * 1000.0);
-                        const unsigned int app_scale = it->get_note().get_visible().appearance.scale;
+                        const SpriteInfo& headsprite = (*sprites)[pnote->sprite];       // get sprite-info
+                        const double scale = head_height / (sprites->head_height(pnote->sprite) * 1000.0);
+                        const unsigned int app_scale = pnote->get_note().get_visible().appearance.scale;
                         const mpx_t stem_width = viewport->umtopx_h(style->stem_width); // get stem width
                         const mpx_t sprite_width = _round(headsprite.width * scale * app_scale);
                         Position<mpx_t> stem;                                           // stem position
                         stem.x = _round(headsprite.get_real("stem.x") * scale * app_scale);
                         stem.y = _round(headsprite.get_real("stem.y") * scale * app_scale);
                         
-                        if (it->stem.base > top)    // an upward stem is right of the chord
+                        if (pnote->stem.base > top)     // an upward stem is right of the chord
                         {
-                            it->stem.x = it->absolutePos.front().x                              // base position
-                                + stem.x                                                        // offset for the sprite
-                                - _round(it->stem_info->cluster ? 0 : stem_width * scale / 2);  // offset for the stem's width
+                            pnote->stem.x = pnote->absolutePos.front().x                            // base position
+                                + stem.x                                                            // offset for the sprite
+                                - _round(pnote->stem_info->cluster ? 0 : stem_width * scale / 2);   // offset for the stem's width
                             
-                            it->stem.top = _round(y1 + (it->stem.x - x1) * slope);
-                            it->stem.base = it->stem_info->base_pos + (it->stem_info->base_side ?
-                                _round(((headsprite.height * scale * app_scale - stem.y) * it->stem_info->base_scale) / 1000.0) :
+                            pnote->stem.top = _round(y1 + (pnote->stem.x - x1) * slope);
+                            pnote->stem.base = pnote->stem_info->base_pos + (pnote->stem_info->base_side ?
+                                _round(((headsprite.height * scale * app_scale - stem.y) * pnote->stem_info->base_scale) / 1000.0) :
                                 stem.y);
                         };
                         
-                        if (it->stem.base < top)    // downward stems are placed left of the chord
+                        if (pnote->stem.base < top)     // downward stems are placed left of the chord
                         {
-                            it->stem.x = it->absolutePos.front().x                              // base position
-                             + _round(it->stem_info->cluster ? stem.x : sprite_width - stem.x + stem_width * scale / 2);
+                            pnote->stem.x = pnote->absolutePos.front().x                            // base position
+                             + _round(pnote->stem_info->cluster ? stem.x : sprite_width - stem.x + stem_width * scale / 2);
                             
-                            it->stem.top = _round(y1 + (it->stem.x - x1) * slope);
-                            it->stem.base = it->stem_info->top_pos + (it->stem_info->top_side ?
+                            pnote->stem.top = _round(y1 + (pnote->stem.x - x1) * slope);
+                            pnote->stem.base = pnote->stem_info->top_pos + (pnote->stem_info->top_side ?
                                 stem.y :
-                                _round(((headsprite.height * scale * app_scale - stem.y) * it->stem_info->top_scale) / 1000.0));
+                                _round(((headsprite.height * scale * app_scale - stem.y) * pnote->stem_info->top_scale) / 1000.0));
                         };
                         
-                        it->gphBox.extend(Position<mpx_t>(it->stem.x, it->stem.top));
+                        pnote->gphBox.extend(Position<mpx_t>(pnote->stem.x, pnote->stem.top));
                     }
-                    else it->stem.top = _round(top);
+                    else pnote->stem.top = _round(top);
                 };
             };
             
-            if (!got_beam && it->beam[VALUE_BASE - 3])  // on beam's begin
+            if (!got_beam && pnote->beam[VALUE_BASE - 3]) // on beam's begin
             {
-                it->beam_begin = it;        // set on-plate begin iterator
-                beam_it = it;               // set begin iterator
+                pnote->beam_begin = pnote;  // set on-plate begin iterator
+                beam_it = pnote;            // set begin iterator
                 got_beam = true;            // set beam indicator
-                x1 = it->stem.x;            // set coordinates
-                y1 = it->stem.top;          // set slope
-                slope  = it->beam[VALUE_BASE - 3]->end->stem.top - y1;
-                slope /= it->beam[VALUE_BASE - 3]->end->stem.x - x1;
+                x1 = pnote->stem.x;         // set coordinates
+                y1 = pnote->stem.top;       // set slope
+                slope  = pnote->beam[VALUE_BASE - 3]->end->stem.top - y1;
+                slope /= pnote->beam[VALUE_BASE - 3]->end->stem.x - x1;
             };
         };
         
         // engrave beams
-        BeamInfo beam_info(*voice);
-        value_t time(voice->time);
-        beam_it = voice->notes.begin();
-        for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
+        BeamInfo beam_info(*pvoice);
+        value_t time(pvoice->time);
+        beam_it = pvoice->notes.begin();
+        for (pnote = pvoice->notes.begin(); pnote != pvoice->notes.end(); ++pnote)
         {
-            if (!it->at_end() && it->get_note().is(Class::NOTEOBJECT))
+            if (!pnote->at_end() && pnote->get_note().is(Class::NOTEOBJECT))
             {
-                time += static_cast<const NoteObject&>(it->get_note()).value();
-                if (it->get_note().is(Class::CHORD))
+                time += static_cast<const NoteObject&>(pnote->get_note()).value();
+                if (pnote->get_note().is(Class::CHORD))
                 {
-                    beam_info.apply2(static_cast<const Chord&>(it->get_note()), it, time, param->beam_group);
+                    beam_info.apply2(static_cast<const Chord&>(pnote->get_note()), pnote, time, param->beam_group);
                 };
             };
         };
@@ -499,12 +529,12 @@ void EngraverState::engrave_stems()
         
         // correct stem length for notes with beam (II)
         got_beam = false;
-        for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
+        for (pnote = pvoice->notes.begin(); pnote != pvoice->notes.end(); ++pnote)
         {
             // on beam's begin
-            if (!got_beam && it->beam[VALUE_BASE - 3])
+            if (!got_beam && pnote->beam[VALUE_BASE - 3])
             {
-                beam_it = it;               // set begin iterator
+                beam_it = pnote;            // set begin iterator
                 got_beam = true;            // set beam indicator
             }
             
@@ -512,18 +542,18 @@ void EngraverState::engrave_stems()
             else if (got_beam)
             {
                 // update stem lengths by beam-offset
-                if (it->stem.base < it->stem.top)
-                    it->stem.top = _round(it->stem.top + head_height *
+                if (pnote->stem.base < pnote->stem.top)
+                    pnote->stem.top = _round(pnote->stem.top + head_height *
                         (((beam_it->stem.base > beam_it->stem.top) ? style->beam_height : 0)
-                           + it->stem.beam_off * (style->beam_height + style->beam_distance))
+                           + pnote->stem.beam_off * (style->beam_height + style->beam_distance))
                         / 1000.0);
                 else
-                    it->stem.top = _round(it->stem.top - head_height *
+                    pnote->stem.top = _round(pnote->stem.top - head_height *
                         (((beam_it->stem.base < beam_it->stem.top) ? style->beam_height : 0)
-                           + it->stem.beam_off * (style->beam_height + style->beam_distance))
+                           + pnote->stem.beam_off * (style->beam_height + style->beam_distance))
                         / 1000.0);
                 
-                got_beam = (beam_it->beam[VALUE_BASE - 3]->end != &*it);    // update beam indicator
+                got_beam = (beam_it->beam[VALUE_BASE - 3]->end != &*pnote); // update beam indicator
             };
         };
     };
@@ -536,31 +566,31 @@ void EngraverState::engrave_attachables()
     const VisibleObject* visible;       // visible object reference
     
     // iterate the voices
-    for (std::list<Plate::pVoice>::iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
+    for (pvoice = pline->voices.begin(); pvoice != pline->voices.end(); ++pvoice)
     {
-        head_height = viewport->umtopx_v(voice->begin.staff().head_height); // get head height
-        style = &*voice->begin.staff().style;                               // set style
+        head_height = viewport->umtopx_v(pvoice->begin.staff().head_height); // get head height
+        style = &*pvoice->begin.staff().style;                               // set style
         if (!style) style = &default_style;
         
         // iterate the voice
-        for (std::list<Plate::pNote>::iterator it = voice->notes.begin(); it != voice->notes.end(); ++it)
+        for (pnote = pvoice->notes.begin(); pnote != pvoice->notes.end(); ++pnote)
         {
             // ignore inserted notes
-            if (it->at_end() || it->is_inserted()) continue;
+            if (pnote->at_end() || pnote->is_inserted()) continue;
             
             // check durables
             for (std::list<DurableInfo>::iterator i = durableinfo.begin(); i != durableinfo.end();)
             {
                 if ((--(i->durationcountdown)) == 0)    // if the durable objects ends here
                 {
-                    end_durable(*i->source, *i->target, *voice, *it);    // finish the durable
-                    i = durableinfo.erase(i);                                   // remove the object
+                    end_durable(*i);            // finish the durable
+                    i = durableinfo.erase(i);   // remove the object
                 }
                 else ++i;
             };
             
             // get visible object
-            visible = &it->get_note().get_visible();
+            visible = &pnote->get_note().get_visible();
             
             // engrave movables
             if (visible != NULL)
@@ -570,24 +600,24 @@ void EngraverState::engrave_attachables()
                 if ((*i)->is(Class::DURABLE))
                 {
                     durableinfo.push_back(DurableInfo());
-                    begin_durable(static_cast<const Durable&>(**i), durableinfo.back(), *voice, *it);
+                    begin_durable(static_cast<const Durable&>(**i), durableinfo.back());
                 }
                 
                 // append attachable
                 else
                 {
-                    it->attached.push_back(
+                    pnote->attached.push_back(
                         Plate::pNote::AttachablePtr(new Plate::pAttachable(**i,
                         Position<mpx_t>(_round(
                             ((*i)->typeX == Movable::PAGE)   ? viewport->umtopx_h((*i)->position.x) : (
                             ((*i)->typeX == Movable::LINE)   ? pline->basePos.x + viewport->umtopx_h((*i)->position.x) : (
-                            ((*i)->typeX == Movable::STAFF)  ? voice->basePos.x + (head_height * (*i)->position.x) / 1000 : (
-                            ((*i)->typeX == Movable::PARENT) ? it->absolutePos.back().x + (head_height * (*i)->position.x) / 1000 :
+                            ((*i)->typeX == Movable::STAFF)  ? pvoice->basePos.x + (head_height * (*i)->position.x) / 1000 : (
+                            ((*i)->typeX == Movable::PARENT) ? pnote->absolutePos.back().x + (head_height * (*i)->position.x) / 1000 :
                             0)))), _round(
                             ((*i)->typeY == Movable::PAGE)   ? viewport->umtopx_v((*i)->position.y) : (
                             ((*i)->typeY == Movable::LINE)   ? pline->basePos.y + viewport->umtopx_v((*i)->position.y) : (
-                            ((*i)->typeY == Movable::STAFF)  ? voice->basePos.y + (head_height * (*i)->position.y) / 1000 : (
-                            ((*i)->typeY == Movable::PARENT) ? it->absolutePos.back().y + (head_height * (*i)->position.y) / 1000 :
+                            ((*i)->typeY == Movable::STAFF)  ? pvoice->basePos.y + (head_height * (*i)->position.y) / 1000 : (
+                            ((*i)->typeY == Movable::PARENT) ? pnote->absolutePos.back().y + (head_height * (*i)->position.y) / 1000 :
                             0))))
                         )
                         )
@@ -597,10 +627,10 @@ void EngraverState::engrave_attachables()
                     if ((*i)->is(Class::TEXTAREA))
                     {
                         const TextArea& obj = static_cast<const TextArea&>(**i);
-                        it->attached.back()->gphBox.pos = it->attached.back()->absolutePos;
-                        it->attached.back()->gphBox.width =
+                        pnote->attached.back()->gphBox.pos = pnote->attached.back()->absolutePos;
+                        pnote->attached.back()->gphBox.width =
                             _round((viewport->umtopx_h(obj.width) * obj.appearance.scale) / 1000.0);
-                        it->attached.back()->gphBox.height =
+                        pnote->attached.back()->gphBox.height =
                             _round((viewport->umtopx_h(obj.height) * obj.appearance.scale) / 1000.0);
                     }
                     else if ((*i)->is(Class::CUSTOMSYMBOL))
@@ -615,9 +645,17 @@ void EngraverState::engrave_attachables()
                         const double scale =  (head_height / sprites->head_height(sprite_id))
                                             * (obj.appearance.scale / 1000.0);
                         
-                        it->attached.back()->gphBox.pos    = it->attached.back()->absolutePos;
-                        it->attached.back()->gphBox.width  = _round(scale * (*sprites)[sprite_id].width);
-                        it->attached.back()->gphBox.height = _round(scale * (*sprites)[sprite_id].height);
+                        pnote->attached.back()->gphBox.pos    = pnote->attached.back()->absolutePos;
+                        pnote->attached.back()->gphBox.width  = _round(scale * (*sprites)[sprite_id].width);
+                        pnote->attached.back()->gphBox.height = _round(scale * (*sprites)[sprite_id].height);
+                    };
+                    
+                    // update external data
+                    if (reengrave_info)
+                    {
+                        reengrave_info->update(**i, *this);
+                        if (reengrave_info->is_empty())
+                            reengrave_info = NULL;
                     };
                 };
             };
@@ -626,8 +664,9 @@ void EngraverState::engrave_attachables()
         if (!durableinfo.empty())   // warn for durable objects exceeding the linebreak
         {
             log_warn("Got durable object exceeding the end of the line or voice. (class: EngraverState)");
+            pnote = --pvoice->notes.end();
             for (std::list<DurableInfo>::iterator i = durableinfo.begin(); i != durableinfo.end(); ++i)
-                end_durable(*i->source, *i->target, *voice, voice->notes.back());
+                end_durable(*i);
             durableinfo.clear();    // erase durable information
         };
     };
@@ -785,17 +824,17 @@ void EngraverState::engrave_braces()
         pline->basePos.x += offset;
         pline->line_end += offset;
         
-        for (std::list<Plate::pVoice>::iterator voice = pline->voices.begin(); voice != pline->voices.end(); ++voice)
+        for (pvoice = pline->voices.begin(); pvoice != pline->voices.end(); ++pvoice)
         {
-            voice->basePos.x += offset;
-            voice->brace.gphBox.pos.x += offset;
-            voice->bracket.gphBox.pos.x += offset;
-            voice->bracket.line_base.x += offset;
-            voice->bracket.line_end.x += offset;
-            for (std::list<Plate::pNote>::iterator note = voice->notes.begin(); note != voice->notes.end(); ++note)
+            pvoice->basePos.x += offset;
+            pvoice->brace.gphBox.pos.x += offset;
+            pvoice->bracket.gphBox.pos.x += offset;
+            pvoice->bracket.line_base.x += offset;
+            pvoice->bracket.line_end.x += offset;
+            for (pnote = pvoice->notes.begin(); pnote != pvoice->notes.end(); ++pnote)
             {
-                note->add_offset(offset);
-                note->add_tieend_offset(offset);
+                pnote->add_offset(offset);
+                pnote->add_tieend_offset(offset);
             };
         };
     };
@@ -998,108 +1037,6 @@ void EngraverState::break_ties(      TieInfoChord&  tieinfo,        // tie infor
     };
 }
 
-// calculate the graphical box for the voices within a line
-void EngraverState::calculate_gphBox(Plate::pLine& line)
-{
-    line.gphBox.extend(Position<mpx_t>(line.line_end, line.gphBox.pos.y));
-    
-    // iterate the voices
-    for (std::list<Plate::pVoice>::iterator voice = line.voices.begin(); voice != line.voices.end(); ++voice)
-    {
-        // iterate the voice
-        for (std::list<Plate::pNote>::iterator pnote = voice->notes.begin(); pnote != voice->notes.end(); ++pnote)
-        {
-            line.gphBox.extend(pnote->gphBox);
-            
-            for (Plate::pNote::AttachableList::iterator a = pnote->attached.begin(); a != pnote->attached.end(); ++a)
-                line.gphBox.extend((*a)->gphBox);
-        };
-    };
-}
-
-// calculate the graphical box for the given bezier spline
-Plate::GphBox EngraverState::calculate_gphBox(Position<mpx_t> p1, Position<mpx_t> c1, Position<mpx_t> c2, Position<mpx_t> p2, mpx_t w0, mpx_t w1)
-{
-    double tx1, tx2, ty1, ty2;  // extreme parameters
-    
-    // calculate extreme parameters (X coordinate)
-    if (p2.x - 3 * c2.x + 3 * c1.x - p1.x != 0) // cubic polynomial
-    {
-        const double px = (c2.x - 2.0 * c1.x + p1.x) / (p2.x - 3.0 * c2.x + 3.0 * c1.x - p1.x);
-        const double qx = (3.0 * (c1.x - p1.x)) / (p2.x - 3.0 * c2.x + 3.0 * c1.x - p1.x);
-        if (px * px - qx >= 0)    // monotonous?
-        {       // non-monotonous => extremum
-            tx1 = -px + sqrt(px * px - qx);
-            tx2 = -px - sqrt(px * px - qx);
-            if (tx1 < 0 || tx1 > 1) tx1 = 0;    // cut to interval [0,1]
-            if (tx2 < 0 || tx2 > 1) tx2 = 0;
-        }
-        else    // monotonous => extremum in endpoint
-        {
-            tx1 = tx2 = 0;
-        };
-    }
-    else if (c2.x - 2 * c1.x + p1.x != 0)   // quadratic polynomial
-    {
-        tx1 = tx2 = -(c1.x - p1.x) / (2.0 * (c2.x - 2.0 * c1.x + p1.x));
-        if (tx1 < 0 || tx1 > 1) tx1 = 0;    // cut to interval [0,1]
-        if (tx2 < 0 || tx2 > 1) tx2 = 0;
-    }
-    else    tx1 = tx2 = 0;  // linear polynomial => extremum in endpoint
-    
-    // calculate extreme parameters (Y coordinate)
-    if (p2.y - 3 * c2.y + 3 * c1.y - p1.y != 0) // cubic polynomial
-    {
-        const double py = (c2.y - 2.0 * c1.y + p1.y) / (p2.y - 3.0 * c2.y + 3.0 * c1.y - p1.y);
-        const double qy = (3.0 * (c1.y - p1.y)) / (p2.y - 3.0 * c2.y + 3.0 * c1.y - p1.y);
-        if (py * py - qy >= 0)     // monotonous?
-        {       // non-monotonous => extremum
-            ty1 = -py + sqrt(py * py - qy);
-            ty2 = -py - sqrt(py * py - qy);
-            if (ty1 < 0 || ty1 > 1) ty1 = 0;    // cut to interval [0,1]
-            if (ty2 < 0 || ty2 > 1) ty2 = 0;
-        }
-        else    // monotonous => extremum in endpoint
-        {
-            ty1 = ty2 = 0;
-        };
-    }
-    else if (c2.y - 2 * c1.y + p1.y != 0)   // quadratic polynomial
-    {
-        ty1 = ty2 = - (c1.y - p1.y) / (2.0 * (c2.y - 2.0 * c1.y + p1.y));
-        if (ty1 < 0 || ty1 > 1) ty1 = 0;    // cut to interval [0,1]
-        if (ty2 < 0 || ty2 > 1) ty2 = 0;
-    }
-    else    ty1 = ty2 = 0;  // linear polynomial => extremum in endpoint
-    
-    // calculate bezier-function values
-    const double x1 = (1-tx1)*(1-tx1)*((1-tx1)*p1.x + 3*tx1*c1.x) + tx1*tx1*(3*(1-tx1)*c2.x + tx1*p2.x);
-    const double x2 = (1-tx2)*(1-tx2)*((1-tx2)*p1.x + 3*tx2*c1.x) + tx2*tx2*(3*(1-tx2)*c2.x + tx2*p2.x);
-    const double y1 = (1-ty1)*(1-ty1)*((1-ty1)*p1.y + 3*ty1*c1.y) + ty1*ty1*(3*(1-ty1)*c2.y + ty1*p2.y);
-    const double y2 = (1-ty2)*(1-ty2)*((1-ty2)*p1.y + 3*ty2*c1.y) + ty2*ty2*(3*(1-ty2)*c2.y + ty2*p2.y);
-    
-    // calculate extremata                                         (and consider line width)
-    const mpx_t Mx = _round((x1 > x2 && x1 > p1.x && x1 > p2.x) ? x1   + 2*(w1-w0)*tx1*(1-tx1)+w0 :
-                           ((x2 > p1.x && x2 > p2.x)            ? x2   + 2*(w1-w0)*tx2*(1-tx2)+w0 :
-                           ((p1.x > p2.x)                       ? p1.x + w0 / 2 :
-                                                            p2.x + w0 / 2 )));
-    const mpx_t mx = _round((x1 < x2 && x1 < p1.x && x1 < p2.x) ? x1   - 2*(w1-w0)*tx1*(1-tx1)-w0 :
-                           ((x2 < p1.x && x2 < p2.x)            ? x2   - 2*(w1-w0)*tx2*(1-tx2)-w0 :
-                           ((p1.x < p2.x)                       ? p1.x - w0 / 2 :
-                                                            p2.x - w0 / 2)));
-    const mpx_t My = _round((y1 > y2 && y1 > p1.y && y1 > p2.y) ? y1   + 2*(w1-w0)*ty1*(1-ty1)+w0 :
-                           ((y2 > p1.y && y2 > p2.y)            ? y2   + 2*(w1-w0)*ty2*(1-ty2)+w0 :
-                           ((p1.y > p2.y)                       ? p1.y + w0 / 2 :
-                                                            p2.y + w0 / 2 )));
-    const mpx_t my = _round((y1 < y2 && y1 < p1.y && y1 < p2.y) ? y1   - 2*(w1-w0)*ty1*(1-ty1)-w0 :
-                           ((y2 < p1.y && y2 < p2.y)            ? y2   - 2*(w1-w0)*ty2*(1-ty2)-w0 :
-                           ((p1.y < p2.y)                       ? p1.y - w0 / 2 :
-                                                            p2.y - w0 / 2 )));
-    
-    // create box
-    return Plate::GphBox(Position<mpx_t>(mx, my), Mx - mx, My - my);
-}
-
 // constructor (will erase "score" from the "pageset" and prepare for engraving)
 EngraverState::EngraverState(const Score&         _score,
                              const unsigned int   _start_page,
@@ -1112,6 +1049,7 @@ EngraverState::EngraverState(const Score&         _score,
                                                                style(&_style),
                                                                default_style(_style),
                                                                viewport(&_viewport),
+                                                               reengrave_info(NULL),
                                                                pick(_score, _param, _viewport, _sprites),
                                                                pageset(&_pageset),
                                                                pagecnt(0),
@@ -1140,7 +1078,6 @@ EngraverState::EngraverState(const Score&         _score,
     pline = plate->lines.begin();               // initialize target line iterator
     pline->basePos.x = pick.get_indent();       // set the base-position of the new line (checked with new voice)
     pline->basePos.y = pick.get_cursor().ypos + viewport->umtopx_v(pick.staff_offset(_score.staves.front()));
-    pline->gphBox.pos = plate->lines.back().basePos;    // initialize graphical boundary box
     
     // create default clef
     Clef clef;
@@ -1204,6 +1141,7 @@ bool EngraverState::engrave_next()
     };
     
     // finish the line
+    barcnt = pvoice->context.bar(pick.get_cursor().time);
     create_lineend();               // calculate line-end information
     engrave_braces();               // engrave braces and brackets
     if (lineinfo.justify)           // justifiy the line
@@ -1211,8 +1149,7 @@ bool EngraverState::engrave_next()
     apply_offsets();                // apply non-cumulative offsets
     engrave_stems();                // engrave all the missing stems
     engrave_attachables();          // engrave all the line's attached objects
-    calculate_gphBox(*pline);       // calculate the graphical boundary box
-    barcnt = pvoice->context.bar(pick.get_cursor().time);
+    pline->calculate_gphBox();      // calculate the graphical boundary box
     
     // exit here, if no newline (below is the code for newline handling)
     if (!newline) return false;
@@ -1350,6 +1287,12 @@ void EngraverState::add_offset(const mpx_t offset)
 
 // logging control
 void EngraverState::log_set(Log& log)
+{
+    this->Logging::log_set(log);
+    pick.log_set(log);
+}
+
+void EngraverState::log_set(Logging& log)
 {
     this->Logging::log_set(log);
     pick.log_set(log);
