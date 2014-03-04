@@ -2,7 +2,6 @@ libscorepress - TODO List
 =========================
 
 BUGS:
-  user_cursor.cpp   crash on empty line at voice-end editing (remove newline/insert)
   pick.cpp          wrong note positioning
 
 INCOMPLETE:
