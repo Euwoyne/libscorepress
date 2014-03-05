@@ -21,8 +21,8 @@
 #define SCOREPRESS_EDITCURSOR_HH
 
 #include "user_cursor.hh"   // UserCursor, Document, Pageset, [score classes]
+#include "object_cursor.hh" // ObjectCursor
 #include "engraver.hh"      // Engraver
-#include "log.hh"           // Logging
 #include "export.hh"
 
 namespace ScorePress
@@ -90,6 +90,7 @@ class SCOREPRESS_API EditCursor : public UserCursor
                const StyleParam&     style,
                const ViewportParam&  viewport);
     
+    /*
     // access methods (non-constant)
     MovableList&                  get_attached()  throw(NotValidException); // return objects attached to the note
     Plate::pNote::AttachableList& get_pattached() throw(NotValidException); // return on-plate attached-object info
@@ -98,6 +99,11 @@ class SCOREPRESS_API EditCursor : public UserCursor
     Newline&        get_layout()        throw(NotValidException);   // return the line layout
     ScoreDimension& get_dimension()     throw(NotValidException);   // return the score dimension
     MovableList&    get_page_attached() throw(NotValidException);   // return objects attached to the page
+    */
+    
+    // attached object access
+    ObjectCursor create_object_cursor();                        // return an object cursor for the referenced note
+    void         create_object_cursor(ObjectCursor& cursor);    // set the object cursor's parent note
     
     // insert an object (inserting transfers the objects ownership to the voice-object within the score)
     void insert(StaffObject* const object) throw(NotValidException, Cursor::IllegalObjectTypeException);

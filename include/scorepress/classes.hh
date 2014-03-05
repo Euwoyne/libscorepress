@@ -41,6 +41,7 @@ class PressState;           // press state class prototype (see "press.hh")
 class Renderer;             // renderer class prototype (see "renderer.hh")
 class Plate_pNote;          // pNote prototype (see "plate.hh")
 class Plate_pAttachable;    // pAttachable prototype (see "plate.hh")
+class DurableInfo;          // durable-information prototype (see "engrave_info.hh")
 
 // BASE CLASSES
 class  SCOREPRESS_API Appearance;   // graphical appearance properties (visibility, color, scale)
@@ -610,6 +611,9 @@ class SCOREPRESS_API Staff : public Voice
  public:
     typedef SmartPtr<StyleParam> StyleParamPtr;
     
+    // default head-heights (by rastrum number)
+    static const unsigned int rastrum[9];
+    
  public:
     StaffObjectList notes;      // content of the staff
     SubVoiceList    subvoices;  // sub-voices associated with this staff
@@ -626,7 +630,7 @@ class SCOREPRESS_API Staff : public Voice
     StyleParamPtr style;        // optional staff specific style parameters
     Newline layout;             // staff layout on the first page
     
-    Staff() : offset_y(0), head_height(10), line_count(5), long_barlines(false), curlybrace(false), bracket(false), brace_pos(500), bracket_pos(1000), style(NULL) {}
+    Staff() : offset_y(0), head_height(1875), line_count(5), long_barlines(false), curlybrace(false), bracket(false), brace_pos(500), bracket_pos(1000), style(NULL) {}
     virtual bool is(classType type) const {return ((type == STAFF) || Voice::is(type));};
     virtual classType classtype() const {return STAFF;};
     virtual Staff* clone() const {return new Staff(*this);};
@@ -644,16 +648,21 @@ class SCOREPRESS_API Movable : public AttachedObject
  public:
     Position<> position;                   // position data (in micrometer or promille of head-height)
     enum Type {PAGE, LINE, STAFF, PARENT}; // position type (origin position; ignored for on-page objects)
+    enum Unit {METRIC, HEAD};              // position unit (micrometer or promille of head-height)
     Type typeX, typeY;                     // position type for X- and Y-coordinate
+    Unit unitX, unitY;                     // position unit for X- and Y-coordinate
     
  public:
-    Movable() : typeX(PAGE), typeY(PAGE) {};
+    Movable() : typeX(PAGE), typeY(PAGE), unitX(METRIC), unitY(METRIC) {};
+    virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
     virtual bool is(classType type) const {return ((type == MOVABLE) || AttachedObject::is(type));};
     virtual classType classtype() const {return MOVABLE;};
     virtual Movable* clone() const = 0;
     virtual ContextChanging* ctxchange() {return NULL;};
     virtual const ContextChanging* ctxchange() const {return NULL;};
+    
+    Position<mpx_t> engrave_pos(const EngraverState& engraver, const Position<>& pos) const;
 };
 
 // plain-text object (text with formatting information)
@@ -685,6 +694,7 @@ class SCOREPRESS_API TextArea : public Movable
     std::list<Paragraph> text;     // paragraphs
     
  public:
+    virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer&, const Plate_pAttachable&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == TEXTAREA) || (Movable::is(type)));};
     virtual classType classtype() const {return TEXTAREA;};
@@ -779,6 +789,7 @@ class SCOREPRESS_API CustomSymbol : public Symbol
     SpriteId sprite;   // sprite of the symbol
     
  public:
+    virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer&, const Plate_pAttachable&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == CUSTOMSYMBOL) || (Symbol::is(type)));};
     virtual classType classtype() const {return CUSTOMSYMBOL;};
@@ -794,6 +805,8 @@ class SCOREPRESS_API Durable : public Symbol
     
  public:
     Durable() : duration(1) {};
+    virtual void engrave(EngraverState& engraver) const;
+    virtual void engrave(EngraverState& engraver, DurableInfo& info) const = 0;
     virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
     virtual bool is(classType type) const {return ((type == DURABLE) || (Symbol::is(type)));};
     virtual classType classtype() const {return DURABLE;};
@@ -811,6 +824,7 @@ class SCOREPRESS_API Slur : public Durable
     
  public:
     Slur() : thickness1(500), thickness2(2000) {};
+    virtual void engrave(EngraverState& engraver, DurableInfo& info) const;
     virtual void render(Renderer&, const Plate_pAttachable&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == SLUR) || (Durable::is(type)));};
     virtual classType classtype() const {return SLUR;};
@@ -827,6 +841,7 @@ class SCOREPRESS_API Hairpin : public Durable
     
  public:
     Hairpin() : thickness(1000), height(1000), crescendo(true) {};
+    virtual void engrave(EngraverState& engraver, DurableInfo& info) const;
     virtual void render(Renderer&, const Plate_pAttachable&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == HAIRPIN) || (Durable::is(type)));};
     virtual classType classtype() const {return HAIRPIN;};

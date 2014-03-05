@@ -252,6 +252,7 @@ EditCursor::EditCursor(Document& _document, Pageset& _pageset,
 //  access methods
 // ----------------
 
+/*
 // return objects attached to the note
 MovableList& EditCursor::get_attached() throw(NotValidException)
 {
@@ -289,6 +290,22 @@ MovableList& EditCursor::get_page_attached() throw(NotValidException)
     return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).attached
                                        : score->layout.attached;
 }
+*/
+
+// return an object cursor for the referenced note
+ObjectCursor EditCursor::create_object_cursor()
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return ObjectCursor(cursor->note->get_visible(), *cursor->pnote, *cursor->pvoice, *line, page->pageno);
+}
+
+// set the object cursor's parent note
+void EditCursor::create_object_cursor(ObjectCursor& objcursor)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    objcursor.set_parent(cursor->note->get_visible(), *cursor->pnote, *cursor->pvoice, *line, page->pageno);
+}
+
 
 //  insertion interface
 // ---------------------

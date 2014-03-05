@@ -81,21 +81,21 @@ Engraver::Engraver(Pageset& _pageset, const Sprites& _sprites, const StyleParam&
     pageset(&_pageset),
     sprites(&_sprites),
     style(&_style),
-    viewport(&_viewport), running(false) {}
+    viewport(&_viewport) {}
 
-// engrave the whole score
-void Engraver::engrave(const Score& score, const unsigned int start_page)
+// engrave the score
+void Engraver::engrave(const Score& score, const unsigned int start_page, const unsigned int head_height)
 {
     log_debug("engrave (score)");
-    EngraverState state(score, start_page, *pageset, *sprites, parameters, *style, *viewport);
+    EngraverState state(score, start_page, *pageset, *sprites, head_height, parameters, *style, *viewport);
     state.log_set(*this);
     while (state.engrave_next());
 }
 
-void Engraver::engrave(const Score& score, const unsigned int start_page, ReengraveInfo& info)
+void Engraver::engrave(const Score& score, const unsigned int start_page, const unsigned int head_height, ReengraveInfo& info)
 {
     log_debug("engrave (score with reengrave-info)");
-    EngraverState state(score, start_page, *pageset, *sprites, parameters, *style, *viewport);
+    EngraverState state(score, start_page, *pageset, *sprites, head_height, parameters, *style, *viewport);
     state.set_reengrave_info(info);
     state.log_set(*this);
     while (state.engrave_next());
@@ -112,7 +112,7 @@ void Engraver::engrave(const Document& document)
     
     for (std::list<Document::Score>::const_iterator i = document.scores.begin(); i != document.scores.end(); ++i)
     {
-        engrave(i->score, i->start_page);
+        engrave(i->score, i->start_page, document.head_height);
     };
     engrave_attachables(document);
 }
@@ -127,7 +127,7 @@ void Engraver::engrave(const Document& document, ReengraveInfo& info)
     
     for (std::list<Document::Score>::const_iterator i = document.scores.begin(); i != document.scores.end(); ++i)
     {
-        engrave(i->score, i->start_page, info);
+        engrave(i->score, i->start_page, document.head_height, info);
     };
     engrave_attachables(document);
 }

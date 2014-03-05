@@ -24,6 +24,7 @@
 using namespace ScorePress;
 
 inline int _round(const double d) {return static_cast<mpx_t>(d + 0.5);}
+#define HEAD_HEIGHT(staff) ((staff).head_height ? (staff).head_height : this->head_height)
 
 
 //
@@ -500,12 +501,12 @@ void Pick::calculate_npos(VoiceCursor& nextNote)
     // the note's graphical width (plus minimal distance)
     const mpx_t note_width = width(*sprites,
                                    &*nextNote,
-                                   viewport->umtopx_v(nextNote.staff().head_height))
+                                   viewport->umtopx_v(HEAD_HEIGHT(nextNote.staff()))
                               + ((nextNote->is(Class::NOTEOBJECT)) ?
                                       viewport->umtopx_h(param->min_distance) :
                                       ((nextNote->is(Class::BARLINE)) ?
                                             viewport->umtopx_h(param->barline_distance) :
-                                            viewport->umtopx_h(param->default_distance)));
+                                            viewport->umtopx_h(param->default_distance))));
     
     // the note's value-related width
     const mpx_t distance = (nextNote->is(Class::NOTEOBJECT)) ?
@@ -514,7 +515,7 @@ void Pick::calculate_npos(VoiceCursor& nextNote)
     
     // add the maximum of both to the current note position
     nextNote.npos = nextNote.pos + ((distance < note_width) ? note_width : distance)
-                                 + viewport->umtopx_v((nextNote.staff().head_height * nextNote->acc_offset) / 1000.0);
+                                 + viewport->umtopx_v((HEAD_HEIGHT(nextNote.staff()) * nextNote->acc_offset) / 1000.0);
 }
 
 // insert next note of current voice
@@ -776,11 +777,12 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
 }
 
 // constructor: create a new pick
-Pick::Pick(const Score& _score, const EngraverParam& _param, const ViewportParam& _viewport, const Sprites& _sprites) :
+Pick::Pick(const Score& _score, const EngraverParam& _param, const ViewportParam& _viewport, const Sprites& _sprites, int def_head_height) :
                                             score(&_score),
                                             param(&_param),
                                             viewport(&_viewport),
                                             sprites(&_sprites),
+                                            head_height(def_head_height),
                                             _dimension(NULL),
                                             _newline(false),
                                             _pagebreak(false),
@@ -1030,8 +1032,8 @@ int Pick::staff_offset(int idx_shift) const
     {
         if (_layout.get(*j).visible)
         {
-            out += ((j->offset_y + _layout.get(*j).distance) * j->head_height) / 1000   // add staff offset
-                +  (j->line_count - 1) * j->head_height;                                // add staff height
+            out += ((j->offset_y + _layout.get(*j).distance) * HEAD_HEIGHT(*j)) / 1000  // add staff offset
+                +  (j->line_count - 1) * HEAD_HEIGHT(*j);                               // add staff height
             if (idx_shift < 0) ++idx_shift;
         };
         if (!idx_shift) ++i;
@@ -1046,7 +1048,7 @@ int Pick::staff_offset(int idx_shift) const
     };
     
     // add staff offset and return
-    return out + ((j->offset_y + _layout.get(*j).distance) * j->head_height) / 1000;
+    return out + ((j->offset_y + _layout.get(*j).distance) * HEAD_HEIGHT(*j)) / 1000;
 }
 
 // calculate the staff's offset relative to the line's position (in micrometer)
@@ -1058,8 +1060,8 @@ int Pick::staff_offset(const Staff& staff) const
     while (i != score->staves.end() && &*i != &staff)   // iterate until given staff is found (or we run out of staffs)
     {
         if (_layout.get(*i).visible)
-            out += ((i->offset_y + _layout.get(*i).distance) * i->head_height) / 1000   // add staff offset
-                +  (i->line_count - 1) * i->head_height;                                // add staff height
+            out += ((i->offset_y + _layout.get(*i).distance) * HEAD_HEIGHT(*i)) / 1000  // add staff offset
+                +  (i->line_count - 1) * HEAD_HEIGHT(*i);                               // add staff height
         ++i;
     };
     
@@ -1071,7 +1073,7 @@ int Pick::staff_offset(const Staff& staff) const
     };
     
     // add staff offset and return
-    return out + ((staff.offset_y + _layout.get(staff).distance) * staff.head_height) / 1000;
+    return out + ((staff.offset_y + _layout.get(staff).distance) * HEAD_HEIGHT(staff)) / 1000;
 }
 
 // calculate the complete line height (in micrometer)
@@ -1080,8 +1082,8 @@ int Pick::line_height() const
     int out = 0; // staff offset
     for (std::list<Staff>::const_iterator i = score->staves.begin(); i != score->staves.end(); ++i)
     {
-        out += ((i->offset_y + _layout.get(*i).distance) * i->head_height) / 1000   // add staff offset
-            +  (i->line_count - 1) * i->head_height;                                // add staff height
+        out += ((i->offset_y + _layout.get(*i).distance) * HEAD_HEIGHT(*i)) / 1000  // add staff offset
+            +  (i->line_count - 1) * HEAD_HEIGHT(*i);                               // add staff height
     };
     return out;
 }

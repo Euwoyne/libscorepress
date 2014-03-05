@@ -149,6 +149,15 @@
 			<Option target="install-static" />
 			<Option target="clear" />
 		</Unit>
+		<Unit filename="include/scorepress/cursor_base.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="doc" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="uninstall" />
+			<Option target="clear" />
+		</Unit>
 		<Unit filename="include/scorepress/document.hh">
 			<Option target="shared" />
 			<Option target="static" />

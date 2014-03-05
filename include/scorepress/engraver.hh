@@ -73,13 +73,15 @@ class SCOREPRESS_LOCAL Engraver : public Logging
     const StyleParam&    get_style();                   // get the staff-style
     const ViewportParam& get_viewport();                // get the viewport
     
+    // engrave the score
+    void engrave(const Score& score, const unsigned int start_page, const unsigned int head_height);
+    void engrave(const Score& score, const unsigned int start_page, const unsigned int head_height, ReengraveInfo& info);
     // (engraving deletes and recreates all affected plates!)
-    void engrave(const Score& score, const unsigned int start_page);    // engrave the whole score
-    void engrave(const Score& score, const unsigned int start_page, ReengraveInfo& info);
     
-    bool running;
-    void engrave(const Document& document);                             // engrave the document
+    // engrave the document
+    void engrave(const Document& document);
     void engrave(const Document& document, ReengraveInfo& info);
+    // (engraving deletes and recreates all affected plates!)
 };
 
 // set methods

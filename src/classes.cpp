@@ -17,6 +17,7 @@
   permissions and limitations under the Licence.
 */
 
+#include <cmath>                // sqrt
 #include "classes.hh"           // [score classes]
 #include "engraver_state.hh"    // EngraverState
 #include "press.hh"             // PressState, Plate::pNote, Plate::pAttachable, Renderer
@@ -125,6 +126,9 @@ const char* const Barline::endbar    = "\x01\x01\x02";
 
 // tone modification for each accidental-type
 const int Accidental::note_modifier[9] = {-2, -1, -1, 0, 0, 0, 1, 1, 2};
+
+// default head-heights (by rastrum number)
+const unsigned int Staff::rastrum[9] = {2125, 2000, 1875, 1750, 1625, 1500, 1375, 1250, 1125};
 
 //
 // let v / (2 ^ VALUE_BASE) be the value of the note-object:
@@ -599,7 +603,7 @@ void Barline::engrave(EngraverState& engraver) const
                 Position<mpx_t>(
                     posx,
                     pvoice->basePos.y +
-                        viewport.umtopx_v((static_cast<int>(i->line_count) - 1) * i->head_height)
+                        viewport.umtopx_v((static_cast<int>(i->line_count) - 1) * engraver.default_head_height(i->head_height))
                 )
             );
             
@@ -614,7 +618,7 @@ void Barline::engrave(EngraverState& engraver) const
                 Position<mpx_t>(
                     posx,
                     pvoice->basePos.y +
-                        viewport.umtopx_v((static_cast<int>(i->line_count) - 1) * i->head_height)
+                        viewport.umtopx_v((static_cast<int>(i->line_count) - 1) * engraver.default_head_height(i->head_height))
                 )
             );
         };
@@ -1787,6 +1791,54 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
     };
 }
 
+// engraving method (Movable)
+void Movable::engrave(EngraverState& engraver) const
+{
+    engraver.get_target().attached.push_back(Plate::pNote::AttachablePtr(new Plate::pAttachable(*this, engrave_pos(engraver, this->position))));
+}
+
+// calculate on-plate position of movable object
+Position<mpx_t> Movable::engrave_pos(const EngraverState& engraver, const Position<>& pos) const
+{
+    return Position<mpx_t>(
+        _round(
+            ((this->typeX == Movable::PAGE)   ? 0 : (
+             (this->typeX == Movable::LINE)   ? engraver.get_target_line().basePos.x : (
+             (this->typeX == Movable::STAFF)  ? engraver.get_target_voice().basePos.x : (
+             (this->typeX == Movable::PARENT) ? engraver.get_target().absolutePos.back().x :
+                                                0))))
+            +
+            ((this->unitX == Movable::METRIC) ? engraver.get_viewport().umtopx_h(pos.x) : (
+             (this->unitX == Movable::HEAD)   ? (engraver.get_head_height() * pos.x) / 1000.0 :
+                                                0))),
+        _round(
+            ((this->typeY == Movable::PAGE)   ? 0 : (
+             (this->typeY == Movable::LINE)   ? engraver.get_target_line().basePos.y : (
+             (this->typeY == Movable::STAFF)  ? engraver.get_target_voice().basePos.y : (
+             (this->typeY == Movable::PARENT) ? engraver.get_target().absolutePos.back().y :
+                                                0))))
+            +
+            ((this->unitY == Movable::METRIC) ? engraver.get_viewport().umtopx_v(pos.y) : (
+             (this->unitY == Movable::HEAD)   ? (engraver.get_head_height() * pos.y) / 1000.0 :
+                                                0))));
+}
+
+// engraving method (TextArea)
+void TextArea::engrave(EngraverState& engraver) const
+{
+    // prepare on-plate object
+    Movable::engrave(engraver);
+    
+    // get data
+          Plate::pNote&  pnote    = engraver.get_target();
+    const ViewportParam& viewport = engraver.get_viewport();
+    
+    // calculate the graphical boundary box
+    pnote.attached.back()->gphBox.pos    = pnote.attached.back()->absolutePos;
+    pnote.attached.back()->gphBox.width  = _round((viewport.umtopx_h(this->width)  * this->appearance.scale) / 1000.0);
+    pnote.attached.back()->gphBox.height = _round((viewport.umtopx_h(this->height) * this->appearance.scale) / 1000.0);
+}
+
 // rendering method (TextArea)
 void TextArea::render(Renderer& renderer, const Plate::pAttachable& object, const PressState& state) const
 {
@@ -1830,6 +1882,32 @@ void TextArea::render(Renderer& renderer, const Plate::pAttachable& object, cons
     };
 }
 
+// engraving method (CustomSymbol)
+void CustomSymbol::engrave(EngraverState& engraver) const
+{
+    // prepare on-plate object
+    Movable::engrave(engraver);
+    
+    // get data
+          Plate::pNote&  pnote    = engraver.get_target();
+    const Sprites&       sprites  = engraver.get_sprites();
+    
+    // calculate the graphical boundary box
+    const SpriteId sprite_id =
+        (this->sprite.setid == UNDEFINED) ?
+            SpriteId(0, sprites.front().undefined_symbol) :
+            ((this->sprite.spriteid == UNDEFINED) ?
+                SpriteId(this->sprite.setid, sprites[this->sprite.setid].undefined_symbol) :
+                this->sprite);
+    
+    const double scale = (engraver.get_head_height() / sprites.head_height(sprite_id))
+                       * (this->appearance.scale / 1000.0);
+    
+    pnote.attached.back()->gphBox.pos    = pnote.attached.back()->absolutePos;
+    pnote.attached.back()->gphBox.width  = _round(scale * sprites[sprite_id].width);
+    pnote.attached.back()->gphBox.height = _round(scale * sprites[sprite_id].height);
+}
+
 // rendering method (CustomSymbol)
 void CustomSymbol::render(Renderer& renderer, const Plate::pAttachable& object, const PressState& state) const
 {
@@ -1850,6 +1928,134 @@ void CustomSymbol::render(Renderer& renderer, const Plate::pAttachable& object, 
                             :  state.parameters.do_scale(sprite_scale) / 1000.0);
 }
 
+// engraving method (Durable)
+void Durable::engrave(EngraverState& engraver) const
+{
+    engraver.get_target().attached.push_back(Plate::pNote::AttachablePtr(new Plate::pDurable(*this, engrave_pos(engraver, this->position))));
+}
+
+// calculate the graphical box for the given bezier spline
+static Plate::GphBox calculate_gphBox(const Plate::Pos& p1, const Plate::Pos& p2, const Plate::Pos& c1, const Plate::Pos& c2, const mpx_t w0, const mpx_t w1)
+{
+    double tx1, tx2, ty1, ty2;  // extreme parameters
+    
+    // calculate extreme parameters (X coordinate)
+    if (p2.x - 3 * c2.x + 3 * c1.x - p1.x != 0) // cubic polynomial
+    {
+        const double px = (c2.x - 2.0 * c1.x + p1.x) / (p2.x - 3.0 * c2.x + 3.0 * c1.x - p1.x);
+        const double qx = (3.0 * (c1.x - p1.x)) / (p2.x - 3.0 * c2.x + 3.0 * c1.x - p1.x);
+        if (px * px - qx >= 0)    // monotonous?
+        {       // non-monotonous => extremum
+            tx1 = -px + sqrt(px * px - qx);
+            tx2 = -px - sqrt(px * px - qx);
+            if (tx1 < 0 || tx1 > 1) tx1 = 0;    // cut to interval [0,1]
+            if (tx2 < 0 || tx2 > 1) tx2 = 0;
+        }
+        else    // monotonous => extremum in endpoint
+        {
+            tx1 = tx2 = 0;
+        };
+    }
+    else if (c2.x - 2 * c1.x + p1.x != 0)   // quadratic polynomial
+    {
+        tx1 = tx2 = -(c1.x - p1.x) / (2.0 * (c2.x - 2.0 * c1.x + p1.x));
+        if (tx1 < 0 || tx1 > 1) tx1 = 0;    // cut to interval [0,1]
+        if (tx2 < 0 || tx2 > 1) tx2 = 0;
+    }
+    else    tx1 = tx2 = 0;  // linear polynomial => extremum in endpoint
+    
+    // calculate extreme parameters (Y coordinate)
+    if (p2.y - 3 * c2.y + 3 * c1.y - p1.y != 0) // cubic polynomial
+    {
+        const double py = (c2.y - 2.0 * c1.y + p1.y) / (p2.y - 3.0 * c2.y + 3.0 * c1.y - p1.y);
+        const double qy = (3.0 * (c1.y - p1.y)) / (p2.y - 3.0 * c2.y + 3.0 * c1.y - p1.y);
+        if (py * py - qy >= 0)     // monotonous?
+        {       // non-monotonous => extremum
+            ty1 = -py + sqrt(py * py - qy);
+            ty2 = -py - sqrt(py * py - qy);
+            if (ty1 < 0 || ty1 > 1) ty1 = 0;    // cut to interval [0,1]
+            if (ty2 < 0 || ty2 > 1) ty2 = 0;
+        }
+        else    // monotonous => extremum in endpoint
+        {
+            ty1 = ty2 = 0;
+        };
+    }
+    else if (c2.y - 2 * c1.y + p1.y != 0)   // quadratic polynomial
+    {
+        ty1 = ty2 = - (c1.y - p1.y) / (2.0 * (c2.y - 2.0 * c1.y + p1.y));
+        if (ty1 < 0 || ty1 > 1) ty1 = 0;    // cut to interval [0,1]
+        if (ty2 < 0 || ty2 > 1) ty2 = 0;
+    }
+    else    ty1 = ty2 = 0;  // linear polynomial => extremum in endpoint
+    
+    // calculate bezier-function values
+    const double x1 = (1-tx1)*(1-tx1)*((1-tx1)*p1.x + 3*tx1*c1.x) + tx1*tx1*(3*(1-tx1)*c2.x + tx1*p2.x);
+    const double x2 = (1-tx2)*(1-tx2)*((1-tx2)*p1.x + 3*tx2*c1.x) + tx2*tx2*(3*(1-tx2)*c2.x + tx2*p2.x);
+    const double y1 = (1-ty1)*(1-ty1)*((1-ty1)*p1.y + 3*ty1*c1.y) + ty1*ty1*(3*(1-ty1)*c2.y + ty1*p2.y);
+    const double y2 = (1-ty2)*(1-ty2)*((1-ty2)*p1.y + 3*ty2*c1.y) + ty2*ty2*(3*(1-ty2)*c2.y + ty2*p2.y);
+    
+    // calculate extremata                                         (and consider line width)
+    const mpx_t Mx = _round((x1 > x2 && x1 > p1.x && x1 > p2.x) ? x1   + 2*(w1-w0)*tx1*(1-tx1)+w0 :
+                           ((x2 > p1.x && x2 > p2.x)            ? x2   + 2*(w1-w0)*tx2*(1-tx2)+w0 :
+                           ((p1.x > p2.x)                       ? p1.x + w0 / 2 :
+                                                            p2.x + w0 / 2 )));
+    const mpx_t mx = _round((x1 < x2 && x1 < p1.x && x1 < p2.x) ? x1   - 2*(w1-w0)*tx1*(1-tx1)-w0 :
+                           ((x2 < p1.x && x2 < p2.x)            ? x2   - 2*(w1-w0)*tx2*(1-tx2)-w0 :
+                           ((p1.x < p2.x)                       ? p1.x - w0 / 2 :
+                                                            p2.x - w0 / 2)));
+    const mpx_t My = _round((y1 > y2 && y1 > p1.y && y1 > p2.y) ? y1   + 2*(w1-w0)*ty1*(1-ty1)+w0 :
+                           ((y2 > p1.y && y2 > p2.y)            ? y2   + 2*(w1-w0)*ty2*(1-ty2)+w0 :
+                           ((p1.y > p2.y)                       ? p1.y + w0 / 2 :
+                                                            p2.y + w0 / 2 )));
+    const mpx_t my = _round((y1 < y2 && y1 < p1.y && y1 < p2.y) ? y1   - 2*(w1-w0)*ty1*(1-ty1)-w0 :
+                           ((y2 < p1.y && y2 < p2.y)            ? y2   - 2*(w1-w0)*ty2*(1-ty2)-w0 :
+                           ((p1.y < p2.y)                       ? p1.y - w0 / 2 :
+                                                            p2.y - w0 / 2 )));
+    
+    // create box
+    return Plate::GphBox(Position<mpx_t>(mx, my), Mx - mx, My - my);
+}
+
+// engraving method (Slur)
+void Slur::engrave(EngraverState& engraver, DurableInfo& info) const
+{
+    // get data
+    const StyleParam&    style       = engraver.get_style();
+    const ViewportParam& viewport    = engraver.get_viewport();
+    const mpx_t&         head_height = engraver.get_head_height();
+    
+    // calculate position of the end-node
+    info.target->endPos = engrave_pos(engraver, end_position);
+    
+    // calculate the graphical boundary box
+    info.target->gphBox = calculate_gphBox(
+            info.target->absolutePos,
+            Position<mpx_t>(
+                (this->unitX == METRIC)
+                    ? info.target->absolutePos.x + _round(viewport.umtopx_h(this->control1.x))
+                    : info.target->absolutePos.x + _round((head_height * this->control1.x) / 1000.0),
+                (this->unitY == METRIC)
+                    ? info.target->absolutePos.y + _round(viewport.umtopx_v(this->control1.y))
+                    : info.target->absolutePos.y + _round((head_height * this->control1.y) / 1000.0)),
+            Position<mpx_t>(
+                (this->unitX == METRIC)
+                    ? info.target->endPos.x + _round(viewport.umtopx_h(this->control2.x))
+                    : info.target->endPos.x + _round((head_height * this->control2.x) / 1000.0),
+                (this->unitY == METRIC)
+                    ? info.target->endPos.y + _round(viewport.umtopx_v(this->control2.y))
+                    : info.target->endPos.y + _round((head_height * this->control2.y) / 1000.0)),
+            info.target->endPos,
+            _round((this->thickness1 * viewport.umtopx_h(style.stem_width)) / 1000.0),
+            _round((this->thickness2 * viewport.umtopx_h(style.stem_width)) / 1000.0));
+    
+    // scale the object
+    info.target->endPos.x      = info.target->absolutePos.x + ((info.target->endPos.x - info.target->absolutePos.x) * this->appearance.scale) / 1000;
+    info.target->endPos.y      = info.target->absolutePos.y + ((info.target->endPos.y - info.target->absolutePos.y) * this->appearance.scale) / 1000;
+    info.target->gphBox.width  = _round((info.target->gphBox.width  * this->appearance.scale) / 1000.0);
+    info.target->gphBox.height = _round((info.target->gphBox.height * this->appearance.scale) / 1000.0);
+}
+
 // rendering method (Slur)
 void Slur::render(Renderer& renderer, const Plate::pAttachable& object, const PressState& state) const
 {
@@ -1864,7 +2070,7 @@ void Slur::render(Renderer& renderer, const Plate::pAttachable& object, const Pr
     pos2.y = static_cast<const Plate::pDurable&>(object).endPos.y / 1000.0;
     
     // calculate control-point positions
-    if (typeX == Movable::PAGE || typeX == Movable::LINE)
+    if (unitX == METRIC)
     {
         // coordinates given in millipixel
         ctrl1.x = pos1.x + state.viewport.umtopx_h(control1.x) / 1000.0;
@@ -1877,7 +2083,7 @@ void Slur::render(Renderer& renderer, const Plate::pAttachable& object, const Pr
         ctrl2.x = pos2.x + (static_cast<int>(state.head_height) * control2.x) / 1.0e6;
     };
     
-    if (typeY == Movable::PAGE || typeY == Movable::LINE)
+    if (unitY == METRIC)
     {
         // coordinates given in millipixel
         ctrl1.y = pos1.y + state.viewport.umtopx_v(control1.y) / 1000.0;
@@ -1908,6 +2114,25 @@ void Slur::render(Renderer& renderer, const Plate::pAttachable& object, const Pr
     renderer.bezier_slur(pos1.x, pos1.y, ctrl1.x, ctrl1.y, ctrl2.x, ctrl2.y, pos2.x, pos2.y,
                          state.parameters.do_scale((thickness1 * state.stem_width) / 1000.0) / 1000.0,
                          state.parameters.do_scale((thickness2 * state.stem_width) / 1000.0) / 1000.0);
+}
+
+// engraving method (Hairpin)
+void Hairpin::engrave(EngraverState& engraver, DurableInfo& info) const
+{
+    // calculate position of the end-node
+    info.target->endPos = engrave_pos(engraver, end_position);
+    
+    // calculate the graphical boundary box
+    info.target->gphBox.pos = info.target->absolutePos;
+    info.target->gphBox.pos.y -= _round((this->height * engraver.get_head_height()) / 2000.0) + 1000;
+    info.target->gphBox.width = info.target->endPos.x - info.target->absolutePos.x;
+    info.target->gphBox.height = _round((this->height * engraver.get_head_height()) / 1000.0);
+    
+    // scale the object
+    info.target->endPos.x      = info.target->absolutePos.x + ((info.target->endPos.x - info.target->absolutePos.x) * this->appearance.scale) / 1000;
+    info.target->endPos.y      = info.target->absolutePos.y + ((info.target->endPos.y - info.target->absolutePos.y) * this->appearance.scale) / 1000;
+    info.target->gphBox.width  = _round((info.target->gphBox.width  * this->appearance.scale) / 1000.0);
+    info.target->gphBox.height = _round((info.target->gphBox.height * this->appearance.scale) / 1000.0);
 }
 
 // rendering method (Hairpin)

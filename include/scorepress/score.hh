@@ -59,11 +59,15 @@ class SCOREPRESS_API Score
     std::list<Staff> staves;    // the staves within the score
     Layout layout;              // layout information for the first page
                                 // (consequent page information given with pagebreak-objects)
-    EngraverParamPtr param;     // optional engraver parameters
+    unsigned int head_height;   // optional score-specific default head-height (when 0, inherit from document)
     StyleParamPtr style;        // optional style parameters
+    EngraverParamPtr param;     // optional engraver parameters
     Meta meta;                  // meta information
     
  public:
+    // default constructor
+    Score() : head_height(0) {};
+    
     // get an iterator for a given staff
     std::list<Staff>::const_iterator get_staff(const Staff& staff) const throw(StaffNotFound);
     

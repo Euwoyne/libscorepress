@@ -50,6 +50,7 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
  private:
     // initial parameters
     const Sprites*       sprites;           // pointer to the sprite-library
+    const unsigned int   def_head_height;   // default head-height
     const EngraverParam* param;             // current engraver-parameters
     const StyleParam*    style;             // current staff-style
     const StyleParam&    default_style;     // default staff-style
@@ -75,7 +76,6 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     Plate::NoteIt    pnote;         // target on-plate note
     
     // miscellaneous data
-    mpx_t        head_height;       // precalculated head-height
     unsigned int pagecnt;           // page counter
     unsigned int barcnt;            // bar counter
     value_t      start_time;        // line start time
@@ -86,16 +86,15 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     void create_lineend();      // calculate line-end info/line's rightmost border (see "Plate::pLine::line_end")
     void apply_offsets();       // apply all non-accumulative offsets
     
-    void begin_durable(const Durable& source, DurableInfo& info);
-    void end_durable(DurableInfo& info);
-    
     void engrave_stems();       // engrave all stems within beams in the current line
     void engrave_attachables(); // engrave all attachables within the current line
     void engrave_braces();      // engrave braces and brackets for the current line
     
     void justify_line();        // justify the given line to fit into the score-area
     
-    Pageset::ScoreDimension dimtopx(const ScoreDimension& dim); // convert score-dimension from micrometer to millipixel
+ public:
+    Pageset::ScoreDimension dimtopx(const ScoreDimension& dim) const;                     // convert score-dimension from micrometer to millipixel
+    Position<mpx_t>         movable_pos(const Movable& obj, const Position<>& pos) const; // calculate on-plate position of movable object
     
  private:
     // break all ties at the specified x-position
@@ -107,7 +106,8 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
                   const unsigned int   start_page,  // page to begin the score on
                         Pageset&       pageset,     // target pageset
                   const Sprites&       sprites,     // sprite set
-                  const EngraverParam& parameters,  // engraver parameters
+                  const unsigned int   head_height, // default head-height (may be overridden by score)
+                  const EngraverParam& parameters,  // default engraver parameters (may be overridden by score)
                   const StyleParam&    style,       // default staff-style (may be overridden by score)
                   const ViewportParam& viewport);   // viewport parameters
     
@@ -125,7 +125,7 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     inline const Voice&              get_voice()        const {return pick.get_cursor().voice();};
     inline const value_t&            get_time()         const {return pick.get_cursor().time;};
     inline const value_t&            get_ntime()        const {return pick.get_cursor().ntime;};
-    inline const mpx_t&              get_head_height()  const {return head_height;};
+    inline const mpx_t&              get_head_height()  const {return pvoice->head_height;};
     
     inline const Pageset::PageIt     get_target_page_it()     {return page;}
     inline const Plate::LineIt&      get_target_line_it()     {return pline;};
@@ -150,9 +150,10 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     inline       VoiceContext&       get_voicectx()           {return pvoice->context;};
     
     // miscellaneous state info
-    inline mpx_t min_distance()     const {return viewport->umtopx_h(param->min_distance);};
-    inline mpx_t barline_distance() const {return viewport->umtopx_h(param->barline_distance);};
-    inline bool  eos()              const {return pick.eos();};
+    inline unsigned int default_head_height(unsigned int h = 0) const {return (h ? h : def_head_height);}
+    inline mpx_t        min_distance()                          const {return viewport->umtopx_h(param->min_distance);};
+    inline mpx_t        barline_distance()                      const {return viewport->umtopx_h(param->barline_distance);};
+    inline bool         eos()                                   const {return pick.eos();};
     
     const Staff& get_visual_staff() const;   // get the staff, in which the note is drawn (i.e. apply staff-shift)
     
@@ -187,7 +188,7 @@ inline bool     EngraverState::has_tie(const Head& head)                   {retu
 inline TieInfo& EngraverState::get_tieinfo(const Head& head)               {return tieinfo[&get_voice()][head.tone];}
 inline void     EngraverState::erase_tieinfo(const Head& head)             {tieinfo[&get_voice()].erase(head.tone);}
 inline void     EngraverState::erase_tieinfo()                             {tieinfo[&get_voice()].clear();}
-inline void     EngraverState::break_ties()                                {break_ties(tieinfo[&get_voice()], pnote->gphBox.pos.x, pnote->gphBox.right(), head_height);}
+inline void     EngraverState::break_ties()                                {break_ties(tieinfo[&get_voice()], pnote->gphBox.pos.x, pnote->gphBox.right(), pvoice->head_height);}
 inline void     EngraverState::add_distance_after(mpx_t dst, value_t time) {pick.add_distance_after(dst, time);}
 
 inline bool EngraverState::has_cluster_space() {

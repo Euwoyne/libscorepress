@@ -118,7 +118,7 @@ void Engine::reengrave(UserCursor& cursor)
     cursor.setup_reengrave(info);
     if (object_cur.ready() && !object_cur.end())
         object_cur.setup_reengrave(info);
-    engraver.engrave(cursor.get_score(), cursor.get_start_page(), info);
+    engraver.engrave(cursor.get_score(), cursor.get_start_page(), document->head_height, info);
     info.finish();
     if (!info.is_empty())
         log_error("Some cursors could not be updated. (class: Engine)");
@@ -456,7 +456,7 @@ bool Engine::select_object(Position<mpx_t> pos, const Page& page) throw(Error)
                     if ((*a)->contains(pos))
                     {
                         // (casts away const, but not unexpected, since this object got a non-const reference to the document)
-                        if (buffer.set_parent(const_cast<StaffObject&>(n->get_note()).get_visible(), *n, *l, pinfo->pageno))
+                        if (buffer.set_parent(const_cast<StaffObject&>(n->get_note()).get_visible(), *n, *v, *l, pinfo->pageno))
                         {
                             if (buffer.select(*static_cast<const Movable*>((*a)->object)))
                             {

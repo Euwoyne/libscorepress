@@ -260,6 +260,7 @@ class SCOREPRESS_API Plate_pVoice
     
  public:
     Plate_Pos     basePos;      // top-right corner of the staff
+    mpx_t         head_height;  // the staffs head-height (in millipixel)
     NoteList      notes;        // notes of the voice
     const_Cursor  begin;        // cursor at the beginning of this voice (in the score object)
     VoiceContext  context;      // this voice's context at the END of the line (or voice)
@@ -330,9 +331,6 @@ class SCOREPRESS_API Plate
     
     // lines on the plate
     LineList lines;
-    
-    // calculate the graphical box for the given bezier spline
-    static GphBox calculate_gphBox(const Pos& p1, const Pos& c1, const Pos& c2, const Pos& p2, const mpx_t w0 = 0, const mpx_t w1 = 0);
     
     // dump the plate content to stdout
     void dump() const;

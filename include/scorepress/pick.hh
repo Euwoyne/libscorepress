@@ -119,6 +119,7 @@ class SCOREPRESS_LOCAL Pick : public Logging
     const EngraverParam* const param;       // engraving-parameters (see "parameters.hh")
     const ViewportParam* const viewport;    // viewport-paramters (see "parameters.hh")
     const Sprites* const sprites;           // pointer to the sprite-library (access to the graphical widths)
+    const int head_height;                  // default head-hight
     
     typedef std::list<VoiceCursor> CList;   // list of voice cursors
     CList cursors;                          // containing cursors to the notes next to be read of all voices
@@ -145,7 +146,7 @@ class SCOREPRESS_LOCAL Pick : public Logging
     void prepare_next(const VoiceCursor& engravedNote, mpx_t width); // prepare next note to be engraved
 
  public:
-    Pick(const Score& score, const EngraverParam& param, const ViewportParam& viewport, const Sprites& sprites);
+    Pick(const Score& score, const EngraverParam& param, const ViewportParam& viewport, const Sprites& sprites, int def_head_height);
     
     // movement methods
     void next(mpx_t width = 0); // pop current note from stack and add next note in voice
