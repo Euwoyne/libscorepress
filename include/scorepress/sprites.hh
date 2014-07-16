@@ -34,7 +34,7 @@ namespace ScorePress
 // ---------
 struct SCOREPRESS_API SpriteInfo;  // sprite graphic information
 struct SCOREPRESS_API SpriteSet;   // set of sprites
-struct SCOREPRESS_API Sprites;     // a set of sprite-sets
+struct SCOREPRESS_API Sprites;     // set of sprite-sets
 
 
 //

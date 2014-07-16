@@ -1,0 +1,22 @@
+
+@setfilename tutorial.info
+
+@c Tutorial Menu
+@menu
+* Getting started::           Overwiew of the most important classes.
+* The Renderer interface::    How to implement a Renderer
+@end menu
+
+@c Getting Started
+@node Getting started
+Blaw Blaw Blaw
+
+And more Blaw.
+
+
+@c The Renderer interface
+@node The Renderer interface
+Some more Blaw Blaw
+
+Blaw!
+

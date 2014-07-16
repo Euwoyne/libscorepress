@@ -12,6 +12,6 @@ INCOMPLETE:
 UNTESTED:
 
 FEATURES:
-  classes.hh        tremolo implementation
+  classes.cpp       tremolo implementation
   score.hh          user defined brace scale parameters
 

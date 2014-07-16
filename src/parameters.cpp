@@ -23,11 +23,11 @@ using namespace ScorePress;
 // engraver parameters
 EngraverParam::EngraverParam() : min_distance(1200),
                                  default_distance(1400),
-                                 barline_distance(3200),
+                                 barline_distance(3000),
                                  accidental_space(500),
                                  exponent(707),
                                  constant_coeff(250),
-                                 linear_coeff(1000),
+                                 linear_coeff(1250),
                                  max_justification(2000),
                                  newline_time_reset(true),
                                  auto_barlines(true),

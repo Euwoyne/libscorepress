@@ -621,20 +621,22 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-CFLAGS
 RPATH
 EGREP
 GREP
 CXXCPP
-USER_LIBXML
 LIBXML_LIBS
 LIBXML_CFLAGS
+LIBXML
 MAKEINDEX
 LATEX
-SED
+CHMOD
 DOXYGEN
 PKGCONFIG
 LDCONFIG
+ZIP
+BZIP2
+GZIP
 AR
 LN_S
 INSTALL_DATA
@@ -1330,10 +1332,10 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-debug          enable debugging with GDB
+  --disable-debug         disable creation of debugging symbols
   --enable-profile        enable profiling with GProf
   --enable-fraction-check enable overflow check for rational numbers
-  --enable-doxygen        enable 'make doc' with doxygen
+  --enable-doxygen        enable documentation compilation with doxygen
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2187,7 +2189,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-ac_config_headers="$ac_config_headers include/scorepress/config.hh:include/scorepress/config.hh.ac"
+ac_config_headers="$ac_config_headers config.hh:include/scorepress/config.hh.ac"
 
 ac_config_files="$ac_config_files Makefile:Makefile.ac"
 
@@ -2213,7 +2215,8 @@ $as_echo "#define LIBSCOREPRESS_VERSION_PATCH 6" >>confdefs.h
 
 
 # save user flags
-CFLAGS_ORI="$CFLAGS"
+CPPFLAGS_ORI="$CPPFLAGS"
+CXXFLAGS_ORI="$CXXFLAGS"
 LDFLAGS_ORI="$LDFLAGS"
 LIBS_ORI="$LIBS"
 
@@ -2223,7 +2226,7 @@ LIBS_ORI="$LIBS"
 if test "${enable_debug+set}" = set; then :
   enableval=$enable_debug; with_debug="$withval"
 else
-  with_debug="no"
+  with_debug="yes"
 fi
 
 # Check whether --enable-profile was given.
@@ -3121,6 +3124,126 @@ $as_echo "no" >&6; }
 fi
 
 
+# Extract the first word of "gzip", so it can be a program name with args.
+set dummy gzip; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_GZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $GZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_GZIP="$GZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_GZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+GZIP=$ac_cv_path_GZIP
+if test -n "$GZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $GZIP" >&5
+$as_echo "$GZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "bzip2", so it can be a program name with args.
+set dummy bzip2; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BZIP2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BZIP2 in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BZIP2="$BZIP2" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BZIP2="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+BZIP2=$ac_cv_path_BZIP2
+if test -n "$BZIP2"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BZIP2" >&5
+$as_echo "$BZIP2" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "zip", so it can be a program name with args.
+set dummy zip; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ZIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ZIP in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ZIP="$ZIP" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ZIP="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ZIP=$ac_cv_path_ZIP
+if test -n "$ZIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZIP" >&5
+$as_echo "$ZIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 # Extract the first word of "ldconfig", so it can be a program name with args.
 set dummy ldconfig; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -3203,13 +3326,7 @@ fi
 
 
 if test "x$with_doxygen" != "xno"; then :
-  DOXYGEN=$with_doxygen
-
-else
-  DOXYGEN=:
-
-fi
-if test -z "$with_doxygen"; then :
+  if test -z "$with_doxygen"; then :
   # Extract the first word of "doxygen", so it can be a program name with args.
 set dummy doxygen; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -3250,18 +3367,20 @@ $as_echo "no" >&6; }
 fi
 
 
+else
+  DOXYGEN=$with_doxygen
+
 fi
-if test "x$with_doxygen" != "xno"; then :
-  # Extract the first word of "sed", so it can be a program name with args.
-set dummy sed; ac_word=$2
+       # Extract the first word of "chmod", so it can be a program name with args.
+set dummy chmod; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_SED+:} false; then :
+if ${ac_cv_path_CHMOD+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  case $SED in
+  case $CHMOD in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_SED="$SED" # Let the user override the test with a path.
+  ac_cv_path_CHMOD="$CHMOD" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -3271,7 +3390,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_SED="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_CHMOD="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -3282,19 +3401,17 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-SED=$ac_cv_path_SED
-if test -n "$SED"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SED" >&5
-$as_echo "$SED" >&6; }
+CHMOD=$ac_cv_path_CHMOD
+if test -n "$CHMOD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHMOD" >&5
+$as_echo "$CHMOD" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-fi
-if test "x$with_doxygen" != "xno"; then :
-  # Extract the first word of "pdflatex", so it can be a program name with args.
+       # Extract the first word of "pdflatex", so it can be a program name with args.
 set dummy pdflatex; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -3334,9 +3451,7 @@ $as_echo "no" >&6; }
 fi
 
 
-fi
-if test "x$with_doxygen" != "xno"; then :
-  # Extract the first word of "makeindex", so it can be a program name with args.
+       # Extract the first word of "makeindex", so it can be a program name with args.
 set dummy makeindex; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -3376,10 +3491,22 @@ $as_echo "no" >&6; }
 fi
 
 
+else
+  DOXYGEN=:
+
 fi
+
+if test -z "$GZIP";      then GZIP=:
+ fi
+if test -z "$BZIP2";     then BZIP2=:
+ fi
+if test -z "$ZIP";       then ZIP=:
+ fi
+if test -z "$LDCONFIG";  then LDCONFIG=:
+ fi
 if test -z "$DOXYGEN";   then DOXYGEN=:
  fi
-if test -z "$SED";       then SED=:
+if test -z "$CHMOD";     then CHMOD=:
  fi
 if test -z "$LATEX";     then LATEX=:
  fi
@@ -3388,28 +3515,26 @@ if test -z "$MAKEINDEX"; then MAKEINDEX=:
 
 # check libraries
 #   libxml2
+
 if test "x$with_libxml2" != "xauto"; then
     LIBXML_CFLAGS=-I$with_libxml2
 
     LIBXML_LIBS=-lxml2
 
-    USER_LIBXML=$with_libxml2
+    LIBXML=$with_libxml2
 
 elif test -n "$PKGCONFIG" -a `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; then
     LIBXML_CFLAGS=`\${PKGCONFIG} libxml-2.0 --cflags`
 
     LIBXML_LIBS=`\${PKGCONFIG} libxml-2.0 --libs`
 
-
 else
     LIBXML_CFLAGS=-I/usr/include/libxml2
 
     LIBXML_LIBS=-lxml2
 
-
 fi
-
-CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
+CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CXXFLAGS"
 LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
 LIBS="$LIBS_ORI $LIBXML_LIBS"
 
@@ -3952,8 +4077,8 @@ fi
 
 
 
-CPPFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
-CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
+CPPFLAGS="$CPPFLAGS_ORI $LIBXML_CFLAGS"
+CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CFLAGS"
 ac_fn_cxx_check_header_mongrel "$LINENO" "libxml/xmlreader.h" "ac_cv_header_libxml_xmlreader_h" "$ac_includes_default"
 if test "x$ac_cv_header_libxml_xmlreader_h" = xyes; then :
 
@@ -4096,7 +4221,7 @@ fi
 
 
 # check functions
-CFLAGS="$CFLAGS_ORI $LIBXML_CFLAGS"
+CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CFLAGS"
 LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
 LIBS="$LIBS_ORI $LIBXML_LIBS"
 ac_fn_cxx_check_func "$LINENO" "xmlReaderForFile" "ac_cv_func_xmlReaderForFile"
@@ -4118,7 +4243,7 @@ fi
 RPATH=
 if test -n "$RPATHFLAG"; then
     buffer=$LIBXML_LIBS
-    for path in $buffer $USER_LIBXML; do
+    for path in $buffer $LIBXML; do
         path=$(expr "$path" : "-L\(.*\)")
         if test -n "$path"; then
             LIBXML_LIBS="$LIBXML_LIBS $RPATHFLAG$path"
@@ -4142,7 +4267,9 @@ RPATH=$RPATH
 
 
 # generate output
-CFLAGS=$CFLAGS_ORI
+CPPFLAGS=$CPPFLAGS_ORI
+
+CXXFLAGS=$CXXFLAGS_ORI
 
 LDFLAGS=$LDFLAGS_ORI
 
@@ -4838,7 +4965,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "include/scorepress/config.hh") CONFIG_HEADERS="$CONFIG_HEADERS include/scorepress/config.hh:include/scorepress/config.hh.ac" ;;
+    "config.hh") CONFIG_HEADERS="$CONFIG_HEADERS config.hh:include/scorepress/config.hh.ac" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile:Makefile.ac" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

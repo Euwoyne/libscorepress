@@ -524,7 +524,7 @@ void EngraverState::engrave_attachables()
                 }
                 
                 // append attachable
-                else 
+                else
                 {
                     // engrave object (polymorphically call "Movable::engrave")
                     (*i)->engrave(*this);
@@ -1039,7 +1039,6 @@ bool EngraverState::engrave_next()
     };
     
     // finish the line
-    barcnt = pvoice->context.bar(pick.get_cursor().time);
     create_lineend();               // calculate line-end information
     engrave_braces();               // engrave braces and brackets
     if (lineinfo.justify)           // justifiy the line

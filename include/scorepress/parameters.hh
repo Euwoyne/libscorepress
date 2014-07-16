@@ -50,8 +50,8 @@ class SCOREPRESS_API ViewportParam
     // convert micrometer to millipixel (and vice versa)
     inline mpx_t umtopx_h(const double um)  const {return static_cast<mpx_t>((um * hppm) / 1e3 + .5);};
     inline mpx_t umtopx_v(const double um)  const {return static_cast<mpx_t>((um * vppm) / 1e3 + .5);};
-    inline int   pxtoum_h(const mpx_t  mpx) const {return (mpx * 1000) / hppm;};
-    inline int   pxtoum_v(const mpx_t  mpx) const {return (mpx * 1000) / hppm;};
+    inline um_t  pxtoum_h(const mpx_t  mpx) const {return (mpx * 1000) / hppm;};
+    inline um_t  pxtoum_v(const mpx_t  mpx) const {return (mpx * 1000) / hppm;};
     
     // setup viewport in dpi
     inline ViewportParam() : hppm(3780), vppm(3780) {};     // default to 96dpi
@@ -70,23 +70,27 @@ class SCOREPRESS_API ViewportParam
 //
 struct SCOREPRESS_API EngraverParam
 {
-    unsigned int min_distance;      // minimal graphical distance of note-heads of the same voice (in micrometer)
-    unsigned int default_distance;  // graphical distance between non-note objects                (in micrometer)
-    unsigned int barline_distance;  // graphical distance preceiding the first chord of a bar     (in micrometer)
-    unsigned int accidental_space;  // space between an accidental and the previous note (in promille of head width)
+    // positioning parameters
+    um_t         min_distance;      // minimal graphical distance of note-heads of the same voice (in micrometer)
+    um_t         default_distance;  // graphical distance between non-note objects                (in micrometer)
+    um_t         barline_distance;  // graphical distance preceiding the first chord of a bar     (in micrometer)
+    pohh_t       accidental_space;  // space between an accidental and the previous note (in promille of head width)
     
-    unsigned int exponent;          // note value exponent (in promille)
-    unsigned int constant_coeff;    // constant additional distance (in micrometer)
+    promille_t   exponent;          // note value exponent (in promille)
+    um_t         constant_coeff;    // constant additional distance (in micrometer)
     unsigned int linear_coeff;      // linear coefficient to the note value (in micrometer per whole note)
     
-    unsigned int max_justification; // only justify, if the strech-factor is less than this (in promille)
+    promille_t   max_justification; // only justify, if the strech-factor is less than this (in promille)
     
+    // bar calculation parameters
     bool newline_time_reset;        // should the time-stamp be reset on newline?
     bool auto_barlines;             // engrave barlines automatically
     bool remember_accidentals;      // memorize accidentals
     
+    // beam parameters
     unsigned char beam_group;       // default beam group
     
+    // default tie parameters
     Position<> tieup_offset1;       // default upward tie parameters
     Position<> tieup_offset2;
     Position<> tieup_control1;
@@ -111,19 +115,19 @@ struct SCOREPRESS_API EngraverParam
 //
 struct SCOREPRESS_API StyleParam
 {
-    unsigned int stem_width;        // in micrometer
-    unsigned int ledger_length;     // ledger line length (in promille of head width)
+    uum_t       stem_width;         // stem width
+    pohw_t      ledger_length;      // ledger line length
     
-    unsigned int flag_distance;     // distance of flags               (in promille of head height)
-    unsigned int beam_distance;     // distance of beams               (in promille of head height)
-    unsigned int beam_height;       // height of a beam                (in promille of head height)
-    unsigned int shortbeam_length;  // length of a short one-note beam (in promille of head width)
-    unsigned int shortbeam_short;   // length of a tiny short beam     (in promille of available space)
+    pohh_t      flag_distance;      // distance of flags
+    pohh_t      beam_distance;      // distance of beams
+    pohh_t      beam_height;        // height of a beam
+    pohw_t      shortbeam_length;   // length of a short one-note beam
+    promille_t  shortbeam_short;    // length of a tiny short beam
     
-    unsigned int line_thickness;    // line-width for the staff        (in micrometer)
-    unsigned int bar_thickness;     // line-width for the bar-lines    (in micrometer)
-    unsigned int tie_thickness;     // line-width for the tie          (in micrometer)
-    unsigned int ledger_thickness;  // line-width for the ledger-lines (in micrometer)
+    uum_t       line_thickness;     // line-width for the staff
+    uum_t       bar_thickness;      // line-width for the bar-lines
+    uum_t       tie_thickness;      // line-width for the tie
+    uum_t       ledger_thickness;   // line-width for the ledger-lines
     
     // default parameters
     StyleParam();
@@ -138,20 +142,23 @@ struct SCOREPRESS_API StyleParam
 //
 struct SCOREPRESS_API PressParam
 {
-    unsigned int scale;             // printing scale (in promille)
+    // general render parameters
+    promille_t   scale;             // printing scale (in promille)
     
     bool         draw_shadow;       // draw page shadow
     unsigned int shadow_color;      // color of page shadows         (in rgba, little endian)
-    unsigned int shadow_offset;     // size of the page shadows      (in mpx)
+    mpx_t        shadow_offset;     // size of the page shadows      (in mpx)
     bool         draw_margin;       // draw page margin
     unsigned int margin_color;      // color of page margin          (in rgba, little endian)
-    unsigned int cursor_width;      // cursor line-width             (in mpx)
-    unsigned int cursor_distance;   // cursor distance from the note (in micrometer; should be less than "min-distance")
+    mpx_t        cursor_width;      // cursor line-width             (in mpx)
+    uum_t        cursor_distance;   // cursor distance from the note (in micrometer; should be less than "min-distance")
     
+    // boundary box parameters
     bool draw_notebounds;           // draw boundary boxes of notes
     bool draw_attachbounds;         // draw boundary boxes of attachable objects
     bool draw_linebounds;           // draw boundary boxes of lines
     bool draw_eov;                  // draw end-of-voice objects
+    
     unsigned int notebounds_color;      // color of boundary boxes       (in rgba, little endian)
     unsigned int virtualbounds_color;   // color of boundary boxes       (in rgba, little endian)
     unsigned int attachbounds_color;    // color of boundary boxes       (in rgba, little endian)

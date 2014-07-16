@@ -1,0 +1,26 @@
+
+@setfilename api.info
+
+@c API Classes
+@menu
+Herer you can find the documentation for any classes defined by the library.
+
+* Engine::        Typesetting Engine class
+* Renderer::      Abstract Renderer interface
+@end menu
+
+@c Engine
+@node Engine
+@cindex api, Engine
+Blaw Blaw Blaw
+
+And more Blaw.
+
+
+@c The Renderer interface
+@node Renderer
+@cindex api, Renderer
+Some more Blaw Blaw
+
+Blaw!
+

@@ -1,0 +1,88 @@
+\input texinfo
+
+@c  Header
+@c ========
+@setfilename scorepress.info
+@settitle ScorePress - Music Engraving Software
+@set VERSION 0.2.6
+
+@c  Copyright
+@c ===========
+@copying
+This manual is for libscorepress (version @value{VERSION}).
+
+Copyright @copyright{} 2014 Dominik Lehmann
+
+@quotation
+Licensed under the EUPL, Version 1.1 or - as soon they
+will be approved by the European Commission - subsequent
+versions of the EUPL (the "Licence");
+You may not use this work except in compliance with the
+Licence.
+
+Unless required by applicable law or agreed to in
+writing, software distributed under the Licence is
+distributed on an "AS IS" basis, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either expressed or implied.
+See the Licence for the specific language governing
+permissions and limitations under the Licence.
+@end quotation
+@end copying
+
+@c  Titlepage
+@c ===========
+@titlepage
+@title ScorePress - Music Engraving Software  (development library)
+@subtitle version @value{VERSION}
+@author D. Lehmann (@email{dominik.lehmann-dev@@arcor.de})
+@page
+@vskip 0pt plus 1fill
+@insertcopying
+@end titlepage
+
+@c table of contents
+@contents
+
+@c title in non-tex output
+@ifnottex
+@node Top
+@top ScorePress - Music Engraving Software  (development library)
+
+This manual is for libscorepress (version @value{VERSION}).
+@end ifnottex
+
+@c main menu
+@menu
+* Introduction::                   Introduction to the library and its uses.
+* Tutorial::                       How to use libscorepress.
+* API Reference::                  Exhaustive API reference section.
+* European Union Public Licence::
+* Index::
+@end menu
+
+@c chapters
+@node Introduction
+@chapter Introduction
+@cindex introduction
+@include intro.texi
+
+@node Tutorial
+@chapter Tutorial
+@cindex tutorial
+@include tutorial.texi
+
+@node API Reference
+@chapter API Reference
+@cindex api
+@include api.texi
+
+@node European Union Public Licence
+@appendix European Union Public Licence
+@include eupl.texi
+
+@node Index
+@unnumbered Index
+@printindex cp
+
+@bye
+

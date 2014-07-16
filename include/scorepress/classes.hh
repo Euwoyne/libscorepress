@@ -42,6 +42,7 @@ class Renderer;             // renderer class prototype (see "renderer.hh")
 class Plate_pNote;          // pNote prototype (see "plate.hh")
 class Plate_pAttachable;    // pAttachable prototype (see "plate.hh")
 class DurableInfo;          // durable-information prototype (see "engrave_info.hh")
+class Sprites;              // sprites prototype (see "sprites.hh")
 
 // BASE CLASSES
 class  SCOREPRESS_API Appearance;   // graphical appearance properties (visibility, color, scale)
@@ -115,9 +116,9 @@ typedef std::list<SubVoicePtr>            SubVoiceList;     // list of smart poi
 class SCOREPRESS_API Appearance
 {
  public:
-    bool visible;       // visibility
-    Color color;        // color
-    unsigned int scale; // in promille
+    bool       visible; // visibility
+    Color      color;   // color
+    promille_t scale;   // scaling
     
  public:
     Appearance() : visible(true), scale(1000) {color.r = color.g = color.b = 0; color.a = 255;};
@@ -171,9 +172,9 @@ extern SCOREPRESS_API const std::string classname(Class::classType type);
 class SCOREPRESS_API VisibleObject : virtual public Class
 {
  public:
-    MovableList attached;      // attached objects
-    int offset_x;              // horizontal offset (in promille of head-width)
-    Appearance appearance;     // graphical appearance properties
+    MovableList attached;       // attached objects
+    spohw_t     offset_x;       // horizontal offset
+    Appearance  appearance;     // graphical appearance properties
     
  protected: VisibleObject() : offset_x(0) {};
  public:
@@ -186,7 +187,7 @@ class SCOREPRESS_API VisibleObject : virtual public Class
 class SCOREPRESS_API AttachedObject : virtual public Class
 {
  public:
-    Appearance appearance;     // graphical appearance properties
+    Appearance appearance;      // graphical appearance properties
     
  protected: AttachedObject() {};
  public:
@@ -201,10 +202,11 @@ class SCOREPRESS_API AttachedObject : virtual public Class
 class SCOREPRESS_API SpriteObject : public AttachedObject
 {
  public:
-    SpriteId sprite;               // sprite id
+    SpriteId sprite;            // sprite id
     
  protected: SpriteObject() {};
  public:
+    virtual SpriteId get_sprite(const Sprites&) const {return sprite;};
     virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const;
     virtual AttachedObject* clone() const = 0;
 };
@@ -213,10 +215,11 @@ class SCOREPRESS_API SpriteObject : public AttachedObject
 class SCOREPRESS_API StaffObject : virtual public Class
 {
  public:
-    int acc_offset;             // accumulative horizontal offset (in promille of head-width) 
+    pohw_t acc_offset;          // accumulative horizontal offset
     
  protected: StaffObject() : acc_offset(0) {};
  public:
+    virtual SpriteId get_sprite(const Sprites&) const {return SpriteId();};
     virtual VisibleObject& get_visible() = 0;
     virtual const VisibleObject& get_visible() const = 0;
     
@@ -246,14 +249,15 @@ class SCOREPRESS_API MusicObject : public StaffObject, public VisibleObject
 class SCOREPRESS_API Clef : public MusicObject
 {
  public:
-    SpriteId sprite;       // sprite
-    tone_t base_note;      // tone residing on the specified line
-    unsigned char line;    // 0 - first line, 1 - first space, 2 - second line, 3 - second space, 4 - third line, etc.
-    tone_t keybnd_sharp;   // lowest tone for sharp-key display (to specify area of key signature)
-    tone_t keybnd_flat;    // lowest tone for flat-key display (to specify area of key signature)
+    SpriteId      sprite;       // sprite
+    tone_t        base_note;    // tone residing on the specified line
+    unsigned char line;         // 0 - first line, 1 - first space, 2 - second line, 3 - second space, 4 - third line, etc.
+    tone_t        keybnd_sharp; // lowest tone for sharp-key display (to specify area of key signature)
+    tone_t        keybnd_flat;  // lowest tone for flat-key display (to specify area of key signature)
     
  public:
     Clef() : base_note(67), line(5), keybnd_sharp(69), keybnd_flat(65) {};
+    virtual SpriteId get_sprite(const Sprites&) const;
     virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == CLEF) || MusicObject::is(type));};
@@ -265,12 +269,14 @@ class SCOREPRESS_API Clef : public MusicObject
 class SCOREPRESS_API Key : public MusicObject
 {
  public:
-    enum Type {SHARP, FLAT} type;  // key type
-    char number;                   // number of "accidentals" (e.g. FLAT * 4 is As-Major or f-minor)
-    SpriteId sprite;               // accidental sprite id
+    enum Type {SHARP, FLAT};
+    Type     type;              // key type
+    char     number;            // number of "accidentals" (e.g. FLAT * 4 is As-Major or f-minor)
+    SpriteId sprite;            // accidental sprite id
     
  public:
     Key() : type(SHARP), number(0) {};
+    virtual SpriteId get_sprite(const Sprites&) const;
     virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType _type) const {return ((_type == KEY) || MusicObject::is(_type));};
@@ -305,6 +311,7 @@ class SCOREPRESS_API CustomTimeSig : public TimeSig
     SpriteId sprite;   // custom sprite for the time signature
     
  public:
+    virtual SpriteId get_sprite(const Sprites&) const;
     virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == CUSTOMTIMESIG) || TimeSig::is(type));};
@@ -350,15 +357,15 @@ class SCOREPRESS_API VoiceObject : public StaffObject
 class SCOREPRESS_API Newline : public VoiceObject
 {
  public:
-    int  indent;                // LINE:  in micrometer
-    bool justify;               // LINE:  width justification for this line?
-    bool forced_justification;  // LINE:  use forced justification (do not preserve min-distance)?
-    int  right_margin;          // LINE:  in micrometer (only for justified lines)
-    int  distance;              // STAFF: in promille of head-height
-    bool auto_clef;             // STAFF: insert clef at the line front
-    bool auto_key;              // STAFF: insert key at the line front
-    bool auto_timesig;          // STAFF: insert time-signature at the line front
-    bool visible;               // VOICE: voice visible in this line?
+    um_t   indent;                // LINE:  line indentation (vertical)
+    bool   justify;               // LINE:  width justification for this line?
+    bool   forced_justification;  // LINE:  use forced justification (do not preserve min-distance)?
+    um_t   right_margin;          // LINE:  distance from right page margin (only for justified lines)
+    pohh_t distance;              // STAFF: in promille of head-height
+    bool   auto_clef;             // STAFF: insert clef at the line front
+    bool   auto_key;              // STAFF: insert key at the line front
+    bool   auto_timesig;          // STAFF: insert time-signature at the line front
+    bool   visible;               // VOICE: voice visible in this line?
     
  public:
     Newline() : indent(0), justify(false), forced_justification(false), right_margin(0), distance(0), auto_clef(true), auto_key(true), auto_timesig(false), visible(true) {};
@@ -375,20 +382,20 @@ class SCOREPRESS_API Newline : public VoiceObject
 class SCOREPRESS_API ScoreDimension
 {
  public:
-    Position<> position;        // position of the score-object (in micrometer)
-    unsigned int width;         // in micrometer
-    unsigned int height;        // in micrometer
+    Position<um_t> position;    // position of the score-object (in micrometer)
+    um_t           width;       // in micrometer
+    um_t           height;      // in micrometer
     
  public:
     ScoreDimension() : width(0), height(0) {};
-    bool contains(const Position<>& pos);   // check, if the score-object contains a given point
+    bool contains(const Position<um_t>& pos);   // check, if the score-object contains a given point
 };
 
 // page-break indicator (with next page's layout information)
 class SCOREPRESS_API Pagebreak : public Newline
 {
  public:
-    MovableList attached;       // objects attached to the page
+    MovableList    attached;    // objects attached to the page
     ScoreDimension dimension;   // layout information
     
  public:
@@ -401,8 +408,8 @@ class SCOREPRESS_API Pagebreak : public Newline
 class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
 {
  public:
-    SubVoicePtr subvoice;   // sub voice attached to this note
-    int staff_shift;        // note in different staff (if neq 0)
+    SubVoicePtr subvoice;       // sub voice attached to this note
+    int         staff_shift;    // note in different staff (if neq 0)
     
     struct Value
     {
@@ -441,18 +448,20 @@ class SCOREPRESS_API Chord : public NoteObject
     enum BeamType {NO_BEAM, AUTO_BEAM, FORCE_BEAM, CUT_BEAM};
     
  public:
-    // TODO: tremolo implementation
-    HeadList heads;                 // heads of the chord (in ascending order)
-    ArticulationList articulation;  // articulation symbols
-    SpriteId sprite;                // head sprite id
-    int stem_length;                // stem length (in promille of head_height)
-    Color stem_color;               // stem color
-    bool invisible_flag;            // should the flag be rendered (ignored on notes with stem)
-    Color flag_color;               // flag color
-    BeamType beam;                  // type of the beam to the next note
+    // TODO: sprite per head, not per chord
+    HeadList         heads;             // heads of the chord (in ascending order)
+    ArticulationList articulation;      // articulation symbols
+    SpriteId         sprite;            // head sprite id
+    spohh_t          stem_length;       // stem length
+    Color            stem_color;        // stem color
+    unsigned char    stem_tremolo;      // tremolo stem count
+    bool             invisible_flag;    // should the flag be rendered (ignored on notes with stem)
+    Color            flag_color;        // flag color
+    BeamType         beam;              // type of the beam to the next note
     
  public:
     Chord() : stem_length(3000), invisible_flag(false), beam(AUTO_BEAM) {stem_color.r = stem_color.g = stem_color.b = 0; stem_color.a = 255;};
+    virtual SpriteId get_sprite(const Sprites&) const;
     virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
             void render_beam(Renderer& renderer, const Plate_pNote&, const PressState&) const;
@@ -465,14 +474,14 @@ class SCOREPRESS_API Chord : public NoteObject
 class SCOREPRESS_API Rest : public NoteObject
 {
  public:
-    int offset_y;          // vertical offset (in promille of head-height)
-                           // (horizontal offset inherited from "NoteObject")
-    Position<> dot_offset; // offset for the dots (in promille of head-height)
-    
-    SpriteId sprite;       // rest sprite id
+    pohh_t           offset_y;      // vertical offset (in promille of head-height)
+                                    // (horizontal offset inherited from "NoteObject")
+    Position<pohh_t> dot_offset;    // offset for the dots (in promille of head-height)
+    SpriteId         sprite;        // rest sprite id
     
  public:
     Rest() : offset_y(0) {};
+    virtual SpriteId get_sprite(const Sprites&) const;
     virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
     virtual bool is(classType type) const {return ((type == REST) || NoteObject::is(type));};
@@ -506,12 +515,13 @@ class SCOREPRESS_API Accidental : public SpriteObject
     };
     
  public:
-    Type type;              // accidental type
-    int offset_x;           // horizontal offset (in promille of head-width)
-    bool force;             // force rendering (do not check key signature)
+    Type   type;        // accidental type
+    pohh_t offset_x;    // horizontal offset (in promille of head-width)
+    bool   force;       // force rendering (do not check key signature)
     
  public:
     Accidental() : type(natural), offset_x(0), force(false) {};
+    virtual SpriteId get_sprite(const Sprites&) const;
     virtual bool is(classType _type) const {return ((_type == ACCIDENTAL) || SpriteObject::is(_type));};
     virtual classType classtype() const {return ACCIDENTAL;};
     virtual Accidental* clone() const {return new Accidental(*this);};
@@ -521,10 +531,10 @@ class SCOREPRESS_API Accidental : public SpriteObject
 class SCOREPRESS_API Articulation : public SpriteObject
 {
  public:
-    int offset_y;                  // vertical offset (in promille of head-height)
-    bool far;                      // symbol placed far from the heads (i.e. on top of the stem)
-    unsigned int value_modifier;   // (in promille)
-    unsigned int volume_modifier;  // (in promille)
+    pohh_t     offset_y;        // vertical offset (in promille of head-height)
+    bool       far;             // symbol placed far from the heads (i.e. on top of the stem)
+    promille_t value_modifier;  // value coefficient
+    promille_t volume_modifier; // volume coefficient
     
  public:
     Articulation() : offset_y(0), far(false), value_modifier(0), volume_modifier(0) {};
@@ -537,10 +547,10 @@ class SCOREPRESS_API Articulation : public SpriteObject
 class SCOREPRESS_API Head : public Class
 {
  public:
-    tone_t tone;               // as defined for MIDI: a' = 69
-    Accidental accidental;     // associated accidental
-    Appearance appearance;     // graphical appearance properties
-    Position<> dot_offset;     // offset for the dots (in promille of head-size)
+    tone_t            tone;         // as defined for MIDI: a' = 69
+    Accidental        accidental;   // associated accidental
+    Appearance        appearance;   // graphical appearance properties
+    Position<spohh_t> dot_offset;   // offset for the dots
     
  public:
     Head() : tone(69) {};
@@ -553,10 +563,10 @@ class SCOREPRESS_API Head : public Class
 class SCOREPRESS_API TiedHead : public Head
 {
  public:
-    Position<> offset1;    // offset of the first anchor (in promille of head-height)
-    Position<> offset2;    // offset of the second anchor (in promille of head-height)
-    Position<> control1;   // offset of the first control point (in promille of head-height)
-    Position<> control2;   // offset of the second control point (in promille of head-height)
+    Position<spohh_t> offset1;      // offset of the first anchor
+    Position<spohh_t> offset2;      // offset of the second anchor
+    Position<spohh_t> control1;     // offset of the first control point
+    Position<spohh_t> control2;     // offset of the second control point
     
  public:
     TiedHead() : Head() {};
@@ -577,7 +587,8 @@ class SCOREPRESS_API Voice : public Class
 {
  public:
     enum StemDirection {STEM_AUTOMATIC, STEM_UPWARDS, STEM_DOWNWARDS};
-    StemDirection stem_direction;
+    
+    StemDirection stem_direction;   // default stem direction of chords in this voice
     
  public:
     Voice() : stem_direction(STEM_AUTOMATIC) {};
@@ -590,11 +601,11 @@ class SCOREPRESS_API Voice : public Class
 class SCOREPRESS_API SubVoice : public Voice
 {
  private:
-    Voice* parent;         // parent voice (either a staff or another sub-voice)
+    Voice* parent;          // parent voice (either a staff or another sub-voice)
     
  public:
-    bool on_top;           // voice insertion direction (for cursor movement control)
-    VoiceObjectList notes; // content of the voice (no staff objects; i.e. clefs and key/time signatures)
+    bool            on_top; // voice insertion direction (for cursor movement control)
+    VoiceObjectList notes;  // content of the voice (no staff objects; i.e. clefs and key/time signatures)
     
  public:
     SubVoice(Voice& _parent) : parent(&_parent), on_top(false) {};
@@ -612,23 +623,22 @@ class SCOREPRESS_API Staff : public Voice
     typedef SmartPtr<StyleParam> StyleParamPtr;
     
     // default head-heights (by rastrum number)
-    static const unsigned int rastrum[9];
+    static const uum_t rastrum[9];
     
  public:
-    StaffObjectList notes;      // content of the staff
-    SubVoiceList    subvoices;  // sub-voices associated with this staff
+    StaffObjectList notes;          // content of the staff
+    SubVoiceList    subvoices;      // sub-voices associated with this staff
     
-    int offset_y;               // in promille of head-height
-    
-    unsigned int head_height;   // in micrometer
-    unsigned int line_count;    // number of lines in this staff
-    bool long_barlines;         // draw barlines down to the next staff?
-    bool curlybrace;            // curly brace for connecting staves of one instrument?
-    bool bracket;               // angular bracket for grouping instruments?
-    unsigned int brace_pos;     // distance of the brace to the staff 
-    unsigned int bracket_pos;   // distance of the bracket to the staff
-    StyleParamPtr style;        // optional staff specific style parameters
-    Newline layout;             // staff layout on the first page
+    pohh_t        offset_y;         // basic distance from the staff above
+    uum_t         head_height;      // rastral (by head-height)
+    unsigned int  line_count;       // number of lines in this staff
+    bool          long_barlines;    // draw barlines down to the next staff?
+    bool          curlybrace;       // curly brace for connecting staves of one instrument?
+    bool          bracket;          // angular bracket for grouping instruments?
+    uum_t         brace_pos;        // distance of the brace to the staff 
+    uum_t         bracket_pos;      // distance of the bracket to the staff
+    StyleParamPtr style;            // optional staff specific style parameters
+    Newline       layout;           // staff layout on the first page
     
     Staff() : offset_y(0), head_height(1875), line_count(5), long_barlines(false), curlybrace(false), bracket(false), brace_pos(500), bracket_pos(1000), style(NULL) {}
     virtual bool is(classType type) const {return ((type == STAFF) || Voice::is(type));};
@@ -689,8 +699,8 @@ class SCOREPRESS_API Paragraph
 class SCOREPRESS_API TextArea : public Movable
 {
  public:
-    unsigned int width;            // width of the text-area (in micrometer)
-    unsigned int height;           // height of the text-area (in micrometer)
+    uum_t                width;    // width of the text-area
+    uum_t                height;   // height of the text-area
     std::list<Paragraph> text;     // paragraphs
     
  public:
@@ -715,14 +725,14 @@ class SCOREPRESS_API ContextChanging
     
     enum Scope {VOICE, STAFF, INSTRUMENT, GROUP, SCORE};   // scope of the change
     
-    int tempo;                     // new tempo value/modifier
-    Type tempo_type;               // tempo modifier type
-    int volume;                    // new volume value/modifier
-    Type volume_type;              // volume modifier type
-    Scope volume_scope;            // volume scope
-    unsigned int value_modifier;   // in promille
-    Scope value_scope;             // value scope
-    bool permanent;                // is this permanent, or for just this note?
+    int        tempo;           // new tempo value/modifier
+    Type       tempo_type;      // tempo modifier type
+    int        volume;          // new volume value/modifier
+    Type       volume_type;     // volume modifier type
+    Scope      volume_scope;    // volume scope
+    promille_t value_modifier;  // value coefficient
+    Scope      value_scope;     // value scope
+    bool       permanent;       // is this permanent, or for just this note?
     
  public:
     ContextChanging() : tempo(120), tempo_type(NONE),
@@ -735,7 +745,7 @@ class SCOREPRESS_API ContextChanging
 class SCOREPRESS_API Symbol : public Movable
 {
  private:
-    ContextChanging ctxchanger;    // context-changing information
+    ContextChanging ctxchanger; // context-changing information
     
  public:
     virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
@@ -753,8 +763,8 @@ class SCOREPRESS_API PluginInfo : public Movable
     char* data;     // data delivered to the plugin (will NOT be deleted with object!)
         
  public:
-    std::string caption;    // caption, shown to the user
-    std::string plugin;     // plugin id
+    std::string caption;        // caption, shown to the user
+    std::string plugin;         // plugin id
         
  public:
     PluginInfo() : data(NULL) {};
@@ -772,7 +782,7 @@ class SCOREPRESS_API PluginInfo : public Movable
 class SCOREPRESS_API Annotation : public TextArea
 {
  private:
-    ContextChanging ctxchanger;     // context-changing information
+    ContextChanging ctxchanger; // context-changing information
     
  public:
     virtual bool is(classType type) const {return ((type == ANNOTATION) || (TextArea::is(type)));};
@@ -786,7 +796,7 @@ class SCOREPRESS_API Annotation : public TextArea
 class SCOREPRESS_API CustomSymbol : public Symbol
 {
  public:
-    SpriteId sprite;   // sprite of the symbol
+    SpriteId sprite;            // sprite of the symbol
     
  public:
     virtual void engrave(EngraverState& engraver) const;
@@ -800,8 +810,8 @@ class SCOREPRESS_API CustomSymbol : public Symbol
 class SCOREPRESS_API Durable : public Symbol
 {
  public:
-    size_t duration;           // number of staff-objects within the scope of the symbol
-    Position<> end_position;   // position of the end-node (same unit as position; see "Movable")
+    size_t duration;            // number of staff-objects within the scope of the symbol
+    Position<> end_position;    // position of the end-node (same unit as position; see "Movable")
     
  public:
     Durable() : duration(1) {};
@@ -817,10 +827,10 @@ class SCOREPRESS_API Durable : public Symbol
 class SCOREPRESS_API Slur : public Durable
 {
  public:
-    Position<> control1;       // first control point        (same unit as position; see "Movable")
-    Position<> control2;       // second control point       (same unit as position; see "Movable")
-    unsigned int thickness1;   // line-width at the ends     (in promille of stem-width)
-    unsigned int thickness2;   // line-width at the center   (in promille of stem-width)
+    Position<> control1;        // first control point        (same unit as position; see "Movable")
+    Position<> control2;        // second control point       (same unit as position; see "Movable")
+    promille_t thickness1;      // line-width at the ends     (in promille of stem-width)
+    promille_t thickness2;      // line-width at the center   (in promille of stem-width)
     
  public:
     Slur() : thickness1(500), thickness2(2000) {};
@@ -835,9 +845,9 @@ class SCOREPRESS_API Slur : public Durable
 class SCOREPRESS_API Hairpin : public Durable
 {
  public:
-    unsigned int thickness;    // line-width (in promille of stem-width)
-    unsigned int height;       // height at the open end of the "hairpin" (in promille of head-height)
-    bool crescendo;            // crescendo or decrescendo symbol?
+    promille_t thickness;       // line-width (in promille of stem-width)
+    pohh_t     height;          // height at the open end of the "hairpin" (in promille of head-height)
+    bool       crescendo;       // crescendo or decrescendo symbol?
     
  public:
     Hairpin() : thickness(1000), height(1000), crescendo(true) {};

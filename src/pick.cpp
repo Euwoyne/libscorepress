@@ -17,6 +17,7 @@
   permissions and limitations under the Licence.
 */
 
+#include <iostream>
 #include <cmath>        // pow
 #include "pick.hh"      // Pick, const_Cursor, Sprites, List, [score classes]
 #include "undefined.hh" // defines "UNDEFINED" macro, resolving to the largest value "size_t" can contain
@@ -40,6 +41,33 @@ inline int _round(const double d) {return static_cast<mpx_t>(d + 0.5);}
 // constructor for the "VoiceCursor" class
 Pick::VoiceCursor::VoiceCursor() : const_Cursor(), pos(0), npos(0), ypos(0), time(0), ntime(0),
                                    virtual_obj(NULL), inserted(false), remaining_duration(-1) {}
+
+// comparison defining the engraving order for VoiceCursor
+bool Pick::compare(const VoiceCursorPtr& cur1, const VoiceCursorPtr& cur2)
+{
+    if ((*cur1)->is(Class::PAGEBREAK))
+        return (!(*cur2)->is(Class::PAGEBREAK) || cur2->time < cur1->time);
+    if ((*cur2)->is(Class::PAGEBREAK))
+        return false;
+    if ((*cur1)->is(Class::NEWLINE))
+        return (!(*cur2)->is(Class::NEWLINE) || cur2->time < cur1->time);
+    if ((*cur2)->is(Class::NEWLINE))
+        return false;
+    if (cur1->time != cur2->time)
+        return (cur2->time < cur1->time);
+    if (cur1->ntime != cur2->ntime)
+        return (cur2->ntime < cur1->ntime);
+    if ((*cur1)->classtype() == (*cur2)->classtype())
+        return (cur2->time < cur1->time);
+    
+    if ((*cur1)->is(Class::TIMESIG)) return true;
+    if ((*cur2)->is(Class::TIMESIG)) return false;
+    if ((*cur1)->is(Class::KEY))     return true;
+    if ((*cur2)->is(Class::KEY))     return false;
+    if ((*cur1)->is(Class::BARLINE)) return true;
+    if ((*cur2)->is(Class::BARLINE)) return false;
+    return !((*cur1)->is(Class::CLEF));
+}
 
 // exception class
 Pick::LineLayout::VoiceNotFoundException::VoiceNotFoundException()
@@ -88,155 +116,6 @@ void Pick::LineLayout::set_first_voice(const Voice& voice) throw(VoiceNotFoundEx
     first_voice = &voice;
 }
 
-// return the staff-object's sprite-id
-SpriteId Pick::sprite_id(const Sprites& spr, const StaffObject* obj)
-{
-    if (spr.empty()) return SpriteId();
-    if (obj == NULL) return SpriteId(0, spr.front().undefined_symbol);
-
-    if (obj->is(Class::CHORD))  // if the object is a chord
-    {
-        const Chord& chord = *static_cast<const Chord*>(obj);
-        if (chord.sprite.setid == UNDEFINED)    // if the complete sprite is undefined
-        {
-            switch (chord.val.exp)              // return the default sprite of the first set
-            {
-            case VALUE_BASE + 2: return SpriteId(0, spr.front().heads_longa);   // longa head
-            case VALUE_BASE + 1: return SpriteId(0, spr.front().heads_breve);   // breve head
-            case VALUE_BASE    : return SpriteId(0, spr.front().heads_whole);   // whole head
-            case VALUE_BASE - 1: return SpriteId(0, spr.front().heads_half);    // half head
-            default            : return SpriteId(0, spr.front().heads_quarter); // quarter head
-            };
-        };
-        if (chord.sprite.spriteid == UNDEFINED) // if the set is defined, but the sprite is not
-        {
-            switch (chord.val.exp)              // return the default sprite of the given set
-            {
-            case VALUE_BASE + 2: return SpriteId(chord.sprite.setid, spr[chord.sprite.setid].heads_longa);   // longa head
-            case VALUE_BASE + 1: return SpriteId(chord.sprite.setid, spr[chord.sprite.setid].heads_breve);   // breve head
-            case VALUE_BASE    : return SpriteId(chord.sprite.setid, spr[chord.sprite.setid].heads_whole);   // whole head
-            case VALUE_BASE - 1: return SpriteId(chord.sprite.setid, spr[chord.sprite.setid].heads_half);    // half head
-            default            : return SpriteId(chord.sprite.setid, spr[chord.sprite.setid].heads_quarter); // quarter head
-            };
-        };
-        return chord.sprite;    // return the given sprite, if it is completely defined
-    }
-    else if (obj->is(Class::REST))  // if the object is a rest
-    {
-        const Rest& rest = *static_cast<const Rest*>(obj);
-        if (rest.sprite.setid == UNDEFINED) // if the complete sprite is undefined
-        {
-            switch (rest.val.exp)           // return the default sprite of the first set
-            {
-            case VALUE_BASE + 2: return SpriteId(0, spr.front().rests_longa);   // longa rest
-            case VALUE_BASE + 1: return SpriteId(0, spr.front().rests_breve);   // breve rest
-            case VALUE_BASE    : return SpriteId(0, spr.front().rests_whole);   // whole rest
-            case VALUE_BASE - 1: return SpriteId(0, spr.front().rests_half);    // half rest
-            case VALUE_BASE - 2: return SpriteId(0, spr.front().rests_quarter); // quarter rest
-            default            : return SpriteId(0, spr.front().flags_rest);    // flagged rest
-            };
-        };
-        if (rest.sprite.spriteid == UNDEFINED)  // if the set is defined, but the sprite is not
-        {
-            switch (rest.val.exp)               // return the default sprite of the given set
-            {
-            case VALUE_BASE + 2: return SpriteId(rest.sprite.setid, spr[rest.sprite.setid].rests_longa);   // longa rest
-            case VALUE_BASE + 1: return SpriteId(rest.sprite.setid, spr[rest.sprite.setid].rests_breve);   // breve rest
-            case VALUE_BASE    : return SpriteId(rest.sprite.setid, spr[rest.sprite.setid].rests_whole);   // whole rest
-            case VALUE_BASE - 1: return SpriteId(rest.sprite.setid, spr[rest.sprite.setid].rests_half);    // half rest
-            case VALUE_BASE - 2: return SpriteId(rest.sprite.setid, spr[rest.sprite.setid].rests_quarter); // quarter rest
-            default            : return SpriteId(rest.sprite.setid, spr[rest.sprite.setid].flags_rest);    // flagged rest
-            };
-        };
-        return rest.sprite; // return the given sprite, if it is completely defined
-    }
-    else if (obj->is(Class::CLEF))  // if the object is a clef
-    {
-        const SpriteId& sprite = static_cast<const Clef*>(obj)->sprite;
-        if (sprite.setid == UNDEFINED)      // if we have no sprite information
-            return SpriteId(0, spr.front().undefined_symbol);   // get undefined symbol, of the first set
-        
-        if (sprite.spriteid == UNDEFINED)   // get undefined symbol of given set
-            return SpriteId(sprite.setid, spr[sprite.setid].undefined_symbol);
-        
-        return sprite;  // just return existing sprite
-    }
-    else if (obj->is(Class::KEY))   // if the object is a key signature
-    {
-        const Key& key = *static_cast<const Key*>(obj);
-        if (key.sprite.setid == UNDEFINED)  // if there is no sprite information
-        {
-            switch (key.type)   // get default sprite from the first set
-            {
-            case Key::SHARP: return SpriteId(0, spr.front().accidentals_sharp);
-            case Key::FLAT:  return SpriteId(0, spr.front().accidentals_flat);
-            };
-        };
-        
-        if (key.sprite.spriteid == UNDEFINED)   // if only the set is given
-        {
-            switch (key.type)   // get default sprite from the given set
-            {
-            case Key::SHARP: return SpriteId(key.sprite.setid, spr[key.sprite.setid].accidentals_sharp);
-            case Key::FLAT:  return SpriteId(key.sprite.setid, spr[key.sprite.setid].accidentals_flat);
-            };
-        };
-        
-        return key.sprite;
-    }
-    else if (obj->is(Class::CUSTOMTIMESIG)) // if the object is a time signature
-    {
-        const SpriteId& sprite = static_cast<const CustomTimeSig*>(obj)->sprite;
-        if (sprite.setid == UNDEFINED)      // if we have no sprite information
-            return SpriteId(0, spr.front().undefined_symbol);   // get undefined symbol, of the first set
-    
-        if (sprite.spriteid == UNDEFINED)   // get undefined symbol of given set
-            return SpriteId(sprite.setid, spr[sprite.setid].undefined_symbol);
-        
-        return sprite;  // just return existing sprite
-    };
-    
-    return SpriteId(0, spr.front().undefined_symbol);
-}
-
-// return the accidental's sprite-id
-SpriteId Pick::sprite_id(const Sprites& spr, const Accidental& obj)
-{
-    if (obj.sprite.setid == UNDEFINED)
-    {
-        switch (obj.type)
-        {
-        case Accidental::double_sharp:   return SpriteId(0, spr.front().accidentals_double_sharp);   break;
-        case Accidental::sharp_andahalf: return SpriteId(0, spr.front().accidentals_sharp_andahalf); break;
-        case Accidental::sharp:          return SpriteId(0, spr.front().accidentals_sharp);          break;
-        case Accidental::half_sharp:     return SpriteId(0, spr.front().accidentals_half_sharp);     break;
-        case Accidental::natural:        return SpriteId(0, spr.front().accidentals_natural);        break;
-        case Accidental::half_flat:      return SpriteId(0, spr.front().accidentals_half_flat);      break;
-        case Accidental::flat:           return SpriteId(0, spr.front().accidentals_flat);           break;
-        case Accidental::flat_andahalf:  return SpriteId(0, spr.front().accidentals_flat_andahalf);  break;
-        case Accidental::double_flat:    return SpriteId(0, spr.front().accidentals_double_flat);    break;
-        };
-    };
-
-    if (obj.sprite.spriteid == UNDEFINED)
-    {
-        switch (obj.type)
-        {
-        case Accidental::double_sharp:   return SpriteId(obj.sprite.setid, spr[obj.sprite.setid].accidentals_double_sharp);   break;
-        case Accidental::sharp_andahalf: return SpriteId(obj.sprite.setid, spr[obj.sprite.setid].accidentals_sharp_andahalf); break;
-        case Accidental::sharp:          return SpriteId(obj.sprite.setid, spr[obj.sprite.setid].accidentals_sharp);          break;
-        case Accidental::half_sharp:     return SpriteId(obj.sprite.setid, spr[obj.sprite.setid].accidentals_half_sharp);     break;
-        case Accidental::natural:        return SpriteId(obj.sprite.setid, spr[obj.sprite.setid].accidentals_natural);        break;
-        case Accidental::half_flat:      return SpriteId(obj.sprite.setid, spr[obj.sprite.setid].accidentals_half_flat);      break;
-        case Accidental::flat:           return SpriteId(obj.sprite.setid, spr[obj.sprite.setid].accidentals_flat);           break;
-        case Accidental::flat_andahalf:  return SpriteId(obj.sprite.setid, spr[obj.sprite.setid].accidentals_flat_andahalf);  break;
-        case Accidental::double_flat:    return SpriteId(obj.sprite.setid, spr[obj.sprite.setid].accidentals_double_flat);    break;
-        };
-    };
-    
-    return obj.sprite;
-}
-
 // return the graphical width for the number
 mpx_t Pick::width(const SpriteSet& spr, unsigned int n, const mpx_t height)
 {
@@ -266,7 +145,7 @@ mpx_t Pick::width(const SpriteSet& spr, unsigned int n, const mpx_t height)
 
 mpx_t Pick::width(const Sprites& spr, const StaffObject* obj, const mpx_t height)
 {
-    SpriteId idx = sprite_id(spr, obj); // get sprite id (if possible)
+    SpriteId idx = obj->get_sprite(spr);    // get sprite id (if possible)
     
     if (obj->is(Class::CHORD))          // if the object is a chord...
     {
@@ -281,8 +160,8 @@ mpx_t Pick::width(const Sprites& spr, const StaffObject* obj, const mpx_t height
         const Rest& rest = *static_cast<const Rest*>(obj);
         
         // if it is a simple rest, just return the width of the sprite
-        if (rest.val.exp >= VALUE_BASE - 2) return _width(sprite_id(spr, obj), Rest);
-
+        if (rest.val.exp >= VALUE_BASE - 2) return _width(idx, Rest);
+        
         // otherwise calculate width of composed graphic
         if (spr[idx].real.find("slope") == spr[idx].real.end()) // if there is no slope,
             return spr[idx].width * 1000;                       //    return simple width
@@ -351,114 +230,51 @@ mpx_t Pick::value_width(const value_t& value, const EngraverParam& param, const 
            ) + param.constant_coeff * viewport.hppm / 1e3);
 }
 
-// insert the given cursor, maintaining the order according to "time"
-void Pick::insert(const Pick::VoiceCursor& cursor, CList& clist)
+// add cursors for the sub-voices of a note to the queue
+void Pick::add_subvoices(const VoiceCursor& parent, CQueue& cqueue)
 {
-    // insert all newlines in the front (with pagebreaks after the newlines)
-    if (cursor->is(Class::NEWLINE))
-    {
-        for (std::list<Pick::VoiceCursor>::iterator i = clist.begin(); i != clist.end(); ++i)
-        {
-            if (   (!cursor->is(Class::PAGEBREAK) && i->time >= cursor.time)
-                || !(*i)->is(Class::NEWLINE))
-            {
-                clist.insert(i, cursor);
-                return;
-            };
-        };
-        clist.push_back(cursor);
-        return;
-    };
-    
-    // iterate through cursors (chronologically)
-    for (std::list<Pick::VoiceCursor>::reverse_iterator i = clist.rbegin(); i != clist.rend(); ++i)
-    {
-        if ((*i)->is(Class::NEWLINE))   // all objects before newlines!
-        {
-            clist.insert(i.base(), cursor);     // insert_after
-            return;
-        };
-        
-        if (i->time >= cursor.time && !cursor->is(Class::NOTEOBJECT))   // earlier or simultaneous non-note object
-        {
-            // render non-note objects before every note-object
-            if ((*i)->is(Class::NOTEOBJECT))
-            {
-                clist.insert(i.base(), cursor);     // insert_after
-                return;
-            };
-            
-            // render in order: newline -> clef -> barline -> key -> time-signature
-            if (cursor->is(Class::NEWLINE)  ||
-                (cursor->is(Class::CLEF)    && !(*i)->is(Class::NEWLINE)) ||
-                
-                (cursor->is(Class::BARLINE) && !(*i)->is(Class::NEWLINE)
-                                            && !(*i)->is(Class::CLEF))    ||
-                
-                (cursor->is(Class::KEY)     && !(*i)->is(Class::NEWLINE)
-                                            && !(*i)->is(Class::CLEF)
-                                            && !(*i)->is(Class::BARLINE)) ||
-                
-                (cursor->is(Class::TIMESIG) && !(*i)->is(Class::NEWLINE)
-                                            && !(*i)->is(Class::CLEF)
-                                            && !(*i)->is(Class::BARLINE)
-                                            && !(*i)->is(Class::KEY))
-               )
-            {
-                clist.insert((++i).base(), cursor);     // insert_before
-                return;
-            };
-        }
-        else if (i->time > cursor.time) // earlier note object
-        {
-            clist.insert(i.base(), cursor);     // render before later note object
-            return;
-        };
-    };
-    clist.push_front(cursor);   // otherwise render last (insert at the beginning)
-    
-    // note that the vector is in descending order! (the last entry is the next note)
-}
-
-// add cursors for the sub-voices of a note to the stack
-void Pick::add_subvoices(VoiceCursor cursor, CList& clist)
-{
-    if (!cursor->is(Class::NOTEOBJECT)) return; // check if object can have voices
-    const NoteObject& obj = *static_cast<const NoteObject*>(&*cursor);
+    if (!parent->is(Class::NOTEOBJECT)) return;  // check if object can have voices
+    const NoteObject& obj = static_cast<const NoteObject&>(*parent);
     if (obj.subvoice == NULL) return;           // check if object has got a sub-voice
     
     if (!obj.subvoice->notes.empty())   // ignore empty voices (checked by engraver)
     {
-        // set layout
-        _layout.set(*obj.subvoice, _layout.get(cursor.voice()));
-        
         // create cursor to the new voice's beginning
-        cursor.set(cursor.staff(), *obj.subvoice);
+        VoiceCursorPtr cursor = VoiceCursorPtr(new VoiceCursor());
+        cursor->set(parent.staff(), *obj.subvoice);
         
-        // calculate estimated position of the following note
-        calculate_npos(cursor);
+        // set layout
+        _layout.set(*obj.subvoice, _layout.get(parent.voice()));
+        
+        // set position
+        cursor->pos = parent.pos;   // copy horizontal position
+        cursor->ypos = parent.ypos; // copy vertical position
+        calculate_npos(*cursor);    // calculate estimated position of the following note
         
         // setup time-stamp
-        cursor.ntime = cursor.time;         // set ntime to current timestamp
-        if (cursor->is(Class::NOTEOBJECT))  // and if we got a note-object
+        cursor->time = parent.time;             // set time to current timestamp
+        cursor->ntime = parent.time;            // initialize end-time
+        if ((*cursor)->is(Class::NOTEOBJECT))   // if we got a note-object
         {
-            cursor.ntime += static_cast<const NoteObject*>(&*cursor)->value();  // increase time-stamp
+            cursor->ntime += static_cast<const NoteObject&>(**cursor).value();  // increase end-time
         };
         
         // insert note
-        add_subvoices(cursor, clist);   // add the subvoices of the first note of the new voice
-        insert(cursor, clist);          // add cursor to the list
+        add_subvoices(*cursor, cqueue); // add the subvoices of the first note of the new voice
+        cqueue.push(cursor);            // add cursor to the queue
     };
 }
 
 // intialize the cursors to the score's beginning
 void Pick::_initialize()
 {
-    VoiceCursor cur;    // cursor object
     for (std::list<Staff>::const_iterator s = score->staves.begin(); s != score->staves.end(); ++s)
     {
         if (!s->notes.empty())  // if the staff contains any notes...
         {
+            VoiceCursorPtr curptr = VoiceCursorPtr(new VoiceCursor);
+            VoiceCursor& cur = *curptr;
+            
             // append main-voice
             cur.set(*s);            // create cursor to the staff's beginning
             if (s->notes.front()->is(Class::NOTEOBJECT))
@@ -487,7 +303,7 @@ void Pick::_initialize()
             
             // insert note
             add_subvoices(cur);     // add the subvoices of the first note of the new voice
-            insert(cur);            // add cursor to the list
+            cursors.push(curptr);   // add cursor to the queue
         };
     };
     
@@ -501,12 +317,14 @@ void Pick::calculate_npos(VoiceCursor& nextNote)
     // the note's graphical width (plus minimal distance)
     const mpx_t note_width = width(*sprites,
                                    &*nextNote,
-                                   viewport->umtopx_v(HEAD_HEIGHT(nextNote.staff()))
+                                   viewport->umtopx_v(HEAD_HEIGHT(nextNote.staff())))/*
                               + ((nextNote->is(Class::NOTEOBJECT)) ?
                                       viewport->umtopx_h(param->min_distance) :
                                       ((nextNote->is(Class::BARLINE)) ?
                                             viewport->umtopx_h(param->barline_distance) :
-                                            viewport->umtopx_h(param->default_distance))));
+                                            viewport->umtopx_h(param->default_distance)))*/;
+    nextNote.npos = nextNote.pos + note_width;
+    return;
     
     // the note's value-related width
     const mpx_t distance = (nextNote->is(Class::NOTEOBJECT)) ?
@@ -521,7 +339,8 @@ void Pick::calculate_npos(VoiceCursor& nextNote)
 // insert next note of current voice
 void Pick::insert_next(const VoiceCursor& engravedNote)
 {
-    VoiceCursor nextNote(engravedNote); // copy current cursor
+    VoiceCursorPtr nextNotePtr = VoiceCursorPtr(new VoiceCursor(engravedNote));
+    VoiceCursor& nextNote(*nextNotePtr);    // copy current cursor
     
     // virtual object
     if (engravedNote.virtual_obj)       // if the object was virtual
@@ -530,12 +349,12 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         {
             if (engravedNote.inserted)              // if we have an inserted note
             {               // search for the already existant next one in voice
-                for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
+                for (CQueue::iterator i = cursors.begin(); i != cursors.end(); ++i)
                 {
-                    if (i->time == engravedNote.time)
+                    if ((*i)->time == engravedNote.time)
                     {
-                        i->npos += (engravedNote.npos - i->pos);
-                        i->pos = engravedNote.npos; // update the next notes position
+                        (*i)->npos += (engravedNote.npos - (*i)->pos);
+                        (*i)->pos = engravedNote.npos;  // update the next notes position
                     };
                 };
                 return;                 // if the note was inserted, the next one is already there
@@ -588,11 +407,11 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
             _line_height = viewport->umtopx_v(line_height());
             
             // set newline time
-            for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-                if (i->time > _newline_time) _newline_time = i->time;
+            for (CQueue::iterator i = cursors.begin(); i != cursors.end(); ++i)
+                if ((*i)->time > _newline_time) _newline_time = (*i)->time;
             if (param->newline_time_reset)
-                for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-                    i->ntime = _newline_time;
+                for (CQueue::iterator i = cursors.begin(); i != cursors.end(); ++i)
+                    (*i)->ntime = _newline_time;
         };
         
         // copy new line layout
@@ -626,11 +445,11 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
             
             // set newline time
             _newline_time = engravedNote.ntime;
-            for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-                if (i->time > _newline_time) _newline_time = i->time;
+            for (CQueue::iterator i = cursors.begin(); i != cursors.end(); ++i)
+                if ((*i)->time > _newline_time) _newline_time = (*i)->time;
             if (param->newline_time_reset)
-                for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-                    i->ntime = _newline_time;
+                for (CQueue::iterator i = cursors.begin(); i != cursors.end(); ++i)
+                    (*i)->ntime = _newline_time;
         };
         
         // copy new line layout
@@ -672,7 +491,7 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         };
         
         // insert new note into stack
-        insert(nextNote, (engravedNote->is(Class::NEWLINE)) ? next_cursors : cursors);
+        ((engravedNote->is(Class::NEWLINE)) ? next_cursors : cursors).push(nextNotePtr);
         
         // add new voices
         if (!nextNote.virtual_obj)
@@ -681,7 +500,7 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
 }
 
 // prepare next note to be engraved
-void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
+void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t /*w*/)
 {
     if (cursors.empty())
     {
@@ -694,7 +513,7 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
         _pagebreak = false;                 //          and the pagebreak block
     };
     
-    VoiceCursor& nextNote = cursors.back(); // get the object which is to be engraved next
+    VoiceCursor& nextNote = *cursors.top(); // get the object which is to be engraved next
     
     // calculate note position
     if (nextNote->is(Class::NEWLINE))       // if we got a newline/pagebreak
@@ -706,16 +525,20 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
             if (engravedNote.time == nextNote.time)
                 nextNote.pos = engravedNote.pos;
         }
-        else if (engravedNote->is(Class::BARLINE))
-            nextNote.pos = engravedNote.npos - viewport->umtopx_h(param->barline_distance);
-        else if (nextNote.pos - engravedNote.pos - w < viewport->umtopx_h(param->min_distance))
-            nextNote.pos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
+        else nextNote.pos = engravedNote.npos;
+        //else if (engravedNote->is(Class::BARLINE))
+        //    nextNote.pos = engravedNote.npos - viewport->umtopx_h(param->barline_distance);
+        //else if (nextNote.pos - engravedNote.pos - w < viewport->umtopx_h(param->min_distance))
+        //    nextNote.pos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
         nextNote.npos = nextNote.pos;
     }
     else if (engravedNote->is(Class::NEWLINE))
     {
-        if (nextNote->is(Class::NOTEOBJECT))
-            nextNote.pos += viewport->umtopx_h(param->barline_distance - param->min_distance);
+        // add distance
+        if (nextNote->is(Class::NOTEOBJECT))    // add barline distance for note objects
+            nextNote.pos += viewport->umtopx_h(param->barline_distance);
+        else                                    // non-note objects have just minimal distance from barlines
+            nextNote.pos += viewport->umtopx_h(param->min_distance);
     }
     else if (nextNote->classtype() == engravedNote->classtype() && !engravedNote->is(Class::NOTEOBJECT)
                                                                 && !engravedNote->is(Class::TIMESIG))
@@ -738,28 +561,23 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
     {
         nextNote.pos = engravedNote.npos;       // the next notes are rendered right behind it
         
-        if (!nextNote->is(Class::NOTEOBJECT))
-            nextNote.pos -= viewport->umtopx_h(param->barline_distance - param->min_distance);
+        // add distance
+        if (nextNote->is(Class::NOTEOBJECT))    // add barline distance for note objects
+            nextNote.pos += viewport->umtopx_h(param->barline_distance);
+        else                                    // non-note objects have just minimal distance from barlines
+            nextNote.pos += viewport->umtopx_h(param->min_distance);
     }
     else    // in any other case
     {
         // assume the position to be the previously estimated one
         nextNote.pos = engravedNote.npos;
         
-        // calculate the minimal left margin (i.e. leftmost rightmost position of previous objects)
-        for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
-        {
-            if (nextNote.pos      > i->npos && !(*i)->is(Class::NEWLINE) && 
-                (engravedNote.pos < i->npos ||
-                 (engravedNote->is(Class::NOTEOBJECT) && nextNote->is(Class::NOTEOBJECT)
-                                                      && engravedNote.pos <= i->npos)))
-            {
-                nextNote.pos = i->npos;
-            };
-        };
+        // apply value dependant distance
+        {const mpx_t valpos = engravedNote.pos + value_width(nextNote.time - engravedNote.time, *param, *viewport);
+        if (nextNote.pos < valpos) nextNote.pos = valpos;}
         
         // check minimal distance
-        {const mpx_t minpos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
+        {const mpx_t minpos = engravedNote.npos + viewport->umtopx_h(param->min_distance);
         if (nextNote.pos < minpos) nextNote.pos = minpos;}
     };
     
@@ -783,6 +601,8 @@ Pick::Pick(const Score& _score, const EngraverParam& _param, const ViewportParam
                                             viewport(&_viewport),
                                             sprites(&_sprites),
                                             head_height(def_head_height),
+                                            cursors(&compare),
+                                            next_cursors(&compare),
                                             _dimension(NULL),
                                             _newline(false),
                                             _pagebreak(false),
@@ -797,10 +617,11 @@ void Pick::next(mpx_t w)
 {
     // remove engraved note
     if (cursors.empty()) return;
-    VoiceCursor engravedNote(cursors.back());
-    cursors.pop_back();
-    insert_next(engravedNote);
-    prepare_next(engravedNote, w);
+    
+    VoiceCursorPtr engravedNote(cursors.top());
+    cursors.pop();
+    insert_next(*engravedNote);
+    prepare_next(*engravedNote, w);
 }
 
 // reset cursors to the beginning of the score
@@ -817,25 +638,25 @@ void Pick::reset()
 // get cursor of a special voice
 const Pick::VoiceCursor& Pick::get_cursor(const Voice& voice) const
 {
-    for (std::list<Pick::VoiceCursor>::const_iterator i = cursors.begin(); i != cursors.end(); ++i)
-        if (&i->voice() == &voice) return *i;
-    return cursors.back();
+    for (CQueue::const_iterator i = cursors.begin(); i != cursors.end(); ++i)
+        if (&(*i)->voice() == &voice) return **i;
+    return *cursors.top();
 }
 
 // apply additional distance to all notes at and after a given time
 void Pick::add_distance(mpx_t distance, value_t time)
 {
     // iterate through the voices
-    for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
+    for (CQueue::iterator i = cursors.begin(); i != cursors.end(); ++i)
     {
-        if (i->time >= time)    // if the note occurs at or after the insertion
+        if ((*i)->time >= time) // if the note occurs at or after the insertion
         {
-            i->pos += distance;     // move the note
-            i->npos += distance;    // and all next notes
+            (*i)->pos += distance;  // move the note
+            (*i)->npos += distance; // and all next notes
         }
         else                    // if the insertion is during the note
         {
-            i->npos += distance;    // move all next notes
+            (*i)->npos += distance; // move all next notes
         };
     };
 }
@@ -844,16 +665,16 @@ void Pick::add_distance(mpx_t distance, value_t time)
 void Pick::add_distance_after(mpx_t distance, value_t time)
 {
     // iterate through the voices
-    for (std::list<VoiceCursor>::iterator i = cursors.begin(); i != cursors.end(); ++i)
+    for (CQueue::iterator i = cursors.begin(); i != cursors.end(); ++i)
     {
-        if (i->time > time)     // if the note occurs after the insertion
+        if ((*i)->time > time)  // if the note occurs after the insertion
         {
-            i->pos += distance;     // move the note
-            i->npos += distance;    // and all next notes
+            (*i)->pos += distance;  // move the note
+            (*i)->npos += distance; // and all next notes
         }
         else                    // if the insertion is during the note
         {
-            i->npos += distance;    // move all next notes
+            (*i)->npos += distance; // move all next notes
         };
     };
 }
@@ -862,19 +683,20 @@ void Pick::add_distance_after(mpx_t distance, value_t time)
 void Pick::insert(const StaffObject& obj)
 {
     if (cursors.empty()) return;
-    VoiceCursor cur(cursors.back());
+    VoiceCursorPtr curptr(new VoiceCursor(*cursors.top()));
+    VoiceCursor& cur(*curptr);
     cur.time = cur.ntime;               // set timestamp to current time
     if (obj.is(Class::NOTEOBJECT))      // if we got a note-object
         cur.ntime += static_cast<const NoteObject&>(obj).value();   // increase end time-stamp
     
-    if (cursors.back()->is(Class::PAGEBREAK))
+    if (cur->is(Class::PAGEBREAK))
     {
-        cur.pos = viewport->umtopx_h(param->min_distance + static_cast<const Pagebreak&>(*cursors.back()).indent);
+        cur.pos = viewport->umtopx_h(param->min_distance + static_cast<const Pagebreak&>(*cur).indent);
     }
-    else if (cursors.back()->is(Class::NEWLINE))
+    else if (cur->is(Class::NEWLINE))
     {
         if (!_newline) _line_height = viewport->umtopx_v(line_height());
-        cur.pos = viewport->umtopx_h(param->min_distance + static_cast<const Newline&>(*cursors.back()).indent);
+        cur.pos = viewport->umtopx_h(param->min_distance + static_cast<const Newline&>(*cur).indent);
         cur.ypos += _line_height;
     }
     else cur.pos = cur.npos;
@@ -884,63 +706,62 @@ void Pick::insert(const StaffObject& obj)
     cur.inserted = true;
     cur.remaining_duration = -1;
     ++cur;
-    if (cursors.back()->is(Class::NEWLINE)) insert(cur, next_cursors);
-    else insert(cur, cursors);
+    ((*cursors.top())->is(Class::NEWLINE) ? next_cursors : cursors).push(curptr);
 }
 
 // insert a virtual barline object at a given time
 void Pick::insert_barline(const Barline::Style& style)
 {
     if (cursors.empty()) return;
-    VoiceCursor barline(cursors.back());
-    barline.time = barline.ntime;
-    barline.virtual_obj = StaffObjectPtr(new Barline(style));
-    barline.inserted = true;
-    barline.remaining_duration = -1;
-    insert(barline);
+    VoiceCursorPtr barline(new VoiceCursor(*cursors.top()));
+    barline->time = barline->ntime;
+    barline->virtual_obj = StaffObjectPtr(new Barline(style));
+    barline->inserted = true;
+    barline->remaining_duration = -1;
+    cursors.push(barline);
 }
 
 // insert a virtual object (changes current cursor)
 bool Pick::insert_before(const StaffObject& obj)
 {
-    return insert_before(obj, cursors.back().voice());
+    return insert_before(obj, cursors.top()->voice());
 }
 
 // insert a virtual object (into given voice)
 bool Pick::insert_before(const StaffObject& obj, const Voice& voice)
 {
-    std::list<VoiceCursor>::iterator cursor;
-    for (std::list<VoiceCursor>::iterator c = cursors.begin(); c != cursors.end(); ++c)
-        if (&c->voice() == &voice) {cursor = c; break;};
+    CQueue::iterator cursor;
+    for (CQueue::iterator c = cursors.begin(); c != cursors.end(); ++c)
+        if (&(*c)->voice() == &voice) {cursor = c; break;};
     
-    for (std::list<VoiceCursor>::iterator c = cursors.begin(); c != cursors.end(); ++c)
-        if (c->time > cursor->time) return false;
+    for (CQueue::iterator c = cursors.begin(); c != cursors.end(); ++c)
+        if ((*c)->time > (*cursor)->time) return false;
     
-    VoiceCursor vobj(*cursor);
-    vobj.ntime = vobj.time;
-    if (obj.is(Class::NOTEOBJECT)) vobj.ntime += static_cast<const NoteObject&>(obj).value();
-    vobj.virtual_obj = StaffObjectPtr(obj.clone());
-    vobj.inserted = true;
-    vobj.remaining_duration = -1;
-    calculate_npos(vobj);
-    cursors.back().npos = vobj.npos;
-    insert(vobj);
-    prepare_next(cursors.back(), 0);
+    VoiceCursorPtr vobj(new VoiceCursor(**cursor));
+    vobj->ntime = vobj->time;
+    if (obj.is(Class::NOTEOBJECT)) vobj->ntime += static_cast<const NoteObject&>(obj).value();
+    vobj->virtual_obj = StaffObjectPtr(obj.clone());
+    vobj->inserted = true;
+    vobj->remaining_duration = -1;
+    calculate_npos(*vobj);
+    cursors.top()->npos = vobj->npos;
+    cursors.push(vobj);
+    prepare_next(*cursors.top(), 0);
     return true;
 }
 
 // cut the note into two tied notes (given duration of the first)
 void Pick::cut(value_t duration)
 {
-    if (!cursors.back()->is(Class::NOTEOBJECT)) return;
-    if (static_cast<const NoteObject*>(&*cursors.back())->value() <= duration) return;
+    if (!(*cursors.top())->is(Class::NOTEOBJECT)) return;
+    if (static_cast<const NoteObject&>(**cursors.top()).value() <= duration) return;
     
     // cut a chord
-    if (cursors.back()->is(Class::CHORD))
+    if ((*cursors.top())->is(Class::CHORD))
     {
         // create first part of virtually tied note
-        const Chord& chord = *static_cast<const Chord*>(&*cursors.back());
-        Chord* nchord = new Chord(*static_cast<const Chord*>(&cursors.back().original()));
+        const Chord& chord = static_cast<const Chord&>(**cursors.top());
+        Chord* nchord = new Chord(static_cast<const Chord&>(cursors.top()->original()));
         free(nchord->subvoice);
         nchord->set_value(duration);
         nchord->attached.clear();
@@ -953,39 +774,39 @@ void Pick::cut(value_t duration)
             static_cast<TiedHead&>(*nchord->heads.back()).control2 = param->tieup_control2;
             static_cast<TiedHead&>(*nchord->heads.back()).offset2 = param->tieup_offset2;
         };
-        cursors.back().remaining_duration = cursors.back().ntime - cursors.back().time - duration;
-        cursors.back().ntime = cursors.back().time + duration;
-        cursors.back().virtual_obj = StaffObjectPtr(nchord);    // inserted status stays ("false" for first, "true" for following)
+        cursors.top()->remaining_duration = cursors.top()->ntime - cursors.top()->time - duration;
+        cursors.top()->ntime = cursors.top()->time + duration;
+        cursors.top()->virtual_obj = StaffObjectPtr(nchord);    // inserted status stays ("false" for first, "true" for following)
         
         // calculate estimated position of the following note
-        calculate_npos(cursors.back());
+        calculate_npos(*cursors.top());
     }
     
     // cut a rest
-    else if (cursors.back()->is(Class::REST))
+    else if ((*cursors.top())->is(Class::REST))
     {
         // create first part of virtually tied note
-        Rest* nrest = new Rest(*static_cast<const Rest*>(&cursors.back().original()));
+        Rest* nrest = new Rest(static_cast<const Rest&>(cursors.top()->original()));
         free(nrest->subvoice);
         nrest->set_value(duration);
         nrest->attached.clear();
-        cursors.back().remaining_duration = cursors.back().ntime - cursors.back().time - duration;
-        cursors.back().ntime = cursors.back().time + duration;
-        cursors.back().virtual_obj = StaffObjectPtr(nrest); // inserted status stays ("false" for first, "true" for following)
+        cursors.top()->remaining_duration = cursors.top()->ntime - cursors.top()->time - duration;
+        cursors.top()->ntime = cursors.top()->time + duration;
+        cursors.top()->virtual_obj = StaffObjectPtr(nrest); // inserted status stays ("false" for first, "true" for following)
         
         // calculate estimated position of the following note
-        calculate_npos(cursors.back());
+        calculate_npos(*cursors.top());
     };
 }
 
 // get the current staff (shifted)
 const Staff& Pick::get_staff(int idx_shift) const
 {
-    if (idx_shift == 0) return cursors.back().staff();
+    if (idx_shift == 0) return cursors.top()->staff();
     
     std::list<Staff>::const_iterator i = score->staves.begin(); // iterator (real)
     std::list<Staff>::const_iterator j = score->staves.begin(); // iterator (offset)
-    const Staff& staff = cursors.back().staff();
+    const Staff& staff = cursors.top()->staff();
     
     // push idx-offset without adding position
     while (idx_shift < 0 && &*i != &staff && i != score->staves.end())
@@ -1017,7 +838,7 @@ int Pick::staff_offset(int idx_shift) const
     int out = 0;                                                // staff offset
     std::list<Staff>::const_iterator i = score->staves.begin(); // iterator (real)
     std::list<Staff>::const_iterator j = score->staves.begin(); // iterator (offset)
-    const Staff& staff = cursors.back().staff();
+    const Staff& staff = cursors.top()->staff();
     
     // push idx-offset without adding position
     while (idx_shift < 0 && &*i != &staff && i != score->staves.end())
@@ -1092,21 +913,20 @@ int Pick::line_height() const
 bool Pick::eov() const
 {
     if (cursors.empty()) return true;
-    const Voice* const voice = &cursors.back().voice();
-    for (std::list<VoiceCursor>::const_iterator i = cursors.begin(); i != --cursors.end(); ++i)
-        if (&i->voice() == voice) return false;
-    for (std::list<VoiceCursor>::const_iterator i = next_cursors.begin(); i != next_cursors.end(); ++i)
-        if (&i->voice() == voice) return false;
+    const Voice* const voice = &cursors.top()->voice();
+    for (CQueue::const_iterator i = ++cursors.begin(); i != cursors.end(); ++i)
+        if (&(*i)->voice() == voice) return false;
+    for (CQueue::const_iterator i = next_cursors.begin(); i != next_cursors.end(); ++i)
+        if (&(*i)->voice() == voice) return false;
     return true;
 }
 
 // peek at the next note in the voice (NULL if not there)
 const Pick::VoiceCursor* Pick::peek(const Voice& v) const
 {
-    for (std::list<VoiceCursor>::const_reverse_iterator i = cursors.rbegin(); i != cursors.rend(); ++i)
-        if (&i->voice() == &v) return &*i;
-    for (std::list<VoiceCursor>::const_reverse_iterator i = next_cursors.rbegin(); i != next_cursors.rend(); ++i)
-        if (&i->voice() == &v) return &*i;
+    for (CQueue::const_iterator i = ++cursors.begin(); i != cursors.end(); ++i)
+        if (&(*i)->voice() == &v) return &**i;
+    for (CQueue::const_iterator i = next_cursors.begin(); i != next_cursors.end(); ++i)
+        if (&(*i)->voice() == &v) return &**i;
     return NULL;
 }
-

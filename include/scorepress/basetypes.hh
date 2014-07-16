@@ -28,8 +28,18 @@ namespace ScorePress
 {
 //  TYPE DEFINTIONS
 // -----------------
-typedef int           mpx_t;       // milli-pixel (graphical positioning)
-typedef unsigned char tone_t;      // note-number (as defined for the MIDI standard: a' = 69)
+// position and scale units
+typedef int           mpx_t;       // milli-pixel
+typedef int           um_t;        // micrometer
+typedef unsigned int  uum_t;       // micrometer (unsigned)
+typedef unsigned int  pohh_t;      // promille of head-height
+typedef unsigned int  pohw_t;      // promille of head-width
+typedef int           spohh_t;     // promille of head-height (signed)
+typedef int           spohw_t;     // promille of head-width (signed)
+typedef unsigned int  promille_t;  // promille
+
+// miscellaneous units
+typedef unsigned char tone_t;      // note-number (as defined by the MIDI standard: a' = 69)
 typedef Fraction      value_t;     // note-values will be represented by exact fractions ("double" is too imprecise)
 
 // note value base exponent (i.e. the exponent of a whole note)

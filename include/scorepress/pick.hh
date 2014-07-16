@@ -21,11 +21,14 @@
 #define SCOREPRESS_PICK_HH
 
 #include <list>             // std::list
+#include <vector>           // std::vector
+#include <algorithm>        // std::make_heap, std::push_heap, std::pop_heap
 
 #include "score.hh"         // Score, Staff, LineLayout, [score classes]
 #include "cursor.hh"        // const_Cursor
 #include "sprites.hh"       // Sprites
 #include "parameters.hh"    // EngraverParam, ViewportParam
+#include "refptr.hh"        // RefPtr
 #include "error.hh"         // Error, std::string
 #include "log.hh"           // Logging
 #include "export.hh"
@@ -72,6 +75,14 @@ class SCOREPRESS_LOCAL Pick : public Logging
         const StaffObject* operator -> () const;    // return a pointer to the staff-object
     };
     
+    // voice-cursor smart pointer and comparison function types
+    typedef SmartPtr<VoiceCursor> VoiceCursorPtr;
+    typedef bool (*compare_t)(const VoiceCursorPtr& cur1, const VoiceCursorPtr& cur2);
+    
+    // comparison function on pointers of VoiceCursors
+    // returns true, if "cur2" should be engraved before "cur1"
+    static bool compare(const VoiceCursorPtr& cur1, const VoiceCursorPtr& cur2);
+    
     // line layout (collection of newlines for each voice)
     class LineLayout
     {
@@ -94,17 +105,33 @@ class SCOREPRESS_LOCAL Pick : public Logging
         void clear();                                                               // clear data
     };
     
+    // queue of voice-cursors ordered according to the compare object above
+    template <class T, class Container = std::vector<T>, class Compare = std::less<typename Container::value_type> >
+    class Queue : public Container
+    {
+     private:
+        Compare comp;
+        
+     private:
+        const T& back() const;
+              T& back();
+        const T& front() const;
+              T& front();
+        
+     public:
+        Queue() {};
+        Queue(Compare c) : comp(c) {};
+        
+        const T& top() const    {return Container::front();};
+        void push(const T& val) {Container::push_back(val); std::push_heap(Container::begin(), Container::end(), comp);};
+        void pop()              {std::pop_heap(Container::begin(), Container::end(), comp); Container::pop_back();};
+        void make_heap()        {std::make_heap(Container::begin(), Container::end(), comp);};
+    };
+    
+    typedef Queue<VoiceCursorPtr, std::vector<VoiceCursorPtr>, compare_t> CQueue;
+    typedef CQueue Cursors;
+    
  public:
-    // return the staff-object's sprite-id
-    static SpriteId sprite_id(const Sprites& spr, const StaffObject* obj);
-    
-    // return the accidental's sprite-id
-    static SpriteId sprite_id(const Sprites& spr, const Accidental& obj);
-    
-    // return the staff-object's sprite-information
-    inline static const SpriteInfo& sprite(const Sprites& spr, const StaffObject* obj)
-        {return spr[sprite_id(spr, obj)];};
-    
     // return the graphical width for the number
     static mpx_t width(const SpriteSet& spr, const unsigned int n, const mpx_t height);
     
@@ -121,10 +148,9 @@ class SCOREPRESS_LOCAL Pick : public Logging
     const Sprites* const sprites;           // pointer to the sprite-library (access to the graphical widths)
     const int head_height;                  // default head-hight
     
-    typedef std::list<VoiceCursor> CList;   // list of voice cursors
-    CList cursors;                          // containing cursors to the notes next to be read of all voices
+    Cursors cursors;                        // containing cursors to the notes next to be read of all voices
                                             // ordered descending! by "time" (the last entry is the next note)
-    CList next_cursors;                     // cursors for the next line (stored seperately, so that they do not
+    Cursors next_cursors;                   // cursors for the next line (stored seperately, so that they do not
                                             // get mixed up with the currently processed newlines)
     
     const ScoreDimension* _dimension;       // dimension of the score object on the currently engraved page
@@ -135,10 +161,8 @@ class SCOREPRESS_LOCAL Pick : public Logging
     value_t    _newline_time;               // timestamp of the first newline object (during newline processing)
     mpx_t      _line_height;                // height of the line (during newline processing)
     
-    void insert(const VoiceCursor& cursor); // insert the given cursor, maintaining the order according to "time"
-    void insert(const VoiceCursor& cursor, CList&);
-    void add_subvoices(VoiceCursor cursor); // add cursors for the sub-voices of a note to the stack
-    void add_subvoices(VoiceCursor cursor, CList&);
+    void add_subvoices(const VoiceCursor&); // add cursors for the sub-voices of a note to the stack
+    void add_subvoices(const VoiceCursor&, CQueue&);
     void _initialize();                     // intialize the cursors to the score's beginning
     
     void calculate_npos(VoiceCursor& nextNote);                      // calculate estimated position of the following note
@@ -202,10 +226,9 @@ inline const StaffObject* Pick::VoiceCursor::operator -> () const
 inline void Pick::LineLayout::swap(LineLayout& a) {std::swap(data, a.data); std::swap(first_voice, a.first_voice);}
 inline void Pick::LineLayout::clear()             {data.clear();}
 
-inline void Pick::insert(const VoiceCursor& cursor) {insert(cursor, cursors);}
-inline void Pick::add_subvoices(VoiceCursor cursor) {add_subvoices(cursor, cursors);}
+inline void Pick::add_subvoices(const VoiceCursor& cursor) {add_subvoices(cursor, cursors);}
 
-inline const Pick::VoiceCursor& Pick::get_cursor()                const {return cursors.back();}
+inline const Pick::VoiceCursor& Pick::get_cursor()                const {return *cursors.top();}
 inline       bool               Pick::eos()                       const {return cursors.empty() && next_cursors.empty();}
 inline       bool               Pick::is_within_newline()         const {return _newline || _pagebreak;}
 inline const ScoreDimension&    Pick::get_dimension()             const {return *_dimension;}

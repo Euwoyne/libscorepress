@@ -220,6 +220,18 @@ void NoteObject::add_subvoice(RefPtr<SubVoice>& newvoice)
     };
 }
 
+// sprite calculation (Clef)
+SpriteId Clef::get_sprite(const Sprites& spr) const
+{
+    if (sprite.setid == UNDEFINED)      // if we have no sprite information
+        return SpriteId(0, spr.front().undefined_symbol);   // get undefined symbol, of the first set
+    
+    if (sprite.spriteid == UNDEFINED)   // get undefined symbol of given set
+        return SpriteId(sprite.setid, spr[sprite.setid].undefined_symbol);
+    
+    return sprite;  // just return existing sprite
+}
+
 // engraving method (Clef)
 void Clef::engrave(EngraverState& engraver) const
 {
@@ -232,7 +244,7 @@ void Clef::engrave(EngraverState& engraver) const
     engraver.get_target_line().staffctx[&engraver.get_staff()].modify(*this);
     
     // set sprite
-    pnote.sprite = Pick::sprite_id(sprites, this);
+    pnote.sprite = this->get_sprite(sprites);
     
     // get sprite and position-offset
     const SpriteInfo& spriteinfo = sprites[pnote.sprite];   // get sprite-info
@@ -272,6 +284,30 @@ void Clef::render(Renderer& renderer, const Plate::pNote& note, const PressState
                          state.parameters.do_scale(sprite_scale) / 1000.0);
 }
 
+// sprite calculation (Key)
+SpriteId Key::get_sprite(const Sprites& spr) const
+{
+    if (sprite.setid == UNDEFINED)  // if there is no sprite information
+    {
+        switch (type)   // get default sprite from the first set
+        {
+        case Key::SHARP: return SpriteId(0, spr.front().accidentals_sharp);
+        case Key::FLAT:  return SpriteId(0, spr.front().accidentals_flat);
+        };
+    };
+    
+    if (sprite.spriteid == UNDEFINED)   // if only the set is given
+    {
+        switch (type)   // get default sprite from the given set
+        {
+        case Key::SHARP: return SpriteId(sprite.setid, spr[sprite.setid].accidentals_sharp);
+        case Key::FLAT:  return SpriteId(sprite.setid, spr[sprite.setid].accidentals_flat);
+        };
+    };
+    
+    return sprite;
+}
+
 // engraving method (Key)
 void Key::engrave(EngraverState& engraver) const
 {
@@ -286,7 +322,7 @@ void Key::engrave(EngraverState& engraver) const
     staffctx.modify(*this);
     
     // set sprite
-    pnote.sprite = Pick::sprite_id(sprites, this);
+    pnote.sprite = this->get_sprite(sprites);
     
     // get sprite and position-offset
     const SpriteInfo& spriteinfo = sprites[pnote.sprite];   // get sprite-info
@@ -500,6 +536,18 @@ void TimeSig::render(Renderer& renderer, const Plate::pNote& note, const PressSt
     };
 }
 
+// sprite calculation (Custom Time Signature)
+SpriteId CustomTimeSig::get_sprite(const Sprites& spr) const
+{
+    if (sprite.setid == UNDEFINED)      // if we have no sprite information
+        return SpriteId(0, spr.front().undefined_symbol);   // get undefined symbol, of the first set
+    
+    if (sprite.spriteid == UNDEFINED)   // get undefined symbol of given set
+        return SpriteId(sprite.setid, spr[sprite.setid].undefined_symbol);
+    
+    return sprite;  // just return existing sprite
+}
+
 // engraving method (Custom Time Signature)
 void CustomTimeSig::engrave(EngraverState& engraver) const
 {
@@ -572,15 +620,15 @@ void Barline::engrave(EngraverState& engraver) const
           Plate::pLine&  pline       = engraver.get_target_line();
     const Sprites&       sprites     = engraver.get_sprites();
     const mpx_t&         head_height = engraver.get_head_height();
-    const EngraverParam& param       = engraver.get_parameters();
+    //const EngraverParam& param       = engraver.get_parameters();
     const ViewportParam& viewport    = engraver.get_viewport();
     
     // set default sprite-set
     pnote.sprite.setid = 0;
     
     // add additional distance
-    engraver.add_distance_after(viewport.umtopx_h(param.barline_distance), engraver.get_time());
-    pnote.absolutePos.front().x += viewport.umtopx_h(param.barline_distance);
+    //engraver.add_distance_after(viewport.umtopx_h(param.barline_distance), engraver.get_time());
+    //pnote.absolutePos.front().x += viewport.umtopx_h(param.barline_distance);
     mpx_t posx = pnote.absolutePos.front().x;
     
     // forget memorized accidentals
@@ -683,6 +731,34 @@ void Newline::engrave(EngraverState& engraver) const
 // rendering method (Newline)
 void Newline::render(Renderer&, const Plate::pNote&, const PressState&) const {}
 
+// sprite calculation (Chord, for heads)
+SpriteId Chord::get_sprite(const Sprites& spr) const
+{
+    if (sprite.setid == UNDEFINED)    // if the complete sprite is undefined
+    {
+        switch (val.exp)              // return the default sprite of the first set
+        {
+        case VALUE_BASE + 2: return SpriteId(0, spr.front().heads_longa);   // longa head
+        case VALUE_BASE + 1: return SpriteId(0, spr.front().heads_breve);   // breve head
+        case VALUE_BASE    : return SpriteId(0, spr.front().heads_whole);   // whole head
+        case VALUE_BASE - 1: return SpriteId(0, spr.front().heads_half);    // half head
+        default            : return SpriteId(0, spr.front().heads_quarter); // quarter head
+        };
+    };
+    if (sprite.spriteid == UNDEFINED) // if the set is defined, but the sprite is not
+    {
+        switch (val.exp)              // return the default sprite of the given set
+        {
+        case VALUE_BASE + 2: return SpriteId(sprite.setid, spr[sprite.setid].heads_longa);   // longa head
+        case VALUE_BASE + 1: return SpriteId(sprite.setid, spr[sprite.setid].heads_breve);   // breve head
+        case VALUE_BASE    : return SpriteId(sprite.setid, spr[sprite.setid].heads_whole);   // whole head
+        case VALUE_BASE - 1: return SpriteId(sprite.setid, spr[sprite.setid].heads_half);    // half head
+        default            : return SpriteId(sprite.setid, spr[sprite.setid].heads_quarter); // quarter head
+        };
+    };
+    return sprite;  // return the given sprite, if it is completely defined
+}
+
 // add the given head to the target "pNote" instance (and return true, if a cluster ocurred; for stem correction)
 static bool engrave_head(Head&          head,           // head to be engraved
                      Plate::pNote&      target,         // target pNote instance
@@ -731,8 +807,8 @@ static bool engrave_head(Head&          head,           // head to be engraved
         int offset = _round((-sprite_width * head.appearance.scale) / 1000.0);
         target.add_offset(offset);
         target.absolutePos.front().x -= offset;
-        engraver.add_offset(offset);
-        unscaledPos.x += 2 * offset;
+        //engraver.add_offset(offset);
+        unscaledPos.x += offset;
     };
     
     // add accidental
@@ -742,7 +818,7 @@ static bool engrave_head(Head&          head,           // head to be engraved
         target.attached.push_back(Plate::pNote::AttachablePtr(new Plate::pAttachable(head.accidental, unscaledPos)));
         
         // get sprite-id
-        target.attached.back()->sprite = Pick::sprite_id(sprites, head.accidental);
+        target.attached.back()->sprite = head.accidental.get_sprite(sprites);
         
         // get sprite and calculate scale factor
         const SpriteInfo& sprite = sprites[target.attached.back()->sprite];
@@ -846,7 +922,7 @@ void Chord::engrave(EngraverState& engraver) const
     const mpx_t&         head_height = engraver.get_head_height();
     
     // get sprite
-    pnote.sprite = Pick::sprite_id(sprites, this);
+    pnote.sprite = this->get_sprite(sprites);
     const SpriteInfo& headsprite = sprites[pnote.sprite];    // get sprite-info
     
     // calculate scale factors
@@ -1058,7 +1134,7 @@ void Chord::engrave(EngraverState& engraver) const
     {
         pnote.stem.x = pnote.absolutePos.front().x                      // base position
             + stem.x                                                    // offset for the sprite
-            - _round(stem_info.cluster ? 0 : stem_width * scale / 2);   // offset for the stem's width
+            - _round(stem_info.cluster ? 0 : stem_width * scale );   // offset for the stem's width
         
         pnote.stem.top = stem_info.top_pos + head_height / 2 - stem_len;
         pnote.stem.base = stem_info.base_pos + (stem_info.base_side ?
@@ -1068,7 +1144,7 @@ void Chord::engrave(EngraverState& engraver) const
     else                // downward stems are placed left of the chord
     {
         pnote.stem.x = pnote.absolutePos.front().x             // base position
-         + _round(stem_info.cluster ? stem.x : sprite_width - stem.x + stem_width * scale / 2);
+         + _round(stem_info.cluster ? stem.x : sprite_width - stem.x + stem_width * scale);
         
         pnote.stem.top = stem_info.base_pos + head_height / 2 - stem_len;
         pnote.stem.base = stem_info.top_pos + (stem_info.top_side ?
@@ -1597,6 +1673,36 @@ void Chord::render_beam(Renderer& renderer, const Plate::pNote& note, const Pres
     };
 }
 
+// sprite calculation (Rest)
+SpriteId Rest::get_sprite(const Sprites& spr) const
+{
+    if (sprite.setid == UNDEFINED)  // if the complete sprite is undefined
+    {
+        switch (val.exp)            // return the default sprite of the first set
+        {
+        case VALUE_BASE + 2: return SpriteId(0, spr.front().rests_longa);   // longa rest
+        case VALUE_BASE + 1: return SpriteId(0, spr.front().rests_breve);   // breve rest
+        case VALUE_BASE    : return SpriteId(0, spr.front().rests_whole);   // whole rest
+        case VALUE_BASE - 1: return SpriteId(0, spr.front().rests_half);    // half rest
+        case VALUE_BASE - 2: return SpriteId(0, spr.front().rests_quarter); // quarter rest
+        default            : return SpriteId(0, spr.front().flags_rest);    // flagged rest
+        };
+    };
+    if (sprite.spriteid == UNDEFINED)   // if the set is defined, but the sprite is not
+    {
+        switch (val.exp)                // return the default sprite of the given set
+        {
+        case VALUE_BASE + 2: return SpriteId(sprite.setid, spr[sprite.setid].rests_longa);   // longa rest
+        case VALUE_BASE + 1: return SpriteId(sprite.setid, spr[sprite.setid].rests_breve);   // breve rest
+        case VALUE_BASE    : return SpriteId(sprite.setid, spr[sprite.setid].rests_whole);   // whole rest
+        case VALUE_BASE - 1: return SpriteId(sprite.setid, spr[sprite.setid].rests_half);    // half rest
+        case VALUE_BASE - 2: return SpriteId(sprite.setid, spr[sprite.setid].rests_quarter); // quarter rest
+        default            : return SpriteId(sprite.setid, spr[sprite.setid].flags_rest);    // flagged rest
+        };
+    };
+    return sprite;  // return the given sprite, if it is completely defined
+}
+
 // engraving method (Rest)
 void Rest::engrave(EngraverState& engraver) const
 {
@@ -1606,7 +1712,7 @@ void Rest::engrave(EngraverState& engraver) const
     const mpx_t&         head_height = engraver.get_head_height();
     
     // get sprite and position-offset
-    pnote.sprite = Pick::sprite_id(sprites, this);
+    pnote.sprite = this->get_sprite(sprites);
     const SpriteInfo& restsprite = sprites[pnote.sprite];  // get sprite-info
     const double scale = head_height /                     // calculate scale factor
                          (sprites.head_height(pnote.sprite) * 1000.0);
@@ -1791,6 +1897,44 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
     };
 }
 
+// sprite calculation (Accidental)
+SpriteId Accidental::get_sprite(const Sprites& spr) const
+{
+    if (sprite.setid == UNDEFINED)
+    {
+        switch (type)
+        {
+        case Accidental::double_sharp:   return SpriteId(0, spr.front().accidentals_double_sharp);   break;
+        case Accidental::sharp_andahalf: return SpriteId(0, spr.front().accidentals_sharp_andahalf); break;
+        case Accidental::sharp:          return SpriteId(0, spr.front().accidentals_sharp);          break;
+        case Accidental::half_sharp:     return SpriteId(0, spr.front().accidentals_half_sharp);     break;
+        case Accidental::natural:        return SpriteId(0, spr.front().accidentals_natural);        break;
+        case Accidental::half_flat:      return SpriteId(0, spr.front().accidentals_half_flat);      break;
+        case Accidental::flat:           return SpriteId(0, spr.front().accidentals_flat);           break;
+        case Accidental::flat_andahalf:  return SpriteId(0, spr.front().accidentals_flat_andahalf);  break;
+        case Accidental::double_flat:    return SpriteId(0, spr.front().accidentals_double_flat);    break;
+        };
+    };
+
+    if (sprite.spriteid == UNDEFINED)
+    {
+        switch (type)
+        {
+        case Accidental::double_sharp:   return SpriteId(sprite.setid, spr[sprite.setid].accidentals_double_sharp);   break;
+        case Accidental::sharp_andahalf: return SpriteId(sprite.setid, spr[sprite.setid].accidentals_sharp_andahalf); break;
+        case Accidental::sharp:          return SpriteId(sprite.setid, spr[sprite.setid].accidentals_sharp);          break;
+        case Accidental::half_sharp:     return SpriteId(sprite.setid, spr[sprite.setid].accidentals_half_sharp);     break;
+        case Accidental::natural:        return SpriteId(sprite.setid, spr[sprite.setid].accidentals_natural);        break;
+        case Accidental::half_flat:      return SpriteId(sprite.setid, spr[sprite.setid].accidentals_half_flat);      break;
+        case Accidental::flat:           return SpriteId(sprite.setid, spr[sprite.setid].accidentals_flat);           break;
+        case Accidental::flat_andahalf:  return SpriteId(sprite.setid, spr[sprite.setid].accidentals_flat_andahalf);  break;
+        case Accidental::double_flat:    return SpriteId(sprite.setid, spr[sprite.setid].accidentals_double_flat);    break;
+        };
+    };
+    
+    return sprite;
+}
+
 // engraving method (Movable)
 void Movable::engrave(EngraverState& engraver) const
 {
@@ -1948,8 +2092,8 @@ static Plate::GphBox calculate_gphBox(const Plate::Pos& p1, const Plate::Pos& p2
         {       // non-monotonous => extremum
             tx1 = -px + sqrt(px * px - qx);
             tx2 = -px - sqrt(px * px - qx);
-            if (tx1 < 0 || tx1 > 1) tx1 = 0;    // cut to interval [0,1]
-            if (tx2 < 0 || tx2 > 1) tx2 = 0;
+            tx1 = (tx1 <= 0.0) ? 0.0 : ((tx1 >= 1.0) ? 1.0 : tx1);  // cut to interval [0,1]
+            tx2 = (tx2 <= 0.0) ? 0.0 : ((tx2 >= 1.0) ? 1.0 : tx2);
         }
         else    // monotonous => extremum in endpoint
         {
@@ -1959,8 +2103,8 @@ static Plate::GphBox calculate_gphBox(const Plate::Pos& p1, const Plate::Pos& p2
     else if (c2.x - 2 * c1.x + p1.x != 0)   // quadratic polynomial
     {
         tx1 = tx2 = -(c1.x - p1.x) / (2.0 * (c2.x - 2.0 * c1.x + p1.x));
-        if (tx1 < 0 || tx1 > 1) tx1 = 0;    // cut to interval [0,1]
-        if (tx2 < 0 || tx2 > 1) tx2 = 0;
+        tx1 = (tx1 <= 0.0) ? 0.0 : ((tx1 >= 1.0) ? 1.0 : tx1);  // cut to interval [0,1]
+        tx2 = (tx2 <= 0.0) ? 0.0 : ((tx2 >= 1.0) ? 1.0 : tx2);
     }
     else    tx1 = tx2 = 0;  // linear polynomial => extremum in endpoint
     
@@ -1973,8 +2117,8 @@ static Plate::GphBox calculate_gphBox(const Plate::Pos& p1, const Plate::Pos& p2
         {       // non-monotonous => extremum
             ty1 = -py + sqrt(py * py - qy);
             ty2 = -py - sqrt(py * py - qy);
-            if (ty1 < 0 || ty1 > 1) ty1 = 0;    // cut to interval [0,1]
-            if (ty2 < 0 || ty2 > 1) ty2 = 0;
+            ty1 = (ty1 <= 0.0) ? 0.0 : ((ty1 >= 1.0) ? 1.0 : ty1);  // cut to interval [0,1]
+            ty2 = (ty2 <= 0.0) ? 0.0 : ((ty2 >= 1.0) ? 1.0 : ty2);
         }
         else    // monotonous => extremum in endpoint
         {
@@ -1984,8 +2128,8 @@ static Plate::GphBox calculate_gphBox(const Plate::Pos& p1, const Plate::Pos& p2
     else if (c2.y - 2 * c1.y + p1.y != 0)   // quadratic polynomial
     {
         ty1 = ty2 = - (c1.y - p1.y) / (2.0 * (c2.y - 2.0 * c1.y + p1.y));
-        if (ty1 < 0 || ty1 > 1) ty1 = 0;    // cut to interval [0,1]
-        if (ty2 < 0 || ty2 > 1) ty2 = 0;
+        ty1 = (ty1 <= 0.0) ? 0.0 : ((ty1 >= 1.0) ? 1.0 : ty1);              // cut to interval [0,1]
+        ty2 = (ty2 <= 0.0) ? 0.0 : ((ty2 >= 1.0) ? 1.0 : ty2);
     }
     else    ty1 = ty2 = 0;  // linear polynomial => extremum in endpoint
     
@@ -2031,6 +2175,7 @@ void Slur::engrave(EngraverState& engraver, DurableInfo& info) const
     // calculate the graphical boundary box
     info.target->gphBox = calculate_gphBox(
             info.target->absolutePos,
+            info.target->endPos,
             Position<mpx_t>(
                 (this->unitX == METRIC)
                     ? info.target->absolutePos.x + _round(viewport.umtopx_h(this->control1.x))
@@ -2045,7 +2190,6 @@ void Slur::engrave(EngraverState& engraver, DurableInfo& info) const
                 (this->unitY == METRIC)
                     ? info.target->endPos.y + _round(viewport.umtopx_v(this->control2.y))
                     : info.target->endPos.y + _round((head_height * this->control2.y) / 1000.0)),
-            info.target->endPos,
             _round((this->thickness1 * viewport.umtopx_h(style.stem_width)) / 1000.0),
             _round((this->thickness2 * viewport.umtopx_h(style.stem_width)) / 1000.0));
     
