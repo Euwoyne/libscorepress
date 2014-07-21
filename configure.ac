@@ -41,45 +41,27 @@ LIBS_ORI="$LIBS"
 
 # check commandline arguments
 #AC_PRESERVE_HELP_ORDER
-AC_ARG_ENABLE([debug],
-            [AS_HELP_STRING([--disable-debug], [disable creation of debugging symbols])],
-            [without_debug="$withval"],
-            [without_debug="yes"])
-AC_ARG_ENABLE([profile],
-            [AS_HELP_STRING([--enable-profile], [enable profiling with GProf])],
-            [with_profile="$withval"],
-            [with_profile="no"])
-AC_ARG_ENABLE([fraction-check],
-            [AS_HELP_STRING([--enable-fraction-check], [enable overflow check for rational numbers])],
-            [with_sizecheck="$withval"],
-            [with_sizecheck="no"])
-AC_ARG_ENABLE([doxygen],
-            [AS_HELP_STRING([--enable-doxygen], [enable documentation compilation with doxygen])],
-            [with_doxygen="$withval"],
-            [with_doxygen="no"])
-AC_ARG_WITH([libxml2],
-            [AS_HELP_STRING([--with-libxml2], [location of the libxml2 headers [/usr/include/libxml2]])],
-            [with_libxml2="$withval"],
-            [with_libxml2="auto"])
-AC_ARG_WITH([rpath],
-            [AS_HELP_STRING([--with-rpath], [add the given path to the runtime library search path])],
-            [with_rpath="$withval"],
-            [with_rpath=""])
+AC_ARG_ENABLE([debug],          [AS_HELP_STRING([--disable-debug],         [disable creation of debugging symbols])])
+AC_ARG_ENABLE([profile],        [AS_HELP_STRING([--enable-profile],        [enable profiling with GProf])])
+AC_ARG_ENABLE([fraction-check], [AS_HELP_STRING([--enable-fraction-check], [enable overflow check for rational numbers])])
+AC_ARG_ENABLE([rpath],          [AS_HELP_STRING([--enable-rpath],          [enable use of the linkers -rpath flag])])
+AC_ARG_WITH(  [doxygen],        [AS_HELP_STRING([--with-doxygen],          [enable documentation compilation with doxygen])])
+AC_ARG_VAR(   [RPATH],          [add the given directory to the runtime library search path])
 
 AC_SUBST([MODE], [RELEASE])
 
-AS_IF([test "x$without_debug" != "xno"],
-      [AC_DEFINE([LIBSCOREPRESS_DEBUG], [0])],
-      [AC_DEFINE([LIBSCOREPRESS_DEBUG], [1])])
-AS_IF([test "x$with_profile" != "xno"],
-      [AC_SUBST([MODE], [PROFILE])])
-AS_IF([test "x$without_debug" != "xno"],
+AS_IF([test "x$enable_debug" != "xno"],
+      [AC_DEFINE([LIBSCOREPRESS_DEBUG], [1])],
+      [AC_DEFINE([LIBSCOREPRESS_DEBUG], [0])])
+AS_IF([test "x$enable_debug" != "xno"],
       [AC_SUBST([MODE], [DEBUG])])
-AS_IF([test "x$with_sizecheck" != "xno"],
+AS_IF([test "x$enable_profile" = "xyes"],
+      [AC_SUBST([MODE], [PROFILE])])
+AS_IF([test "x$enable_fraction_check" = "xyes"],
       [AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_ON}])],
       [AC_SUBST([FRACT_SIZECHECK], [\${SIZECHECK_OFF}])])
 
-AC_SUBST([USER_RPATH], [$with_rpath])
+AC_SUBST([RPATH], [$RPATH])
 
 # check shell
 AS_IF([test "x$SHELL" != "x"],
@@ -99,7 +81,7 @@ if test "x$CXX" = "xgcc" || test "x$CXX" = "xg++"; then
     AC_SUBST([PROFILE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
     AC_SUBST([RELEASE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
     AC_SUBST([SOFLAGS],    ["-fPIC -lc"])
-    AS_IF([test "x$with_rpath" == "xno"],
+    AS_IF([test "x$enable_rpath" = "xyes"],
         [AC_SUBST([RPATHFLAG],  [])],
         [AC_SUBST([RPATHFLAG],  ["-Wl,-rpath,"])])
     AC_SUBST([FSIZECHECK], ["-Wno-long-long"])
@@ -135,28 +117,32 @@ if test "x$CXX" = "xgcc" || test "x$CXX" = "xg++"; then
 fi
 
 # check for programs
-AC_PROG_INSTALL
 AC_PROG_LN_S
+AC_PATH_PROG([LDCONFIG],  [ldconfig])
+AC_PROG_INSTALL
+
 AC_PATH_PROG([AR],        [ar])
 AC_PATH_PROG([GZIP],      [gzip])
 AC_PATH_PROG([BZIP2],     [bzip2])
 AC_PATH_PROG([ZIP],       [zip])
-AC_PATH_PROG([LDCONFIG],  [ldconfig])
 AC_PATH_PROG([PKGCONFIG], [pkg-config])
 
+AC_PATH_PROG([MAKEINFO],  [makeinfo])
 AS_IF([test "x$with_doxygen" != "xno"],
-      [AS_IF([test -z "$with_doxygen"],
-             [AC_PATH_PROG([DOXYGEN], [doxygen])], 
-             [AC_SUBST([DOXYGEN], [$with_doxygen])])
-       AC_PATH_PROG([CHMOD], [chmod])
-       AC_PATH_PROG([LATEX], [pdflatex])
+      [AC_PATH_PROG([DOXYGEN],   [doxygen])
+       AC_PATH_PROG([CHMOD],     [chmod])
+       AC_PATH_PROG([LATEX],     [pdflatex])
        AC_PATH_PROG([MAKEINDEX], [makeindex])],
-      [AC_SUBST([DOXYGEN], [:])])
+      [AC_SUBST([DOXYGEN],       [:])])
 
+if test -z "$LDCONFIG";  then AC_SUBST([LDCONFIG],  [:]) fi
+
+if test -z "$AR";        then AC_SUBST([AR],        [:]) fi
 if test -z "$GZIP";      then AC_SUBST([GZIP],      [:]) fi
 if test -z "$BZIP2";     then AC_SUBST([BZIP2],     [:]) fi
 if test -z "$ZIP";       then AC_SUBST([ZIP],       [:]) fi
-if test -z "$LDCONFIG";  then AC_SUBST([LDCONFIG],  [:]) fi
+
+if test -z "$MAKEINFO";  then AC_SUBST([MAKEINFO],  [:]) fi
 if test -z "$DOXYGEN";   then AC_SUBST([DOXYGEN],   [:]) fi
 if test -z "$CHMOD";     then AC_SUBST([CHMOD],     [:]) fi
 if test -z "$LATEX";     then AC_SUBST([LATEX],     [:]) fi
@@ -164,19 +150,14 @@ if test -z "$MAKEINDEX"; then AC_SUBST([MAKEINDEX], [:]) fi
 
 # check libraries
 #   libxml2
-AC_SUBST([LIBXML])
-if test "x$with_libxml2" != "xauto"; then
-    AC_SUBST([LIBXML_CFLAGS], [-I$with_libxml2])
-    AC_SUBST([LIBXML_LIBS], [-lxml2])
-    AC_SUBST([LIBXML], [$with_libxml2])
-elif test -n "$PKGCONFIG" -a `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; then
+if test -n "$PKGCONFIG" -a `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; then
     AC_SUBST([LIBXML_CFLAGS], [`\${PKGCONFIG} libxml-2.0 --cflags`])
     AC_SUBST([LIBXML_LIBS], [`\${PKGCONFIG} libxml-2.0 --libs`])
 else
     AC_SUBST([LIBXML_CFLAGS], [-I/usr/include/libxml2])
     AC_SUBST([LIBXML_LIBS], [-lxml2])
 fi
-CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CXXFLAGS"
+CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CFLAGS"
 LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
 LIBS="$LIBS_ORI $LIBXML_LIBS"
 AC_CHECK_LIB([xml2], [xmlReaderForFile],, AC_MSG_ERROR([cannot find library 'libxml2']))
@@ -205,6 +186,7 @@ AS_IF([test "x$with_sizecheck" != "xno"],
 AC_TYPE_SIZE_T
 
 # check functions
+CPPFLAGS="$CPPFLAGS_ORI $LIBXML_CFLAGS"
 CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CFLAGS"
 LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
 LIBS="$LIBS_ORI $LIBXML_LIBS"
@@ -212,7 +194,6 @@ AC_CHECK_FUNC([xmlReaderForFile],, AC_MSG_ERROR([library 'libxml2' does not prov
 AC_CHECK_FUNC([xmlReaderForMemory],, AC_MSG_ERROR([library 'libxml2' does not provide the 'xmlReader' interface]))
 
 # create rpath
-RPATH=
 if test -n "$RPATHFLAG"; then
     buffer=$LIBXML_LIBS
     for path in $buffer $LIBXML; do
@@ -221,10 +202,13 @@ if test -n "$RPATHFLAG"; then
             LIBXML_LIBS="$LIBXML_LIBS $RPATHFLAG$path"
         fi
     done
-    AC_SUBST([LIBXML_LIBS], [$LIBXML_LIBS])
-
-    if test "x$with_rpath" != "xno" -a "x$with_rpath" != "xyes" -a "x$with_rpath" != "x"; then
-        RPATH="$RPATHFLAG$with_rpath"
+    
+    if test "x$RPATH" != "x"; then
+        buffer=
+        for path in $RPATH; do
+            buffer="$buffer $RPATHFLAG$path"
+        done
+        RPATH=$buffer
     fi
     
     for path in $LDFLAGS; do
@@ -233,8 +217,8 @@ if test -n "$RPATHFLAG"; then
             RPATH="$RPATH $RPATHFLAG$path"
         fi
     done
+    AC_SUBST([RPATH], [$RPATH])
 fi
-AC_SUBST([RPATH], [$RPATH])
 
 # generate output
 AC_SUBST([CPPFLAGS],[$CPPFLAGS_ORI])

@@ -26,20 +26,21 @@ SHELL           := @SHELL@
 SH              := @SH@
 CXX             := @CXX@
 
-AR              := @AR@
-ARFLAGS         := rcs
-GZIP            := @GZIP@
-BZIP2           := @BZIP2@
-ZIP             := @ZIP@
-
 LN              := @LN_S@
 LDCONFIG        := @LDCONFIG@
 INSTALL         := @INSTALL@
 INSTALL_DATA    := @INSTALL_DATA@
 INSTALL_PROGRAM := @INSTALL_PROGRAM@
 
-CHMOD           := @CHMOD@
+AR              := @AR@
+ARFLAGS         := rcs
+GZIP            := @GZIP@
+BZIP2           := @BZIP2@
+ZIP             := @ZIP@
+
+MAKEINFO        := @MAKEINFO@
 DOXYGEN         := @DOXYGEN@
+CHMOD           := @CHMOD@
 LATEX           := @LATEX@ -interaction=batchmode
 MAKEINDEX       := @MAKEINDEX@ -q
 
@@ -80,6 +81,7 @@ mandir            := @mandir@
 man3dir           := ${mandir}/man3
 manext            := .3
 docdir            := @docdir@
+infodir           := @infodir@
 htmldir           := @htmldir@
 dvidir            := @dvidir@
 pdfdir            := @pdfdir@
@@ -110,7 +112,6 @@ USER_CPPFLAGS := @CPPFLAGS@ ${CPPFLAGS}
 USER_LDFLAGS  := @LDFLAGS@ ${LDFLAGS}
 USER_LIBS     := @LIBS@ ${LIBS}
 USER_RPATH    := @RPATH@
-USER_LIBXML   := @LIBXML@
 
 CXXFLAGS := ${WARNINGS} ${CTRLFLAGS} ${${MODE}} ${USER_CXXFLAGS}
 CPPFLAGS := -I${includesrc} -I${builddir} ${USER_CPPFLAGS}
@@ -347,7 +348,7 @@ deps_user_cursor_cpp    := ${cppsrc}/user_cursor.cpp ${deps_user_cursor_hh} ${de
         install-so    install-a    install-data    install-headers    \
         uninstall-so  uninstall-a  uninstall-data  uninstall-headers  \
         \
-        doc  alldoc  man  html  pdf  dvi  ps  \
+        doc  alldoc  info  man  html  pdf  dvi  ps  \
         \
         install-doc    install-alldoc    install-readme    install-man    install-html    install-pdf    install-dvi    install-ps    \
         uninstall-doc  uninstall-alldoc  uninstall-readme  uninstall-man  uninstall-html  uninstall-pdf  uninstall-dvi  uninstall-ps  \
@@ -362,29 +363,29 @@ _default: all
 
 # install (collection targets)
 install-all:          install-so       install-a       install-data install-alldoc install-headers
-install-dev:          install-so       install-a       install-data install-readme install-headers
-install:              install-so       install-a       install-data install-readme
-install-strip:        install-so-strip install-a-strip install-data install-readme
+install-dev:          install-so       install-a       install-data install-doc    install-headers
+install:              install-so       install-a       install-data install-doc
+install-strip:        install-so-strip install-a-strip install-data install-doc
 install-nodoc:        install-so       install-a       install-data
-install-shared-dev:   install-so       install-data install-readme install-headers
-install-shared:       install-so       install-data install-readme
-install-shared-strip: install-so-strip install-data install-readme
+install-shared-dev:   install-so       install-data install-doc install-headers
+install-shared:       install-so       install-data install-doc
+install-shared-strip: install-so-strip install-data install-doc
 install-shared-nodoc: install-so       install-data
-install-static-dev:   install-a        install-data install-readme install-headers
-install-static:       install-a        install-data install-readme
-install-static-strip: install-a-strip  install-data install-readme install-headers
+install-static-dev:   install-a        install-data install-doc install-headers
+install-static:       install-a        install-data install-doc
+install-static-strip: install-a-strip  install-data install-doc install-headers
 install-static-nodoc: install-a        install-data
 
 # uninstall (collection targets)
 uninstall-all:          uninstall-so uninstall-a uninstall-data uninstall-alldoc uninstall-headers
-uninstall-dev:          uninstall-so uninstall-a uninstall-data uninstall-readme uninstall-headers
-uninstall:              uninstall-so uninstall-a uninstall-data uninstall-readme
+uninstall-dev:          uninstall-so uninstall-a uninstall-data uninstall-doc    uninstall-headers
+uninstall:              uninstall-so uninstall-a uninstall-data uninstall-doc
 uninstall-nodoc:        uninstall-so uninstall-a uninstall-data
-uninstall-shared-dev:   uninstall-so uninstall-data uninstall-readme uninstall-headers
-uninstall-shared:       uninstall-so uninstall-data uninstall-readme
+uninstall-shared-dev:   uninstall-so uninstall-data uninstall-doc uninstall-headers
+uninstall-shared:       uninstall-so uninstall-data uninstall-doc
 uninstall-shared-nodoc: uninstall-so uninstall-data
-uninstall-static-dev:   uninstall-a  uninstall-data uninstall-readme uninstall-headers
-uninstall-static:       uninstall-a  uninstall-data uninstall-readme
+uninstall-static-dev:   uninstall-a  uninstall-data uninstall-doc uninstall-headers
+uninstall-static:       uninstall-a  uninstall-data uninstall-doc
 uninstall-static-nodoc: uninstall-a  uninstall-data
 
 # library (build)
@@ -462,9 +463,18 @@ ${doxyfile}: ${doxy_ac}
 	     -e 's|@MAKEINDEX[@]|${MAKEINDEX}|g'            \
 	     < ${doxy_ac} > ${doxyfile}
 
-doc:    man pdf
-alldoc: man pdf html dvi ps
+doc:    readme info
+alldoc: readme info man pdf html dvi ps
 readme:
+
+info: ${docsrc}/scorepress.info
+${docsrc}/scorepress.info: ${docsrc}/scorepress.texi ${docsrc}/intro.texi ${docsrc}/tutorial.texi ${docsrc}/api.texi ${docsrc}/eupl.texi
+	@echo "Generating:  Info Files..."
+	@if test "${MAKEINFO}" = ":"; then                                       \
+	     echo "    FAILED";                                                  \
+	 else                                                                    \
+	     ${MAKEINFO} ${docsrc}/scorepress.texi -o ${docsrc}/scorepress.info; \
+	 fi
 
 man: ${objdir}/man/man3
 ${objdir}/man/man3: ${doxyfile} ${objdir}
@@ -473,7 +483,7 @@ ${objdir}/man/man3: ${doxyfile} ${objdir}
 	     echo "    FAILED (no DoxyGen installed)";                  \
 	 else                                                           \
 	     (cat ${doxyfile}; echo "GENERATE_MAN=yes") | ${DOXYGEN} -; \
-	     (cd ${objdir}/man/man3; ${GZIP} * 2> /dev/null)            \
+	     (cd ${objdir}/man/man3; ${GZIP} * 2> /dev/null);           \
 	 fi
 
 html: ${objdir}/html
@@ -536,13 +546,18 @@ ${objdir}/refman.ps: ${objdir}/refman.dvi
 	 fi
 
 # documentation (install)
-install-doc:    install-readme install-man install-html
-install-alldoc: install-readme install-man install-html install-pdf install-dvi install-ps
+install-doc:    install-readme install-info
+install-alldoc: install-readme install-info install-man install-html install-pdf install-dvi install-ps
 
 install-readme: ${DESTDIR}${docdir}
 	$(NORMAL_INSTALL)
 	@echo "Installing:  Base Documentation"
 	@${INSTALL_DATA} ${miscfiles} ${DESTDIR}${docdir}
+
+install-info: ${DESTDIR}${infodir} info
+	$(NORMAL_INSTALL)
+	@echo "Installing:  Info Files"
+	@${INSTALL_DATA} ${docsrc}/scorepress.info ${DESTDIR}${infodir}/scorepress.info
 
 install-man: ${DESTDIR}${man3dir} man
 	$(NORMAL_INSTALL)
@@ -576,8 +591,8 @@ install-ps: ${DESTDIR}${psdir} ps
 	                               || echo "    ERROR: Documentation not built. Please run \"make ps\"."
 
 # documentation (uninstall)
-uninstall-doc:    uninstall-readme uninstall-man uninstall-html
-uninstall-alldoc: uninstall-readme uninstall-man uninstall-html uninstall-pdf uninstall-dvi uninstall-ps
+uninstall-doc:    uninstall-readme uninstall-info
+uninstall-alldoc: uninstall-readme uninstall-info uninstall-man uninstall-html uninstall-pdf uninstall-dvi uninstall-ps
 
 uninstall-readme:
 	$(NORMAL_UNINSTALL)
@@ -589,6 +604,11 @@ uninstall-readme:
 	@-rm -f ${DESTDIR}${docdir}/README
 	@-rm -f ${DESTDIR}${docdir}/TODO
 	@test -d ${DESTDIR}${docdir} && (rmdir ${DESTDIR}${docdir} 2> /dev/null || echo "    WARNING: \"${DESTDIR}${docdir}\" is not empty") || :
+
+uninstall-info:
+	$(NORMAL_UNINSTALL)
+	@test -f ${DESTDIR}${infodir}/scorepress.info && echo "Removing:  Info Files" || :
+	@-rm -f ${DESTDIR}${infodir}/scorepress.info
 
 uninstall-man:
 	$(NORMAL_UNINSTALL)
@@ -657,6 +677,8 @@ maintainer-clean:
 	@echo 'deletes files that may need special tools to rebuild.'
 	@echo
 	@${MAKE} -s distclean
+	@echo "  Deleting:  info files..."
+	@-rm -f ${docsrc}/scorepress.info
 
 # user information
 help:
@@ -667,54 +689,60 @@ help:
 
 help-targets:
 	@echo "General Compilation:"
-	@echo "  all               compile shared and static libraries"
-	@echo "  shared            compile the shared library"
-	@echo "  static            compile the static library"
+	@echo "  all                compile shared and static libraries"
+	@echo "  shared             compile the shared library"
+	@echo "  static             compile the static library"
 	@echo
 	@echo "Library Installation:"
-	@echo "  install-so        install shared library  [LIBDIR]"
-	@echo "  install-so-strip  install stripped .so    [LIBDIR]"
-	@echo "  install-a         install static library  [LIBDIR]"
-	@echo "  install-a-strip   install stripped .a     [LIBDIR]"
-	@echo "  install-data      install data files      [DATADIR_PKG]"
-	@echo "  install-headers   install headers         [INCLUDEDIR_PKG]"
+	@echo "  install-so         install shared library  [LIBDIR]"
+	@echo "  install-so-strip   install stripped .so    [LIBDIR]"
+	@echo "  install-a          install static library  [LIBDIR]"
+	@echo "  install-a-strip    install stripped .a     [LIBDIR]"
+	@echo "  install-data       install data files      [DATADIR_PKG]"
+	@echo "  install-headers    install headers         [INCLUDEDIR_PKG]"
 	@echo
 	@echo "Documentation:"
-	@echo "  readme            readme and licence information (NOOP)"
-	@if test "${DOXYGEN}" != ":"; then                                      \
-	     echo "  doc               generate Manpages and HTML";             \
-	     echo "  alldoc            generate documentation in every format"; \
-	     echo "";                                                           \
-	     echo "  man               generate Manpages (section 3)";          \
-	     echo "  html              generate documentation as HTML";         \
-	     echo "  pdf               generate documentation as PDF";          \
-	     echo "  dvi               generate documentation as DVI";          \
-	     echo "  ps                generate documentation as PostScript";   \
+	@echo "  doc                generate readme and info files"
+	@echo "  readme             readme and licence information (NOOP)"
+	@if test "${DOXYGEN}" != ":"; then                                       \
+	     echo "  alldoc             generate documentation in every format"; \
+	     echo "";                                                            \
+	 fi
+	@echo "  info               generate info files"
+	@if test "${DOXYGEN}" != ":"; then                                       \
+	     echo "  man                generate Manpages (section 3)";          \
+	     echo "  html               generate documentation as HTML";         \
+	     echo "  pdf                generate documentation as PDF";          \
+	     echo "  dvi                generate documentation as DVI";          \
+	     echo "  ps                 generate documentation as PostScript";   \
 	 fi
 	@echo
 	@echo "Documentation Installation:"
-	@echo "  install-readme    readme and licence information [DOCDIR]"
-	@if test "${DOXYGEN}" != ":"; then                                                  \
-	     echo "  install-doc       install Manpages and HTML";                          \
-	     echo "  install-alldoc    install documentation in every format";              \
-	     echo "";                                                                       \
-	     echo "  install-man       install Manpages (section 3)         [MANDIR/man3]"; \
-	     echo "  install-html      install documentation as HTML        [HTMLDIR]";     \
-	     echo "  install-pdf       install documentation as PDF         [PDFDIR]";      \
-	     echo "  install-dvi       install documentation as DVI         [DVIDIR]";      \
-	     echo "  install-ps        install documentation as PostScript  [PSDIR]";       \
+	@echo "  install-doc        install readme and info files"
+	@echo "  install-readme     readme and licence information       [DOCDIR]"
+	@if test "${DOXYGEN}" != ":"; then                                                   \
+	     echo "  install-alldoc     install documentation in every format";              \
+	     echo "";                                                                        \
+	 fi
+	@echo "  install-info       install info files                   [INFODIR]";
+	@if test "${DOXYGEN}" != ":"; then                                                   \
+	     echo "  install-man        install Manpages (section 3)         [MANDIR/man3]"; \
+	     echo "  install-html       install documentation as HTML        [HTMLDIR]";     \
+	     echo "  install-pdf        install documentation as PDF         [PDFDIR]";      \
+	     echo "  install-dvi        install documentation as DVI         [DVIDIR]";      \
+	     echo "  install-ps         install documentation as PostScript  [PSDIR]";       \
 	 fi
 	@echo
 	@echo "General Installation:  (collections of installation targets)"
 	@echo "  install-all             installs -so, -a, -data, -alldoc, -headers"
-	@echo "  install-dev             installs -so, -a, -data, -readme, -headers"
-	@echo "  install                 installs -so, -a, -data, -readme"
+	@echo "  install-dev             installs -so, -a, -data, -doc,    -headers"
+	@echo "  install                 installs -so, -a, -data, -doc"
 	@echo "  install-nodoc           installs -so, -a, -data"
-	@echo "  install-shared-dev      installs -so,     -data, -readme, -headers"
-	@echo "  install-shared          installs -so,     -data, -readme"
+	@echo "  install-shared-dev      installs -so,     -data, -doc,    -headers"
+	@echo "  install-shared          installs -so,     -data, -doc"
 	@echo "  install-shared-nodoc    installs -so,     -data"
-	@echo "  install-static-dev      installs      -a, -data, -readme, -headers"
-	@echo "  install-static          installs      -a, -data, -readme"
+	@echo "  install-static-dev      installs      -a, -data, -doc,    -headers"
+	@echo "  install-static          installs      -a, -data, -doc"
 	@echo "  install-static-nodoc    installs      -a, -data"
 	@echo
 	@echo "  install-strip           like \"install\" but strips the .so and .a files"
@@ -745,29 +773,31 @@ help-targets:
 
 help-directories:
 	@echo "Installation Directories:"
-	@echo "  PREFIX           ${prefix}"
-	@echo "  EPREFIX          ${exec_prefix}"
+	@echo "  PREFIX            ${prefix}"
+	@echo "  EPREFIX           ${exec_prefix}"
 	@echo
-	@echo -n "  LIBDIR           "
+	@echo -n "  LIBDIR            "
 	@echo ${libdir} | sed -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|"
-	@echo -n "  DATADIR_PKG      "
+	@echo -n "  DATADIR_PKG       "
 	@echo ${datadir_pkg} | sed -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|"
-	@echo -n "  INCLUDEDIR_PKG   "
+	@echo -n "  INCLUDEDIR_PKG    "
 	@echo ${includedir_pkg} | sed -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|"
 	@echo
-	@echo -n "  DATADIR          "
+	@echo -n "  DATADIR           "
 	@echo "${datadir}" | sed -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  DOCDIR           "
+	@echo -n "  DOCDIR            "
 	@echo "${docdir}" | sed -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  MANDIR           "
+	@echo -n "  INFODIR           "
+	@echo "${infodir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
+	@echo -n "  MANDIR            "
 	@echo "${mandir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  HTMLDIR          "
+	@echo -n "  HTMLDIR           "
 	@echo "${htmldir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  PDFDIR           "
+	@echo -n "  PDFDIR            "
 	@echo "${pdfdir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  DVIDIR           "
+	@echo -n "  DVIDIR            "
 	@echo "${dvidir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  PSDIR            "
+	@echo -n "  PSDIR             "
 	@echo "${psdir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
 	@echo
 
@@ -785,6 +815,7 @@ configinfo:
 	@echo "  oldincludedir: ${oldincludedir}"
 	@echo "  mandir:        ${mandir}"
 	@echo "  docdir:        ${docdir}"
+	@echo "  infodir:       ${infodir}"
 	@echo "  htmldir:       ${htmldir}"
 	@echo "  dvidir:        ${dvidir}"
 	@echo "  pdfdir:        ${pdfdir}"
@@ -801,7 +832,6 @@ configinfo:
 	@if test "${FRACT_SIZECHECK}" = "SIZECHECK_ON";                          \
 	                                then echo "  --enable-fraction-check"; fi
 	@if test "${DOXYGEN}" != ":";   then echo "  --enable-doxygen";        fi
-	@if test -n "${USER_LIBXML}";   then echo "  --with-libxml2=${USER_LIBXML}"; fi
 	@if test -n "${USER_RPATH}";    then echo "  --with-rpath=${USER_RPATH}";    fi
 	@echo
 
@@ -815,6 +845,7 @@ confargs := --srcdir=${srcdir}               \
             --oldincludedir=${oldincludedir} \
             --mandir=${mandir}               \
             --docdir=${docdir}               \
+            --infodir=${infodir}             \
             --htmldir=${htmldir}             \
             --dvidir=${dvidir}               \
             --pdfdir=${pdfdir}               \
@@ -822,17 +853,19 @@ confargs := --srcdir=${srcdir}               \
 
 Makefile:
 	@echo -n "${confargs} " > /tmp/$$.confargs
-	@if test "${MODE}" = "DEBUG";   then echo -n "--enable-debug "   >> /tmp/$$.confargs; fi
-	@if test "${MODE}" = "PROFILE"; then echo -n "--enable-profile " >> /tmp/$$.confargs; fi
+	@if test "${MODE}" = "RELEASE"; then echo -n "--disable-debug "           >> /tmp/$$.confargs; fi
+	@if test "${MODE}" = "PROFILE"; then echo -n "--enable-profile "          >> /tmp/$$.confargs; fi
 	@if test "${FRACT_SIZECHECK}" = "SIZECHECK_ON"; \
-	                                then echo -n "--enable-fraction-check "       >> /tmp/$$.confargs; fi
-	@if test "${DOXYGEN}" != ":";   then echo -n "--enable-doxygen "              >> /tmp/$$.confargs; fi
-	@if test -n "${USER_LIBXML}";   then echo -n "--with-libxml2=${USER_LIBXML} " >> /tmp/$$.confargs; fi
+	                                then echo -n "--enable-fraction-check "   >> /tmp/$$.confargs; fi
+	@if test -n "${RPATHFLAG}";     then echo -n "--enable-rpath "            >> /tmp/$$.confargs; fi
+	@if test "${DOXYGEN}" != ":";   then echo -n "--with-doxygen "            >> /tmp/$$.confargs; fi
 	
 	@echo -n > /tmp/$$.envvars
-	@if test -n "${USER_CFLAGS}";  then echo -n "CFLAGS=${USER_CFLAGS} "   >> /tmp/$$.envvars; fi
-	@if test -n "${USER_LIBS}";    then echo -n "LIBS=${USER_LIBS} "       >> /tmp/$$.envvars; fi
-	@if test -n "${USER_LDFLAGS}"; then echo -n "LDFLAGS=${USER_LDFLAGS} " >> /tmp/$$.envvars; fi
+	@if test -n "${USER_CXXFLAGS}"; then echo -n "CXXFLAGS=${USER_CXXFLAGS} " >> /tmp/$$.envvars; fi
+	@if test -n "${USER_CPPFLAGS}"; then echo -n "CPPFLAGS=${USER_CPPFLAGS} " >> /tmp/$$.envvars; fi
+	@if test -n "${USER_LDFLAGS}";  then echo -n "LDFLAGS=${USER_LDFLAGS} "   >> /tmp/$$.envvars; fi
+	@if test -n "${USER_LIBS}";     then echo -n "LIBS=${USER_LIBS} "         >> /tmp/$$.envvars; fi
+	@if test -n "${USER_RPATH}";    then echo -n "RPATH=${USER_RPATH} "       >> /tmp/$$.envvars; fi
 	
 	@echo "Running configure script..."
 	@(eval `cat /tmp/$$.envvars` ${srcdir}/configure `cat /tmp/$$.confargs`)

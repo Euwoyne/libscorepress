@@ -621,27 +621,26 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-RPATH
 EGREP
 GREP
 CXXCPP
 LIBXML_LIBS
 LIBXML_CFLAGS
-LIBXML
 MAKEINDEX
 LATEX
 CHMOD
 DOXYGEN
+MAKEINFO
 PKGCONFIG
-LDCONFIG
 ZIP
 BZIP2
 GZIP
 AR
-LN_S
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
+LDCONFIG
+LN_S
 CTRLFLAGS
 WARNINGS
 FSIZECHECK
@@ -661,9 +660,9 @@ LDFLAGS
 CXXFLAGS
 CXX
 SH
-USER_RPATH
 FRACT_SIZECHECK
 MODE
+RPATH
 PACKAGE_VERSION_MAIN
 target_alias
 host_alias
@@ -709,13 +708,13 @@ enable_option_checking
 enable_debug
 enable_profile
 enable_fraction_check
-enable_doxygen
-with_libxml2
-with_rpath
+enable_rpath
+with_doxygen
 '
       ac_precious_vars='build_alias
 host_alias
 target_alias
+RPATH
 CXX
 CXXFLAGS
 LDFLAGS
@@ -1335,17 +1334,15 @@ Optional Features:
   --disable-debug         disable creation of debugging symbols
   --enable-profile        enable profiling with GProf
   --enable-fraction-check enable overflow check for rational numbers
-  --enable-doxygen        enable documentation compilation with doxygen
+  --enable-rpath          enable use of the linkers -rpath flag
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-libxml2          location of the libxml2 headers
-                          [/usr/include/libxml2]
-  --with-rpath            add the given path to the runtime library search
-                          path
+  --with-doxygen          enable documentation compilation with doxygen
 
 Some influential environment variables:
+  RPATH       add the given directory to the runtime library search path
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -2224,68 +2221,51 @@ LIBS_ORI="$LIBS"
 #AC_PRESERVE_HELP_ORDER
 # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then :
-  enableval=$enable_debug; with_debug="$withval"
-else
-  with_debug="yes"
+  enableval=$enable_debug;
 fi
 
 # Check whether --enable-profile was given.
 if test "${enable_profile+set}" = set; then :
-  enableval=$enable_profile; with_profile="$withval"
-else
-  with_profile="no"
+  enableval=$enable_profile;
 fi
 
 # Check whether --enable-fraction-check was given.
 if test "${enable_fraction_check+set}" = set; then :
-  enableval=$enable_fraction_check; with_sizecheck="$withval"
-else
-  with_sizecheck="no"
+  enableval=$enable_fraction_check;
 fi
 
-# Check whether --enable-doxygen was given.
-if test "${enable_doxygen+set}" = set; then :
-  enableval=$enable_doxygen; with_doxygen="$withval"
-else
-  with_doxygen="no"
+# Check whether --enable-rpath was given.
+if test "${enable_rpath+set}" = set; then :
+  enableval=$enable_rpath;
 fi
 
 
-# Check whether --with-libxml2 was given.
-if test "${with_libxml2+set}" = set; then :
-  withval=$with_libxml2; with_libxml2="$withval"
-else
-  with_libxml2="auto"
+# Check whether --with-doxygen was given.
+if test "${with_doxygen+set}" = set; then :
+  withval=$with_doxygen;
 fi
 
-
-# Check whether --with-rpath was given.
-if test "${with_rpath+set}" = set; then :
-  withval=$with_rpath; with_rpath="$withval"
-else
-  with_rpath=""
-fi
 
 
 MODE=RELEASE
 
 
-if test "x$with_debug" != "xno"; then :
+if test "x$enable_debug" != "xno"; then :
   $as_echo "#define LIBSCOREPRESS_DEBUG 1" >>confdefs.h
 
 else
   $as_echo "#define LIBSCOREPRESS_DEBUG 0" >>confdefs.h
 
 fi
-if test "x$with_profile" != "xno"; then :
-  MODE=PROFILE
-
-fi
-if test "x$with_debug" != "xno"; then :
+if test "x$enable_debug" != "xno"; then :
   MODE=DEBUG
 
 fi
-if test "x$with_sizecheck" != "xno"; then :
+if test "x$enable_profile" = "xyes"; then :
+  MODE=PROFILE
+
+fi
+if test "x$enable_fraction_check" = "xyes"; then :
   FRACT_SIZECHECK=\${SIZECHECK_ON}
 
 else
@@ -2293,7 +2273,7 @@ else
 
 fi
 
-USER_RPATH=$with_rpath
+RPATH=$RPATH
 
 
 # check shell
@@ -2905,7 +2885,7 @@ fi
 
     SOFLAGS="-fPIC -lc"
 
-    if test "x$with_rpath" == "xno"; then :
+    if test "x$enable_rpath" = "xyes"; then :
 
 else
   RPATHFLAG="-Wl,-rpath,"
@@ -2951,6 +2931,57 @@ fi
 fi
 
 # check for programs
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
+$as_echo_n "checking whether ln -s works... " >&6; }
+LN_S=$as_ln_s
+if test "$LN_S" = "ln -s"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, using $LN_S" >&5
+$as_echo "no, using $LN_S" >&6; }
+fi
+
+# Extract the first word of "ldconfig", so it can be a program name with args.
+set dummy ldconfig; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_LDCONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $LDCONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LDCONFIG="$LDCONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LDCONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+LDCONFIG=$ac_cv_path_LDCONFIG
+if test -n "$LDCONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDCONFIG" >&5
+$as_echo "$LDCONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
   if test -f "$ac_dir/install-sh"; then
@@ -3073,16 +3104,6 @@ test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
 
 test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
-$as_echo_n "checking whether ln -s works... " >&6; }
-LN_S=$as_ln_s
-if test "$LN_S" = "ln -s"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, using $LN_S" >&5
-$as_echo "no, using $LN_S" >&6; }
-fi
 
 # Extract the first word of "ar", so it can be a program name with args.
 set dummy ar; ac_word=$2
@@ -3244,46 +3265,6 @@ $as_echo "no" >&6; }
 fi
 
 
-# Extract the first word of "ldconfig", so it can be a program name with args.
-set dummy ldconfig; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_LDCONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $LDCONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_LDCONFIG="$LDCONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_LDCONFIG="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-LDCONFIG=$ac_cv_path_LDCONFIG
-if test -n "$LDCONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDCONFIG" >&5
-$as_echo "$LDCONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
 # Extract the first word of "pkg-config", so it can be a program name with args.
 set dummy pkg-config; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -3325,8 +3306,47 @@ fi
 
 
 
+# Extract the first word of "makeinfo", so it can be a program name with args.
+set dummy makeinfo; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MAKEINFO+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MAKEINFO in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MAKEINFO="$MAKEINFO" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MAKEINFO="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MAKEINFO=$ac_cv_path_MAKEINFO
+if test -n "$MAKEINFO"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MAKEINFO" >&5
+$as_echo "$MAKEINFO" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 if test "x$with_doxygen" != "xno"; then :
-  if test -z "$with_doxygen"; then :
   # Extract the first word of "doxygen", so it can be a program name with args.
 set dummy doxygen; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -3367,10 +3387,6 @@ $as_echo "no" >&6; }
 fi
 
 
-else
-  DOXYGEN=$with_doxygen
-
-fi
        # Extract the first word of "chmod", so it can be a program name with args.
 set dummy chmod; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -3496,13 +3512,19 @@ else
 
 fi
 
+if test -z "$LDCONFIG";  then LDCONFIG=:
+ fi
+
+if test -z "$AR";        then AR=:
+ fi
 if test -z "$GZIP";      then GZIP=:
  fi
 if test -z "$BZIP2";     then BZIP2=:
  fi
 if test -z "$ZIP";       then ZIP=:
  fi
-if test -z "$LDCONFIG";  then LDCONFIG=:
+
+if test -z "$MAKEINFO";  then MAKEINFO=:
  fi
 if test -z "$DOXYGEN";   then DOXYGEN=:
  fi
@@ -3515,15 +3537,7 @@ if test -z "$MAKEINDEX"; then MAKEINDEX=:
 
 # check libraries
 #   libxml2
-
-if test "x$with_libxml2" != "xauto"; then
-    LIBXML_CFLAGS=-I$with_libxml2
-
-    LIBXML_LIBS=-lxml2
-
-    LIBXML=$with_libxml2
-
-elif test -n "$PKGCONFIG" -a `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; then
+if test -n "$PKGCONFIG" -a `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; then
     LIBXML_CFLAGS=`\${PKGCONFIG} libxml-2.0 --cflags`
 
     LIBXML_LIBS=`\${PKGCONFIG} libxml-2.0 --libs`
@@ -3534,7 +3548,7 @@ else
     LIBXML_LIBS=-lxml2
 
 fi
-CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CXXFLAGS"
+CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CFLAGS"
 LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
 LIBS="$LIBS_ORI $LIBXML_LIBS"
 
@@ -4221,6 +4235,7 @@ fi
 
 
 # check functions
+CPPFLAGS="$CPPFLAGS_ORI $LIBXML_CFLAGS"
 CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CFLAGS"
 LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
 LIBS="$LIBS_ORI $LIBXML_LIBS"
@@ -4240,7 +4255,6 @@ fi
 
 
 # create rpath
-RPATH=
 if test -n "$RPATHFLAG"; then
     buffer=$LIBXML_LIBS
     for path in $buffer $LIBXML; do
@@ -4249,11 +4263,13 @@ if test -n "$RPATHFLAG"; then
             LIBXML_LIBS="$LIBXML_LIBS $RPATHFLAG$path"
         fi
     done
-    LIBXML_LIBS=$LIBXML_LIBS
 
-
-    if test "x$with_rpath" != "xno" -a "x$with_rpath" != "xyes" -a "x$with_rpath" != "x"; then
-        RPATH="$RPATHFLAG$with_rpath"
+    if test "x$RPATH" != "x"; then
+        buffer=
+        for path in $RPATH; do
+            buffer="$buffer $RPATHFLAG$path"
+        done
+        RPATH=$buffer
     fi
 
     for path in $LDFLAGS; do
@@ -4262,9 +4278,9 @@ if test -n "$RPATHFLAG"; then
             RPATH="$RPATH $RPATHFLAG$path"
         fi
     done
-fi
-RPATH=$RPATH
+    RPATH=$RPATH
 
+fi
 
 # generate output
 CPPFLAGS=$CPPFLAGS_ORI
