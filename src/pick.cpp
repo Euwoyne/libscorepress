@@ -500,7 +500,7 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
 }
 
 // prepare next note to be engraved
-void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t /*w*/)
+void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
 {
     if (cursors.empty())
     {
@@ -525,7 +525,10 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t /*w*/)
             if (engravedNote.time == nextNote.time)
                 nextNote.pos = engravedNote.pos;
         }
-        else nextNote.pos = engravedNote.npos;
+        else if (engravedNote->is(Class::BARLINE))
+            nextNote.pos = engravedNote.pos;
+        else
+            nextNote.pos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
         //else if (engravedNote->is(Class::BARLINE))
         //    nextNote.pos = engravedNote.npos - viewport->umtopx_h(param->barline_distance);
         //else if (nextNote.pos - engravedNote.pos - w < viewport->umtopx_h(param->min_distance))
@@ -577,7 +580,7 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t /*w*/)
         if (nextNote.pos < valpos) nextNote.pos = valpos;}
         
         // check minimal distance
-        {const mpx_t minpos = engravedNote.npos + viewport->umtopx_h(param->min_distance);
+        {const mpx_t minpos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
         if (nextNote.pos < minpos) nextNote.pos = minpos;}
     };
     
@@ -924,7 +927,7 @@ bool Pick::eov() const
 // peek at the next note in the voice (NULL if not there)
 const Pick::VoiceCursor* Pick::peek(const Voice& v) const
 {
-    for (CQueue::const_iterator i = ++cursors.begin(); i != cursors.end(); ++i)
+    for (CQueue::const_iterator i = cursors.begin(); i != cursors.end(); ++i)
         if (&(*i)->voice() == &v) return &**i;
     for (CQueue::const_iterator i = next_cursors.begin(); i != next_cursors.end(); ++i)
         if (&(*i)->voice() == &v) return &**i;
