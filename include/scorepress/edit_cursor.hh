@@ -133,7 +133,7 @@ class SCOREPRESS_API EditCursor : public UserCursor
     void set_stem_length_auto()    throw(Cursor::IllegalObjectTypeException);
     void set_stem_dir_auto()       throw(Cursor::IllegalObjectTypeException);
     
-    // set auto accidental to current object
+    // accidental control
     void set_accidental_auto() throw(Cursor::IllegalObjectTypeException);
 };
 

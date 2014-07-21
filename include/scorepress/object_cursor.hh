@@ -129,9 +129,9 @@ class SCOREPRESS_API ObjectCursor : public Reengraveable
     const Staff&              get_staff()   const;  // return parent staff
     
     // reengraving interface
-    virtual void setup_reengrave(ReengraveInfo& info);  // setup reengraving triggers
-    virtual bool reengrave(EngraverState& state);       // reengraving function
-    virtual void finish_reengrave();                    // reengrave finishing function (NOOP)
+    virtual void   setup_reengrave(ReengraveInfo& info);    // setup reengraving triggers
+    virtual Status reengrave(EngraverState& state);         // reengraving function
+    virtual void   finish_reengrave();                      // reengrave finishing function (NOOP)
     /*
     // moving interface
     bool prepare_move(Plate::Pos offset, Grid grid);    // prepare movement (returns, if offset changed)

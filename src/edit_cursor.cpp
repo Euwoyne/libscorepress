@@ -22,6 +22,9 @@
 
 using namespace ScorePress;
 
+//  helper functions
+// ------------------
+
 inline int _round(const double d) {return static_cast<int>(d + 0.5);}
 inline value_t get_value(const StaffObject* obj) {return (obj->is(Class::NOTEOBJECT)) ? static_cast<const NoteObject*>(obj)->value() : value_t(0);}
 
@@ -244,7 +247,8 @@ bool EditCursor::for_each_chord_in_beam_do(VoiceCursor& cur, void (*func)(Chord&
     return true;
 }
 
-// constructor
+//  constructor
+// -------------
 EditCursor::EditCursor(Document& _document, Pageset& _pageset,
                        const InterfaceParam& _param, const StyleParam& _style, const ViewportParam& _viewport)
     : UserCursor(_document, _pageset), param(_param), style(_style), viewport(_viewport) {}
@@ -305,7 +309,6 @@ void EditCursor::create_object_cursor(ObjectCursor& objcursor)
     if (cursor == vcursors.end()) throw NotValidException();
     objcursor.set_parent(cursor->note->get_visible(), *cursor->pnote, *cursor->pvoice, *line, page->pageno);
 }
-
 
 //  insertion interface
 // ---------------------
@@ -598,6 +601,9 @@ void EditCursor::remove_break() throw(NotValidException)
         return remove_pagebreak();                  //     remove pagebreak, create newline
 }
 
+//  voice control
+// ---------------
+
 // add empty voice
 void EditCursor::add_voice() throw(NotValidException, Cursor::IllegalObjectTypeException)
 {
@@ -621,6 +627,9 @@ void EditCursor::add_voice() throw(NotValidException, Cursor::IllegalObjectTypeE
         };
     };
 }
+
+//  stem comtrol
+// --------------
 
 static void _add_stem_length(Chord& chord, const int pohh, int*)
 {
@@ -857,6 +866,9 @@ void EditCursor::set_stem_dir_auto() throw(Cursor::IllegalObjectTypeException)
         break;
     };
 }
+
+//  accidental control
+// --------------------
 
 // set auto accidental to current object
 void EditCursor::set_accidental_auto()  throw(Cursor::IllegalObjectTypeException)

@@ -237,6 +237,14 @@ void EngraverState::engrave()
         pvoice->context.set_buffer_xpos(pnote->gphBox.right());
     };
     
+    // update external data
+    if (reengrave_info)
+    {
+        reengrave_info->update(cursor.original(), *this);
+        if (reengrave_info->is_empty())
+            reengrave_info = NULL;
+    };
+    
     // insert barline
     if (param->auto_barlines && pvoice->context.beat(cursor.ntime) == 0L && barcnt < pvoice->context.bar(cursor.ntime))
     {
@@ -265,14 +273,6 @@ void EngraverState::engrave()
         pvoice->notes.back().gphBox.width = 1000;
         pvoice->notes.back().gphBox.height = pvoice->head_height * (cursor.staff().line_count - 1);
         pvoice->notes.back().absolutePos.front() = pvoice->notes.back().gphBox.pos;
-    };
-    
-    // update external data
-    if (reengrave_info)
-    {
-        reengrave_info->update(*cursor, *this);
-        if (reengrave_info->is_empty())
-            reengrave_info = NULL;
     };
 }
 

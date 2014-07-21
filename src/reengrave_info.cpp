@@ -29,9 +29,12 @@ void ReengraveInfo::update(const StaffObject& note, EngraverState& state)
     // iterate through all objects, corresponding with this note
     while (it != on_create_note.end() && it->first == &note)
     {
-        if (it->second->reengrave(state))           // execute update
-            on_finish.insert(it->second);           //     if requested, mark for finish
-        on_create_note.erase(it++);                 // remove from the map
+        switch (it->second->reengrave(state))       // execute update
+        {
+            case Reengraveable::RETRY:  ++it; break;                    // do nothing, retry one more time
+            case Reengraveable::FINISH: on_finish.insert(it->second);   // if requested, mark for finish
+            case Reengraveable::DONE:   on_create_note.erase(it++);     // if done, remove from the map
+        };
     };
 }
 
@@ -44,9 +47,12 @@ void ReengraveInfo::update(const Voice& voice, EngraverState& state)
     // iterate through all objects, corresponding with this note
     while (it != on_create_voice.end() && it->first == &voice)
     {
-        if (it->second->reengrave(state))           // execute update
-            on_finish.insert(it->second);           //     if requested, mark for finish
-        on_create_voice.erase(it++);                // remove from the map
+        switch (it->second->reengrave(state))       // execute update
+        {
+            case Reengraveable::RETRY:  ++it; break;                    // do nothing, retry one more time
+            case Reengraveable::FINISH: on_finish.insert(it->second);   // if requested, mark for finish
+            case Reengraveable::DONE:   on_create_voice.erase(it++);    // if done, remove from the map
+        };
     };
 }
 
@@ -59,9 +65,12 @@ void ReengraveInfo::update(const Movable& object, EngraverState& state)
     // iterate through all objects, corresponding with this note
     while (it != on_create_movable.end() && it->first == &object)
     {
-        if (it->second->reengrave(state))           // execute update
-            on_finish.insert(it->second);           //     if requested, mark for finish
-        on_create_movable.erase(it++);              // remove from the map
+        switch (it->second->reengrave(state))       // execute update
+        {
+            case Reengraveable::RETRY:  ++it; break;                    // do nothing, retry one more time
+            case Reengraveable::FINISH: on_finish.insert(it->second);   // if requested, mark for finish
+            case Reengraveable::DONE:   on_create_movable.erase(it++);  // if done, remove from the map
+        };
     };
 }
 

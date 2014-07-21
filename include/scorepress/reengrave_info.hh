@@ -44,10 +44,11 @@ class SCOREPRESS_LOCAL EngraverState;   // engraver state class prototype (see "
 class SCOREPRESS_API Reengraveable
 {
  public:
-    // called by "EngraverState" class, after "trigger" was engraved
-    virtual void setup_reengrave(ReengraveInfo& info) = 0;
-    virtual bool reengrave(EngraverState& state) = 0;
-    virtual void finish_reengrave() = 0;
+    enum Status {DONE, FINISH, RETRY};                          // reengrave status
+    
+    virtual void   setup_reengrave(ReengraveInfo& info) = 0;    // setup before reengraving takes place
+    virtual Status reengrave(EngraverState& state) = 0;         // called by "EngraverState" class, after "trigger" was engraved
+    virtual void   finish_reengrave() = 0;                      // executed after reengraving finished
 };
 
 

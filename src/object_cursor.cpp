@@ -138,8 +138,15 @@ Plate::pAttachable& ObjectCursor::get_pobject() const
     return **pobject;
 }
 
+// setup reengraving trigger
+void ObjectCursor::setup_reengrave(ReengraveInfo& info)
+{
+    if (!pnote) throw NotValidException();
+    info.setup_reengrave(**object, *this);
+}
+
 // reengraving function
-bool ObjectCursor::reengrave(EngraverState& state)
+Reengraveable::Status ObjectCursor::reengrave(EngraverState& state)
 {
     pline   = &state.get_target_line();
     pvoice  = &state.get_target_voice();
@@ -149,14 +156,7 @@ bool ObjectCursor::reengrave(EngraverState& state)
     while (pobject != plist->end() && (*pobject)->object != &**object)
         ++pobject;
     if (pobject == plist->end()) setup();
-    return false;
-}
-
-// setup reengraving trigger
-void ObjectCursor::setup_reengrave(ReengraveInfo& info)
-{
-    if (!pnote) throw NotValidException();
-    info.setup_reengrave(**object, *this);
+    return DONE;
 }
 
 // reengrave finishing function (NOOP)

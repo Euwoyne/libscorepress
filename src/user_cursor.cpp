@@ -222,14 +222,18 @@ void UserCursor::VoiceCursor::setup_reengrave(ReengraveInfo& info)
 }
 
 // reengraving function
-bool UserCursor::VoiceCursor::reengrave(EngraverState& state)
+Reengraveable::Status UserCursor::VoiceCursor::reengrave(EngraverState& state)
 {
+    // ignore inserted objects
+    if (state.get_target().is_inserted())
+        return RETRY;
+    
     // update cursor with data from the engraver
     pnote  =  state.get_target_it();
     pvoice = &state.get_target_voice();
     time   =  state.get_time();
     ntime  =  state.get_ntime();
-    return false;
+    return DONE;
 }
 
 // reengrave finishing function (NOOP)
@@ -1192,17 +1196,6 @@ mpx_t UserCursor::graphical_height(const ViewportParam& viewport) const throw(No
     return h;
 }
 
-// reengraving function
-bool UserCursor::reengrave(EngraverState& state)
-{
-    // update page, plate and line with data from the engraver
-    pageset = &state.get_pageset();
-    page = state.get_target_page_it();
-    plateinfo = &state.get_plateinfo();
-    line = state.get_target_line_it();
-    return true;
-}
-
 // setup reengraving triggers
 void UserCursor::setup_reengrave(ReengraveInfo& info)
 {
@@ -1226,6 +1219,17 @@ void UserCursor::setup_reengrave(ReengraveInfo& info)
     // add voice cursors to the info class
     for (std::list<VoiceCursor>::iterator i = vcursors.begin(); i != vcursors.end(); ++i)
         i->setup_reengrave(info);
+}
+
+// reengraving function
+Reengraveable::Status UserCursor::reengrave(EngraverState& state)
+{
+    // update page, plate and line with data from the engraver
+    pageset = &state.get_pageset();
+    page = state.get_target_page_it();
+    plateinfo = &state.get_plateinfo();
+    line = state.get_target_line_it();
+    return FINISH;
 }
 
 // reengrave finishing function
@@ -1296,7 +1300,6 @@ void UserCursor::dump() const
 {
     for (std::list<VoiceCursor>::const_iterator i = vcursors.begin(); i != vcursors.end(); ++i)
     {
-        assert(i->pnote->at_end() || !i->note.at_end());
         size_t idx = 0;
         for (std::list<Plate::pNote>::const_iterator j = i->pvoice->notes.begin(); j != i->pvoice->notes.end() && j != i->pnote; ++j, ++idx);
         if (!i->active) std::cout << "["; else std::cout << " ";

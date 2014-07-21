@@ -91,9 +91,9 @@ class SCOREPRESS_API UserCursor : public Reengraveable, public Logging
         bool is_before(const VoiceCursor& cur) const;       // is this object rendered before the given one?
         
         // reengraving interface
-        virtual void setup_reengrave(ReengraveInfo& info);  // setup reengraving triggers
-        virtual bool reengrave(EngraverState& state);       // reengraving function
-        virtual void finish_reengrave();                    // reengrave finishing function (NOOP)
+        virtual void   setup_reengrave(ReengraveInfo& info);    // setup reengraving triggers
+        virtual Status reengrave(EngraverState& state);         // reengraving function
+        virtual void   finish_reengrave();                      // reengrave finishing function (NOOP)
     };
     
  protected:
@@ -216,10 +216,10 @@ class SCOREPRESS_API UserCursor : public Reengraveable, public Logging
     mpx_t graphical_height(const ViewportParam& viewport) const throw(NotValidException);   // height of the cursor
     
     // reengraving interface
-    virtual void setup_reengrave(ReengraveInfo& info);  // setup reengraving triggers
-    virtual bool reengrave(EngraverState& state);       // reengraving function
-    virtual void finish_reengrave();                    // reengrave finishing function
-            void update_voices();                       // check for missing voice-cursors
+    virtual void   setup_reengrave(ReengraveInfo& info);    // setup reengraving triggers
+    virtual Status reengrave(EngraverState& state);         // reengraving function
+    virtual void   finish_reengrave();                      // reengrave finishing function
+            void   update_voices();                         // check for missing voice-cursors
     
     // dump cursor state to stdout
     void dump() const;

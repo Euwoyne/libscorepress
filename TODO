@@ -2,10 +2,8 @@ libscorepress - TODO List
 =========================
 
 BUGS:
-  pick.cpp          wrong note positioning
 
 INCOMPLETE:
-  engine.cpp        implement Engine::render_selection(ObjectCursor&)
   file_format.cpp   parse <movable> section
   file_format.cpp   document parsing
 
