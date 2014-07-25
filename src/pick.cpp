@@ -318,23 +318,8 @@ void Pick::calculate_npos(VoiceCursor& nextNote)
     // the note's graphical width (plus minimal distance)
     const mpx_t note_width = width(*sprites,
                                    &*nextNote,
-                                   viewport->umtopx_v(HEAD_HEIGHT(nextNote.staff())))/*
-                              + ((nextNote->is(Class::NOTEOBJECT)) ?
-                                      viewport->umtopx_h(param->min_distance) :
-                                      ((nextNote->is(Class::BARLINE)) ?
-                                            viewport->umtopx_h(param->barline_distance) :
-                                            viewport->umtopx_h(param->default_distance)))*/;
+                                   viewport->umtopx_v(HEAD_HEIGHT(nextNote.staff())));
     nextNote.npos = nextNote.pos + note_width;
-    return;
-    
-    // the note's value-related width
-    const mpx_t distance = (nextNote->is(Class::NOTEOBJECT)) ?
-                               value_width(static_cast<const NoteObject*>(&*nextNote)->value(), *param, *viewport) :
-                               0;
-    
-    // add the maximum of both to the current note position
-    nextNote.npos = nextNote.pos + ((distance < note_width) ? note_width : distance)
-                                 + viewport->umtopx_v((HEAD_HEIGHT(nextNote.staff()) * nextNote->acc_offset) / 1000.0);
 }
 
 // insert next note of current voice
@@ -530,11 +515,6 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
             nextNote.pos = engravedNote.pos;
         else
             nextNote.pos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
-        //else if (engravedNote->is(Class::BARLINE))
-        //    nextNote.pos = engravedNote.npos - viewport->umtopx_h(param->barline_distance);
-        //else if (nextNote.pos - engravedNote.pos - w < viewport->umtopx_h(param->min_distance))
-        //    nextNote.pos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
-        nextNote.npos = nextNote.pos;
     }
     else if (engravedNote->is(Class::NEWLINE))
     {
@@ -577,13 +557,27 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
         nextNote.pos = engravedNote.npos;
         
         // apply value dependant distance
-        {const mpx_t valpos = engravedNote.pos + value_width(nextNote.time - engravedNote.time, *param, *viewport);
-        if (nextNote.pos < valpos) nextNote.pos = valpos;}
+        {
+            const mpx_t valpos = engravedNote.pos + value_width(nextNote.time - engravedNote.time, *param, *viewport);
+            if (nextNote.pos < valpos) nextNote.pos = valpos;
+        };
         
         // check minimal distance
-        {const mpx_t minpos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
-        if (nextNote.pos < minpos) nextNote.pos = minpos;}
+        if (engravedNote->is(Class::NOTEOBJECT) && nextNote->is(Class::NOTEOBJECT))
+        {
+            const mpx_t minpos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
+            if (nextNote.pos < minpos) nextNote.pos = minpos;
+        }
+        else
+        {
+            const mpx_t minpos = engravedNote.pos + w + viewport->umtopx_h(param->default_distance);
+            if (nextNote.pos < minpos) nextNote.pos = minpos;
+        };
     };
+    
+    // apply accumulative offset
+    if (nextNote->acc_offset)
+        nextNote.pos += viewport->umtopx_v((HEAD_HEIGHT(nextNote.staff()) * nextNote->acc_offset) / 1000.0);
     
     // calculate estimated position of the following note
     if (!nextNote->is(Class::NEWLINE))

@@ -109,7 +109,7 @@ void BeamInfo::set(unsigned int exp, Plate::pVoice::Iterator pnote)
         calculate_beam(i, *pnote, *end, s,          // calculate the beam
                i < exp - 1                          //    if the beam is short, it points to the left, if...
             && beam[i + 1] != voice->notes.end()    // ...there is a beam above, ...
-            && beam[i + 1] != beam[i]);             // ...that only has a connection to the previous note
+            && beam[i + 1] != beam[i]);            // ...that only has a connection to the previous note
     };
     
     // count irregular beam positions (for stem length)

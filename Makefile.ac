@@ -248,6 +248,7 @@ afiles := ${objdir}/main.o           \
 miscfiles := ${srcdir}/AUTHORS       \
              ${srcdir}/LICENCE.pdf   \
              ${srcdir}/LICENCES      \
+             ${srcdir}/Makefile      \
              ${srcdir}/README        \
              ${srcdir}/TODO          \
              ${datasrc}/CC-BY-SA.pdf
@@ -329,6 +330,114 @@ deps_sprites_cpp        := ${cppsrc}/sprites.cpp ${deps_sprites_hh} ${deps_undef
 deps_user_cursor_cpp    := ${cppsrc}/user_cursor.cpp ${deps_user_cursor_hh} ${deps_engraver_state_hh}
 
 
+# string table
+STR_make      := 'Making: %s\n'
+STR_link      := '  Linking:    %s...\n'
+STR_compile   := '  Compiling:  %s...\n'
+STR_generate  := 'Generating: %s\n'
+STR_install   := 'Installing: %s\n'
+STR_uninstall := 'Removing: %s\n'
+STR_clean     := 'Cleaning "%s"\n'
+STR_cleancmp  := 'Cleaning "%s" (compilation only)\n'
+STR_delete    := '  Deleting:  %s...\n'
+STR_nonempty  := '    WARNING: "%s" is not empty\n'
+STR_error     := '    ERROR: %s\n'
+STR_errcreate := '    ERROR: cannot create directory "%s"\n'
+STR_fail      := '    FAILED\n'
+STR_sfail     := '    FAILED (%s)\n'
+
+HELP_general := "\
+General Compilation:\n\
+  all                compile shared and static libraries\n\
+  shared             compile the shared library\n\
+  static             compile the static library\n"
+
+HELP_libinst := "\
+Library Installation:\n\
+  install-so         install shared library  [LIBDIR]\n\
+  install-so-strip   install stripped .so    [LIBDIR]\n\
+  install-a          install static library  [LIBDIR]\n\
+  install-a-strip    install stripped .a     [LIBDIR]\n\
+  install-data       install data files      [DATADIR_PKG]\n\
+  install-headers    install headers         [INCLUDEDIR_PKG]\n"
+
+HELP_doc := "\
+Documentation:\n\
+  doc                generate readme and info files\n\
+  readme             readme and licence information (NOOP)\n\
+  info               generate info files\n"
+
+HELP_dox := "\
+Documentation:\n\
+  doc                generate readme and info files\n\
+  readme             readme and licence information (NOOP)\n\
+  alldoc             generate documentation in every format\n\
+  \n\
+  info               generate info files\n\
+  man                generate Manpages (section 3)\n\
+  html               generate documentation as HTML\n\
+  pdf                generate documentation as PDF\n\
+  dvi                generate documentation as DVI\n\
+  ps                 generate documentation as PostScript\n"
+
+HELP_docinst := "\
+Documentation Installation:\n\
+  install-doc        install readme and info files\n\
+  install-readme     readme and licence information       [DOCDIR]\n\
+  install-info       install info files                   [INFODIR]\n"
+
+HELP_doxinst := "\
+Documentation Installation:\n\
+  install-doc        install readme and info files\n\
+  install-alldoc     install documentation in every format\n\
+  \n\
+  install-readme     readme and licence information       [DOCDIR]\n\
+  install-info       install info files                   [INFODIR]\n\
+  install-man        install Manpages (section 3)         [MANDIR/man3]\n\
+  install-html       install documentation as HTML        [HTMLDIR]\n\
+  install-pdf        install documentation as PDF         [PDFDIR]\n\
+  install-dvi        install documentation as DVI         [DVIDIR]\n\
+  install-ps         install documentation as PostScript  [PSDIR]\n"
+
+HELP_install := "\
+General Installation:  (collections of installation targets)\n\
+  install-all             installs -so, -a, -data, -alldoc, -headers\n\
+  install-dev             installs -so, -a, -data, -doc,    -headers\n\
+  install                 installs -so, -a, -data, -doc\n\
+  install-nodoc           installs -so, -a, -data\n\
+  install-shared-dev      installs -so,     -data, -doc,    -headers\n\
+  install-shared          installs -so,     -data, -doc\n\
+  install-shared-nodoc    installs -so,     -data\n\
+  install-static-dev      installs      -a, -data, -doc,    -headers\n\
+  install-static          installs      -a, -data, -doc\n\
+  install-static-nodoc    installs      -a, -data\n\
+  \n\
+  install-strip           like "install" but strips the .so and .a files\n\
+  install-shared-strip    like "install-shared" but strips the .so file\n\
+  install-static-strip    like "install-static" but strips the .a file\n\
+\n\
+NOTE: For each  install-*  target there is a corresponding  uninstall-*  target\n\
+      that deletes the files installed by the install target.\n"
+
+HELP_misc := "\
+Miscellaneous:\n\
+  clean              delete files created by build (incl. DoxyGen output)\n\
+  distclean          additionally delete files created by  configure\n\
+  \n\
+  help               display this help-text\n\
+  configinfo         display configuration (directories and flags)\n\
+  Makefile           recreates this  Makefile  by running  configure\n"
+
+HELP_packaging := 'Packaging:'
+HELP_dist      := '  dist              create directory containing distribution files'
+HELP_gzip      := '  dist-gzip         create  gzip  source package'
+HELP_bzip2     := '  dist-bzip2        create  bzip2  source package'
+HELP_zip       := '  dist-zip          create  zip  source package'
+HELP_deb       := '  deb               create debian package [currently not implemented]'
+
+HELP_dir := '  %-18s%s\n'
+
+
 #
 # MAIN TARGETS
 #
@@ -396,7 +505,7 @@ static: ${srcfiles} ${objdir} ${objdir}/${afile}
 # library (install)
 install-so: ${objdir} ${objdir}/${sofile} ${DESTDIR}${libdir}
 	$(NORMAL_INSTALL)
-	@echo "Installing:  ${sofile}"
+	@printf ${STR_install} "${sofile}"
 	@${INSTALL_PROGRAM} ${objdir}/${sofile} ${DESTDIR}${libdir}
 	@-${LN} -f ${DESTDIR}${libdir}/${sofile} ${DESTDIR}${libdir}/${sobase}
 	$(POST_INSTALL)
@@ -407,7 +516,7 @@ install-so-strip:
 
 install-a: ${objdir} ${objdir}/${afile} ${DESTDIR}${libdir}
 	$(NORMAL_INSTALL)
-	@echo "Installing:  ${afile}"
+	@printf ${STR_install} "${afile}"
 	@cp ${objdir}/${afile} ${DESTDIR}${libdir}/${afile}
 
 install-a-strip:
@@ -415,44 +524,44 @@ install-a-strip:
 
 install-data: ${DESTDIR}${datadir_pkg}/dtd ${DESTDIR}${datadir_pkg}/symbol
 	$(NORMAL_INSTALL)
-	@echo "Installing:  Symbols"
+	@printf ${STR_install} 'Symbols'
 	@${INSTALL_DATA} -t ${DESTDIR}${datadir_pkg}/symbol ${datasrc}/symbol/*
-	@echo "Installing:  libscorepress.symbols.dtd"
+	@printf ${STR_install} 'DTD'
 	@${INSTALL_DATA} -t ${DESTDIR}${datadir_pkg}/dtd ${datasrc}/dtd/*
 
 install-headers: ${DESTDIR}${includedir_pkg}/${basename}
 	$(NORMAL_INSTALL)
-	@echo "Installing:  Headers"
+	@printf ${STR_install} 'Headers'
 	@${INSTALL_PROGRAM} -t ${DESTDIR}${includedir_pkg}/${basename} ${hfiles}
 
 # library (uninstall)
 uninstall-so:
 	$(NORMAL_UNINSTALL)
-	@test -f ${DESTDIR}${libdir}/${sobase} -o -f ${DESTDIR}${libdir}/${soname} -o -f ${DESTDIR}${libdir}/${sofile} && echo "Removing:  Shared Libraries" || :
+	@test -f ${DESTDIR}${libdir}/${sobase} -o -f ${DESTDIR}${libdir}/${soname} -o -f ${DESTDIR}${libdir}/${sofile} && printf ${STR_uninstall} 'Shared Libraries' || :
 	@-rm -f ${DESTDIR}${libdir}/${sobase}
 	@-rm -f ${DESTDIR}${libdir}/${soname}
 	@-rm -f ${DESTDIR}${libdir}/${sofile}
 
 uninstall-a:
 	$(NORMAL_UNINSTALL)
-	@test -f ${DESTDIR}${libdir}/${afile} && echo "Removing:  Static Libraries" || :
+	@test -f ${DESTDIR}${libdir}/${afile} && printf ${STR_uninstall} 'Static Libraries' || :
 	@-rm -f ${DESTDIR}${libdir}/${afile}
 
 uninstall-data:
 	$(NORMAL_UNINSTALL)
-	@-test -d ${DESTDIR}${datadir_pkg} && echo "Removing:  Base Data" || :
+	@-test -d ${DESTDIR}${datadir_pkg} && printf ${STR_uninstall} 'Base Data' || :
 	@-rm -rf ${DESTDIR}${datadir_pkg}/symbol
 	@-rm -rf ${DESTDIR}${datadir_pkg}/dtd
 	@test -d ${DESTDIR}${datadir_pkg} && (rmdir ${DESTDIR}${datadir_pkg} 2> /dev/null \
-	                                  || echo "    WARNING: \"${DESTDIR}${datadir_pkg}\" is not empty") || :
+	                                  || printf ${STR_nonempty} "${DESTDIR}${datadir_pkg}") || :
 uninstall-headers:
 	$(NORMAL_UNINSTALL)
-	@test -d ${DESTDIR}${includedir_pkg} && echo "Removing:  Headers" || :
+	@test -d ${DESTDIR}${includedir_pkg} && printf ${STR_uninstall} 'Headers' || :
 	@-rm -rf ${DESTDIR}${includedir_pkg}
 
 # documentation (build)
 ${doxyfile}: ${doxy_ac}
-	@echo "Generating:  Doxyfile"
+	@printf ${STR_generate} 'Doxyfile'
 	@sed -e 's|@PACKAGE_NAME[@]|@PACKAGE_NAME@|g'       \
 	     -e 's|@PACKAGE_VERSION[@]|@PACKAGE_VERSION@|g' \
 	     -e 's|@OUTPUT_DIR[@]|${objdir}|g'              \
@@ -469,28 +578,28 @@ readme:
 
 info: ${docsrc}/scorepress.info
 ${docsrc}/scorepress.info: ${docsrc}/scorepress.texi ${docsrc}/intro.texi ${docsrc}/tutorial.texi ${docsrc}/api.texi ${docsrc}/eupl.texi
-	@echo "Generating:  Info Files..."
+	@printf ${STR_generate} 'Info Files'
 	@if test "${MAKEINFO}" = ":"; then                                       \
-	     echo "    FAILED";                                                  \
+	     printf ${STR_fail};                                                 \
 	 else                                                                    \
 	     ${MAKEINFO} ${docsrc}/scorepress.texi -o ${docsrc}/scorepress.info; \
 	 fi
 
 man: ${objdir}/man/man3
 ${objdir}/man/man3: ${doxyfile} ${objdir}
-	@echo "Generating:  Manpages..."
+	@printf ${STR_generate} 'Manpages'
 	@if test "${DOXYGEN}" = ":"; then                               \
-	     echo "    FAILED (no DoxyGen installed)";                  \
+	     printf ${STR_sfail} 'no DoxyGen installed';                \
 	 else                                                           \
-	     (cat ${doxyfile}; echo "GENERATE_MAN=yes") | ${DOXYGEN} -; \
+	     (cat ${doxyfile}; echo 'GENERATE_MAN=yes') | ${DOXYGEN} -; \
 	     (cd ${objdir}/man/man3; ${GZIP} * 2> /dev/null);           \
 	 fi
 
 html: ${objdir}/html
 ${objdir}/html: ${doxyfile} ${objdir}
-	@echo "Generating:  Documentation (HTML)..."
+	@printf ${STR_generate} 'Documentation (HTML)'
 	@if test "${DOXYGEN}" = ":"; then                                \
-	     echo "    FAILED (no DoxyGen installed)";                   \
+	     printf ${STR_sfail} 'no DoxyGen installed';                 \
 	 else                                                            \
 	     (cat ${doxyfile}; echo "GENERATE_HTML=yes") | ${DOXYGEN} -; \
 	 fi
@@ -498,50 +607,50 @@ ${objdir}/html: ${doxyfile} ${objdir}
 
 pdf: ${objdir}/refman.pdf
 ${objdir}/refman.pdf: ${doxyfile} ${objdir}
-	@echo "Generating:  Documentation (PDF)..."
+	@printf ${STR_generate} 'Documentation (PDF)'
 	@if test "${DOXYGEN}" = ":"; then                       \
-	     echo "    FAILED (no DoxyGen installed)";          \
+	     printf ${STR_sfail} 'no DoxyGen installed';        \
 	 else                                                   \
-	     (cat ${doxyfile}; echo "GENERATE_LATEX=yes";       \
-	                       echo "LATEX_CMD_NAME=\"${LATEX} --output-format pdf\"") | ${DOXYGEN} -; \
+	     (cat ${doxyfile}; echo 'GENERATE_LATEX=yes';       \
+	                       printf "LATEX_CMD_NAME=\"%s --output-format pdf\"\n" "${LATEX}") | ${DOXYGEN} -; \
 	 fi
 	@if test -d ${objdir}/latex; then                       \
 	     (cd ${objdir}/latex && ${MAKE} -s) > /dev/null;    \
 	     if test -e ${objdir}/latex/refman.pdf; then        \
 	         cp ${objdir}/latex/refman.pdf ${objdir};       \
 	     else                                               \
-	         echo "    FAILED (LaTeX failure)";             \
+	         printf ${STR_sfail} 'LaTeX failure';           \
 	     fi;                                                \
 	 fi
 
 dvi: ${objdir}/refman.dvi
 ${objdir}/refman.dvi: ${doxyfile} ${objdir}
-	@echo "Generating:  Documentation (DVI)..."
+	@printf ${STR_generate} 'Documentation (DVI)'
 	@if test "${DOXYGEN}" = ":"; then                       \
-	     echo "    FAILED (no DoxyGen installed)";          \
+	     printf ${STR_sfail} 'no DoxyGen installed';        \
 	 else                                                   \
 	     (cat ${doxyfile}; echo "GENERATE_LATEX=yes";       \
-	                       echo "LATEX_CMD_NAME=\"${LATEX} --output-format dvi\"") | ${DOXYGEN} -; \
+	                       printf "LATEX_CMD_NAME=\"%s --output-format dvi\"\n" "${LATEX}") | ${DOXYGEN} -; \
 	 fi
 	@if test -d ${objdir}/latex; then                       \
 	     (cd ${objdir}/latex && ${MAKE} -s) > /dev/null;    \
 	     if test -e ${objdir}/latex/refman.dvi; then        \
 	         cp ${objdir}/latex/refman.dvi ${objdir};       \
 	     else                                               \
-	         echo "    FAILED (LaTeX failure)";             \
+	         printf ${STR_sfail} 'LaTeX failure';           \
 	     fi;                                                \
 	 fi
 
 ps: ${objdir}/refman.ps
 ${objdir}/refman.ps: ${objdir}/refman.dvi
 	@if test -e ${objdir}/refman.dvi; then               \
-	     echo -n "Generating:  Documentation (PS)...";   \
+	     printf ${STR_generate} 'Documentation (PS)';    \
 	     (cd ${objdir}/latex && dvips -q refman.dvi) > /dev/null; \
 	     if test -e ${objdir}/latex/refman.ps; then      \
 	         cp ${objdir}/latex/refman.ps ${objdir};     \
 	         echo;                                       \
 	     else                                            \
-	         echo "    FAILED (dvips failure)";          \
+	         printf ${STR_sfail} 'dvips failure';        \
 	     fi;                                             \
 	 fi
 
@@ -551,44 +660,44 @@ install-alldoc: install-readme install-info install-man install-html install-pdf
 
 install-readme: ${DESTDIR}${docdir}
 	$(NORMAL_INSTALL)
-	@echo "Installing:  Base Documentation"
+	@printf ${STR_install} 'Base Documentation'
 	@${INSTALL_DATA} ${miscfiles} ${DESTDIR}${docdir}
 
 install-info: ${DESTDIR}${infodir} info
 	$(NORMAL_INSTALL)
-	@echo "Installing:  Info Files"
+	@printf ${STR_install} 'Info Files'
 	@${INSTALL_DATA} ${docsrc}/scorepress.info ${DESTDIR}${infodir}/scorepress.info
 
 install-man: ${DESTDIR}${man3dir} man
 	$(NORMAL_INSTALL)
-	@echo "Installing:  Manpages"
+	@printf ${STR_install} 'Manpages'
 	@test -d ${objdir}/man/man3 && ${INSTALL_DATA} ${objdir}/man/man3/ScorePress_* ${DESTDIR}${man3dir} \
-	                              || echo "    ERROR: Documentation not built. Please run \"make man\"."
+	                              || printf ${STR_error} 'Documentation not built. Please run "make man".'
 
 install-html: ${DESTDIR}${htmldir}/html html
 	$(NORMAL_INSTALL)
-	@echo "Installing:  Documentation (HTML)"
+	@printf ${STR_install} 'Documentation (HTML)'
 	@-test -d ${objdir}/html && ${INSTALL_DATA} ${objdir}/html/* ${DESTDIR}${htmldir}/html \
-	                           || echo "    ERROR: Documentation not built. Please run \"make html\"."
+	                           || printf ${STR_error} 'Documentation not built. Please run "make html".'
 	@-test -d ${objdir}/html && ${LN} ${DESTDIR}${htmldir}/html/index.html ${DESTDIR}${htmldir}/index.html
 
 install-pdf: ${DESTDIR}${pdfdir} pdf
 	$(NORMAL_INSTALL)
-	@echo "Installing:  Documentation (PDF)"
+	@printf ${STR_install} 'Documentation (PDF)'
 	@test -f ${objdir}/refman.pdf && ${INSTALL_DATA} ${objdir}/refman.pdf ${DESTDIR}${pdfdir} \
-	                                || echo "    ERROR: Documentation not built. Please run \"make pdf\"."
+	                                || printf ${STR_error} 'Documentation not built. Please run "make pdf".'
 
 install-dvi: ${DESTDIR}${dvidir} dvi
 	$(NORMAL_INSTALL)
-	@echo "Installing:  Documentation (DVI)"
+	@printf ${STR_install} 'Documentation (DVI)'
 	@test -f ${objdir}/refman.dvi && ${INSTALL_DATA} ${objdir}/refman.dvi ${DESTDIR}${dvidir} \
-	                                || echo "    ERROR: Documentation not built. Please run \"make dvi\"."
+	                                || printf ${STR_error} 'Documentation not built. Please run "make dvi".'
 
 install-ps: ${DESTDIR}${psdir} ps
 	$(NORMAL_INSTALL)
-	@echo "Installing:  Documentation (PS)"
+	@printf ${STR_install} 'Documentation (PS)'
 	@test -f ${objdir}/refman.ps && ${INSTALL_DATA} ${objdir}/refman.ps ${DESTDIR}${psdir} \
-	                               || echo "    ERROR: Documentation not built. Please run \"make ps\"."
+	                               || printf ${STR_error} 'Documentation not built. Please run "make ps".'
 
 # documentation (uninstall)
 uninstall-doc:    uninstall-readme uninstall-info
@@ -596,78 +705,78 @@ uninstall-alldoc: uninstall-readme uninstall-info uninstall-man uninstall-html u
 
 uninstall-readme:
 	$(NORMAL_UNINSTALL)
-	@-test -d ${DESTDIR}${docdir} && echo "Removing:  Base Documentation" || :
+	@-test -d ${DESTDIR}${docdir} && printf ${STR_uninstall} 'Base Documentation' || :
 	@-rm -f ${DESTDIR}${docdir}/AUTHORS
 	@-rm -f ${DESTDIR}${docdir}/CC-BY-SA.pdf
 	@-rm -f ${DESTDIR}${docdir}/LICENCE.pdf
 	@-rm -f ${DESTDIR}${docdir}/LICENCES
 	@-rm -f ${DESTDIR}${docdir}/README
 	@-rm -f ${DESTDIR}${docdir}/TODO
-	@test -d ${DESTDIR}${docdir} && (rmdir ${DESTDIR}${docdir} 2> /dev/null || echo "    WARNING: \"${DESTDIR}${docdir}\" is not empty") || :
+	@test -d ${DESTDIR}${docdir} && (rmdir ${DESTDIR}${docdir} 2> /dev/null || printf ${STR_nonempty} "${DESTDIR}${docdir}") || :
 
 uninstall-info:
 	$(NORMAL_UNINSTALL)
-	@test -f ${DESTDIR}${infodir}/scorepress.info && echo "Removing:  Info Files" || :
+	@test -f ${DESTDIR}${infodir}/scorepress.info && printf ${STR_uninstall} 'Info Files' || :
 	@-rm -f ${DESTDIR}${infodir}/scorepress.info
 
 uninstall-man:
 	$(NORMAL_UNINSTALL)
-	@test -f ${DESTDIR}${man3dir}/ScorePress_Engraver.3.gz && echo "Removing:  Manpages" || :
+	@test -f ${DESTDIR}${man3dir}/ScorePress_Engraver.3.gz && printf ${STR_uninstall} 'Manpages' || :
 	@-rm -f ${DESTDIR}${man3dir}/ScorePress_*
 
 uninstall-html:
 	$(NORMAL_UNINSTALL)
-	@test -d ${DESTDIR}${htmldir}/html && echo "Removing:  Documentation (HTML)" || :
+	@test -d ${DESTDIR}${htmldir}/html && printf ${STR_uninstall} 'Documentation (HTML)' || :
 	@-rm -f ${DESTDIR}${htmldir}/index.html
 	@-rm -rf ${DESTDIR}${htmldir}/html
 	
 uninstall-pdf:
 	$(NORMAL_UNINSTALL)
-	@test -f ${DESTDIR}${pdfdir}/refman.pdf && echo "Removing:  Documentation (PDF)" || :
+	@test -f ${DESTDIR}${pdfdir}/refman.pdf && printf ${STR_uninstall} 'Documentation (PDF)' || :
 	@-rm -f ${DESTDIR}${pdfdir}/refman.pdf
 	@-rmdir ${DESTDIR}${pdfdir} 2> /dev/null || :
 
 uninstall-dvi:
 	$(NORMAL_UNINSTALL)
-	@test -f ${DESTDIR}${dvidir}/refman.dvi && echo "Removing:  Documentation (DVI)" || :
+	@test -f ${DESTDIR}${dvidir}/refman.dvi && printf ${STR_uninstall} 'Documentation (DVI)' || :
 	@-rm -f ${DESTDIR}${dvidir}/refman.dvi
 	@-rmdir ${DESTDIR}${dvidir} 2> /dev/null || :
 
 uninstall-ps:
 	$(NORMAL_UNINSTALL)
-	@test -f ${DESTDIR}${psdir}/refman.ps && echo "Removing:  Documentation (PS)" || :
+	@test -f ${DESTDIR}${psdir}/refman.ps && printf ${STR_uninstall} 'Documentation (PS)' || :
 	@-rm -f ${DESTDIR}${psdir}/refman.ps
 	@-rmdir ${DESTDIR}${psdir} 2> /dev/null || :
 
 # clean
 mostly-clean:
-	@echo "Cleaning \"${PACKAGE_TARNAME}\" (compilation only)"
+	@printf ${STR_cleancmp} "${PACKAGE_TARNAME}"
 	@-rm -f  ${afiles}
 	@-rm -f  ${objdir}/${afile}
 	@-rm -f  ${sofiles}
 	@-rm -f  ${objdir}/${sofile}
 
 clean:
-	@echo "Cleaning \"${PACKAGE_TARNAME}\""
-	@echo "  Deleting:  object-files..."
+	@printf ${STR_clean} "${PACKAGE_TARNAME}"
+	@printf ${STR_delete} 'object-files'
 	@-rm -f  ${afiles}
 	@-rm -f  ${objdir}/${afile}
 	@-rm -f  ${sofiles}
 	@-rm -f  ${objdir}/${sofile}
-	@echo "  Deleting:  documentation-files..."
+	@printf ${STR_delete} 'documentation-files'
 	@-rm -rf ${objdir}/html
 	@-rm -rf ${objdir}/latex
 	@-rm -rf ${objdir}/man
 	@-rm -f  ${objdir}/refman.pdf
 	@-rm -f  ${objdir}/refman.dvi
 	@-rm -f  ${objdir}/refman.ps
-	@echo "  Deleting:  build directory..."
-	@test -d ${objdir} && (rmdir ${objdir} 2> /dev/null || echo "    WARNING: \"${objdir}\" is not empty") || :
+	@printf ${STR_delete} 'build directory'
+	@test -d ${objdir} && (rmdir ${objdir} 2> /dev/null || printf ${STR_nonempty} "${objdir}") || :
 
 distclean: clean
-	@echo "  Deleting:  configuration..."
-	@-rm -f ${includesrc}/config.hh
-	@-rm -f ${doxyfile} 
+	@printf ${STR_delete} 'configuration'
+	@-rm -f ${doxyfile}
+	@-rm -f ${srcdir}/config.hh
 	@-rm -f ${srcdir}/config.log
 	@-rm -f ${srcdir}/config.status
 	@-rm -f ${srcdir}/Makefile
@@ -677,162 +786,103 @@ maintainer-clean:
 	@echo 'deletes files that may need special tools to rebuild.'
 	@echo
 	@${MAKE} -s distclean
-	@echo "  Deleting:  info files..."
+	@printf ${STR_delete} 'info files'
 	@-rm -f ${docsrc}/scorepress.info
 
 # user information
 help:
-	@echo "Makefile for libscorepress 0.2.6."
+	@echo 'Makefile for libscorepress 0.2.6.'
 	@echo
 	@${MAKE} -s help-targets
 	@${MAKE} -s help-directories
 
 help-targets:
-	@echo "General Compilation:"
-	@echo "  all                compile shared and static libraries"
-	@echo "  shared             compile the shared library"
-	@echo "  static             compile the static library"
-	@echo
-	@echo "Library Installation:"
-	@echo "  install-so         install shared library  [LIBDIR]"
-	@echo "  install-so-strip   install stripped .so    [LIBDIR]"
-	@echo "  install-a          install static library  [LIBDIR]"
-	@echo "  install-a-strip    install stripped .a     [LIBDIR]"
-	@echo "  install-data       install data files      [DATADIR_PKG]"
-	@echo "  install-headers    install headers         [INCLUDEDIR_PKG]"
-	@echo
-	@echo "Documentation:"
-	@echo "  doc                generate readme and info files"
-	@echo "  readme             readme and licence information (NOOP)"
-	@if test "${DOXYGEN}" != ":"; then                                       \
-	     echo "  alldoc             generate documentation in every format"; \
-	     echo "";                                                            \
-	 fi
-	@echo "  info               generate info files"
-	@if test "${DOXYGEN}" != ":"; then                                       \
-	     echo "  man                generate Manpages (section 3)";          \
-	     echo "  html               generate documentation as HTML";         \
-	     echo "  pdf                generate documentation as PDF";          \
-	     echo "  dvi                generate documentation as DVI";          \
-	     echo "  ps                 generate documentation as PostScript";   \
-	 fi
-	@echo
-	@echo "Documentation Installation:"
-	@echo "  install-doc        install readme and info files"
-	@echo "  install-readme     readme and licence information       [DOCDIR]"
-	@if test "${DOXYGEN}" != ":"; then                                                   \
-	     echo "  install-alldoc     install documentation in every format";              \
-	     echo "";                                                                        \
-	 fi
-	@echo "  install-info       install info files                   [INFODIR]";
-	@if test "${DOXYGEN}" != ":"; then                                                   \
-	     echo "  install-man        install Manpages (section 3)         [MANDIR/man3]"; \
-	     echo "  install-html       install documentation as HTML        [HTMLDIR]";     \
-	     echo "  install-pdf        install documentation as PDF         [PDFDIR]";      \
-	     echo "  install-dvi        install documentation as DVI         [DVIDIR]";      \
-	     echo "  install-ps         install documentation as PostScript  [PSDIR]";       \
-	 fi
-	@echo
-	@echo "General Installation:  (collections of installation targets)"
-	@echo "  install-all             installs -so, -a, -data, -alldoc, -headers"
-	@echo "  install-dev             installs -so, -a, -data, -doc,    -headers"
-	@echo "  install                 installs -so, -a, -data, -doc"
-	@echo "  install-nodoc           installs -so, -a, -data"
-	@echo "  install-shared-dev      installs -so,     -data, -doc,    -headers"
-	@echo "  install-shared          installs -so,     -data, -doc"
-	@echo "  install-shared-nodoc    installs -so,     -data"
-	@echo "  install-static-dev      installs      -a, -data, -doc,    -headers"
-	@echo "  install-static          installs      -a, -data, -doc"
-	@echo "  install-static-nodoc    installs      -a, -data"
-	@echo
-	@echo "  install-strip           like \"install\" but strips the .so and .a files"
-	@echo "  install-shared-strip    like \"install-shared\" but strips the .so file"
-	@echo "  install-static-strip    like \"install-static\" but strips the .a file"
-	@echo
-	@echo "NOTE: For each  install-*  target there is a corresponding  uninstall-*  target"
-	@echo "      that deletes the files installed by the install target."
-	@echo
-	@echo "Miscellaneous:"
-	@echo "  clean             delete files created by build (incl. DoxyGen output)"
-	@echo "  distclean         additionally delete files created by  configure"
-	@echo
-	@echo "  help              display this help-text"
-	@echo "  configinfo        display configuration (directories and flags)"
-	@echo "  Makefile          recreates this  Makefile  by running  configure"
-	@echo
-	@echo "Packaging:"
-	@echo "  dist              create directory containing distribution files"
-	@if test "${GZIP}" != ":"; then                                             \
-	     echo "  dist-gzip         create  gzip  source package"; fi
-	@if test "${BZIP2}" != ":"; then                                            \
-	     echo "  dist-bzip2        create  bzip2  source package"; fi
-	@if test "${ZIP}" != ":"; then                                              \
-	     echo "  dist-zip          create  zip  source package"; fi
-	@echo "  deb               create debian package [currently not implemented]"
+	@printf "${HELP_general}"
+	@printf "${HELP_libinst}"
+	@if test "${DOXYGEN}" != ":"; then printf "${HELP_dox}";     else printf "${HELP_doc}";     fi
+	@if test "${DOXYGEN}" != ":"; then printf "${HELP_doxinst}"; else printf "${HELP_docinst}"; fi
+	@printf "${HELP_install}"
+	@printf "${HELP_misc}"
+	@printf "${HELP_packaging}"
+	@if test "${GZIP}"  != ":"; then printf "${HELP_gzip}";  fi
+	@if test "${BZIP2}" != ":"; then printf "${HELP_bzip2}"; fi
+	@if test "${ZIP}"   != ":"; then printf "${HELP_zip}";   fi
+	@printf "${HELP_deb}"
 	@echo
 
 help-directories:
-	@echo "Installation Directories:"
-	@echo "  PREFIX            ${prefix}"
-	@echo "  EPREFIX           ${exec_prefix}"
+	@echo 'Installation Directories:'
+	@printf ${HELP_dir} 'PREFIX'  "${prefix}"
+	@printf ${HELP_dir} 'WPREFIX' "${exec_prefix}"
 	@echo
-	@echo -n "  LIBDIR            "
-	@echo ${libdir} | sed -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|"
-	@echo -n "  DATADIR_PKG       "
-	@echo ${datadir_pkg} | sed -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|"
-	@echo -n "  INCLUDEDIR_PKG    "
-	@echo ${includedir_pkg} | sed -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|"
+	@printf %s "${libdir}" | \
+	 sed -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" | \
+	 xargs printf ${HELP_dir} 'LIBDIR'
+	@printf %s "${datadir_pkg}" | \
+	 sed -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" | \
+	 xargs printf ${HELP_dir} 'DATADIR_PKG'
+	@printf %s "${includedir_pkg}" | \
+	 sed -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" | \
+	 xargs printf ${HELP_dir} 'INCLUDEDIR_PKG'
 	@echo
-	@echo -n "  DATADIR           "
-	@echo "${datadir}" | sed -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  DOCDIR            "
-	@echo "${docdir}" | sed -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  INFODIR           "
-	@echo "${infodir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  MANDIR            "
-	@echo "${mandir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  HTMLDIR           "
-	@echo "${htmldir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  PDFDIR            "
-	@echo "${pdfdir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  DVIDIR            "
-	@echo "${dvidir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
-	@echo -n "  PSDIR             "
-	@echo "${psdir}" | sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|"
+	@printf %s "${datadir}" | \
+	 sed -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" | \
+	 xargs printf ${HELP_dir} 'DATADIR'
+	@printf %s "${docdir}" | \
+	 sed -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" | \
+	 xargs printf ${HELP_dir} 'DOCDIR'
+	@printf %s "${infodir}" | \
+	 sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" | \
+	 xargs printf ${HELP_dir} 'INFODIR'
+	@printf %s "${mandir}" | \
+	 sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" | \
+	 xargs printf ${HELP_dir} 'MANDIR'
+	@printf %s "${htmldir}" | \
+	 sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" | \
+	 xargs printf ${HELP_dir} 'HTMLDIR'
+	@printf %s "${pdfdir}" | \
+	 sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" | \
+	 xargs printf ${HELP_dir} 'PDFDIR'
+	@printf %s "${dvidir}" | \
+	 sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" | \
+	 xargs printf ${HELP_dir} 'DVIDIR'
+	@printf %s "${psdir}" | \
+	 sed -e "s|${docdir}\(/*\)|[DOCDIR]\1|" -e "s|${datadir}\(/*\)|[DATADIR]\1|" -e "s|${prefix}\(/*\)|[PREFIX]\1|" -e "s|${exec_prefix}\(/*\)|[EPREFIX]\1|" | \
+	 xargs printf ${HELP_dir} 'PSDIR'
 	@echo
 
 configinfo:
-	@echo "DIRECTORIES:"
-	@echo "  srcdir:        ${srcdir}"
+	@echo 'DIRECTORIES:'
+	@printf '  srcdir:        %s\n' "${srcdir}"
 	@echo
-	@echo "  prefix:        ${prefix}"
-	@echo "  exec_prefix:   ${exec_prefix}"
-	@echo "  datarootdir:   ${datarootdir}"
-	@echo "  datadir:       ${datadir}"
+	@printf '  prefix:        %s\n' "${prefix}"
+	@printf '  exec_prefix:   %s\n' "${exec_prefix}"
+	@printf '  datarootdir:   %s\n' "${datarootdir}"
+	@printf '  datadir:       %s\n' "${datadir}"
 	@echo
-	@echo "  libdir:        ${libdir}"
-	@echo "  includedir:    ${includedir}"
-	@echo "  oldincludedir: ${oldincludedir}"
-	@echo "  mandir:        ${mandir}"
-	@echo "  docdir:        ${docdir}"
-	@echo "  infodir:       ${infodir}"
-	@echo "  htmldir:       ${htmldir}"
-	@echo "  dvidir:        ${dvidir}"
-	@echo "  pdfdir:        ${pdfdir}"
-	@echo "  psdir:         ${psdir}"
+	@printf '  libdir:        %s\n' "${libdir}"
+	@printf '  includedir:    %s\n' "${includedir}"
+	@printf '  oldincludedir: %s\n' "${oldincludedir}"
+	@printf '  mandir:        %s\n' "${mandir}"
+	@printf '  docdir:        %s\n' "${docdir}"
+	@printf '  infodir:       %s\n' "${infodir}"
+	@printf '  htmldir:       %s\n' "${htmldir}"
+	@printf '  dvidir:        %s\n' "${dvidir}"
+	@printf '  pdfdir:        %s\n' "${pdfdir}"
+	@printf '  psdir:         %s\n' "${psdir}"
 	@echo
-	@echo "COMPILER FLAGS:"
-	@if test -n "${USER_CFLAGS}";  then echo "  CFLAGS:   ${USER_CFLAGS}";  fi
-	@if test -n "${USER_LIBS}";    then echo "  LIBS:     ${USER_LIBS}";    fi
-	@if test -n "${USER_LDFLAGS}"; then echo "  LDFLAGS:  ${USER_LDFLAGS}"; fi
+	@echo 'COMPILER FLAGS:'
+	@if test -n "${USER_CFLAGS}";   then printf '  CFLAGS:   %s\n' "${USER_CFLAGS}";  fi
+	@if test -n "${USER_LIBS}";     then printf '  LIBS:     %s\n' "${USER_LIBS}";    fi
+	@if test -n "${USER_LDFLAGS}";  then printf '  LDFLAGS:  %s\n' "${USER_LDFLAGS}"; fi
 	@echo
 	@echo "CONFIGURE OPTIONS:"
-	@if test "${MODE}" = "DEBUG";   then echo "  --enable-debug";   fi
-	@if test "${MODE}" = "PROFILE"; then echo "  --enable-profile"; fi
+	@if test "${MODE}" = "DEBUG";   then echo   '  --enable-debug';   fi
+	@if test "${MODE}" = "PROFILE"; then echo   '  --enable-profile'; fi
 	@if test "${FRACT_SIZECHECK}" = "SIZECHECK_ON";                          \
-	                                then echo "  --enable-fraction-check"; fi
-	@if test "${DOXYGEN}" != ":";   then echo "  --enable-doxygen";        fi
-	@if test -n "${USER_RPATH}";    then echo "  --with-rpath=${USER_RPATH}";    fi
+	                                then echo   '  --enable-fraction-check';           fi
+	@if test "${DOXYGEN}" != ":";   then echo   '  --enable-doxygen';                  fi
+	@if test -n "${USER_RPATH}";    then printf '  --with-rpath=%s\n' "${USER_RPATH}"; fi
 	@echo
 
 confargs := --srcdir=${srcdir}               \
@@ -853,21 +903,21 @@ confargs := --srcdir=${srcdir}               \
 
 Makefile:
 	@echo -n "${confargs} " > /tmp/$$.confargs
-	@if test "${MODE}" = "RELEASE"; then echo -n "--disable-debug "           >> /tmp/$$.confargs; fi
-	@if test "${MODE}" = "PROFILE"; then echo -n "--enable-profile "          >> /tmp/$$.confargs; fi
+	@if test "${MODE}" = "RELEASE"; then printf '--disable-debug '           >> /tmp/$$.confargs; fi
+	@if test "${MODE}" = "PROFILE"; then printf '--enable-profile '          >> /tmp/$$.confargs; fi
 	@if test "${FRACT_SIZECHECK}" = "SIZECHECK_ON"; \
-	                                then echo -n "--enable-fraction-check "   >> /tmp/$$.confargs; fi
-	@if test -n "${RPATHFLAG}";     then echo -n "--enable-rpath "            >> /tmp/$$.confargs; fi
-	@if test "${DOXYGEN}" != ":";   then echo -n "--with-doxygen "            >> /tmp/$$.confargs; fi
+	                                then printf '--enable-fraction-check '   >> /tmp/$$.confargs; fi
+	@if test -n "${RPATHFLAG}";     then printf '--enable-rpath '            >> /tmp/$$.confargs; fi
+	@if test "${DOXYGEN}" != ":";   then printf '--with-doxygen '            >> /tmp/$$.confargs; fi
 	
 	@echo -n > /tmp/$$.envvars
-	@if test -n "${USER_CXXFLAGS}"; then echo -n "CXXFLAGS=${USER_CXXFLAGS} " >> /tmp/$$.envvars; fi
-	@if test -n "${USER_CPPFLAGS}"; then echo -n "CPPFLAGS=${USER_CPPFLAGS} " >> /tmp/$$.envvars; fi
-	@if test -n "${USER_LDFLAGS}";  then echo -n "LDFLAGS=${USER_LDFLAGS} "   >> /tmp/$$.envvars; fi
-	@if test -n "${USER_LIBS}";     then echo -n "LIBS=${USER_LIBS} "         >> /tmp/$$.envvars; fi
-	@if test -n "${USER_RPATH}";    then echo -n "RPATH=${USER_RPATH} "       >> /tmp/$$.envvars; fi
+	@if test -n "${USER_CXXFLAGS}"; then printf 'CXXFLAGS=%s ' "${USER_CXXFLAGS}" >> /tmp/$$.envvars; fi
+	@if test -n "${USER_CPPFLAGS}"; then printf 'CPPFLAGS=%s ' "${USER_CPPFLAGS}" >> /tmp/$$.envvars; fi
+	@if test -n "${USER_LDFLAGS}";  then printf 'LDFLAGS=%s '  "${USER_LDFLAGS}"  >> /tmp/$$.envvars; fi
+	@if test -n "${USER_LIBS}";     then printf 'LIBS=%s '     "${USER_LIBS}"     >> /tmp/$$.envvars; fi
+	@if test -n "${USER_RPATH}";    then printf 'RPATH=%s '    "${USER_RPATH}"    >> /tmp/$$.envvars; fi
 	
-	@echo "Running configure script..."
+	@echo 'Running configure script...'
 	@(eval `cat /tmp/$$.envvars` ${srcdir}/configure `cat /tmp/$$.confargs`)
 	@-rm -f /tmp/$$.confargs /tmp/$$.envvars
 
@@ -888,15 +938,15 @@ dist-zip: ${srcfiles} dist
 	${ZIP} -qr ${distdir}.zip ${distdir}
 
 deb: ${srcfiles}
-	@echo "Debian Packaging not implemented yet."
+	@echo 'Debian Packaging not implemented yet.'
 
 # directories
 ${DESTDIR} ${objdir} ${distdir}:
 	$(NORMAL_INSTALL)
-	@-mkdir -p $@ 2> /dev/null || echo "    ERROR: cannot create directory \"$@\""
+	@-mkdir -p $@ 2> /dev/null || printf ${STR_errcreate} "$@"
 ${DESTDIR}/%:
 	$(NORMAL_INSTALL)
-	@-mkdir -p $@ 2> /dev/null || echo "    ERROR: cannot create directory \"$@\""
+	@-mkdir -p $@ 2> /dev/null || printf ${STR_errcreate} "$@"
 
 
 #
@@ -904,15 +954,15 @@ ${DESTDIR}/%:
 #
 
 ${objdir}/${sofile}:  ${srcfiles}
-						@echo "Making:  ${sofile}"
+						@printf ${STR_make} "${sofile}"
 						@${MAKE} -s ${sofiles}
-						@echo "  Linking:   ${sofile}..."
+						@printf ${STR_link} "${sofile}"
 						@${CXX} -shared -Wl,-soname,${soname} -lc ${sofiles} -o ${objdir}/${sofile} ${XMLLIBS} ${FLAGS}
 
 ${objdir}/${afile}:   ${srcfiles}
-						@echo "Making:  ${afile}"
+						@printf ${STR_make} "${afile}"
 						@${MAKE} -s ${afiles}
-						@echo "  Linking:   ${afile}..."
+						@printf ${STR_link} "${afile}"
 						@${AR} ${ARFLAGS} ${objdir}/${afile} ${afiles}
 
 #
@@ -920,184 +970,184 @@ ${objdir}/${afile}:   ${srcfiles}
 #
 
 ${objdir}/main.o:			${deps_main_cpp}
-							echo "  Compiling: main.cpp..."
+							printf ${STR_compile} 'main.cpp'
 							${CXX} -c ${cppsrc}/main.cpp -o ${objdir}/main.o ${FLAGS}
 ${objdir}/main.s.o:			${deps_main_cpp}
-							echo "  Compiling: main.cpp..."
+							printf ${STR_compile} 'main.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/main.cpp -o ${objdir}/main.s.o ${FLAGS}
 
 ${objdir}/engine.o:			${deps_engine_cpp}
-							echo "  Compiling: engine.cpp..."
+							printf ${STR_compile} 'engine.cpp'
 							${CXX} -c ${cppsrc}/engine.cpp -o ${objdir}/engine.o ${FLAGS}
 ${objdir}/engine.s.o:		${deps_engine_cpp}
-							echo "  Compiling: engine.cpp..."
+							printf ${STR_compile} 'engine.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/engine.cpp -o ${objdir}/engine.s.o ${FLAGS}
 
 ${objdir}/press.o:			${deps_press_cpp}
-							echo "  Compiling: press.cpp..."
+							printf ${STR_compile} 'press.cpp'
 							${CXX} -c ${cppsrc}/press.cpp -o ${objdir}/press.o ${FLAGS}
 ${objdir}/press.s.o:		${deps_press_cpp}
-							echo "  Compiling: press.cpp..."
+							printf ${STR_compile} 'press.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/press.cpp -o ${objdir}/press.s.o ${FLAGS}
 
 ${objdir}/engraver.o:		${deps_engraver_cpp}
-							echo "  Compiling: engraver.cpp..."
+							printf ${STR_compile} 'engraver.cpp'
 							${CXX} -c ${cppsrc}/engraver.cpp -o ${objdir}/engraver.o ${FLAGS}
 ${objdir}/engraver.s.o:		${deps_engraver_cpp}
-							echo "  Compiling: engraver.cpp..."
+							printf ${STR_compile} 'engraver.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/engraver.cpp -o ${objdir}/engraver.s.o ${FLAGS}
 
 ${objdir}/engraver_state.o:		${deps_engraver_state_cpp}
-								echo "  Compiling: engraver_state.cpp..."
+								printf ${STR_compile} 'engraver_state.cpp'
 								${CXX} -c ${cppsrc}/engraver_state.cpp -o ${objdir}/engraver_state.o ${FLAGS}
 ${objdir}/engraver_state.s.o:	${deps_engraver_state_cpp}
-								echo "  Compiling: engraver_state.cpp..."
+								printf ${STR_compile} 'engraver_state.cpp'
 								${CXX} ${SOFLAGS} -c ${cppsrc}/engraver_state.cpp -o ${objdir}/engraver_state.s.o ${FLAGS}
 
 ${objdir}/engrave_info.o:		${deps_engrave_info_cpp}
-								echo "  Compiling: engrave_info.cpp..."
+								printf ${STR_compile} 'engrave_info.cpp'
 								${CXX} -c ${cppsrc}/engrave_info.cpp -o ${objdir}/engrave_info.o ${FLAGS}
 ${objdir}/engrave_info.s.o:		${deps_engrave_info_cpp}
-								echo "  Compiling: engrave_info.cpp..."
+								printf ${STR_compile} 'engrave_info.cpp'
 								${CXX} ${SOFLAGS} -c ${cppsrc}/engrave_info.cpp -o ${objdir}/engrave_info.s.o ${FLAGS}
 
 ${objdir}/reengrave_info.o:		${deps_reengrave_info_cpp}
-								echo "  Compiling: reengrave_info.cpp..."
+								printf ${STR_compile} 'reengrave_info.cpp'
 								${CXX} -c ${cppsrc}/reengrave_info.cpp -o ${objdir}/reengrave_info.o ${FLAGS}
 ${objdir}/reengrave_info.s.o:	${deps_reengrave_info_cpp}
-								echo "  Compiling: reengrave_info.cpp..."
+								printf ${STR_compile} 'reengrave_info.cpp'
 								${CXX} ${SOFLAGS} -c ${cppsrc}/reengrave_info.cpp -o ${objdir}/reengrave_info.s.o ${FLAGS}
 
 ${objdir}/context.o:		${deps_context_cpp}
-							echo "  Compiling: context.cpp..."
+							printf ${STR_compile} 'context.cpp'
 							${CXX} -c ${cppsrc}/context.cpp -o ${objdir}/context.o ${FLAGS}
 ${objdir}/context.s.o:		${deps_context_cpp}
-							echo "  Compiling: context.cpp..."
+							printf ${STR_compile} 'context.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/context.cpp -o ${objdir}/context.s.o ${FLAGS}
 
 ${objdir}/pageset.o:		${deps_pageset_cpp}
-							echo "  Compiling: pageset.cpp..."
+							printf ${STR_compile} 'pageset.cpp'
 							${CXX} -c ${cppsrc}/pageset.cpp -o ${objdir}/pageset.o ${FLAGS}
 ${objdir}/pageset.s.o:		${deps_pageset_cpp}
-							echo "  Compiling: pageset.cpp..."
+							printf ${STR_compile} 'pageset.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/pageset.cpp -o ${objdir}/pageset.s.o ${FLAGS}
 
 ${objdir}/plate.o:			${deps_plate_cpp}
-							echo "  Compiling: plate.cpp..."
+							printf ${STR_compile} 'plate.cpp'
 							${CXX} -c ${cppsrc}/plate.cpp -o ${objdir}/plate.o ${FLAGS}
 ${objdir}/plate.s.o:		${deps_plate_cpp}
-							echo "  Compiling: plate.cpp..."
+							printf ${STR_compile} 'plate.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/plate.cpp -o ${objdir}/plate.s.o ${FLAGS}
 
 ${objdir}/cursor.o:			${deps_cursor_cpp}
-							echo "  Compiling: cursor.cpp..."
+							printf ${STR_compile} 'cursor.cpp'
 							${CXX} -c ${cppsrc}/cursor.cpp -o ${objdir}/cursor.o ${FLAGS}
 ${objdir}/cursor.s.o:		${deps_cursor_cpp}
-							echo "  Compiling: cursor.cpp..."
+							printf ${STR_compile} 'cursor.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/cursor.cpp -o ${objdir}/cursor.s.o ${FLAGS}
 
 ${objdir}/user_cursor.o:	${deps_user_cursor_cpp}
-							echo "  Compiling: user_cursor.cpp..."
+							printf ${STR_compile} 'user_cursor.cpp'
 							${CXX} -c ${cppsrc}/user_cursor.cpp -o ${objdir}/user_cursor.o ${FLAGS}
 ${objdir}/user_cursor.s.o:	${deps_user_cursor_cpp}
-							echo "  Compiling: user_cursor.cpp..."
+							printf ${STR_compile} 'user_cursor.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/user_cursor.cpp -o ${objdir}/user_cursor.s.o ${FLAGS}
 
 ${objdir}/edit_cursor.o:	${deps_edit_cursor_cpp}
-							echo "  Compiling: edit_cursor.cpp..."
+							printf ${STR_compile} 'edit_cursor.cpp'
 							${CXX} -c ${cppsrc}/edit_cursor.cpp -o ${objdir}/edit_cursor.o ${FLAGS}
 ${objdir}/edit_cursor.s.o:	${deps_edit_cursor_cpp}
-							echo "  Compiling: edit_cursor.cpp..."
+							printf ${STR_compile} 'edit_cursor.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/edit_cursor.cpp -o ${objdir}/edit_cursor.s.o ${FLAGS}
 
 ${objdir}/object_cursor.o:		${deps_object_cursor_cpp}
-								echo "  Compiling: object_cursor.cpp..."
+								printf ${STR_compile} 'object_cursor.cpp'
 								${CXX} -c ${cppsrc}/object_cursor.cpp -o ${objdir}/object_cursor.o ${FLAGS}
 ${objdir}/object_cursor.s.o:	${deps_object_cursor_cpp}
-								echo "  Compiling: object_cursor.cpp..."
+								printf ${STR_compile} 'object_cursor.cpp'
 								${CXX} ${SOFLAGS} -c ${cppsrc}/object_cursor.cpp -o ${objdir}/object_cursor.s.o ${FLAGS}
 
 ${objdir}/pick.o:			${deps_pick_cpp}
-							echo "  Compiling: pick.cpp..."
+							printf ${STR_compile} 'pick.cpp'
 							${CXX} -c ${cppsrc}/pick.cpp -o ${objdir}/pick.o ${FLAGS}
 ${objdir}/pick.s.o:			${deps_pick_cpp}
-							echo "  Compiling: pick.cpp..."
+							printf ${STR_compile} 'pick.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/pick.cpp -o ${objdir}/pick.s.o ${FLAGS}
 
 ${objdir}/renderer.o:		${deps_renderer_cpp}
-							echo "  Compiling: renderer.cpp..."
+							printf ${STR_compile} 'renderer.cpp'
 							${CXX} -c ${cppsrc}/renderer.cpp -o ${objdir}/renderer.o ${XMLFLAGS} ${FLAGS}
 ${objdir}/renderer.s.o:		${deps_renderer_cpp}
-							echo "  Compiling: renderer.cpp..."
+							printf ${STR_compile} 'renderer.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/renderer.cpp -o ${objdir}/renderer.s.o ${XMLFLAGS} ${FLAGS}
 
 ${objdir}/sprites.o:		${deps_sprites_cpp}
-							echo "  Compiling: sprites.cpp..."
+							printf ${STR_compile} 'sprites.cpp'
 							${CXX} -c ${cppsrc}/sprites.cpp -o ${objdir}/sprites.o ${FLAGS}
 ${objdir}/sprites.s.o:		${deps_sprites_cpp}
-							echo "  Compiling: sprites.cpp..."
+							printf ${STR_compile} 'sprites.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/sprites.cpp -o ${objdir}/sprites.s.o ${FLAGS}
 
 ${objdir}/sprite_id.o:		${deps_sprite_id_cpp}
-							echo "  Compiling: sprite_id.cpp..."
+							printf ${STR_compile} 'sprite_id.cpp'
 							${CXX} -c ${cppsrc}/sprite_id.cpp -o ${objdir}/sprite_id.o ${FLAGS}
 ${objdir}/sprite_id.s.o:	${deps_sprite_id_cpp}
-							echo "  Compiling: sprite_id.cpp..."
+							printf ${STR_compile} 'sprite_id.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/sprite_id.cpp -o ${objdir}/sprite_id.s.o ${FLAGS}
 
 ${objdir}/score.o:			${deps_score_cpp}
-							echo "  Compiling: score.cpp..."
+							printf ${STR_compile} 'score.cpp'
 							${CXX} -c ${cppsrc}/score.cpp -o ${objdir}/score.o ${FLAGS}
 ${objdir}/score.s.o:		${deps_score_cpp}
-							echo "  Compiling: score.cpp..."
+							printf ${STR_compile} 'score.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/score.cpp -o ${objdir}/score.s.o ${FLAGS}
 
 ${objdir}/classes.o:		${deps_classes_cpp}
-							echo "  Compiling: classes.cpp..."
+							printf ${STR_compile} 'classes.cpp'
 							${CXX} -c ${cppsrc}/classes.cpp -o ${objdir}/classes.o ${FLAGS}
 ${objdir}/classes.s.o:		${deps_classes_cpp}
-							echo "  Compiling: classes.cpp..."
+							printf ${STR_compile} 'classes.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/classes.cpp -o ${objdir}/classes.s.o ${FLAGS}
 
 ${objdir}/log.o:			${deps_log_cpp}
-							echo "  Compiling: log.cpp..."
+							printf ${STR_compile} 'log.cpp'
 							${CXX} -c ${cppsrc}/log.cpp -o ${objdir}/log.o ${FLAGS}
 ${objdir}/log.s.o:			${deps_log_cpp}
-							echo "  Compiling: log.cpp..."
+							printf ${STR_compile} 'log.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/log.cpp -o ${objdir}/log.s.o ${FLAGS}
 
 ${objdir}/fraction.o:		${deps_fraction_cpp}
-							echo "  Compiling: fraction.cpp..."
+							printf ${STR_compile} 'fraction.cpp'
 							${CXX} -c ${cppsrc}/fraction.cpp -o ${objdir}/fraction.o ${FRACT_SIZECHECK} ${FLAGS}
 ${objdir}/fraction.s.o:		${deps_fraction_cpp}
-							echo "  Compiling: fraction.cpp..."
+							printf ${STR_compile} 'fraction.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/fraction.cpp -o ${objdir}/fraction.s.o ${FRACT_SIZECHECK} ${FLAGS}
 
 ${objdir}/parameters.o:		${deps_parameters_cpp}
-							echo "  Compiling: parameters.cpp..."
+							printf ${STR_compile} 'parameters.cpp'
 							${CXX} -c ${cppsrc}/parameters.cpp -o ${objdir}/parameters.o ${FLAGS}
 ${objdir}/parameters.s.o:	${deps_parameters_cpp}
-							echo "  Compiling: parameters.cpp..."
+							printf ${STR_compile} 'parameters.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/parameters.cpp -o ${objdir}/parameters.s.o ${FLAGS}
 
 ${objdir}/error.o:			${deps_error_cpp}
-							echo "  Compiling: error.cpp..."
+							printf ${STR_compile} 'error.cpp'
 							${CXX} -c ${cppsrc}/error.cpp -o ${objdir}/error.o ${FLAGS}
 ${objdir}/error.s.o:		${deps_error_cpp}
-							echo "  Compiling: error.cpp..."
+							printf ${STR_compile} 'error.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/error.cpp -o ${objdir}/error.s.o ${FLAGS}
 
 ${objdir}/file_format.o:	${deps_file_format_cpp}
-							echo "  Compiling: file_format.cpp..."
+							printf ${STR_compile} 'file_format.cpp'
 							${CXX} -c ${cppsrc}/file_format.cpp -o ${objdir}/file_format.o ${XMLFLAGS} ${FLAGS}
 ${objdir}/file_format.s.o:	${deps_file_format_cpp}
-							echo "  Compiling: file_format.cpp..."
+							printf ${STR_compile} 'file_format.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/file_format.cpp -o ${objdir}/file_format.s.o ${XMLFLAGS} ${FLAGS}
 
 ${objdir}/config.o:			${deps_config_cpp}
-							echo "  Compiling: config.cpp..."
+							printf ${STR_compile} 'config.cpp'
 							${CXX} -c ${cppsrc}/config.cpp -o ${objdir}/config.o ${CONFIGFLAGS} ${FLAGS}
 ${objdir}/config.s.o:		${deps_config_cpp}
-							echo "  Compiling: config.cpp..."
+							printf ${STR_compile} 'config.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/config.cpp -o ${objdir}/config.s.o ${CONFIGFLAGS} ${FLAGS}
 
