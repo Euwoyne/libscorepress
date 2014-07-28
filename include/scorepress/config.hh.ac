@@ -31,7 +31,16 @@
 
 #undef LIBSCOREPRESS_DEBUG
 
-extern SCOREPRESS_API const char* libscorepress_datadir;
+extern "C" {
+extern const struct SCOREPRESS_API ScorePress_Config
+{
+    const char* prefix;
+    const char* libdir;
+    const char* includedir;
+    const char* datadir;
+    const char* destdir;
+} libscorepress_config;
+}
 
 #endif
 

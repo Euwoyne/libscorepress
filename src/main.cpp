@@ -18,9 +18,8 @@
   permissions and limitations under the Licence.
 */
 
-// dummy main function (for use with autoconf)
+// dummy function (for use with autoconf)
 extern "C" {
-int main(int, char**) {
-    return 0;
-}}
+void libscorepress_autoconf_check() {}
+}
 

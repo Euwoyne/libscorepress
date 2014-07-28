@@ -37,6 +37,7 @@ ARFLAGS         := rcs
 GZIP            := @GZIP@
 BZIP2           := @BZIP2@
 ZIP             := @ZIP@
+PKGCONFIG       := @PKGCONFIG@
 
 MAKEINFO        := @MAKEINFO@
 DOXYGEN         := @DOXYGEN@
@@ -68,11 +69,14 @@ datasrc     := ${srcdir}/data
 docsrc      := ${srcdir}/doc
 doxyfile    := ${docsrc}/Doxyfile
 doxy_ac     := ${docsrc}/Doxyfile.ac
+pcsrc       := ${datasrc}
+pcfile      := ${basename}.pc
 
 builddir    := @builddir@
 objdir      := ${builddir}/obj
 
 libdir            := @libdir@
+pcdir             := ${libdir}/pkgconfig
 includedir        := @includedir@
 oldincludedir     := @oldincludedir@
 includedir_pkg    := ${includedir}/@PACKAGE_NAME@-@PACKAGE_VERSION@
@@ -106,7 +110,7 @@ RELEASE_SO := -DSCOREPRESS_SO -DSCOREPRESS_EXPORTS @RELEASE_SO@
 SOFLAGS    := @SOFLAGS@ ${${MODE}_SO}
 RPATHFLAG  := @RPATHFLAG@
 
-CONFIGFLAGS   := -DDATADIR="\"${datadir_pkg}\""
+CONFIGFLAGS   := -DPREFIX="\"${PREFIX}\"" -DLIBDIR="\"${libdir}\"" -DINCLUDEDIR="\"${includedir_pkg}\"" -DDATADIR="\"${datadir_pkg}\"" -DDESTDIR="\"${DESTDIR}\""
 USER_CXXFLAGS := @CXXFLAGS@ ${CXXFLAGS}
 USER_CPPFLAGS := @CPPFLAGS@ ${CPPFLAGS}
 USER_LDFLAGS  := @LDFLAGS@ ${LDFLAGS}
@@ -245,22 +249,27 @@ afiles := ${objdir}/main.o           \
           ${objdir}/file_format.o    \
           ${objdir}/config.o
 
-miscfiles := ${srcdir}/AUTHORS       \
-             ${srcdir}/LICENCE.pdf   \
-             ${srcdir}/LICENCES      \
-             ${srcdir}/Makefile      \
-             ${srcdir}/README        \
-             ${srcdir}/TODO          \
-             ${datasrc}/CC-BY-SA.pdf
+docfiles := ${srcdir}/AUTHORS       \
+            ${srcdir}/LICENCE.pdf   \
+            ${srcdir}/LICENCES      \
+            ${srcdir}/README        \
+            ${srcdir}/TODO          \
+            ${datasrc}/CC-BY-SA.pdf
 
 distfiles := ${srcdir}/AUTHORS      \
+             ${srcdir}/config.guess \
+             ${srcdir}/config.sub   \
              ${srcdir}/configure    \
+             ${srcdir}/configure.ac \
              ${srcdir}/install-sh   \
              ${srcdir}/LICENCE.pdf  \
+             ${srcdir}/LICENCES     \
              ${srcdir}/Makefile.ac  \
              ${srcdir}/README       \
+             ${srcdir}/TODO         \
              ${srcdir}/data         \
              ${srcdir}/doc          \
+             ${srcdir}/include      \
              ${srcdir}/src
 
 # header dependency list
@@ -346,94 +355,20 @@ STR_errcreate := '    ERROR: cannot create directory "%s"\n'
 STR_fail      := '    FAILED\n'
 STR_sfail     := '    FAILED (%s)\n'
 
-HELP_general := "\
-General Compilation:\n\
-  all                compile shared and static libraries\n\
-  shared             compile the shared library\n\
-  static             compile the static library\n"
-
-HELP_libinst := "\
-Library Installation:\n\
-  install-so         install shared library  [LIBDIR]\n\
-  install-so-strip   install stripped .so    [LIBDIR]\n\
-  install-a          install static library  [LIBDIR]\n\
-  install-a-strip    install stripped .a     [LIBDIR]\n\
-  install-data       install data files      [DATADIR_PKG]\n\
-  install-headers    install headers         [INCLUDEDIR_PKG]\n"
-
-HELP_doc := "\
-Documentation:\n\
-  doc                generate readme and info files\n\
-  readme             readme and licence information (NOOP)\n\
-  info               generate info files\n"
-
-HELP_dox := "\
-Documentation:\n\
-  doc                generate readme and info files\n\
-  readme             readme and licence information (NOOP)\n\
-  alldoc             generate documentation in every format\n\
-  \n\
-  info               generate info files\n\
-  man                generate Manpages (section 3)\n\
-  html               generate documentation as HTML\n\
-  pdf                generate documentation as PDF\n\
-  dvi                generate documentation as DVI\n\
-  ps                 generate documentation as PostScript\n"
-
-HELP_docinst := "\
-Documentation Installation:\n\
-  install-doc        install readme and info files\n\
-  install-readme     readme and licence information       [DOCDIR]\n\
-  install-info       install info files                   [INFODIR]\n"
-
-HELP_doxinst := "\
-Documentation Installation:\n\
-  install-doc        install readme and info files\n\
-  install-alldoc     install documentation in every format\n\
-  \n\
-  install-readme     readme and licence information       [DOCDIR]\n\
-  install-info       install info files                   [INFODIR]\n\
-  install-man        install Manpages (section 3)         [MANDIR/man3]\n\
-  install-html       install documentation as HTML        [HTMLDIR]\n\
-  install-pdf        install documentation as PDF         [PDFDIR]\n\
-  install-dvi        install documentation as DVI         [DVIDIR]\n\
-  install-ps         install documentation as PostScript  [PSDIR]\n"
-
-HELP_install := "\
-General Installation:  (collections of installation targets)\n\
-  install-all             installs -so, -a, -data, -alldoc, -headers\n\
-  install-dev             installs -so, -a, -data, -doc,    -headers\n\
-  install                 installs -so, -a, -data, -doc\n\
-  install-nodoc           installs -so, -a, -data\n\
-  install-shared-dev      installs -so,     -data, -doc,    -headers\n\
-  install-shared          installs -so,     -data, -doc\n\
-  install-shared-nodoc    installs -so,     -data\n\
-  install-static-dev      installs      -a, -data, -doc,    -headers\n\
-  install-static          installs      -a, -data, -doc\n\
-  install-static-nodoc    installs      -a, -data\n\
-  \n\
-  install-strip           like "install" but strips the .so and .a files\n\
-  install-shared-strip    like "install-shared" but strips the .so file\n\
-  install-static-strip    like "install-static" but strips the .a file\n\
-\n\
-NOTE: For each  install-*  target there is a corresponding  uninstall-*  target\n\
-      that deletes the files installed by the install target.\n"
-
-HELP_misc := "\
-Miscellaneous:\n\
-  clean              delete files created by build (incl. DoxyGen output)\n\
-  distclean          additionally delete files created by  configure\n\
-  \n\
-  help               display this help-text\n\
-  configinfo         display configuration (directories and flags)\n\
-  Makefile           recreates this  Makefile  by running  configure\n"
-
-HELP_packaging := 'Packaging:'
-HELP_dist      := '  dist              create directory containing distribution files'
-HELP_gzip      := '  dist-gzip         create  gzip  source package'
-HELP_bzip2     := '  dist-bzip2        create  bzip2  source package'
-HELP_zip       := '  dist-zip          create  zip  source package'
-HELP_deb       := '  deb               create debian package [currently not implemented]'
+HELP_general := 'General Compilation:\n  all                compile shared and static libraries\n  shared             compile the shared library\n  static             compile the static library\n\n'
+HELP_libinst := 'Library Installation:\n  install-so         install shared library  [LIBDIR]\n  install-so-strip   install stripped .so    [LIBDIR]\n  install-a          install static library  [LIBDIR]\n  install-a-strip    install stripped .a     [LIBDIR]\n  install-data       install data files      [DATADIR_PKG]\n  install-headers    install headers         [INCLUDEDIR_PKG]\n\n'
+HELP_doc := 'Documentation:\n  doc                generate readme and info files\n  readme             readme and licence information (NOOP)\n  info               generate info files\n\n'
+HELP_dox := 'Documentation:\n  doc                generate readme and info files\n  readme             readme and licence information (NOOP)\n  alldoc             generate documentation in every format\n  \n  info               generate info files\n  man                generate Manpages (section 3)\n  html               generate documentation as HTML\n  pdf                generate documentation as PDF\n  dvi                generate documentation as DVI\n  ps                 generate documentation as PostScript\n\n'
+HELP_docinst := 'Documentation Installation:\n  install-doc        install readme and info files\n  install-readme     readme and licence information       [DOCDIR]\n  install-info       install info files                   [INFODIR]\n\n'
+HELP_doxinst := 'Documentation Installation:\n  install-doc        install readme and info files\n  install-alldoc     install documentation in every format\n  \n  install-readme     readme and licence information       [DOCDIR]\n  install-info       install info files                   [INFODIR]\n  install-man        install Manpages (section 3)         [MANDIR/man3]\n  install-html       install documentation as HTML        [HTMLDIR]\n  install-pdf        install documentation as PDF         [PDFDIR]\n  install-dvi        install documentation as DVI         [DVIDIR]\n  install-ps         install documentation as PostScript  [PSDIR]\n\n'
+HELP_install := 'General Installation:  (collections of installation targets)\n  install-all             installs -so, -a, -data, -alldoc, -headers\n  install-dev             installs -so, -a, -data, -doc,    -headers\n  install                 installs -so, -a, -data, -doc\n  install-nodoc           installs -so, -a, -data\n  install-shared-dev      installs -so,     -data, -doc,    -headers\n  install-shared          installs -so,     -data, -doc\n  install-shared-nodoc    installs -so,     -data\n  install-static-dev      installs      -a, -data, -doc,    -headers\n  install-static          installs      -a, -data, -doc\n  install-static-nodoc    installs      -a, -data\n  \n  install-strip           like \"install\" but strips the .so and .a files\n  install-shared-strip    like \"install-shared\" but strips the .so file\n  install-static-strip    like \"install-static\" but strips the .a file\n\nNOTE: For each  install-*  target there is a corresponding  uninstall-*  target\n      that deletes the files installed by the install target.\n\n'
+HELP_misc := 'Miscellaneous:\n  clean              delete files created by build (incl. DoxyGen output)\n  distclean          additionally delete files created by  configure\n  \n  help               display this help-text\n  configinfo         display configuration (directories and flags)\n  Makefile           recreates this  Makefile  by running  configure\n\n'
+HELP_packaging := 'Packaging:\n'
+HELP_dist      := '  dist              create directory containing distribution files\n'
+HELP_gzip      := '  dist-gzip         create  gzip  source package\n'
+HELP_bzip2     := '  dist-bzip2        create  bzip2  source package\n'
+HELP_zip       := '  dist-zip          create  zip  source package\n'
+HELP_deb       := '  deb               create debian package [currently not implemented]\n'
 
 HELP_dir := '  %-18s%s\n'
 
@@ -454,8 +389,8 @@ HELP_dir := '  %-18s%s\n'
         \
         _default  all  shared  static  \
         \
-        install-so    install-a    install-data    install-headers    \
-        uninstall-so  uninstall-a  uninstall-data  uninstall-headers  \
+        install-so    install-a    install-data    install-headers    install-pkgconfig    \
+        uninstall-so  uninstall-a  uninstall-data  uninstall-headers  uninstall-pkgconfig  \
         \
         doc  alldoc  info  man  html  pdf  dvi  ps  \
         \
@@ -524,27 +459,33 @@ install-a-strip:
 
 install-data: ${DESTDIR}${datadir_pkg}/dtd ${DESTDIR}${datadir_pkg}/symbol
 	$(NORMAL_INSTALL)
-	@printf ${STR_install} 'Symbols'
+	@printf ${STR_install} 'Base Data'
 	@${INSTALL_DATA} -t ${DESTDIR}${datadir_pkg}/symbol ${datasrc}/symbol/*
-	@printf ${STR_install} 'DTD'
 	@${INSTALL_DATA} -t ${DESTDIR}${datadir_pkg}/dtd ${datasrc}/dtd/*
+	@${INSTALL_DATA} -t ${DESTDIR}${datadir_pkg} ${srcdir}/Makefile
+	@if test -n "${PKGCONFIG}"; then ${MAKE} -s install-pkgconfig; fi
 
 install-headers: ${DESTDIR}${includedir_pkg}/${basename}
 	$(NORMAL_INSTALL)
 	@printf ${STR_install} 'Headers'
 	@${INSTALL_PROGRAM} -t ${DESTDIR}${includedir_pkg}/${basename} ${hfiles}
 
+install-pkgconfig: ${DESTDIR}${pcdir}
+	$(NORMAL_INSTALL)
+	@printf ${STR_install} 'pkg-config File'
+	@${INSTALL_DATA} -t ${DESTDIR}${pcdir} ${pcsrc}/${pcfile}
+
 # library (uninstall)
 uninstall-so:
 	$(NORMAL_UNINSTALL)
-	@test -f ${DESTDIR}${libdir}/${sobase} -o -f ${DESTDIR}${libdir}/${soname} -o -f ${DESTDIR}${libdir}/${sofile} && printf ${STR_uninstall} 'Shared Libraries' || :
+	@test -f ${DESTDIR}${libdir}/${sobase} -o -f ${DESTDIR}${libdir}/${soname} -o -f ${DESTDIR}${libdir}/${sofile} && printf ${STR_uninstall} "${sofile}" || :
 	@-rm -f ${DESTDIR}${libdir}/${sobase}
 	@-rm -f ${DESTDIR}${libdir}/${soname}
 	@-rm -f ${DESTDIR}${libdir}/${sofile}
 
 uninstall-a:
 	$(NORMAL_UNINSTALL)
-	@test -f ${DESTDIR}${libdir}/${afile} && printf ${STR_uninstall} 'Static Libraries' || :
+	@test -f ${DESTDIR}${libdir}/${afile} && printf ${STR_uninstall} "${afile}" || :
 	@-rm -f ${DESTDIR}${libdir}/${afile}
 
 uninstall-data:
@@ -552,12 +493,21 @@ uninstall-data:
 	@-test -d ${DESTDIR}${datadir_pkg} && printf ${STR_uninstall} 'Base Data' || :
 	@-rm -rf ${DESTDIR}${datadir_pkg}/symbol
 	@-rm -rf ${DESTDIR}${datadir_pkg}/dtd
+	@-rm -f ${DESTDIR}${datadir_pkg}/Makefile
 	@test -d ${DESTDIR}${datadir_pkg} && (rmdir ${DESTDIR}${datadir_pkg} 2> /dev/null \
 	                                  || printf ${STR_nonempty} "${DESTDIR}${datadir_pkg}") || :
+	@if test -n "${PKGCONFIG}"; then ${MAKE} -s uninstall-pkgconfig; fi
+
 uninstall-headers:
 	$(NORMAL_UNINSTALL)
 	@test -d ${DESTDIR}${includedir_pkg} && printf ${STR_uninstall} 'Headers' || :
 	@-rm -rf ${DESTDIR}${includedir_pkg}
+
+uninstall-pkgconfig:
+	$(NORMAL_UNINSTALL)
+	@-test -e ${DESTDIR}${pcdir}/${pcfile} && printf ${STR_uninstall} 'pkg-config File' || :
+	@$-rm -f ${DESTDIR}${pcdir}/${pcfile}
+	@test -d ${DESTDIR}${pcdir} && rmdir ${DESTDIR}${pcdir} 2> /dev/null || :
 
 # documentation (build)
 ${doxyfile}: ${doxy_ac}
@@ -661,7 +611,7 @@ install-alldoc: install-readme install-info install-man install-html install-pdf
 install-readme: ${DESTDIR}${docdir}
 	$(NORMAL_INSTALL)
 	@printf ${STR_install} 'Base Documentation'
-	@${INSTALL_DATA} ${miscfiles} ${DESTDIR}${docdir}
+	@${INSTALL_DATA} ${docfiles} ${DESTDIR}${docdir}
 
 install-info: ${DESTDIR}${infodir} info
 	$(NORMAL_INSTALL)
@@ -776,6 +726,7 @@ clean:
 distclean: clean
 	@printf ${STR_delete} 'configuration'
 	@-rm -f ${doxyfile}
+	@-rm -f ${pcsrc}/${pcfile}
 	@-rm -f ${srcdir}/config.hh
 	@-rm -f ${srcdir}/config.log
 	@-rm -f ${srcdir}/config.status
@@ -797,17 +748,17 @@ help:
 	@${MAKE} -s help-directories
 
 help-targets:
-	@printf "${HELP_general}"
-	@printf "${HELP_libinst}"
-	@if test "${DOXYGEN}" != ":"; then printf "${HELP_dox}";     else printf "${HELP_doc}";     fi
-	@if test "${DOXYGEN}" != ":"; then printf "${HELP_doxinst}"; else printf "${HELP_docinst}"; fi
-	@printf "${HELP_install}"
-	@printf "${HELP_misc}"
-	@printf "${HELP_packaging}"
-	@if test "${GZIP}"  != ":"; then printf "${HELP_gzip}";  fi
-	@if test "${BZIP2}" != ":"; then printf "${HELP_bzip2}"; fi
-	@if test "${ZIP}"   != ":"; then printf "${HELP_zip}";   fi
-	@printf "${HELP_deb}"
+	@printf ${HELP_general}
+	@printf ${HELP_libinst}
+	@if test "${DOXYGEN}" != ":"; then printf ${HELP_dox};     else printf ${HELP_doc};     fi
+	@if test "${DOXYGEN}" != ":"; then printf ${HELP_doxinst}; else printf ${HELP_docinst}; fi
+	@printf ${HELP_install}
+	@printf ${HELP_misc}
+	@printf ${HELP_packaging}
+	@if test "${GZIP}"  != ":"; then printf ${HELP_gzip};  fi
+	@if test "${BZIP2}" != ":"; then printf ${HELP_bzip2}; fi
+	@if test "${ZIP}"   != ":"; then printf ${HELP_zip};   fi
+	@printf ${HELP_deb}
 	@echo
 
 help-directories:
@@ -927,6 +878,7 @@ dist: ${srcfiles} ${distdir}
 	cp -RP --preserve=timestamps,links ${distfiles} ${distdir}
 	if test -f ${distdir}/include/${basename}/config.hh; then rm -f ${distdir}/include/${basename}/config.hh; fi
 	if test -f ${distdir}/doc/Doxyfile;                  then rm -f ${distdir}/doc/Doxyfile;  fi
+	if test -f ${distdir}/data/${basename}.pc;           then rm -f ${distdir}/data/${basename}.pc; fi
 
 dist-gzip: ${srcfiles} dist
 	tar -cf - ${distdir} | ${GZIP} -c > ${distdir}.tar.gz
@@ -957,7 +909,7 @@ ${objdir}/${sofile}:  ${srcfiles}
 						@printf ${STR_make} "${sofile}"
 						@${MAKE} -s ${sofiles}
 						@printf ${STR_link} "${sofile}"
-						@${CXX} -shared -Wl,-soname,${soname} -lc ${sofiles} -o ${objdir}/${sofile} ${XMLLIBS} ${FLAGS}
+						@${CXX} -shared -Wl,-soname,${soname} ${sofiles} -o ${objdir}/${sofile} ${LIBS} ${FLAGS}
 
 ${objdir}/${afile}:   ${srcfiles}
 						@printf ${STR_make} "${afile}"

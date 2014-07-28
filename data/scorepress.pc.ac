@@ -1,0 +1,17 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+datarootdir=@datarootdir@
+datadir=@datadir@
+datadir_pkg=${datadir}/@PACKAGE_TARNAME@
+includedir=@includedir@
+includedir_pkg=${includedir}/@PACKAGE_NAME@-@PACKAGE_VERSION@
+
+Name: ScorePress
+Version: @PACKAGE_VERSION@
+Description: Core library for the ScorePress music typesetter
+URL: https://github.com/Euwoyne/libscorepress
+Requires: libxml-2.0 >= 2.6.2
+Libs: -L${libdir} -lscorepress
+Cflags: -I${includedir_pkg}
+

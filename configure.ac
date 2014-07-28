@@ -22,7 +22,7 @@ AC_PREREQ([2.69])
 AC_INIT([libscorepress], [0.2.6])
 AC_CONFIG_SRCDIR([src/engraver.cpp])
 AC_CONFIG_HEADERS([config.hh:include/scorepress/config.hh.ac])
-AC_CONFIG_FILES([Makefile:Makefile.ac])
+AC_CONFIG_FILES([Makefile:Makefile.ac data/scorepress.pc:data/scorepress.pc.ac])
 AC_LANG([C++])
 
 AC_SUBST([PACKAGE_VERSION_MAIN], [0])
@@ -40,7 +40,6 @@ LDFLAGS_ORI="$LDFLAGS"
 LIBS_ORI="$LIBS"
 
 # check commandline arguments
-#AC_PRESERVE_HELP_ORDER
 AC_ARG_ENABLE([debug],          [AS_HELP_STRING([--disable-debug],         [disable creation of debugging symbols])])
 AC_ARG_ENABLE([profile],        [AS_HELP_STRING([--enable-profile],        [enable profiling with GProf])])
 AC_ARG_ENABLE([fraction-check], [AS_HELP_STRING([--enable-fraction-check], [enable overflow check for rational numbers])])
@@ -63,6 +62,13 @@ AS_IF([test "x$enable_fraction_check" = "xyes"],
 
 AC_SUBST([RPATH], [$RPATH])
 
+# get host machine
+AC_CANONICAL_HOST
+case "$host_os" in
+    linux*|mingw* ) ;;
+    * ) AC_MSG_WARN([unrecognized OS '$host_os']) ;;
+esac
+
 # check shell
 AS_IF([test "x$SHELL" != "x"],
       [AC_SUBST([SH], [$SHELL])],
@@ -72,7 +78,8 @@ AS_IF([test "x$SHELL" != "x"],
 AC_PROG_CXX
 
 # set compiler specific flags
-if test "x$CXX" = "xgcc" || test "x$CXX" = "xg++"; then
+case "$CXX" in
+gcc | g++ )
     AC_CHECK_PROG([DEBUG], [gdb], [-ggdb], [-g])
     AC_SUBST([DEBUG],      ["$DEBUG -fno-inline -Werror"])
     AC_SUBST([PROFILE],    ["-O2 -fno-omit-frame-pointer"])
@@ -80,7 +87,10 @@ if test "x$CXX" = "xgcc" || test "x$CXX" = "xg++"; then
     AC_SUBST([DEBUG_SO],   [])
     AC_SUBST([PROFILE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
     AC_SUBST([RELEASE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
-    AC_SUBST([SOFLAGS],    ["-fPIC -lc"])
+    case "$host_os" in
+        linux* ) AC_SUBST([SOFLAGS], ["-fPIC -lc"]) ;;
+        * )      AC_SUBST([SOFLAGS], []) ;;
+    esac
     AS_IF([test "x$enable_rpath" = "xyes"],
         [AC_SUBST([RPATHFLAG],  [])],
         [AC_SUBST([RPATHFLAG],  ["-Wl,-rpath,"])])
@@ -114,7 +124,21 @@ if test "x$CXX" = "xgcc" || test "x$CXX" = "xg++"; then
             else
                 AC_SUBST([DEBUG], ["$DEBUG -O0"])
             fi ])
-fi
+    ;;
+*)
+    echo "WARNING: Unknown Compiler!"
+    AC_SUBST([DEBUG],      [:])
+    AC_SUBST([PROFILE],    [])
+    AC_SUBST([RELEASE],    [])
+    AC_SUBST([DEBUG_SO],   [])
+    AC_SUBST([PROFILE_SO], [])
+    AC_SUBST([RELEASE_SO], [])
+    AC_SUBST([SOFLAGS],    [])
+    AC_SUBST([RPATHFLAG],  [])
+    AC_SUBST([FSIZECHECK], [])
+    AC_SUBST([WARNINGS],   [])
+    AC_SUBST([CTRLFLAGS],  [])
+esac
 
 # check for programs
 AC_PROG_LN_S
@@ -150,12 +174,24 @@ if test -z "$MAKEINDEX"; then AC_SUBST([MAKEINDEX], [:]) fi
 
 # check libraries
 #   libxml2
-if test -n "$PKGCONFIG" -a `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; then
-    AC_SUBST([LIBXML_CFLAGS], [`\${PKGCONFIG} libxml-2.0 --cflags`])
-    AC_SUBST([LIBXML_LIBS], [`\${PKGCONFIG} libxml-2.0 --libs`])
-else
-    AC_SUBST([LIBXML_CFLAGS], [-I/usr/include/libxml2])
+AC_SUBST([LIBXML_CFLAGS], [])
+if test -n "$PKGCONFIG"; then
+    if test `$PKGCONFIG --exists libxml-2.0; echo $?` -eq 0; then
+        AC_SUBST([LIBXML_CFLAGS], [`\${PKGCONFIG} libxml-2.0 --cflags`])
+        AC_SUBST([LIBXML_LIBS], [`\${PKGCONFIG} libxml-2.0 --libs`])
+    fi
+fi
+if test -z "$LIBXML_LIBS"; then
     AC_SUBST([LIBXML_LIBS], [-lxml2])
+    if test -d /usr/include/libxml2/libxml; then
+        AC_SUBST([LIBXML_CFLAGS], [-I/usr/include/libxml2])
+    elif test -d /usr/local/include/libxml2/libxml; then
+        AC_SUBST([LIBXML_CFLAGS], [-I/usr/local/include/libxml2])
+    elif test -d "$prefix/usr/include/libxml2/libxml"; then
+        AC_SUBST([LIBXML_CFLAGS], [-I"$prefix/usr/include/libxml2"])
+    elif test -d "$prefix/usr/local/include/libxml2/libxml"; then
+        AC_SUBST([LIBXML_CFLAGS], [-I"$prefix/usr/local/include/libxml2"])
+    fi
 fi
 CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CFLAGS"
 LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
@@ -181,7 +217,7 @@ CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CFLAGS"
 AC_CHECK_HEADER([libxml/xmlreader.h],, AC_MSG_ERROR([Failed to find <xmlreader.h>]))
 
 # check types
-AS_IF([test "x$with_sizecheck" != "xno"],
+AS_IF([test "x$enable_fraction_check" = "xyes"],
     AC_TYPE_LONG_LONG_INT)
 AC_TYPE_SIZE_T
 

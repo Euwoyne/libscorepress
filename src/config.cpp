@@ -20,5 +20,12 @@
 
 #include "config.hh"
 
-const char* libscorepress_datadir = DATADIR;
+const struct ScorePress_Config scorepress_config =
+{
+    PREFIX,
+    LIBDIR,
+    INCLUDEDIR,
+    DATADIR,
+    DESTDIR
+};
 
