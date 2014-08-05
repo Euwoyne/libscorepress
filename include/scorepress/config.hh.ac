@@ -39,7 +39,7 @@ extern const struct SCOREPRESS_API ScorePress_Config
     const char* includedir;
     const char* datadir;
     const char* destdir;
-} libscorepress_config;
+} scorepress_config;
 }
 
 #endif

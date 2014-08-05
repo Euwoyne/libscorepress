@@ -103,13 +103,17 @@ void BeamInfo::set(unsigned int exp, Plate::pVoice::Iterator pnote)
     --end;
     
     size_t s = 0;   // beam shift (due to unequal stem directions)
-    
+    //const bool left = false;//(voice->end_time.i() % (2u<<exp) == 0);
     for (size_t i = 0; i < exp; ++i)    // check every beam we don't need...
     {
+        
         calculate_beam(i, *pnote, *end, s,          // calculate the beam
-               i < exp - 1                          //    if the beam is short, it points to the left, if...
+        //voice->end_time.i() % (4 << exp) == 0
+               i < exp - 1                  //    if the beam is short, it points to the left, if...
             && beam[i + 1] != voice->notes.end()    // ...there is a beam above, ...
-            && beam[i + 1] != beam[i]);            // ...that only has a connection to the previous note
+            && beam[i + 1] != beam[i]              // ...that only has a connection to the previous note
+        //    || left)  // ...or is at the end of the base beat
+        );
     };
     
     // count irregular beam positions (for stem length)
@@ -158,12 +162,14 @@ void BeamInfo::apply(const Chord&             chord,      // current chord
                      const bool               has_beam,   // does the note have a beam?
                      const unsigned int       exp)        // effective value exponent
 {
-    // if the previous note cut all beams
-    if (last_chord && last_chord->beam == Chord::CUT_BEAM)
-        set(VALUE_BASE - 3, pnote);     //   end all beams but one on the previous
+    
     
     if (has_beam && exp < VALUE_BASE - 2)   // if the note has got a beam
     {
+        // if the previous note cut all beams
+        if (last_chord && last_chord->beam == Chord::CUT_BEAM)
+            set(VALUE_BASE - 3, pnote);     //   end all beams but one on the previous
+        
         // add stem-info, if present
         if (stem_info)
             pnote->stem_info = Plate::pNote::StemInfoPtr(new StemInfo(*stem_info));

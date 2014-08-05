@@ -410,7 +410,7 @@ void EngraverState::engrave_stems()
             };
         };
         
-        // engrave beams
+        // engrave beams (second pass)
         BeamInfo beam_info(*pvoice);
         value_t time(pvoice->time);
         beam_it = pvoice->notes.begin();
@@ -1141,7 +1141,7 @@ bool EngraverState::engrave_next()
     return !pick.eos();
 }
 
-// calculate beam information and adjust stem lengths
+// calculate beam end information (first pass; for second pass see "engrave_stems")
 void EngraverState::engrave_beam(const Chord& chord, const StemInfo& info)
 {
     BeamInfoMap::iterator i = beaminfo.find(&*pvoice);

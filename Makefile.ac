@@ -127,7 +127,7 @@ SIZECHECK_OFF   :=
 FRACT_SIZECHECK := @FRACT_SIZECHECK@
 
 # file lists
-cfiles := ${cppsrc}/main.cpp           \
+cfiles := ${cppsrc}/autoconf_check.cpp \
           ${cppsrc}/engine.cpp         \
           ${cppsrc}/press.cpp          \
           ${cppsrc}/engraver.cpp       \
@@ -157,7 +157,7 @@ cfiles := ${cppsrc}/main.cpp           \
 hfiles := ${includesrc}/basetypes.hh      \
           ${includesrc}/classes.hh        \
           ${includesrc}/config.hh.ac      \
-          ${builddir}/config.hh           \
+          ${srcdir}/config.hh           \
           ${includesrc}/context.hh        \
           ${includesrc}/cursor_base.hh    \
           ${includesrc}/cursor.hh         \
@@ -195,7 +195,7 @@ hfiles := ${includesrc}/basetypes.hh      \
 
 srcfiles := ${cfiles} ${hfiles}
 
-sofiles := ${objdir}/main.s.o           \
+sofiles := ${objdir}/autoconf_check.s.o \
            ${objdir}/engine.s.o         \
            ${objdir}/press.s.o          \
            ${objdir}/engraver.s.o       \
@@ -222,7 +222,7 @@ sofiles := ${objdir}/main.s.o           \
            ${objdir}/file_format.s.o    \
            ${objdir}/config.s.o
 
-afiles := ${objdir}/main.o           \
+afiles := ${objdir}/autoconf_check.o \
           ${objdir}/engine.o         \
           ${objdir}/press.o          \
           ${objdir}/engraver.o       \
@@ -274,7 +274,7 @@ distfiles := ${srcdir}/AUTHORS      \
 
 # header dependency list
 deps_export_hh         := ${includesrc}/export.hh
-deps_config_hh_ac      := ${includesrc}/config.hh.ac ${deps_export_hh}
+deps_config_hh         := ${srcdir}/config.hh ${deps_export_hh}
 deps_smartptr_hh       := ${includesrc}/smartptr.hh
 deps_refptr_hh         := ${includesrc}/refptr.hh
 deps_sprite_id_hh      := ${includesrc}/sprite_id.hh ${deps_export_hh}
@@ -324,7 +324,7 @@ deps_error_cpp          := ${cppsrc}/error.cpp ${deps_error_hh}
 deps_file_format_cpp    := ${cppsrc}/file_format.cpp ${deps_file_format_hh} ${deps_renderer_hh}
 deps_fraction_cpp       := ${cppsrc}/fraction.cpp ${deps_fraction_hh}
 deps_log_cpp            := ${cppsrc}/log.cpp ${deps_log_hh}
-deps_main_cpp           := ${cppsrc}/main.cpp
+deps_autoconf_check_cpp := ${cppsrc}/autoconf_check.cpp
 deps_object_cursor_cpp  := ${cppsrc}/object_cursor.cpp ${deps_object_cursor_hh} ${deps_engraver_state_hh}
 deps_pageset_cpp        := ${cppsrc}/pageset.cpp ${deps_pageset_hh}
 deps_parameters_cpp     := ${cppsrc}/parameters.cpp ${deps_parameters_hh}
@@ -651,7 +651,10 @@ install-ps: ${DESTDIR}${psdir} ps
 
 # documentation (uninstall)
 uninstall-doc:    uninstall-readme uninstall-info
+	@test -d ${DESTDIR}${docdir} && (rmdir ${DESTDIR}${docdir} 2> /dev/null || printf ${STR_nonempty} "${DESTDIR}${docdir}") || :
+
 uninstall-alldoc: uninstall-readme uninstall-info uninstall-man uninstall-html uninstall-pdf uninstall-dvi uninstall-ps
+	@test -d ${DESTDIR}${docdir} && (rmdir ${DESTDIR}${docdir} 2> /dev/null || printf ${STR_nonempty} "${DESTDIR}${docdir}") || :
 
 uninstall-readme:
 	$(NORMAL_UNINSTALL)
@@ -662,41 +665,47 @@ uninstall-readme:
 	@-rm -f ${DESTDIR}${docdir}/LICENCES
 	@-rm -f ${DESTDIR}${docdir}/README
 	@-rm -f ${DESTDIR}${docdir}/TODO
-	@test -d ${DESTDIR}${docdir} && (rmdir ${DESTDIR}${docdir} 2> /dev/null || printf ${STR_nonempty} "${DESTDIR}${docdir}") || :
+	@test -d ${DESTDIR}${docdir} && rmdir ${DESTDIR}${docdir} 2> /dev/null
 
 uninstall-info:
 	$(NORMAL_UNINSTALL)
 	@test -f ${DESTDIR}${infodir}/scorepress.info && printf ${STR_uninstall} 'Info Files' || :
 	@-rm -f ${DESTDIR}${infodir}/scorepress.info
+	@test -d ${DESTDIR}${infodir} && rmdir ${DESTDIR}${infodir} 2> /dev/null
 
 uninstall-man:
 	$(NORMAL_UNINSTALL)
 	@test -f ${DESTDIR}${man3dir}/ScorePress_Engraver.3.gz && printf ${STR_uninstall} 'Manpages' || :
 	@-rm -f ${DESTDIR}${man3dir}/ScorePress_*
+	@test -d ${DESTDIR}${man3dir} && rmdir ${DESTDIR}${man3dir} 2> /dev/null
 
 uninstall-html:
 	$(NORMAL_UNINSTALL)
 	@test -d ${DESTDIR}${htmldir}/html && printf ${STR_uninstall} 'Documentation (HTML)' || :
 	@-rm -f ${DESTDIR}${htmldir}/index.html
 	@-rm -rf ${DESTDIR}${htmldir}/html
+	@test -d ${DESTDIR}${htmldir} && rmdir ${DESTDIR}${htmldir} 2> /dev/null
 	
 uninstall-pdf:
 	$(NORMAL_UNINSTALL)
 	@test -f ${DESTDIR}${pdfdir}/refman.pdf && printf ${STR_uninstall} 'Documentation (PDF)' || :
 	@-rm -f ${DESTDIR}${pdfdir}/refman.pdf
 	@-rmdir ${DESTDIR}${pdfdir} 2> /dev/null || :
+	@test -d ${DESTDIR}${pdfdir} && rmdir ${DESTDIR}${pdfdir} 2> /dev/null
 
 uninstall-dvi:
 	$(NORMAL_UNINSTALL)
 	@test -f ${DESTDIR}${dvidir}/refman.dvi && printf ${STR_uninstall} 'Documentation (DVI)' || :
 	@-rm -f ${DESTDIR}${dvidir}/refman.dvi
 	@-rmdir ${DESTDIR}${dvidir} 2> /dev/null || :
+	@test -d ${DESTDIR}${dvidir} && rmdir ${DESTDIR}${dvidir} 2> /dev/null
 
 uninstall-ps:
 	$(NORMAL_UNINSTALL)
 	@test -f ${DESTDIR}${psdir}/refman.ps && printf ${STR_uninstall} 'Documentation (PS)' || :
 	@-rm -f ${DESTDIR}${psdir}/refman.ps
 	@-rmdir ${DESTDIR}${psdir} 2> /dev/null || :
+	@test -d ${DESTDIR}${psdir} && rmdir ${DESTDIR}${psdir} 2> /dev/null
 
 # clean
 mostly-clean:
@@ -905,13 +914,13 @@ ${DESTDIR}/%:
 # TARGET FILES
 #
 
-${objdir}/${sofile}:  ${srcfiles}
+${objdir}/${sofile}:	${srcfiles}
 						@printf ${STR_make} "${sofile}"
 						@${MAKE} -s ${sofiles}
 						@printf ${STR_link} "${sofile}"
 						@${CXX} -shared -Wl,-soname,${soname} ${sofiles} -o ${objdir}/${sofile} ${LIBS} ${FLAGS}
 
-${objdir}/${afile}:   ${srcfiles}
+${objdir}/${afile}:		${srcfiles}
 						@printf ${STR_make} "${afile}"
 						@${MAKE} -s ${afiles}
 						@printf ${STR_link} "${afile}"
@@ -921,12 +930,12 @@ ${objdir}/${afile}:   ${srcfiles}
 # OBJECT FILES
 #
 
-${objdir}/main.o:			${deps_main_cpp}
-							printf ${STR_compile} 'main.cpp'
-							${CXX} -c ${cppsrc}/main.cpp -o ${objdir}/main.o ${FLAGS}
-${objdir}/main.s.o:			${deps_main_cpp}
-							printf ${STR_compile} 'main.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/main.cpp -o ${objdir}/main.s.o ${FLAGS}
+${objdir}/autoconf_check.o:		${deps_autoconf_check_cpp}
+								printf ${STR_compile} 'autoconf_check.cpp'
+								${CXX} -c ${cppsrc}/autoconf_check.cpp -o ${objdir}/autoconf_check.o ${FLAGS}
+${objdir}/autoconf_check.s.o:	${deps_autoconf_check_cpp}
+								printf ${STR_compile} 'autoconf_check.cpp'
+								${CXX} ${SOFLAGS} -c ${cppsrc}/autoconf_check.cpp -o ${objdir}/autoconf_check.s.o ${FLAGS}
 
 ${objdir}/engine.o:			${deps_engine_cpp}
 							printf ${STR_compile} 'engine.cpp'
