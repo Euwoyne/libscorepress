@@ -5,13 +5,14 @@ libscorepress.layout
 # Configure Output
 config.status
 *.log
-include/scorepress/config.hh
+config.hh
 doc/Doxyfile
+data/scorepress.pc
 Makefile
 
 # Compiled Object files
-build
-build/*
+obj
+obj/*
 *.slo
 *.lo
 *.o
