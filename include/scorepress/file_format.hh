@@ -91,8 +91,8 @@ class SCOREPRESS_API XMLDocumentReader : public DocumentReader, public XMLFileRe
 class SCOREPRESS_API XMLSpritesetReader : public SpritesetReader, public XMLFileReader
 {
  public:
-    XMLSpritesetReader();                                   // constructor
-    virtual void parse_spriteset(SpriteSet&   target,       // sprite-set parser
+    XMLSpritesetReader();                               // constructor
+    virtual void parse_spriteset(SpriteSet&   target,   // sprite-set parser
                                  Renderer&    renderer,
                                  const size_t setid);
 };

@@ -665,47 +665,47 @@ uninstall-readme:
 	@-rm -f ${DESTDIR}${docdir}/LICENCES
 	@-rm -f ${DESTDIR}${docdir}/README
 	@-rm -f ${DESTDIR}${docdir}/TODO
-	@test -d ${DESTDIR}${docdir} && rmdir ${DESTDIR}${docdir} 2> /dev/null
+	@test -d ${DESTDIR}${docdir} && rmdir ${DESTDIR}${docdir} 2> /dev/null || :
 
 uninstall-info:
 	$(NORMAL_UNINSTALL)
 	@test -f ${DESTDIR}${infodir}/scorepress.info && printf ${STR_uninstall} 'Info Files' || :
 	@-rm -f ${DESTDIR}${infodir}/scorepress.info
-	@test -d ${DESTDIR}${infodir} && rmdir ${DESTDIR}${infodir} 2> /dev/null
+	@test -d ${DESTDIR}${infodir} && rmdir ${DESTDIR}${infodir} 2> /dev/null || :
 
 uninstall-man:
 	$(NORMAL_UNINSTALL)
 	@test -f ${DESTDIR}${man3dir}/ScorePress_Engraver.3.gz && printf ${STR_uninstall} 'Manpages' || :
 	@-rm -f ${DESTDIR}${man3dir}/ScorePress_*
-	@test -d ${DESTDIR}${man3dir} && rmdir ${DESTDIR}${man3dir} 2> /dev/null
+	@test -d ${DESTDIR}${man3dir} && rmdir ${DESTDIR}${man3dir} 2> /dev/null || :
 
 uninstall-html:
 	$(NORMAL_UNINSTALL)
 	@test -d ${DESTDIR}${htmldir}/html && printf ${STR_uninstall} 'Documentation (HTML)' || :
 	@-rm -f ${DESTDIR}${htmldir}/index.html
 	@-rm -rf ${DESTDIR}${htmldir}/html
-	@test -d ${DESTDIR}${htmldir} && rmdir ${DESTDIR}${htmldir} 2> /dev/null
+	@test -d ${DESTDIR}${htmldir} && rmdir ${DESTDIR}${htmldir} 2> /dev/null || :
 	
 uninstall-pdf:
 	$(NORMAL_UNINSTALL)
 	@test -f ${DESTDIR}${pdfdir}/refman.pdf && printf ${STR_uninstall} 'Documentation (PDF)' || :
 	@-rm -f ${DESTDIR}${pdfdir}/refman.pdf
 	@-rmdir ${DESTDIR}${pdfdir} 2> /dev/null || :
-	@test -d ${DESTDIR}${pdfdir} && rmdir ${DESTDIR}${pdfdir} 2> /dev/null
+	@test -d ${DESTDIR}${pdfdir} && rmdir ${DESTDIR}${pdfdir} 2> /dev/null || :
 
 uninstall-dvi:
 	$(NORMAL_UNINSTALL)
 	@test -f ${DESTDIR}${dvidir}/refman.dvi && printf ${STR_uninstall} 'Documentation (DVI)' || :
 	@-rm -f ${DESTDIR}${dvidir}/refman.dvi
 	@-rmdir ${DESTDIR}${dvidir} 2> /dev/null || :
-	@test -d ${DESTDIR}${dvidir} && rmdir ${DESTDIR}${dvidir} 2> /dev/null
+	@test -d ${DESTDIR}${dvidir} && rmdir ${DESTDIR}${dvidir} 2> /dev/null || :
 
 uninstall-ps:
 	$(NORMAL_UNINSTALL)
 	@test -f ${DESTDIR}${psdir}/refman.ps && printf ${STR_uninstall} 'Documentation (PS)' || :
 	@-rm -f ${DESTDIR}${psdir}/refman.ps
 	@-rmdir ${DESTDIR}${psdir} 2> /dev/null || :
-	@test -d ${DESTDIR}${psdir} && rmdir ${DESTDIR}${psdir} 2> /dev/null
+	@test -d ${DESTDIR}${psdir} && rmdir ${DESTDIR}${psdir} 2> /dev/null || :
 
 # clean
 mostly-clean:

@@ -152,9 +152,8 @@ void EngraverState::engrave()
     if (cursor->is(Class::NOTEOBJECT)) pos.y += viewport->umtopx_v(pick.staff_offset(static_cast<const NoteObject&>(*cursor).staff_shift));
     else                               pos.y += viewport->umtopx_v(pick.staff_offset());
     
-    pvoice->notes.push_back(Plate::pNote(pos, cursor)); // append the new note to the plate
-    pnote = --pvoice->notes.end();                      // get the on-plate note-object
-    if (cursor.virtual_obj)                             // set virtual object
+    pnote = pvoice->append(pos, cursor);    // append the new note to the plate
+    if (cursor.virtual_obj)                 // set virtual object
         pnote->virtual_obj = Plate::pNote::VirtualPtr(new Plate::pNote::Virtual(*cursor.virtual_obj, cursor.inserted));
     
     // engrave object (polymorphically call "StaffObject::engrave")
@@ -371,9 +370,10 @@ void EngraverState::engrave_stems()
                         
                         if (pnote->stem.base > top)     // an upward stem is right of the chord
                         {
-                            pnote->stem.x = pnote->absolutePos.front().x                            // base position
-                                + stem.x                                                            // offset for the sprite
-                                - _round(pnote->stem_info->cluster ? 0 : stem_width * scale / 2);   // offset for the stem's width
+                            pnote->stem.x = pnote->absolutePos.front().x        // base position
+                                + stem.x                                        // offset for the sprite
+                                                                                // offset for the stem's width
+                                - _round(pnote->stem_info->cluster ? 0 : stem_width * scale / 2);
                             
                             pnote->stem.top = _round(y1 + (pnote->stem.x - x1) * slope);
                             pnote->stem.base = pnote->stem_info->base_pos + (pnote->stem_info->base_side ?
@@ -383,7 +383,7 @@ void EngraverState::engrave_stems()
                         
                         if (pnote->stem.base < top)     // downward stems are placed left of the chord
                         {
-                            pnote->stem.x = pnote->absolutePos.front().x                            // base position
+                            pnote->stem.x = pnote->absolutePos.front().x        // base position
                              + _round(pnote->stem_info->cluster ? stem.x : sprite_width - stem.x + stem_width * scale / 2);
                             
                             pnote->stem.top = _round(y1 + (pnote->stem.x - x1) * slope);

@@ -217,10 +217,10 @@ void EditCursor::set_stem_aligned(Chord& chord, Chord& chord2, bool shorten) con
 bool EditCursor::for_each_chord_in_beam_do(VoiceCursor& cur, void (*func)(Chord&,const int,int*), const int arg, int* out)
 {
     // for notes without beams
-    if (   cur.pnote->beam_begin == cur.pvoice->notes.end()
-        && cur.note->is(Class::CHORD))
+    if (cur.pnote->beam_begin == cur.pvoice->notes.end())
     {   // just set the value, and quit
-        (*func)(static_cast<Chord&>(*cur.note), arg, out);
+        if (cur.note->is(Class::CHORD))
+            (*func)(static_cast<Chord&>(*cur.note), arg, out);
         return true;
     };
     
@@ -350,12 +350,16 @@ void EditCursor::insert_head(const InputNote& note) throw(NotValidException, Cur
     // insert head, sorting (ascending) by tone
     for (HeadList::iterator h = chord.heads.begin(); h != chord.heads.end(); ++h)
     {
-        if ((*h)->tone == head->tone)   // if the head exists
+        // if the head exists
+        if (   static_cast<int>((*h)->tone) - Accidental::note_modifier[(*h)->accidental.type]
+            == static_cast<int>(head->tone) - Accidental::note_modifier[head->accidental.type])
         {
             chord.heads.erase(h);           // remove the existing head
             return;                         // stop iterating
         };
-        if ((*h)->tone > head->tone)    // if we got a higher tone
+        
+        // if we got a higher tone
+        if ((*h)->tone > head->tone)
         {                                   // insert and set default dot offset
             (*chord.heads.insert(h, head))->dot_offset = (*h)->dot_offset;
             set_auto_stem_length(chord);    // reset stem-length

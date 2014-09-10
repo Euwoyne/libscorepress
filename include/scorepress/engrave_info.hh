@@ -26,7 +26,7 @@
 #include "plate.hh"     // Plate
 #include "stem_info.hh" // StemInfo
 #include "score.hh"     // Score, Voice, TiedHead, Durable, ScoreDimension, tone_t, value_t, mpx_t
-#include "error.hh"     // MissingDefaultConstructor
+#include "error.hh"     // ScorePress::Error, MissingDefaultConstructor
 #include "export.hh"
 
 namespace ScorePress
@@ -53,7 +53,14 @@ typedef std::map<const Voice*, TieInfoChord> TieInfoMap;    // tie-information f
 //
 class SCOREPRESS_LOCAL BeamInfo
 {
+ public:
+    // exception class
+    class SCOREPRESS_API Error : public ScorePress::Error
+        {public: Error(const std::string& msg);};
+ 
  private:
+    enum ShortDir {FORCE_LEFT, LEFT, RIGHT};
+    
     Plate::pVoice* voice;                           // the host voice
     Plate::pVoice::Iterator beam[VALUE_BASE - 2];   // the first note for every beam
                                                     //   (highest index being the top beam)
@@ -62,33 +69,30 @@ class SCOREPRESS_LOCAL BeamInfo
     
     // helper functions
     void set(size_t beam_idx, size_t end_idx, Plate::pNote& start, const Plate::pNote& end, const Plate::pNote& cur);
-    void calculate_beam(size_t i, Plate::pNote& pnote, const Plate::pNote& end, size_t& s, bool short_left);
+    void calculate_beam(size_t i, Plate::pNote& pnote, const Plate::pNote& end, size_t& s, ShortDir short_dir);
     
-    void start(unsigned int exp, Plate::pVoice::Iterator pnote);  // start necessary beams
-    void set(unsigned int exp, Plate::pVoice::Iterator pnote);    // end unnecessary beams
-    void stop(unsigned int exp, Plate::pVoice::Iterator end);     // end all beams at this note
-    void cut(Plate::pVoice::Iterator pnote);                      // end each beam on the previous note
+    void start(unsigned int exp, Plate::pVoice::Iterator pnote);                    // start necessary beams
+    void set(unsigned int exp, Plate::pVoice::Iterator pnote, ShortDir short_dir);  // end unnecessary beams
+    void stop(unsigned int exp, Plate::pVoice::Iterator end);                       // end all beams at this note
+    void cut(Plate::pVoice::Iterator pnote);                                        // end each beam on the previous note
     
     // create beam information
     void apply(const Chord&             chord,      // current chord
                Plate::pVoice::Iterator& pnote,      // corresponding on-plate note
                const StemInfo*          stem_info,  // stem-info for current note (saved to plate or erased from plate)
                const bool               has_beam,   // does the note have a beam?
-               const unsigned int       exp);       // effective value exponent
+               const unsigned int       exp,        // effective value exponent
+               const unsigned int       time);      // time stamp
     
  public:
     // constructor
     BeamInfo(Plate::pVoice& voice);
     BeamInfo() {throw MissingDefaultConstructor("BeamInfo");};
     
-    // create beam information (first pass; only top beam)
-    // (first version expecting the "object" to correspond to the last note in the "voice")
+    // create beam information (first pass; only top beam; expecting the "object" to correspond to the last note in the "voice")
     void apply1(const Chord& object, const unsigned char beam_group, const StemInfo& info);
-    void apply1(const Chord& object, Plate::pVoice::Iterator pnote, const unsigned char beam_group, const StemInfo& info);
     
     // calculate beam information (second pass; all beams)
-    // (first version expecting the "object" to correspond to the last note in the "voice")
-    void apply2(const Chord& object, const unsigned char beam_group);
     void apply2(const Chord& object, Plate::pVoice::Iterator pnote, const value_t time, const unsigned char beam_group);
     
     // end all beams

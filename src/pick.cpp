@@ -764,6 +764,7 @@ void Pick::cut(value_t duration)
         nchord->set_value(duration);
         nchord->attached.clear();
         nchord->heads.clear();
+        nchord->beam = Chord::NO_BEAM;
         for (HeadList::const_iterator i = chord.heads.begin(); i != chord.heads.end(); ++i)
         {
             nchord->heads.push_back(HeadPtr(new TiedHead(**i)));

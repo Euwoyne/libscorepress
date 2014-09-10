@@ -1,9 +1,6 @@
 libscorepress - TODO List
 =========================
 
-BUGS:
-  engrave_info.cpp  wrong on tied notes and short beams with CUTBEAM
-
 INCOMPLETE:
   file_format.cpp   parse <movable> section
   file_format.cpp   document parsing

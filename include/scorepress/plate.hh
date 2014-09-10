@@ -201,15 +201,15 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     typedef NoteList::iterator           Iterator;
     
  public:
-    const_Cursor   note;            // note object
+    const_Cursor   note;                    // note object
     
-    SpriteId       sprite;          // head sprite id
-    PositionList   absolutePos;     // positions for each head
-    PositionList   dotPos;          // positions for each dot
-    LedgerLineList ledgers;         // ledger lines
-    TieList        ties;            // attached ties
-    AttachableList attached;        // list of attached objects
-    VirtualPtr     virtual_obj;     // virtual object
+    SpriteId       sprite;                  // head sprite id
+    PositionList   absolutePos;             // positions for each head
+    PositionList   dotPos;                  // positions for each dot
+    LedgerLineList ledgers;                 // ledger lines
+    TieList        ties;                    // attached ties
+    AttachableList attached;                // list of attached objects
+    VirtualPtr     virtual_obj;             // virtual object
     
     Stem           stem;                    // stem information
     StemInfoPtr    stem_info;               // temporary additional stem information (only there during engraving)
@@ -272,6 +272,8 @@ class SCOREPRESS_API Plate_pVoice
     
     Plate_pVoice(const const_Cursor& cursor);                           // constructor
     Plate_pVoice() {throw MissingDefaultConstructor("Plate::pVoice");}  // default constructor
+    
+    Iterator append(const Plate_Pos& pos, const const_Cursor& note);    // append new note
 };
 
 

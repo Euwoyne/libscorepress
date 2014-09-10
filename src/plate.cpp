@@ -213,6 +213,14 @@ Plate_pLine::Iterator Plate_pLine::get_voice(const Voice& voice)
     return voices.end();    // if it cannot be found, return empty iterator
 }
 
+// append new note to voice
+Plate_pVoice::Iterator Plate_pVoice::append(const Plate_Pos& pos, const const_Cursor& note)
+{
+    notes.push_back(Plate_pNote(pos, note));
+    notes.back().beam_begin = notes.end();
+    return --notes.end();
+}
+
 // find the given voice in this line (constant version)
 Plate_pLine::const_Iterator Plate_pLine::get_voice(const Voice& voice) const
 {
