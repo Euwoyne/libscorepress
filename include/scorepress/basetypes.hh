@@ -44,7 +44,7 @@ typedef unsigned char tone_t;      // note-number (as defined by the MIDI standa
 typedef Fraction      value_t;     // note-values will be represented by exact fractions ("double" is too imprecise)
 
 // note value base exponent (i.e. the exponent of a whole note)
-static const int VALUE_BASE = 7;
+static const int VALUE_BASE = 8;
 
 //  BASE CLASSES
 // --------------

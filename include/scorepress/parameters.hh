@@ -75,6 +75,7 @@ struct SCOREPRESS_API EngraverParam
     um_t         min_distance;      // minimal graphical distance of note-heads of the same voice (in micrometer)
     um_t         default_distance;  // graphical distance between non-note objects                (in micrometer)
     um_t         barline_distance;  // graphical distance preceiding the first chord of a bar     (in micrometer)
+    um_t         nonnote_distance;  // graphical distance between non-note objects and notes      (in micrometer)
     pohh_t       accidental_space;  // space between an accidental and the previous note (in promille of head width)
     
     promille_t   exponent;          // note value exponent (in promille)

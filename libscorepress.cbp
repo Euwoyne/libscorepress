@@ -369,6 +369,13 @@
 			<Option target="install-static" />
 			<Option target="clear" />
 		</Unit>
+		<Unit filename="src/autoconf_check.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+			<Option target="dist-clean" />
+		</Unit>
 		<Unit filename="src/classes.cpp">
 			<Option target="shared" />
 			<Option target="static" />
@@ -418,10 +425,6 @@
 			<Option target="static" />
 		</Unit>
 		<Unit filename="src/log.cpp">
-			<Option target="shared" />
-			<Option target="static" />
-		</Unit>
-		<Unit filename="src/main.cpp">
 			<Option target="shared" />
 			<Option target="static" />
 		</Unit>

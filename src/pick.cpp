@@ -563,10 +563,18 @@ void Pick::prepare_next(const VoiceCursor& engravedNote, mpx_t w)
         };
         
         // check minimal distance
-        if (engravedNote->is(Class::NOTEOBJECT) && nextNote->is(Class::NOTEOBJECT))
+        if (nextNote->is(Class::NOTEOBJECT))
         {
-            const mpx_t minpos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
-            if (nextNote.pos < minpos) nextNote.pos = minpos;
+            if (engravedNote->is(Class::NOTEOBJECT))
+            {
+                const mpx_t minpos = engravedNote.pos + w + viewport->umtopx_h(param->min_distance);
+                if (nextNote.pos < minpos) nextNote.pos = minpos;
+            }
+            else
+            {
+                const mpx_t minpos = engravedNote.pos + w + viewport->umtopx_h(param->nonnote_distance);
+                if (nextNote.pos < minpos) nextNote.pos = minpos;
+            };
         }
         else
         {

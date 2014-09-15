@@ -601,6 +601,8 @@ void CustomTimeSig::engrave(EngraverState& engraver) const
 void CustomTimeSig::render(Renderer& renderer, const Plate::pNote& note, const PressState& state) const
 {
     if (!appearance.visible) return;
+    if (!note.sprite.ready()) return TimeSig::render(renderer, note, state);
+    
     renderer.set_color(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
     
     const double sprite_scale = (state.head_height * appearance.scale)
