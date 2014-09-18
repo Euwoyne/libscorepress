@@ -1733,7 +1733,7 @@ void Rest::engrave(EngraverState& engraver) const
     anchor.x = _round(restsprite.get_real("anchor.x") * scale * this->appearance.scale);
     anchor.y = _round(restsprite.get_real("anchor.y") * scale * this->appearance.scale);
     baseline = restsprite.get_integer("line");
-    slope    = _round(restsprite.get_real("slope") * scale * this->appearance.scale);
+    slope    = _round(restsprite.get_real("stem.slope") * scale * this->appearance.scale);
     minlen   = _round(restsprite.get_real("stem.minlen") * scale * this->appearance.scale);
     stembottomx1 = _round(restsprite.get_real("stem.bottom.x1") * scale * this->appearance.scale);
     

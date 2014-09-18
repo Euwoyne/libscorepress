@@ -16,322 +16,115 @@
         <copyright>Copyright (C) 2014 Dominik Lehmann</copyright>
         <license>This work is made available under the terms of the Creative Commons Attribution-Share Alike 3.0 (CC BY-SA 3.0) license.</license>
         <description>This is the default ScorePress Symbol Library.</description>
+        <date>20140916</date>
     </info>
     <sprites unit="20">
         <base>
-            <head type="whole">
-                <path>head_whole</path>
-            </head>
-            <head type="half">
-                <path>head_half</path>
-                <stem>
-                    <x>25</x>
-                    <y>7</y>
-                </stem>
-            </head>
-            <head type="quarter">
-                <path>head_quarter</path>
-                <stem>
-                    <x>25</x>
-                    <y>7</y>
-                </stem>
-            </head>
-            <flag type="note">
-                <path>flag</path>
-                <overlay>flag_overlay</overlay>
-                <distance>18</distance>
-            </flag>
-            <rest type="whole">
-                <path>rest_whole</path>
-                <line>2</line>
-            </rest>
-            <rest type="half">
-                <path>rest_half</path>
-                <anchor>
-                    <x>0</x>
-                    <y>20</y>
-                </anchor>
-                <line>4</line>
-            </rest>
-            <rest type="quarter">
-                <path>rest_quarter</path>
-                <anchor>
-                    <x>0</x>
-                    <y>50</y>
-                </anchor>
-                <line>6</line>
-            </rest>
-            <flag type="rest">
-                <path>flag_rest</path>
-                <restbase>rest_bottom</restbase>
-                <anchor>
-                    <x>0</x>
-                    <y>6</y>
-                </anchor>
-                <line>3</line>
-                <stem>
-                    <top>
-                        <x1>17</x1>
-                        <y1>3</y1>
-                        <x2>19</x2>
-                        <y2>3</y2>
-                    </top>
-                    <bottom>
-                        <x1>0</x1>
-                        <y1>0</y1>
-                        <x2>6</x2>
-                        <y2>0</y2>
-                    </bottom>
-                    <minlen>34</minlen>
-                </stem>
-                <slope>8</slope>
-            </flag>
-            <accidental type="sharp">
-                <path>sharp</path>
-                <anchor>
-                    <x>0</x>
-                    <y>18</y>
-                </anchor>
-                <offset>6</offset>
-            </accidental>
-            <accidental type="natural">
-                <path>natural</path>
-                <anchor>
-                    <x>0</x>
-                    <y>20</y>
-                </anchor>
-                <offset>6</offset>
-            </accidental>
-            <accidental type="flat">
-                <path>flat</path>
-                <anchor>
-                    <x>0</x>
-                    <y>25</y>
-                </anchor>
-                <offset>6</offset>
-            </accidental>
-            <accidental type="double-sharp">
-                <path>double_sharp</path>
-                <anchor>
-                    <x>0</x>
-                    <y>0</y>
-                </anchor>
-                <offset>6</offset>
-            </accidental>
-            <accidental type="double-flat">
-                <path>double_flat</path>
-                <anchor>
-                    <x>0</x>
-                    <y>25</y>
-                </anchor>
-                <offset>6</offset>
-            </accidental>
-            <accidental type="half-sharp">
-                <path>half_sharp</path>
-                <anchor>
-                    <x>0</x>
-                    <y>18</y>
-                </anchor>
-                <offset>6</offset>
-            </accidental>
-            <accidental type="half-flat">
-                <path>half_flat</path>
-                <anchor>
-                    <x>0</x>
-                    <y>25</y>
-                </anchor>
-                <offset>6</offset>
-            </accidental>
-            <brace>
-                <path>brace</path>
-                <anchor>
-                    <x>0</x>
-                    <y>35</y>
-                </anchor>
-                <hmin>200</hmin>
-                <hmax>400</hmax>
-                <low> 0.8</low>
-                <high>0.2</high>
-            </brace>
-            <bracket>
-                <path>bracket</path>
-                <anchor>
-                    <x>0</x>
-                    <y>35</y>
-                </anchor>
-                <line>7</line>
-            </bracket>
-            <dot>
-                <path>dot</path>
-                <anchor>
-                    <x>0</x>
-                    <y>3</y>
-                </anchor>
-                <distance>4</distance>
-                <offset>5</offset>
-            </dot>
-            <articulation type="staccato">
-                <path>dot</path>
-                <anchor>
-                    <x>3</x>
-                    <y>0</y>
-                </anchor>
-                <offset>5</offset>
-                <valuemod>500</valuemod>
+            <!-- HEADS -->
+            <head type="whole"   path="head_whole"/>
+            <head type="half"    path="head_half"    stem-x="25" stem-y="7"/>
+            <head type="quarter" path="head_quarter" stem-x="25" stem-y="7"/>
+            <flag type="note"    path="flag" overlay="flag_overlay" distance="18"/>
+            
+            <!-- RESTS -->
+            <rest type="whole"   path="rest_whole"   line="2"/>
+            <rest type="half"    path="rest_half"    line="4" anchor-x="0" anchor-y="20"/>
+            <rest type="quarter" path="rest_quarter" line="6" anchor-x="0" anchor-y="50"/>
+            <flag type="rest"    path="flag_rest"    line="3" anchor-x="0" anchor-y="6"
+                                 base="rest_bottom"  stem-top="17 3 19 3" stem-bottom="0 0 6 0"
+                                                     stem-minlen="34"     stem-slope="8"/>
+            <!-- DOT -->
+            <dot path="dot" anchor-x="0" anchor-y="3" distance="4" offset="5"/>
+            
+            <!-- ACCIDENTALS -->
+            <accidental type="sharp"        path="sharp"        anchor-x="0" anchor-y="18" offset="6"/>
+            <accidental type="natural"      path="natural"      anchor-x="0" anchor-y="20" offset="6"/>
+            <accidental type="flat"         path="flat"         anchor-x="0" anchor-y="25" offset="6"/>
+            <accidental type="double-sharp" path="double_sharp" anchor-x="0" anchor-y="0"  offset="6"/>
+            <accidental type="double-flat"  path="double_flat"  anchor-x="0" anchor-y="25" offset="6"/>
+            <accidental type="half-sharp"   path="half_sharp"   anchor-x="0" anchor-y="18" offset="6"/>
+            <accidental type="half-flat"    path="half_flat"    anchor-x="0" anchor-y="25" offset="6"/>
+            
+            <!-- SYSTEM BRACES -->
+            <brace   path="brace"   anchor-x="0" anchor-y="35" hmin="200" hmax="400" low="0.8" high="0.2"/>
+            <bracket path="bracket" anchor-x="0" anchor-y="35" line-width="7"/>
+            
+            <!-- ARTICULATION SYMBOLS -->
+            <articulation id="staccato" path="dot" anchor-x="3" anchor-y="0" offset="5" valuemod="500">
+                <name>staccato</name>
             </articulation>
-            <articulation type="accent">
-                <path>accent</path>
-                <anchor>
-                    <x>15</x>
-                    <y>0</y>
-                </anchor>
-                <offset>5</offset>
-                <volumemod>1500</volumemod>
+            
+            <articulation id="accent" path="accent" anchor-x="15" anchor-y="0" offset="5" volumemod="1500">
+                <name lang="en">accent</name>
+                <name lang="de">Akzent</name>
             </articulation>
-            <articulation type="tenuto">
-                <path>tenuto</path>
-                <anchor>
-                    <x>12.5</x>
-                    <y>0</y>
-                </anchor>
-                <offset>6</offset>
-                <valuemod>1000</valuemod>
+            
+            <articulation id="tenuto" path="tenuto" anchor-x="12.5" anchor-y="0" offset="6" valuemod="1000">
+                <name>tenuto</name>
             </articulation>
-            <articulation type="marcato">
-                <path>marcato</path>
-                <anchor>
-                    <x>9</x>
-                    <y>0</y>
-                </anchor>
-                <offset>5</offset>
-                <valuemod>500</valuemod>
-                <volumemod>1500</volumemod>
+            
+            <articulation id="marcato" path="marcato" anchor-x="9" anchor-y="0" offset="5" valuemod="500" volumemod="1500">
+                <name>marcato</name>
             </articulation>
-            <clef type="treble">
-                <path>gclef</path>
-                <anchor>
-                    <x>0</x>
-                    <y>85</y>
-                </anchor>
-                <basenote>67</basenote>
-                <line>6</line>
-                <keybound>
-                    <sharp>69</sharp>
-                    <flat>65</flat>
-                </keybound>
+            
+            <!-- CLEFS -->
+            <clef id="treble" path="gclef" anchor-x="0" anchor-y="85" basenote="67" line="6" keybound-sharp="69" keybound-flat="65">
+                <name lang="en">Treble Clef</name>
+                <name lang="de">Violin Schlüssel</name>
             </clef>
-            <clef type="bass">
-                <path>fclef</path>
-                <anchor>
-                    <x>2</x>
-                    <y>20</y>
-                </anchor>
-                <basenote>53</basenote>
-                <line>2</line>
-                <keybound>
-                    <sharp>45</sharp>
-                    <flat>41</flat>
-                </keybound>
+            
+            <clef id="bass" path="fclef" anchor-x="2" anchor-y="20" basenote="53" line="2" keybound-sharp="45" keybound-flat="41">
+                <name lang="en">Bass Clef</name>
+                <name lang="de">Bass Schlüssel</name>
             </clef>
-            <timesig type="digit">
-                <path>timesig0</path>
-                <digit>0</digit>
-                <anchor>
-                    <x>2</x>
-                    <y>2</y>
-                </anchor>
-            </timesig>
-            <timesig type="digit">
-                <path>timesig1</path>
-                <digit>1</digit>
-                <anchor>
-                    <x>3.5</x>
-                    <y>3</y>
-                </anchor>
-            </timesig>
-            <timesig type="digit">
-                <path>timesig2</path>
-                <digit>2</digit>
-                <anchor>
-                    <x>2.5</x>
-                    <y>2</y>
-                </anchor>
-            </timesig>
-            <timesig type="digit">
-                <path>timesig3</path>
-                <digit>3</digit>
-                <anchor>
-                    <x>3.5</x>
-                    <y>2</y>
-                </anchor>
-            </timesig>
-            <timesig type="digit">
-                <path>timesig4</path>
-                <digit>4</digit>
-                <anchor>
-                    <x>1</x>
-                    <y>2</y>
-                </anchor>
-            </timesig>
-            <timesig type="digit">
-                <path>timesig5</path>
-                <digit>5</digit>
-                <anchor>
-                    <x>1</x>
-                    <y>1</y>
-                </anchor>
-            </timesig>
-            <timesig type="digit">
-                <path>timesig6</path>
-                <digit>6</digit>
-                <anchor>
-                    <x>3</x>
-                    <y>2</y>
-                </anchor>
-            </timesig>
-            <timesig type="digit">
-                <path>timesig7</path>
-                <digit>7</digit>
-                <anchor>
-                    <x>1</x>
-                    <y>1</y>
-                </anchor>
-            </timesig>
-            <timesig type="digit">
-                <path>timesig8</path>
-                <digit>8</digit>
-                <anchor>
-                    <x>2</x>
-                    <y>2</y>
-                </anchor>
-            </timesig>
-            <timesig type="digit">
-                <path>timesig9</path>
-                <digit>9</digit>
-                <anchor>
-                    <x>3</x>
-                    <y>2</y>
-                </anchor>
-            </timesig>
-            <timesig type="symbol">
-                <path>timesigC</path>
-                <enum>4</enum>
-                <denom>4</denom>
-                <anchor>
-                    <x>0</x>
-                    <y>1</y>
-                </anchor>
-            </timesig>
-            <timesig type="symbol">
-                <path>allabreve</path>
-                <enum>2</enum>
-                <denom>2</denom>
-                <anchor>
-                    <x>0</x>
-                    <y>1</y>
-                </anchor>
+            
+            <!-- TIME SIGNATURES -->
+            <timesig type="digit"  digit="0"  path="timesig0"  anchor-x="2"   anchor-y="2"/>
+            <timesig type="digit"  digit="1"  path="timesig1"  anchor-x="3.5" anchor-y="3"/>
+            <timesig type="digit"  digit="2"  path="timesig2"  anchor-x="2.5" anchor-y="2"/>
+            <timesig type="digit"  digit="3"  path="timesig3"  anchor-x="3.5" anchor-y="2"/>
+            <timesig type="digit"  digit="4"  path="timesig4"  anchor-x="1"   anchor-y="2"/>
+            <timesig type="digit"  digit="5"  path="timesig5"  anchor-x="1"   anchor-y="1"/>
+            <timesig type="digit"  digit="6"  path="timesig6"  anchor-x="3"   anchor-y="2"/>
+            <timesig type="digit"  digit="7"  path="timesig7"  anchor-x="1"   anchor-y="1"/>
+            <timesig type="digit"  digit="8"  path="timesig8"  anchor-x="2"   anchor-y="2"/>
+            <timesig type="digit"  digit="9"  path="timesig9"  anchor-x="3"   anchor-y="2"/>
+            <timesig type="symbol" time="4/4" path="timesigC"  anchor-x="0"   anchor-y="1"/>
+            <timesig type="symbol" time="2/2" path="allabreve" anchor-x="0"   anchor-y="1">
+                <name>alla breve</name>
             </timesig>
         </base>
+        
+        <!-- MOVABLE SYMBOLS -->
+        <movables>
+            <group id="dynamic">
+                <name lang="en">Dynamic Symbols</name>
+                <name lang="en">Dynamik Symbole</name>
+                <typeface id="dynamic" ascent="33" descent="-14" general-use="yes" custom-use="yes">
+                    <glyph char="f"  path="forte"            bearing-x="-13"  bearing-y="33"   advance="21"/>
+                    <glyph char="p"  path="piano"            bearing-x="-6"   bearing-y="21"   advance="30"/>
+                    <glyph char="P"  path="piano_noligature" bearing-x="-8.5" bearing-y="21"   advance="27.5"/>
+                    <glyph char="m"  path="mezzo"            bearing-x="-3"   bearing-y="21"   advance="34"/>
+                    <glyph char="r"  path="r"                bearing-x="-1.5" bearing-y="20"   advance="19.2"/>
+                    <glyph char="s"  path="s"                bearing-x="-3.5" bearing-y="20"   advance="14.9"/>
+                    <glyph char="z"  path="z"                bearing-x="-4.7" bearing-y="19.4" advance="16.6"/>
+                </typeface>
+                <symbol id="f"   type="string" path="f">  <name>forte</name></symbol>
+                <symbol id="mf"  type="string" path="mf"> <name>mezzo forte</name></symbol>
+                <symbol id="ff"  type="string" path="ff"> <name>fortissimo</name></symbol>
+                <symbol id="fff" type="string" path="fff"><name>forte fortissimo</name></symbol>
+                <symbol id="p"   type="string" path="p">  <name>piano</name></symbol>
+                <symbol id="mp"  type="string" path="mP"> <name>mezzo piano</name></symbol>
+                <symbol id="pp"  type="string" path="pp"> <name>pianissimo</name></symbol>
+                <symbol id="ppp" type="string" path="ppp"><name>piano pianissimo</name></symbol>
+                <symbol id="fp"  type="string" path="fp"> <name>fortepiano</name></symbol>
+                <symbol id="sf"  type="string" path="sf"> <name>sforzato</name></symbol>
+                <symbol id="sfz" type="string" path="sfz"><name>sforzando</name></symbol>
+                <symbol id="fz"  type="string" path="fz"> <name>forzando</name></symbol>
+                <symbol id="rf"  type="string" path="rf"> <name>rinforzato</name></symbol>
+                <symbol id="rfz" type="string" path="rfz"><name>rinforzando</name></symbol>
+            </group>
+        </movables>
     </sprites>
 </symbols>
 

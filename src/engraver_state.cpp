@@ -694,7 +694,7 @@ void EngraverState::engrave_braces()
             bracket_begin->bracket.line_end = bracket_begin->basePos;
             bracket_begin->bracket.line_end.x -= viewport->umtopx_h(staff->bracket_pos);
             bracket_begin->bracket.line_base = bracket_begin->bracket.line_end;
-            bracket_begin->bracket.line_base.x -= _round(bracket_scale * (*sprites)[bracket_sprite].get_real("line"));
+            bracket_begin->bracket.line_base.x -= _round(bracket_scale * (*sprites)[bracket_sprite].get_real("linewidth"));
             bracket_begin->bracket.line_end.y =
                  (bracket_end->basePos.y
                 + viewport->umtopx_v(HEAD_HEIGHT(bracket_end->begin.staff()) * (bracket_end->begin.staff().line_count - 1))

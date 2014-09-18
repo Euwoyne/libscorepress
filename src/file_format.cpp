@@ -20,6 +20,7 @@
 
 #include "file_format.hh"
 #include "renderer.hh"          // Renderer
+
 #include <cstdlib>              // atoi, strtof
 #include <cstring>              // strlen, sprintf
 #include <cmath>                // log10
@@ -81,6 +82,113 @@ void XMLFileReader::mythrow_eof(const char* trns, const std::string& filename, c
     throw ExpectedEOF(s);                                   // throw message
 }
 
+void XMLFileReader::read_int(int& target, const char* tag)
+{
+    // check EOF
+    if (xmlTextReaderRead(parser) != 1)
+        mythrow("Expected </%s> (in file \"%s\", at line %i:%i)", tag, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+    
+    // read content
+    std::string buffer;
+    while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
+    {
+        buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
+        if (xmlTextReaderRead(parser) != 1)
+            mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+    };
+    
+    // check end tag
+    if (xmlStrEqual(xmlTextReaderConstName(parser), STR_CAST(tag)) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT)
+        mythrow("Expected </%s> (in file \"%s\", at line %i:%i)", tag, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+    
+    // parse the number
+    target = atoi(buffer.c_str());
+}
+
+void XMLFileReader::read_double(double& target, const char* tag)
+{
+    // check EOF
+    if (xmlTextReaderRead(parser) != 1)
+        mythrow("Expected </%s> (in file \"%s\", at line %i:%i)", tag, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+    
+    // read content
+    std::string buffer;
+    while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
+    {
+        buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
+        if (xmlTextReaderRead(parser) != 1)
+            mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+    };
+    
+    // check end tag
+    if (xmlStrEqual(xmlTextReaderConstName(parser), STR_CAST(tag)) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT)
+        mythrow("Expected </%s> (in file \"%s\", at line %i:%i)", tag, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+    
+    // parse the number
+    target = strtof(buffer.c_str(), NULL);
+}
+
+void XMLFileReader::read_string(std::string& target, const char* tag, bool empty_ok)
+{
+    // check EOF
+    if (xmlTextReaderRead(parser) != 1)
+        mythrow("Expected </%s> (in file \"%s\", at line %i:%i)", tag, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+    
+    // check empty tag (i.e. <tag/>)
+    if (xmlTextReaderIsEmptyElement(parser))
+    {
+        if (!empty_ok)
+            mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+        target.clear();
+        return;
+    };
+    
+    // read content
+    target.clear();
+    while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
+    {
+        target.append(XML_CAST(xmlTextReaderConstValue(parser)));
+        if (xmlTextReaderRead(parser) != 1)
+            mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+    };
+    
+    // check end tag
+    if (xmlStrEqual(xmlTextReaderConstName(parser), STR_CAST(tag)) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT)
+        mythrow("Expected </%s> (in file \"%s\", at line %i:%i)", tag, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+}
+
+void XMLFileReader::read_i18n(std::map<std::string, std::string>& target, const char* tag, const char* def, bool empty_ok)
+{
+    // check language
+    xmlChar* attr = xmlTextReaderGetAttribute(parser, STR_CAST("lang"));
+    std::string& str = attr ? target[XML_CAST(attr)] : target[def];
+    xmlFree(attr);
+    
+    // check EOF
+    if (xmlTextReaderRead(parser) != 1)
+        mythrow("Expected </%s> (in file \"%s\", at line %i:%i)", tag, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+    
+    // check empty tag (i.e. <tag/>)
+    if (xmlTextReaderIsEmptyElement(parser))
+    {
+        if (!empty_ok)
+            mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+        str.clear();
+        return;
+    };
+    
+    // read content (text node)
+    str.clear();
+    while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
+    {
+        str.append(XML_CAST(xmlTextReaderConstValue(parser)));
+        if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+    };
+    
+    // check end tag
+    if (xmlStrEqual(xmlTextReaderConstName(parser), STR_CAST(tag)) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT)
+        mythrow("Expected </%s> (in file \"%s\", at line %i:%i)", tag, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+}
 
 // constructor
 XMLFileReader::XMLFileReader() : FileReader("XMl File", "application/xml", "xml"), parser(NULL) {}
@@ -260,115 +368,35 @@ void XMLDocumentReader::parse_document(Document& target)
         case META:
             // document main <title>
             if (xmlStrEqual(tag, STR_CAST("title")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                target.meta.title.clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    target.meta.title.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("Unexpected EOF (in file \"%s\")", filename);
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("title")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </title> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(target.meta.title, "title");
             
             // document's <subtitle>
             else if (xmlStrEqual(tag, STR_CAST("subtitle")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                target.meta.subtitle.clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    target.meta.subtitle.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("Unexpected EOF (in file \"%s\")", filename);
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("subtitle")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </subtitle> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(target.meta.subtitle, "subtitle");
             
             // <artist> name
             else if (xmlStrEqual(tag, STR_CAST("artist")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                target.meta.artist.clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    target.meta.artist.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("Unexpected EOF (in file \"%s\")", filename);
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("artist")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </artist> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(target.meta.artist, "artist");
             
             // main <key> (or keys)
             else if (xmlStrEqual(tag, STR_CAST("key")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                target.meta.key.clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    target.meta.key.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("Unexpected EOF (in file \"%s\")", filename);
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("key")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </key> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(target.meta.key, "key");
             
             // <date> of completion
             else if (xmlStrEqual(tag, STR_CAST("date")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                target.meta.date.clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    target.meta.date.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("Unexpected EOF (in file \"%s\")", filename);
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("date")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </date> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(target.meta.date, "date");
             
             // <number> in a collection
             else if (xmlStrEqual(tag, STR_CAST("number")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                target.meta.number.clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    target.meta.number.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("Unexpected EOF (in file \"%s\")", filename);
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("number")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </number> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(target.meta.number, "number");
             
             // <transcriptor> name
             else if (xmlStrEqual(tag, STR_CAST("transcriptor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                target.meta.transcriptor.clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    target.meta.transcriptor.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("Unexpected EOF (in file \"%s\")", filename);
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("transcriptor")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </transcriptor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(target.meta.transcriptor, "transcriptor");
             
             // <opus> number
             else if (xmlStrEqual(tag, STR_CAST("opus")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                target.meta.opus.clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    target.meta.opus.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("Unexpected EOF (in file \"%s\")", filename);
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("opus")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </opus> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(target.meta.opus, "opus");
             
             // end tag </meta>
             else if (xmlStrEqual(tag, STR_CAST("meta")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
@@ -376,18 +404,8 @@ void XMLDocumentReader::parse_document(Document& target)
             
             // any other tag will be inserted into the "misc" map
             else
-            {
-                const std::string meta_tag(XML_CAST(tag));
-                target.meta.misc[meta_tag].clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    target.meta.misc[meta_tag].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("Unexpected EOF (in file \"%s\")", filename);
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST(meta_tag.c_str())) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </%s> (in file \"%s\", at line %i:%i)", meta_tag, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
+                read_string(target.meta.misc[XML_CAST(tag)], XML_CAST(tag));
+            
             break;
         
         // TODO: continue document parsing
@@ -436,15 +454,7 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
                                     filename;
     
     // parser state enumerator
-    enum enuState
-    {   BEGIN, END,
-        SYMBOLS,
-        INFO, SPRITES,
-        BASE,
-        HEAD, FLAG, REST, RESTFLAG, ACCIDENTAL, BRACE, BRACKET, DOT, ARTICULATION, CLEF, TIMESIG1, TIMESIG2,
-        ANCHOR, STEM, KEYBOUND, RESTSTEM, RESTSTEMTOPPOS, RESTSTEMBOTTOMPOS,
-        MOVABLE
-    };
+    enum enuState {BEGIN, END, SYMBOLS, INFO, SPRITES, BASE, MOVABLES, GROUP, TYPEFACE};
     enuState state = BEGIN;     // set current state
     enuState prestate = BEGIN;  // set the previous state (used for returning from a state)
     
@@ -472,18 +482,18 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
             
             // checking "id" attribute
             attr = xmlTextReaderGetAttribute(parser, STR_CAST("id"));
-            if (attr == NULL) mythrow("Missing \"id\"-attribute for <symbols>-tag (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+            if (attr == NULL) mythrow("Missing \"id\"-attribute for <symbols>-tag (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
             spriteset.info["id"] = XML_CAST(attr);
             xmlFree(attr);
             
             // changing state
-            state = SYMBOLS;
+            if (!xmlTextReaderIsEmptyElement(parser)) state = SYMBOLS;
             break;
             
         //  state after the final </symbols>, expecting the end of data
         // ----------------------------------
         case END:
-            mythrow_eof("Expected EOF (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+            mythrow_eof("Expected EOF (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
             break;
             
         //  <symbols> root section
@@ -492,7 +502,7 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
             // the libraries <info> section
             if (xmlStrEqual(tag, STR_CAST("info")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
             {
-                state = INFO;   // parse the section
+                if (!xmlTextReaderIsEmptyElement(parser)) state = INFO;   // parse the section
             }
             
             // the <sprites> section
@@ -500,12 +510,13 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
             {
                 // get "unit" attribute (i.e. head-height)
                 attr = xmlTextReaderGetAttribute(parser, STR_CAST("unit"));
-                if (attr == NULL) mythrow("Missing \"unit\"-attribute for <sprites> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                if (attr == NULL) mythrow("Missing \"unit\"-attribute for <sprites> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 spriteset.head_height = atoi(XML_CAST(attr));
+                if (spriteset.head_height == 0) mythrow("Illegal value for \"unit\"-attribute for <sprites> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 xmlFree(attr);
                 
                 // parse the sprite information
-                state = SPRITES;
+                if (!xmlTextReaderIsEmptyElement(parser)) state = SPRITES;
             }
             
             // end tag </symbols>
@@ -516,7 +527,7 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
             }
             
             // any other tag is illegal here
-            else mythrow("Expected one of <info>, <sprites> or </symbols> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+            else mythrow("Expected one of <info>, <sprites> or </symbols> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
             break;
             
         //  <info> structure
@@ -524,66 +535,30 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
         case INFO:
             // <author> information
             if (xmlStrEqual(tag, STR_CAST("author")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                spriteset.info["author"].clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.info["author"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("Unexpected EOF (in file \"%s\")", filename);
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("author")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </author> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(spriteset.info["author"], "author");
             
             // <copyright> information
             else if (xmlStrEqual(tag, STR_CAST("copyright")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                spriteset.info["copyright"].clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.info["copyright"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("copyright")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </copyright> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(spriteset.info["copyright"], "copyright");
             
             // <license> information
             else if (xmlStrEqual(tag, STR_CAST("license")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                spriteset.info["license"].clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.info["license"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("license")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </license> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(spriteset.info["license"], "license");
             
             // <description> string
             else if (xmlStrEqual(tag, STR_CAST("description")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                spriteset.info["description"].clear();
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.info["description"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("description")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </description> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
+                read_string(spriteset.info["description"], "description");
+            
+            // <date> string
+            else if (xmlStrEqual(tag, STR_CAST("date")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                read_string(spriteset.info["date"], "date");
             
             // end tag </info>
             else if (xmlStrEqual(tag, STR_CAST("info")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
                 state = SYMBOLS;
             
             // any other tag is illegal here
-            else mythrow("Expected one of <author>, <copyright>, <license>, <description> or </info> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+            else mythrow("Expected one of <author>, <copyright>, <license>, <description> or </info> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
             break;
             
         //  <sprites> section
@@ -591,18 +566,24 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
         case SPRITES:
             // <base> sprites
             if (xmlStrEqual(tag, STR_CAST("base")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-                state = BASE;
+            {
+                if (!xmlTextReaderIsEmptyElement(parser)) state = BASE;
+            }
             
             // user defined <movable> sprites
-            else if (xmlStrEqual(tag, STR_CAST("movable")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-                state = MOVABLE;
+            else if (xmlStrEqual(tag, STR_CAST("movables")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+            {
+                if (!xmlTextReaderIsEmptyElement(parser)) state = MOVABLES;
+            }
             
             // end tag </sprites>
             else if (xmlStrEqual(tag, STR_CAST("sprites")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-                state = SYMBOLS;
+            {
+                if (!xmlTextReaderIsEmptyElement(parser)) state = SYMBOLS;
+            }
             
             // any other tag is illegal here
-            else mythrow("Expected one of <base> or </sprites> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+            else mythrow("Expected one of <base>, <movables> or </sprites> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
             break;
             
         //  <base> sprites section
@@ -611,212 +592,438 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
             // <head> sprite
             if (xmlStrEqual(tag, STR_CAST("head")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
             {
-                // check type and prepare section parser (i.e. state change)
+                // check head type
                 attr = xmlTextReaderGetAttribute(parser, STR_CAST("type"));
-                if (attr == NULL) mythrow("Missing \"type\"-attribute for <head> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                if (attr == NULL) mythrow("Missing \"type\"-attribute for <head> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 
-                if (xmlStrEqual(attr, STR_CAST("longa")) == 1)        // longa head
+                // create sprite
+                if (xmlStrcasecmp(attr, STR_CAST("longa")) == 0)        // longa head
                 {
                     spriteset.heads_longa = spriteset.size();
                     spriteset.ids["base.heads.longa"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::HEADS_LONGA));
                     spriteset.back().text[" class "] = "base.heads.longa";
-                    state = HEAD;
                 }
-                else if (xmlStrEqual(attr, STR_CAST("breve")) == 1)   // breve head
+                else if (xmlStrcasecmp(attr, STR_CAST("breve")) == 0)   // breve head
                 {
                     spriteset.heads_breve = spriteset.size();
                     spriteset.ids["base.heads.breve"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::HEADS_BREVE));
                     spriteset.back().text[" class "] = "base.heads.breve";
-                    state = HEAD;
                 }
-                else if (xmlStrEqual(attr, STR_CAST("whole")) == 1)   // whole head
+                else if (xmlStrcasecmp(attr, STR_CAST("whole")) == 0)   // whole head
                 {
                     spriteset.heads_whole = spriteset.size();
                     spriteset.ids["base.heads.whole"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::HEADS_WHOLE));
                     spriteset.back().text[" class "] = "base.heads.whole";
-                    state = HEAD;
                 }
-                else if (xmlStrEqual(attr, STR_CAST("half")) == 1)    // half head
+                else if (xmlStrcasecmp(attr, STR_CAST("half")) == 0)    // half head
                 {
                     spriteset.heads_half = spriteset.size();
                     spriteset.ids["base.heads.half"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::HEADS_HALF));
                     spriteset.back().text[" class "] = "base.heads.half";
-                    state = HEAD;
                 }
-                else if (xmlStrEqual(attr, STR_CAST("quarter")) == 1) // quarter head
+                else if (xmlStrcasecmp(attr, STR_CAST("quarter")) == 0) // quarter head
                 {
                     spriteset.heads_quarter = spriteset.size();
                     spriteset.ids["base.heads.quarter"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::HEADS_QUARTER));
                     spriteset.back().text[" class "] = "base.heads.quarter";
-                    state = HEAD;
                 }
                 else    // illegal head type (throw error message)
                 {
                     xmlFree(attr);  // free attribute buffer
-                    mythrow("Illegal value of \"type\"-attribute for <head> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    mythrow("Illegal value of \"type\"-attribute for <head> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 };
-                
-                // free attribute buffer
                 xmlFree(attr);
-            }
-            
-            // <flag> sprite
-            else if (xmlStrEqual(tag, STR_CAST("flag")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check type and prepare section parser (i.e. state change)
-                attr = xmlTextReaderGetAttribute(parser, STR_CAST("type"));
-                if (attr == NULL) mythrow("Missing \"type\"-attribute for <flag> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 
-                if (xmlStrEqual(attr, STR_CAST("note")) == 1)       // note flag
+                // read path attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <head> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <head> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read anchor attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read stem attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("stem-x"));
+                if (attr != NULL) spriteset.back().real["stem.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("stem-y"));
+                if (attr != NULL) spriteset.back().real["stem.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
                 {
-                    spriteset.flags_note = spriteset.size();
-                    spriteset.ids["base.flags.note"] = spriteset.size();
-                    spriteset.push_back(SpriteInfo(SpriteInfo::FLAGS_NOTE));
-                    spriteset.back().text[" class "] = "base.flags.note";
-                    state = FLAG;
-                }
-                else if (xmlStrEqual(attr, STR_CAST("rest")) == 1)  // rest flag
-                {
-                    spriteset.flags_rest = spriteset.size();
-                    spriteset.ids["base.flags.rest"] = spriteset.size();
-                    spriteset.push_back(SpriteInfo(SpriteInfo::FLAGS_REST));
-                    spriteset.back().text[" class "] = "base.flags.rest";
-                    state = RESTFLAG;
-                }
-                else    // illegal flag type (throw error message)
-                {
-                    xmlFree(attr);  // free attribute buffer
-                    mythrow("Illegal value of \"type\"-attribute for <rest> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("head")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </head> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 };
-                
-                // free attribute buffer
-                xmlFree(attr);
             }
             
             // <rest> sprite
             else if (xmlStrEqual(tag, STR_CAST("rest")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
             {
-                // check type and prepare section parser (i.e. state change)
+                // check rest type
                 attr = xmlTextReaderGetAttribute(parser, STR_CAST("type"));
-                if (attr == NULL) mythrow("Missing \"type\"-attribute for <rest> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (xmlStrEqual(attr, STR_CAST("longa")) == 1)        // longa rest
+                if (attr == NULL) mythrow("Missing \"type\"-attribute for <rest> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // create sprite
+                if (xmlStrcasecmp(attr, STR_CAST("longa")) == 0)        // longa rest
                 {
                     spriteset.rests_longa = spriteset.size();
                     spriteset.ids["base.rests.longa"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::RESTS_LONGA));
                     spriteset.back().text[" class "] = "base.rests.longa";
-                    state = REST;
                 }
-                else if (xmlStrEqual(attr, STR_CAST("breve")) == 1)   // breve rest
+                else if (xmlStrcasecmp(attr, STR_CAST("breve")) == 0)   // breve rest
                 {
                     spriteset.rests_breve = spriteset.size();
                     spriteset.ids["base.rests.breve"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::RESTS_BREVE));
                     spriteset.back().text[" class "] = "base.rests.breve";
-                    state = REST;
                 }
-                else if (xmlStrEqual(attr, STR_CAST("whole")) == 1)   // whole rest
+                else if (xmlStrcasecmp(attr, STR_CAST("whole")) == 0)   // whole rest
                 {
                     spriteset.rests_whole = spriteset.size();
                     spriteset.ids["base.rests.whole"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::RESTS_WHOLE));
                     spriteset.back().text[" class "] = "base.rests.whole";
-                    state = REST;
                 }
-                else if (xmlStrEqual(attr, STR_CAST("half")) == 1)    // half rest
+                else if (xmlStrcasecmp(attr, STR_CAST("half")) == 0)    // half rest
                 {
                     spriteset.rests_half = spriteset.size();
                     spriteset.ids["base.rests.half"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::RESTS_HALF));
                     spriteset.back().text[" class "] = "base.rests.half";
-                    state = REST;
                 }
-                else if (xmlStrEqual(attr, STR_CAST("quarter")) == 1)  // quarter rest
+                else if (xmlStrcasecmp(attr, STR_CAST("quarter")) == 0) // quarter rest
                 {
                     spriteset.rests_quarter = spriteset.size();
                     spriteset.ids["base.rests.quarter"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::RESTS_QUARTER));
                     spriteset.back().text[" class "] = "base.rests.quarter";
-                    state = REST;
                 }
                 else    // illegal rest type (throw error message)
                 {
                     xmlFree(attr);  // free attribute buffer
-                    mythrow("Illegal value of \"type\"-attribute for <rest> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    mythrow("Illegal value of \"type\"-attribute for <rest> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+                xmlFree(attr);
+                
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <rest> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <rest> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read "line" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("line"));
+                if (attr != NULL) spriteset.back().integer["line"] = atoi(XML_CAST(attr));
+                xmlFree(attr);
+                
+                // read "anchor" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("rest")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </rest> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+            }
+            
+            // <flag> sprite
+            else if (xmlStrEqual(tag, STR_CAST("flag")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+            {
+                // check flag type (note or rest)
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("type"));
+                if (attr == NULL) mythrow("Missing \"type\"-attribute for <flag> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // create sprite
+                if (xmlStrcasecmp(attr, STR_CAST("note")) == 0)       // note flag
+                {
+                    spriteset.flags_note = spriteset.size();
+                    spriteset.ids["base.flags.note"] = spriteset.size();
+                    spriteset.push_back(SpriteInfo(SpriteInfo::FLAGS_NOTE));
+                    spriteset.back().text[" class "] = "base.flags.note";
+                }
+                else if (xmlStrcasecmp(attr, STR_CAST("rest")) == 0)  // rest flag
+                {
+                    spriteset.flags_rest = spriteset.size();
+                    spriteset.ids["base.flags.rest"] = spriteset.size();
+                    spriteset.push_back(SpriteInfo(SpriteInfo::FLAGS_REST));
+                    spriteset.back().text[" class "] = "base.flags.rest";
+                }
+                else    // illegal flag type (throw error message)
+                {
+                    xmlFree(attr);  // free attribute buffer
+                    mythrow("Illegal value of \"type\"-attribute for <flag> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+                xmlFree(attr);
+                
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <flag> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <flag> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read "anchor" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // further attributes
+                if (spriteset.back().type == SpriteInfo::FLAGS_NOTE)
+                {
+                    // read "overlay" attribute
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("overlay"));
+                    if (attr != NULL) spriteset.back().text["overlay"] = XML_CAST(attr);
+                    xmlFree(attr);
+                    
+                    // read "distance" attribute
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("distance"));
+                    if (attr != NULL) spriteset.back().real["distance"] = strtod(XML_CAST(attr), NULL);
+                    xmlFree(attr);
+                }
+                else
+                {
+                    // read "base" attribute
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("base"));
+                    if (attr != NULL) spriteset.back().text["restbase"] = XML_CAST(attr);
+                    xmlFree(attr);
+                    
+                    // read "line" attribute
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("line"));
+                    if (attr != NULL) spriteset.back().integer["line"] = atoi(XML_CAST(attr));
+                    xmlFree(attr);
+                    
+                    // read "stem-top" attribute
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("stem-top"));
+                    if (attr != NULL)
+                    {
+                        char* ptr;
+                        spriteset.back().real["stem.top.x1"] = strtod(XML_CAST(attr), &ptr);
+                        spriteset.back().real["stem.top.y1"] = strtod(ptr,            &ptr);
+                        spriteset.back().real["stem.top.x2"] = strtod(ptr,            &ptr);
+                        spriteset.back().real["stem.top.y2"] = strtod(ptr,            NULL);
+                    };
+                    xmlFree(attr);
+                    
+                    // read "stem-bottom" attribute
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("stem-bottom"));
+                    if (attr != NULL)
+                    {
+                        char* ptr;
+                        spriteset.back().real["stem.bottom.x1"] = strtod(XML_CAST(attr), &ptr);
+                        spriteset.back().real["stem.bottom.y1"] = strtod(ptr,            &ptr);
+                        spriteset.back().real["stem.bottom.x2"] = strtod(ptr,            &ptr);
+                        spriteset.back().real["stem.bottom.y2"] = strtod(ptr,            NULL);
+                    };
+                    xmlFree(attr);
+                    
+                    // read "stem-minlen" attribute
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("stem-minlen"));
+                    if (attr != NULL) spriteset.back().real["stem.minlen"] = strtod(XML_CAST(attr), NULL);
+                    xmlFree(attr);
+                    
+                    // read "stem-slope" attribute
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("stem-slope"));
+                    if (attr != NULL) spriteset.back().real["stem.slope"] = strtod(XML_CAST(attr), NULL);
+                    xmlFree(attr);
                 };
                 
-                // free attribute buffer
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("flag")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </flag> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+                
+                // prepare additional paths
+                if (spriteset.back().type == SpriteInfo::FLAGS_NOTE)
+                {
+                    // create sprite-info for the overlay-path
+                    if (spriteset.back().text.find("overlay") != spriteset.back().text.end())
+                    {
+                        spriteset.flags_overlay = spriteset.size();                 // save id
+                        spriteset.ids["base.flag.overlay"] = spriteset.size();
+                        spriteset.push_back(SpriteInfo(SpriteInfo::FLAGS_OVERLAY)); // add sprite
+                        spriteset.back().text[" class "] = "base.flag.overlay";
+                        spriteset.back().path = spriteset[spriteset.size() - 2].text["overlay"];
+                        if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for \"overlay\" in <flag> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    }
+                    // if there is no overlay sprite, use the same sprite as for the flag
+                    else spriteset.flags_overlay = spriteset.size() - 1;
+                }
+                else
+                {
+                    // create sprite-info for the base-path
+                    if (spriteset.back().text.find("restbase") != spriteset.back().text.end())
+                    {
+                        spriteset.flags_base = spriteset.size();
+                        spriteset.push_back(SpriteInfo(SpriteInfo::FLAGS_BASE));
+                        spriteset.back().text[" class "] = "base.flag.restbase";
+                        spriteset.back().path = spriteset[spriteset.size() - 2].text["restbase"];
+                        if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for \"restbase\" in <flag> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    };
+                };
+            }
+            
+            // <dot> symbol
+            else if (xmlStrEqual(tag, STR_CAST("dot")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+            {
+                // create sprite
+                spriteset.dot = spriteset.size();
+                spriteset.ids["base.dot"] = spriteset.size();
+                spriteset.push_back(SpriteInfo(SpriteInfo::DOT));
+                spriteset.back().text[" class "] = "base.dot";
+                
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <dot> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
                 xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <dot> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read "anchor" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "distance" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("distance"));
+                if (attr != NULL) spriteset.back().real["distance"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "offset" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("offset"));
+                if (attr != NULL) spriteset.back().real["offset"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("dot")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </dot> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
             }
             
             // <accidental> sprite
             else if (xmlStrEqual(tag, STR_CAST("accidental")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
             {
-                // check type and prepare section parser (i.e. state change)
+                // check accidental type
                 attr = xmlTextReaderGetAttribute(parser, STR_CAST("type"));
-                if (attr == NULL) mythrow("Missing \"type\"-attribute for <accidental> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (xmlStrEqual(attr, STR_CAST("double-sharp")) == 1)         // double sharp
+                if (attr == NULL) mythrow("Missing \"type\"-attribute for <accidental> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // create sprite
+                if (xmlStrcasecmp(attr, STR_CAST("double-sharp")) == 0)         // double sharp
                 {
                     spriteset.accidentals_double_sharp = spriteset.size();
                     spriteset.ids["base.accidentals.double-sharp"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::ACCIDENTALS_DOUBLESHARP));
                     spriteset.back().text[" class "] = "base.accidentals.double-sharp";
                 }
-                else if (xmlStrEqual(attr, STR_CAST("sharp-andahalf")) == 1)  // 1 1/2 sharp
+                else if (xmlStrcasecmp(attr, STR_CAST("sharp-andahalf")) == 0)  // 1 1/2 sharp
                 {
                     spriteset.accidentals_sharp_andahalf = spriteset.size();
                     spriteset.ids["base.accidentals.sharp-andahalf"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::ACCIDENTALS_SHARPANDAHALF));
                     spriteset.back().text[" class "] = "base.accidentals.sharp-andahalf";
                 }
-                else if (xmlStrEqual(attr, STR_CAST("sharp")) == 1)           // sharp
+                else if (xmlStrcasecmp(attr, STR_CAST("sharp")) == 0)           // sharp
                 {
                     spriteset.accidentals_sharp = spriteset.size();
                     spriteset.ids["base.accidentals.sharp"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::ACCIDENTALS_SHARP));
                     spriteset.back().text[" class "] = "base.accidentals.sharp";
                 }
-                else if (xmlStrEqual(attr, STR_CAST("half-sharp")) == 1)      // half sharp
+                else if (xmlStrcasecmp(attr, STR_CAST("half-sharp")) == 0)      // half sharp
                 {
                     spriteset.accidentals_half_sharp = spriteset.size();
                     spriteset.ids["base.accidentals.half-sharp"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::ACCIDENTALS_HALFSHARP));
                     spriteset.back().text[" class "] = "base.accidentals.half-sharp";
                 }
-                else if (xmlStrEqual(attr, STR_CAST("natural")) == 1)         // natural
+                else if (xmlStrcasecmp(attr, STR_CAST("natural")) == 0)         // natural
                 {
                     spriteset.accidentals_natural = spriteset.size();
                     spriteset.ids["base.accidentals.natural"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::ACCIDENTALS_NATURAL));
                     spriteset.back().text[" class "] = "base.accidentals.natural";
                 }
-                else if (xmlStrEqual(attr, STR_CAST("half-flat")) == 1)       // half flat
+                else if (xmlStrcasecmp(attr, STR_CAST("half-flat")) == 0)       // half flat
                 {
                     spriteset.accidentals_half_flat = spriteset.size();
                     spriteset.ids["base.accidentals.half-flat"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::ACCIDENTALS_HALFFLAT));
                     spriteset.back().text[" class "] = "base.accidentals.half-flat";
                 }
-                else if (xmlStrEqual(attr, STR_CAST("flat")) == 1)            // flat
+                else if (xmlStrcasecmp(attr, STR_CAST("flat")) == 0)            // flat
                 {
                     spriteset.accidentals_flat = spriteset.size();
                     spriteset.ids["base.accidentals.flat"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::ACCIDENTALS_FLAT));
                     spriteset.back().text[" class "] = "base.accidentals.flat";
                 }
-                else if (xmlStrEqual(attr, STR_CAST("flat-andahalf")) == 1)   // 1 1/2 flat
+                else if (xmlStrcasecmp(attr, STR_CAST("flat-andahalf")) == 0)   // 1 1/2 flat
                 {
                     spriteset.accidentals_flat_andahalf = spriteset.size();
                     spriteset.ids["base.accidentals.flat-andahalf"] = spriteset.size();
                     spriteset.push_back(SpriteInfo(SpriteInfo::ACCIDENTALS_FLATANDAHALF));
                     spriteset.back().text[" class "] = "base.accidentals.flat-andahalf";
                 }
-                else if (xmlStrEqual(attr, STR_CAST("double-flat")) == 1)     // double flat
+                else if (xmlStrcasecmp(attr, STR_CAST("double-flat")) == 0)     // double flat
                 {
                     spriteset.accidentals_double_flat = spriteset.size();
                     spriteset.ids["base.accidentals.double-flat"] = spriteset.size();
@@ -826,99 +1033,364 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
                 else    // illegal accidental type (throw error message)
                 {
                     xmlFree(attr);  // free attribute buffer
-                    mythrow("Illegal value of \"type\"-attribute for <accidental> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    mythrow("Illegal value of \"type\"-attribute for <accidental> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 };
-                
-                // free attribute buffer
                 xmlFree(attr);
                 
-                // goto <accidental> section parser
-                state = ACCIDENTAL;
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <accidental> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <accidental> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read "anchor" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "offset" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("offset"));
+                if (attr != NULL) spriteset.back().real["offset"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("accidental")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </accidental> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
             }
             
             // <brace> sprite
             else if (xmlStrEqual(tag, STR_CAST("brace")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
             {
+                // create sprite
                 spriteset.brace = spriteset.size();
                 spriteset.ids["base.brace"] = spriteset.size();
                 spriteset.push_back(SpriteInfo(SpriteInfo::BRACE));     // create sprite
                 spriteset.back().text[" class "] = "base.brace";        // set class
-                state = BRACE;
+                
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <brace> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <brace> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read "anchor" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "hmin" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("hmin"));
+                if (attr != NULL) spriteset.back().real["hmin"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "hmax" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("hmax"));
+                if (attr != NULL) spriteset.back().real["hmax"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "low" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("low"));
+                if (attr != NULL) spriteset.back().real["low"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "high" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("high"));
+                if (attr != NULL) spriteset.back().real["high"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("brace")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </brace> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
             }
             
             // <bracket> sprite
             else if (xmlStrEqual(tag, STR_CAST("bracket")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
             {
+                // create sprite
                 spriteset.bracket = spriteset.size();
                 spriteset.ids["base.bracket"] = spriteset.size();
                 spriteset.push_back(SpriteInfo(SpriteInfo::BRACKET));   // create sprite
                 spriteset.back().text[" class "] = "base.bracket";      // set class
-                state = BRACKET;
-            }
-            
-            // <dot> symbol
-            else if (xmlStrEqual(tag, STR_CAST("dot")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                spriteset.dot = spriteset.size();
-                spriteset.ids["base.dot"] = spriteset.size();
-                spriteset.push_back(SpriteInfo(SpriteInfo::DOT));       // create sprite
-                spriteset.back().text[" class "] = "base.dot";          // set class
-                state = DOT;        // goto <articulation> section parser
+                
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <bracket> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <bracket> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read "anchor" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "line-width" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("line-width"));
+                if (attr == NULL) mythrow("Missing \"line-width\"-attribute for <bracket> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().real["linewidth"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("bracket")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </bracket> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
             }
             
             // <articulation> symbol
             else if (xmlStrEqual(tag, STR_CAST("articulation")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
             {
-                // check type attribute
-                attr = xmlTextReaderGetAttribute(parser, STR_CAST("type"));
-                if (attr == NULL) mythrow("Missing \"type\"-attribute for <articulation> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.push_back(SpriteInfo(SpriteInfo::CLEF));      // create sprite
-                spriteset.back().text[" class "] = "articulation.";     // set class
+                // check symbol id
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("id"));
+                if (attr == NULL) mythrow("Missing \"id\"-attribute for <articulation> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.push_back(SpriteInfo(SpriteInfo::ARTICULATION));  // create sprite
+                spriteset.back().text[" class "] = "articulation.";         // set class
                 spriteset.back().text[" class "].append(XML_CAST(attr));
+                xmlFree(attr);                                              // free attribute buffer
+                if (spriteset.ids.find(spriteset.back().text[" class "]) != spriteset.ids.end())
+                    mythrow("Redefinition of articulation symbol \"%s\" (in file \"%s\", at line %i:%i)", spriteset.back().text[" class "], err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 spriteset.ids[spriteset.back().text[" class "]] = spriteset.size() - 1;
-                xmlFree(attr);          // free attribute buffer
-                state = ARTICULATION;   // goto <articulation> section parser
+                
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <articulation> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <articulation> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read "anchor" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "offset" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("offset"));
+                if (attr != NULL) spriteset.back().real["offset"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "valuemod" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("valuemod"));
+                if (attr != NULL) spriteset.back().integer["valuemod"] = atoi(XML_CAST(attr));
+                xmlFree(attr);
+                
+                // read "volumemod" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("volumemod"));
+                if (attr != NULL) spriteset.back().integer["volumemod"] = atoi(XML_CAST(attr));
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("articulation")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </articulation> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
             }
             
             // <clef> sprite
             else if (xmlStrEqual(tag, STR_CAST("clef")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
             {
-                // check type attribute
-                attr = xmlTextReaderGetAttribute(parser, STR_CAST("type"));
-                if (attr == NULL) mythrow("Missing \"type\"-attribute for <clef> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.push_back(SpriteInfo(SpriteInfo::CLEF));      // create sprite
-                spriteset.back().text[" class "] = "clef.";             // set class
+                // check symbol id
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("id"));
+                if (attr == NULL) mythrow("Missing \"id\"-attribute for <clef> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.push_back(SpriteInfo(SpriteInfo::ARTICULATION));  // create sprite
+                spriteset.back().text[" class "] = "clef.";                 // set class
                 spriteset.back().text[" class "].append(XML_CAST(attr));
-                xmlFree(attr);          // free attribute buffer
-                state = CLEF;           // goto <clef> section parser
+                xmlFree(attr);                                              // free attribute buffer
+                if (spriteset.ids.find(spriteset.back().text[" class "]) != spriteset.ids.end())
+                    mythrow("Redefinition of clef symbol \"%s\" (in file \"%s\", at line %i:%i)", spriteset.back().text[" class "], filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.ids[spriteset.back().text[" class "]] = spriteset.size() - 1;
+                
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <clef> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <clef> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read "anchor" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "basenote" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("basenote"));
+                if (attr == NULL) mythrow("Missing \"basenote\"-attribute for <clef> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().integer["basenote"] = atoi(XML_CAST(attr));
+                xmlFree(attr);
+                
+                // read "line" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("line"));
+                if (attr != NULL) spriteset.back().integer["line"] = atoi(XML_CAST(attr));
+                xmlFree(attr);
+                
+                // read "keybound-sharp" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("keybound-sharp"));
+                if (attr != NULL) spriteset.back().integer["keybound.sharp"] = atoi(XML_CAST(attr));
+                xmlFree(attr);
+                
+                // read "keybound-flat" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("keybound-flat"));
+                if (attr != NULL) spriteset.back().integer["keybound.flat"] = atoi(XML_CAST(attr));
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("clef")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </clef> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
             }
             
             // <timesig> sprite
             else if (xmlStrEqual(tag, STR_CAST("timesig")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
             {
-                // check type attribute
+                // check time-signature type (digit or symbol)
                 attr = xmlTextReaderGetAttribute(parser, STR_CAST("type"));
-                if (attr == NULL) mythrow("Missing \"type\"-attribute for <timesig> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                if (attr == NULL) mythrow("Missing \"type\"-attribute for <timesig> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 
-                if (xmlStrEqual(attr, STR_CAST("digit")) == 1)  // check type
+                // create sprite
+                if (xmlStrcasecmp(attr, STR_CAST("digit")) == 0)        // time-signature digit
                 {
-                    state = TIMESIG1;   // and set next state appropriately
+                    // get "digit" attribute
+                    xmlFree(attr);
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("digit"));
+                    if (attr == NULL) mythrow("Missing \"digit\"-attribute for <timesig> of digit type (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    const int digit = atoi(XML_CAST(attr));
+                    xmlFree(attr);
+                    if (digit < 0 || digit > 9) mythrow("\"digit\"-attribute for <timesig> out of range (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    
+                    // create sprite
+                    spriteset.push_back(SpriteInfo(SpriteInfo::TIMESIG_DIGIT));
+                    spriteset.back().text[" class "] = "timesig.digit_";
+                    spriteset.back().text[" class "].push_back(('0' + digit) & 0x7F);
+                    spriteset.back().integer["digit"] = digit;
+                    spriteset.digits_time[digit] = spriteset.size() - 1; 
+                    spriteset.ids[spriteset.back().text[" class "]] = spriteset.size() - 1;
                 }
-                else if (xmlStrEqual(attr, STR_CAST("symbol")) == 1)
+                else if (xmlStrcasecmp(attr, STR_CAST("symbol")) == 0)  // time-signature symbol
                 {
-                    state = TIMESIG2;
+                    // create sprite
+                    spriteset.flags_rest = spriteset.size();
+                    spriteset.ids["base.flags.rest"] = spriteset.size();
+                    spriteset.push_back(SpriteInfo(SpriteInfo::TIMESIG));
+                    spriteset.back().text[" class "] = "timesig.symbol_";
+                    
+                    // get number and beat from "time"
+                    xmlFree(attr);
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("time"));
+                    if (attr == NULL) mythrow("Missing \"time\"-attribute for <timesig> of symbol type (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    char* ptr;
+                    spriteset.back().integer["number"] = strtol(XML_CAST(attr), &ptr, 0);
+                    if (*ptr != '/' || *++ptr == 0)
+                    {
+                        xmlFree(attr);
+                        mythrow("Syntax error in \"time\"-attribute for <timesig> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    };
+                    spriteset.back().integer["beat"] = strtol(ptr, NULL, 0);
+                    xmlFree(attr);
+                    
+                    // compose class name
+                    char* buffer = new char[static_cast<int>(log10(spriteset.back().integer["number"])) + static_cast<int>(log10(spriteset.back().integer["beat"])) + 4];
+                    sprintf(buffer, "%i_%i", spriteset.back().integer["number"], spriteset.back().integer["beat"]);
+                    spriteset.back().text[" class "].append(buffer);
+                    delete[] buffer;
+                    spriteset.back().text[" class "].push_back('_');
+                    spriteset.back().text[" class "].append(spriteset.back().path);
+                    spriteset.ids[spriteset.back().text[" class "]] = spriteset.size() - 1;
                 }
-                else
+                else    // illegal timesig type (throw error message)
                 {
-                    mythrow("Illegal value of \"type\"-attribute for <timesig> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    xmlFree(attr);  // free attribute buffer
+                    mythrow("Illegal value of \"type\"-attribute for <timesig> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 };
                 
-                // create class name ("ids"-entry set afterwards)
-                spriteset.push_back(SpriteInfo((state == TIMESIG1) ? SpriteInfo::DIGITS_TIME : SpriteInfo::TIMESIG));    // create sprite
-                spriteset.back().text[" class "] = "timesig.";  // set class
-                spriteset.back().text[" class "].append(XML_CAST(attr));
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <timesig> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <timesig> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 
-                xmlFree(attr);          // free attribute buffer
+                // read "anchor" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("timesig")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </timesig> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
             }
             
             // end tag </base>
@@ -928,1738 +1400,433 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
             }
             
             // any other tag is illegal here
-            else mythrow("Expected one of <head>, <flag>, <rest>, <accidental>, <clef>, <timesig> or </base> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            break;
-            
-        //  <head> section parser
-        // -----------------------
-        case HEAD:
-            // the head's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the <anchor> position structure
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = HEAD;    // prepare jump back
-                state = ANCHOR;     // jump to anchor parser
-            }
-            
-            // the <stem> position structure
-            else if (xmlStrEqual(tag, STR_CAST("stem")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT) 
-            {
-                if (spriteset.back().real.find("stem.x") != spriteset.back().real.end()) mythrow("Unexpected second <stem> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = HEAD;    // prepare jump back
-                state = STEM;       // jump to stem parser
-            }
-            
-            // end tag </head>
-            else if (xmlStrEqual(tag, STR_CAST("head")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                // check for path
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = BASE;       // return
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                // request <path>
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // request <anchor> or end tag </head>
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end())
-                {
-                    // if <stem> is not present, include in message
-                    if (spriteset.back().real.find("stem.x") == spriteset.back().real.end()) mythrow("Expected <anchor>, <stem> or </head> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected <anchor> or </head> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // if <stem> is not present, include in message
-                if (spriteset.back().real.find("stem.x") == spriteset.back().real.end()) mythrow("Expected <stem> or </head> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </head> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <flag> section parser (for notes)
-        // -----------------------------------
-        case FLAG:
-            // the flag's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the path for <overlay> flags
-            else if (xmlStrEqual(tag, STR_CAST("overlay")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read overlay-path
-                if (spriteset.back().text.find("overlay") != spriteset.back().text.end()) mythrow("Unexpected second <overlay> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().text["overlay"].clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().text["overlay"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </overlay>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("overlay")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </overlay> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().text["overlay"].empty()) mythrow("Expected text-content for <overlay> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // flag <distance> parser
-            else if (xmlStrEqual(tag, STR_CAST("distance")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read distance and empty tag
-                if (spriteset.back().real.find("distance") != spriteset.back().real.end()) mythrow("Unexpected <distance> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;     // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["distance"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </distance>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("distance")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </distance> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the flag's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = FLAG;    // prepare jump back
-                state = ANCHOR;     // jump to anchor parser
-            }
-            
-            // end tag </flag>
-            else if (xmlStrEqual(tag, STR_CAST("flag")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                // check for <path>
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // prepare <overlay> sprite
-                if (spriteset.back().text.find("overlay") != spriteset.back().text.end())
-                {
-                    spriteset.flags_overlay = spriteset.size();                 // save id
-                    spriteset.ids["base.flag.overlay"] = spriteset.size();
-                    spriteset.push_back(SpriteInfo(SpriteInfo::FLAGS_OVERLAY)); // add sprite
-                    spriteset.back().text[" class "] = "base.flag.overlay";
-                    spriteset.back().path = spriteset[spriteset.size() - 2].text["overlay"];
-                }
-                // if there is no overlay sprite, use the same sprite as for the flag
-                else spriteset.flags_overlay = spriteset.size() - 1;
-                
-                // return to <base> section
-                state = BASE;
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end())
-                {
-                    if (spriteset.back().text.find("overlay") == spriteset.back().text.end()) mythrow("Expected <anchor>, <overlay> or </flag> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected <anchor> or </flag> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                if (spriteset.back().text.find("overlay") == spriteset.back().text.end()) mythrow("Expected <overlay> or </flag> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </flag> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <rest> section parser
-        // -----------------------
-        case REST:
-            // the rest's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the rest's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = REST;    // prepare jump back
-                state = ANCHOR;     // jump to anchor parser
-            }
-            
-            // default rest <line> parser
-            else if (xmlStrEqual(tag, STR_CAST("line")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read <line> and empty tag
-                if (spriteset.back().real.find("line") != spriteset.back().real.end()) mythrow("Unexpected <line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["line"] = atoi(buffer.c_str());
-                
-                // check for end tag </line>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("line")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </rest>
-            else if (xmlStrEqual(tag, STR_CAST("rest")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                // check for <path>
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = BASE;   // return to <base> section
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end())
-                {
-                    if (spriteset.back().integer.find("line") == spriteset.back().integer.end()) mythrow("Expected <anchor>, <line> or </rest> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected <anchor> or </rest> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                if (spriteset.back().integer.find("line") == spriteset.back().integer.end()) mythrow("Expected <line> or </rest> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </rest> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <flag> section parser (for rests)
-        // -----------------------------------
-        case RESTFLAG:
-            // the flag's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the short rest's <restbase> piece
-            else if (xmlStrEqual(tag, STR_CAST("restbase")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (spriteset.back().text.find("restbase") != spriteset.back().text.end()) mythrow("Unexpected second <restbase> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().text["restbase"].clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().text["restbase"].append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </restbase>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("restbase")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </restbase> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().text["restbase"].empty()) mythrow("Expected text-content for <restbase> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the flag's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = RESTFLAG;    // prepare jump back
-                state = ANCHOR;         // jump to anchor parser
-            }
-            
-            // default rest <line> parser
-            else if (xmlStrEqual(tag, STR_CAST("line")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read <line> and empty tag
-                if (spriteset.back().real.find("line") != spriteset.back().real.end()) mythrow("Unexpected <line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["line"] = atoi(buffer.c_str());
-                
-                // check for end tag </line>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("line")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // parse the rest's <stem>-information
-            else if (xmlStrEqual(tag, STR_CAST("stem")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("stem.top.x1") != spriteset.back().real.end()) mythrow("Unexpected second <stem> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = RESTSTEM;   // jump to stem parser
-            }   // (this parser automatically jumps back here)
-            
-            // stem <slope> section
-            else if (xmlStrEqual(tag, STR_CAST("slope")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read <slope> and empty tag
-                if (spriteset.back().real.find("slope") != spriteset.back().real.end()) mythrow("Unexpected <slope> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["slope"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </slope>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("slope")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </slope> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </flag>
-            else if (xmlStrEqual(tag, STR_CAST("flag")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                // check for <path>
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // create sprite-info for the base-path
-                if (spriteset.back().text.find("restbase") != spriteset.back().text.end())
-                {
-                    spriteset.flags_base = spriteset.size();
-                    spriteset.push_back(SpriteInfo(SpriteInfo::FLAGS_BASE));
-                    spriteset.back().text[" class "] = "base.flag.restbase";
-                    spriteset.back().path = spriteset[spriteset.size() - 2].text["restbase"];
-                    spriteset[spriteset.size() - 2].text.erase("restbase");
-                };
-                
-                // return to <base> section
-                state = BASE;
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end())
-                {
-                    if (spriteset.back().integer.find("line") == spriteset.back().integer.end()) mythrow("Expected <anchor>, <line> or </flag> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected <anchor> or </flag> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                if (spriteset.back().integer.find("line") == spriteset.back().integer.end()) mythrow("Expected <line> or </flag> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </flag> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <accidental> section parser
-        // -----------------------------
-        case ACCIDENTAL:
-            // the accidental's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the accidental's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = ACCIDENTAL;  // prepare jump back
-                state = ANCHOR;         // jump to anchor parser
-            }
-            
-            // the default y-<offset>
-            else if (xmlStrEqual(tag, STR_CAST("offset")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read offset
-                if (spriteset.back().real.find("offset") != spriteset.back().real.end()) mythrow("Unexpected second <offset> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["offset"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </offset>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("offset")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </offset> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </accidental>
-            else if (xmlStrEqual(tag, STR_CAST("accidental")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = BASE;
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end()) mythrow("Expected <anchor> or </accidental> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </accidental> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <brace> section parser
-        // ----------------------
-        case BRACE:
-            // the brace's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the brace's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = BRACE;       // prepare jump back
-                state = ANCHOR;         // jump to anchor parser
-            }
-            
-            // the brace's minimal height <hmin>
-            else if (xmlStrEqual(tag, STR_CAST("hmin")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read minimal height
-                if (spriteset.back().real.find("hmin") != spriteset.back().real.end()) mythrow("Unexpected second <hmin> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["hmin"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </hmin>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("hmin")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </hmin> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the brace's maximal height <hmax>
-            else if (xmlStrEqual(tag, STR_CAST("hmax")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read maximal height
-                if (spriteset.back().real.find("hmax") != spriteset.back().real.end()) mythrow("Unexpected second <hmax> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["hmax"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </hmax>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("hmax")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </hmax> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the brace's <low> coefficient
-            else if (xmlStrEqual(tag, STR_CAST("low")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read maximal height
-                if (spriteset.back().real.find("low") != spriteset.back().real.end()) mythrow("Unexpected second <low> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["low"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </low>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("low")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </low> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the brace's <high> coefficient
-            else if (xmlStrEqual(tag, STR_CAST("high")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read maximal height
-                if (spriteset.back().real.find("high") != spriteset.back().real.end()) mythrow("Unexpected second <high> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["high"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </high>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("high")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </high> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </brace>
-            else if (xmlStrEqual(tag, STR_CAST("brace")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = BASE;
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end()) mythrow("Expected <anchor>, <scalerange> or </brace> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected <scalerange> or </brace> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <bracket> section parser
-        // ----------------------
-        case BRACKET:
-            // the bracket's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the bracket's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = BRACKET; // prepare jump back
-                state = ANCHOR;     // jump to anchor parser
-            }
-            
-            // the bracket's <line> width
-            else if (xmlStrEqual(tag, STR_CAST("line")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read line width
-                if (spriteset.back().real.find("line") != spriteset.back().real.end()) mythrow("Unexpected second <line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["line"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </line>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("line")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </bracket>
-            else if (xmlStrEqual(tag, STR_CAST("bracket")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = BASE;
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end())
-                {
-                    if (spriteset.back().real.find("line") == spriteset.back().real.end())
-                        mythrow("Expected one of <anchor>, <line> or </bracket> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected one of <anchor> or </bracket> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                if (spriteset.back().real.find("line") == spriteset.back().real.end())
-                {
-                    mythrow("Expected <line> or </bracket> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                mythrow("Expected </bracket> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <dot> section parser
-        // ----------------------
-        case DOT:
-            // the dot's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the dot's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = DOT;     // prepare jump back
-                state = ANCHOR;     // jump to anchor parser
-            }
-            
-            // the <distance> between dots
-            else if (xmlStrEqual(tag, STR_CAST("distance")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read distance
-                if (spriteset.back().real.find("distance") != spriteset.back().real.end()) mythrow("Unexpected second <distance> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["distance"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </distance>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("distance")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </distance> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the default <offset> from the head
-            else if (xmlStrEqual(tag, STR_CAST("offset")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read offset
-                if (spriteset.back().real.find("offset") != spriteset.back().real.end()) mythrow("Unexpected second <offset> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["offset"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </offset>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("offset")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </offset> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </dot>
-            else if (xmlStrEqual(tag, STR_CAST("dot")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = BASE;
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end())
-                {
-                    if (spriteset.back().real.find("distance") == spriteset.back().real.end())
-                    {
-                        if (spriteset.back().real.find("offset") == spriteset.back().real.end())
-                            mythrow("Expected one of <anchor>, <distance>, <offset> or </dot> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                        mythrow("Expected one of <anchor>, <distance> or </dot> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    };
-                    if (spriteset.back().real.find("offset") == spriteset.back().real.end())
-                        mythrow("Expected one of <anchor>, <offset> or </dot> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected <anchor> or </dot> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                if (spriteset.back().real.find("distance") == spriteset.back().real.end())
-                {
-                    if (spriteset.back().real.find("offset") == spriteset.back().real.end())
-                        mythrow("Expected one of <distance>, <offset> or </dot> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected <distance> or </dot> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                if (spriteset.back().real.find("offset") == spriteset.back().real.end())
-                    mythrow("Expected <offset> or </dot> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </dot> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
+            else mythrow("Expected one of <head>, <flag>, <rest>, <dot>, <accidental>, <brace>, <bracket>, <articulation>, <clef>, <timesig> or </base> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
             break;
         
-        //  <articulation> section parser
-        // -------------------------------
-        case ARTICULATION:
-            // the articulation symbol's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the articulation symbol's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = ARTICULATION;    // prepare jump back
-                state = ANCHOR;             // jump to anchor parser
-            }
-            
-            // the default y-<offset>
-            else if (xmlStrEqual(tag, STR_CAST("offset")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read offset
-                if (spriteset.back().real.find("offset") != spriteset.back().real.end()) mythrow("Unexpected second <offset> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["offset"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </offset>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("offset")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </offset> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the articulation symbol's <valuemod>-ificator
-            else if (xmlStrEqual(tag, STR_CAST("valuemod")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read basenote
-                if (spriteset.back().integer.find("valuemod") != spriteset.back().integer.end()) mythrow("Unexpected second <valuemod> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["valuemod"] = atoi(buffer.c_str());
-                
-                // check for end tag </valuemod>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("valuemod")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </valuemod> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the articulation symbol's <volumemod>-ificator
-            else if (xmlStrEqual(tag, STR_CAST("volumemod")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read basenote
-                if (spriteset.back().integer.find("volumemod") != spriteset.back().integer.end()) mythrow("Unexpected second <volumemod> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["volumemod"] = atoi(buffer.c_str());
-                
-                // check for end tag </valuemod>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("volumemod")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </volumemod> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </articulation>
-            else if (xmlStrEqual(tag, STR_CAST("articulation")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = BASE;
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end())
-                {
-                    if (spriteset.back().real.find("offset") == spriteset.back().real.end()) mythrow("Expected <anchor>, <offset> or </articulation> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected <anchor> or </articulation> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                }
-                if (spriteset.back().real.find("offset") == spriteset.back().real.end()) mythrow("Expected <offset> or </articulation> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </articulation> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-        
-        //  <clef> section parser
-        // -----------------------
-        case CLEF:
-            // the accidental's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the clef's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = CLEF;    // prepare jump back
-                state = ANCHOR;     // jump to anchor parser
-            }
-            
-            // the <basenote> is the note, which lies on the line through the anchor-point
-            else if (xmlStrEqual(tag, STR_CAST("basenote")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read basenote
-                if (spriteset.back().integer.find("basenote") != spriteset.back().integer.end()) mythrow("Unexpected second <basenote> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["basenote"] = atoi(buffer.c_str());
-                
-                // check for end tag </basenote>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("basenote")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </basenote> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // get the default <line> for the clef
-            else if (xmlStrEqual(tag, STR_CAST("line")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read line
-                if (spriteset.back().real.find("line") != spriteset.back().real.end()) mythrow("Unexpected second <line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["line"] = atoi(buffer.c_str());
-                
-                // check for end tag </line>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("line")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </line> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // parse key-signature boundaries within the tag <keybound>
-            else if (xmlStrEqual(tag, STR_CAST("keybound")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().integer.find("keybound.sharp") != spriteset.back().integer.end()) mythrow("Unexpected second <keybound> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = KEYBOUND;   // jump to keybound parser
-            }
-            
-            // end tag </clef>
-            else if (xmlStrEqual(tag, STR_CAST("clef")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.ids[spriteset.back().text[" class "]] = spriteset.size() - 1;
-                state = BASE;
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end())
-                {
-                    if (spriteset.back().integer.find("basenote") == spriteset.back().integer.end())
-                    {
-                        if (spriteset.back().integer.find("line") == spriteset.back().integer.end()) mythrow("Expected <anchor>, <basenote>, <line> or </clef> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                        mythrow("Expected <anchor>, <basenote> or </clef> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    };
-                    if (spriteset.back().integer.find("line") == spriteset.back().integer.end()) mythrow("Expected <anchor>, <line> or </clef> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected <anchor> or </clef> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                if (spriteset.back().integer.find("basenote") == spriteset.back().integer.end())
-                {
-                    if (spriteset.back().integer.find("line") == spriteset.back().integer.end()) mythrow("Expected <basenote>, <line> or </clef> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected <basenote> or </clef> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                if (spriteset.back().integer.find("line") == spriteset.back().integer.end()) mythrow("Expected <line> or </clef> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </clef> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <timesig> section parser (digit-type)
-        // ---------------------------------------
-        case TIMESIG1:
-            // the time-signature's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // get the <digit> represented by this sprite
-            else if (xmlStrEqual(tag, STR_CAST("digit")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read digit
-                if (spriteset.back().integer.find("digit") != spriteset.back().integer.end()) mythrow("Unexpected second <digit> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["digit"] = atoi(buffer.c_str());
-                
-                // check range
-                if (spriteset.back().integer["digit"] < 0 || spriteset.back().integer["digit"] > 9) mythrow("Value for <digit> out of range 0-9 (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // check for end tag </digit>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("digit")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </digit> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the digit's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = TIMESIG1;    // prepare jump back
-                state = ANCHOR;         // jump to anchor parser
-            }
-            
-            // end tag </timesig>
-            else if (xmlStrEqual(tag, STR_CAST("timesig")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().integer.find("digit") == spriteset.back().integer.end()) mythrow("Expected <digit> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().text[" class "].push_back(static_cast<char>(spriteset.back().integer["digit"] + 0x30));
-                spriteset.ids[spriteset.back().text[" class "]] = spriteset.size() - 1;
-                spriteset.digits_time[spriteset.back().integer["digit"]] = spriteset.size() - 1; 
-                state = BASE;
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().integer.find("digit") == spriteset.back().integer.end()) mythrow("Expected <digit> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end()) mythrow("Expected <anchor> or </timesig> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </timesig> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <timesig> section parser (symbol-type)
-        // ----------------------------------------
-        case TIMESIG2:
-            // the time-signature's <path> name
-            if (xmlStrEqual(tag, STR_CAST("path")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read path
-                if (!spriteset.back().path.empty()) mythrow("Unexpected second <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                spriteset.back().path.clear();
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read content (text node)
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    spriteset.back().path.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // check for end tag </path>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("path")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().path.empty()) mythrow("Expected text-content for <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" (requested in file \"%s\", at line %i:%i)", spriteset.back().path, filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // get the <enum> of the symbol's default time-signature
-            else if (xmlStrEqual(tag, STR_CAST("enum")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read enumerator
-                if (spriteset.back().integer.find("enum") != spriteset.back().integer.end()) mythrow("Unexpected second <enum> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["enum"] = atoi(buffer.c_str());
-                
-                // check for end tag </enum>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("enum")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </enum> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // get the <denom> of the symbol's default time-signature
-            else if (xmlStrEqual(tag, STR_CAST("denom")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check for already read enumerator
-                if (spriteset.back().integer.find("denom") != spriteset.back().integer.end()) mythrow("Unexpected second <denom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["denom"] = atoi(buffer.c_str());
-                
-                // check for end tag </enum>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("denom")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </denom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // the symbol's <anchor> point
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().real.find("anchor.x") != spriteset.back().real.end()) mythrow("Unexpected second <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                prestate = TIMESIG2;    // prepare jump back
-                state = ANCHOR;         // jump to anchor parser
-            }
-            
-            // end tag </timesig>
-            else if (xmlStrEqual(tag, STR_CAST("timesig")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                // check for neccessary data
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().integer.find("enum") == spriteset.back().integer.end())
-                {
-                    if (spriteset.back().integer.find("denom") == spriteset.back().integer.end())
-                    {
-                        mythrow("Expected <enum> or <denom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    };
-                    
-                    mythrow("Expected <enum> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                }
-                else if (spriteset.back().integer.find("denom") == spriteset.back().integer.end())
-                {
-                    mythrow("Expected <denom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // create class-name
-                char* buffer = new char[static_cast<int>(log10(spriteset.back().integer["enum"])) + 2];
-                sprintf(buffer, "%i", spriteset.back().integer["enum"]);
-                spriteset.back().text[" class "].append(buffer);
-                delete[] buffer;
-                spriteset.back().text[" class "] += "_";
-                buffer = new char[static_cast<int>(log10(spriteset.back().integer["denom"])) + 2];
-                sprintf(buffer, "%i", spriteset.back().integer["denom"]);
-                spriteset.back().text[" class "].append(buffer);
-                delete[] buffer;
-                spriteset.back().text[" class "] += "_" + spriteset.back().path;
-                spriteset.ids[spriteset.back().text[" class "]] = spriteset.size() - 1;
-                
-                // return to BASE-state
-                state = BASE;
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().path.empty()) mythrow("Expected <path> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end())
-                {
-                    if (spriteset.back().integer.find("enum") == spriteset.back().integer.end())
-                    {
-                        if (spriteset.back().integer.find("denom") == spriteset.back().integer.end())
-                        {
-                            mythrow("Expected <enum>, <denom> or <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                        };
-                    
-                        mythrow("Expected <enum> or <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    }
-                    else if (spriteset.back().integer.find("denom") == spriteset.back().integer.end())
-                    {
-                        mythrow("Expected <denom> or <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    };
-                    mythrow("Expected <anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                if (spriteset.back().integer.find("enum") == spriteset.back().integer.end())
-                {
-                    if (spriteset.back().integer.find("denom") == spriteset.back().integer.end())
-                    {
-                        mythrow("Expected <enum> or <denom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    };
-                
-                    mythrow("Expected <enum> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                }
-                else if (spriteset.back().integer.find("denom") == spriteset.back().integer.end())
-                {
-                    mythrow("Expected <denom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                mythrow("Expected </timesig> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  position parser for <anchor> and <stem> sections
-        // --------------------------------------------------
-        case ANCHOR:
-        case STEM:
-            // position's X-coordinate
-            if (xmlStrEqual(tag, STR_CAST("x")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check if <x> was already read
-                if ((state == ANCHOR && spriteset.back().real.find("anchor.x") != spriteset.back().real.end())
-                 || (state == STEM   && spriteset.back().real.find("stem.x")   != spriteset.back().real.end()))
-                     mythrow("Unexpected <x> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                if (state == ANCHOR) spriteset.back().real["anchor.x"] = strtof(buffer.c_str(), NULL);
-                else spriteset.back().real["stem.x"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </x>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("x")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </x> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // position's Y-coordinate
-            else if (xmlStrEqual(tag, STR_CAST("y")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check if <y> was already read
-                if ((state == ANCHOR && spriteset.back().real.find("anchor.y") != spriteset.back().real.end())
-                 || (state == STEM   && spriteset.back().real.find("stem.y")   != spriteset.back().real.end()))
-                     mythrow("Unexpected <y> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                if (state == ANCHOR) spriteset.back().real["anchor.y"] = strtof(buffer.c_str(), NULL);
-                else spriteset.back().real["stem.y"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </y>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("y")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </y> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </anchor>
-            else if (xmlStrEqual(tag, STR_CAST("anchor")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (state == ANCHOR)    // if we are within an <anchor> section
-                {                       //     this is OK
-                    if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end()) mythrow("Expected <x> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    if (spriteset.back().real.find("anchor.y") == spriteset.back().real.end()) mythrow("Expected <y> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    state = prestate;
-                }                       // if we are whithin a <stem> section, throw error
-                else mythrow("Unexpected </anchor> in <stem> section (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </stem>
-            else if (xmlStrEqual(tag, STR_CAST("stem")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (state == STEM)      // if we are within an <stem> section
-                {                       //     this is OK
-                    if (spriteset.back().real.find("stem.x") == spriteset.back().real.end()) mythrow("Expected <x> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    if (spriteset.back().real.find("stem.y") == spriteset.back().real.end()) mythrow("Expected <y> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    state = prestate;
-                }                       // if we are whithin an <anchor> section, throw error
-                else mythrow("Unexpected </stem> in <anchor> section (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (state == STEM)
-                {
-                    if (spriteset.back().real.find("stem.x") == spriteset.back().real.end()) mythrow("Expected <x> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    if (spriteset.back().real.find("stem.y") == spriteset.back().real.end()) mythrow("Expected <y> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    mythrow("Expected </stem> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                }
-                if (spriteset.back().real.find("anchor.x") == spriteset.back().real.end()) mythrow("Expected <x> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("anchor.y") == spriteset.back().real.end()) mythrow("Expected <y> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </anchor> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <keybound> section parser  (see <clef> section)
-        // ---------------------------
-        case KEYBOUND:
-            // boundaries for <sharp> key-signatures
-            if (xmlStrEqual(tag, STR_CAST("sharp")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check if <sharp> was already read
-                if (spriteset.back().integer.find("keybound.sharp") != spriteset.back().integer.end())
-                     mythrow("Unexpected <sharp> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["keybound.sharp"] = atoi(buffer.c_str());
-                
-                // check for end tag </sharp>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("sharp")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </sharp> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // boundaries for <flat> key-signatures
-            else if (xmlStrEqual(tag, STR_CAST("flat")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check if <flat> was already read
-                if (spriteset.back().integer.find("keybound.flat") != spriteset.back().integer.end())
-                     mythrow("Unexpected <flat> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().integer["keybound.flat"] = atoi(buffer.c_str());
-                
-                // check for end tag </flat>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("flat")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </flat> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </keybound>
-            else if (xmlStrEqual(tag, STR_CAST("keybound")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                // check, if keybound-information is complete
-                if (spriteset.back().integer.find("keybound.sharp") == spriteset.back().integer.end()) mythrow("Expected <sharp> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().integer.find("keybound.flat") == spriteset.back().integer.end()) mythrow("Expected <flat> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = CLEF;   // return to clef-parser
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().integer.find("keybound.sharp") == spriteset.back().integer.end()) mythrow("Expected <sharp> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().integer.find("keybound.flat") == spriteset.back().integer.end()) mythrow("Expected <flat> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </keybound> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <stem> section parser  (see the rest's <flag>-section)
-        // -----------------------
-        case RESTSTEM:
-            // the two <top> anchor points on the flag (regarding the flag sprite)
-            if (xmlStrEqual(tag, STR_CAST("top")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().integer.find("stem.top.x1") != spriteset.back().integer.end()) mythrow("Unexpected second <top> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = RESTSTEMTOPPOS;     // jump to top-position parser
-            }
-            
-            // the two <bottom> anchor points on the flag (regarding the bottom sprite)
-            else if (xmlStrEqual(tag, STR_CAST("bottom")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                if (spriteset.back().integer.find("stem.bottom.x1") != spriteset.back().integer.end()) mythrow("Unexpected second <bottom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = RESTSTEMBOTTOMPOS;  // jump to bottom-position parser
-            }
-            
-            // parse <minlen>, the minimal length of the short rests stem
-            else if (xmlStrEqual(tag, STR_CAST("minlen")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check if <minlen> was already read
-                if (spriteset.back().real.find("stem.minlen") != spriteset.back().real.end()) mythrow("Unexpected second <minlen> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real["stem.minlen"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </minlen>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("minlen")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </minlen> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </stem>
-            else if (xmlStrEqual(tag, STR_CAST("stem")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (spriteset.back().real.find("stem.top.x1") == spriteset.back().real.end()) mythrow("Expected <top> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.bottom.x1") == spriteset.back().real.end()) mythrow("Expected <bottom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = RESTFLAG;   // return to <flag> parser
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().real.find("stem.top.x1") == spriteset.back().real.end()) mythrow("Expected <top> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.bottom.x1") == spriteset.back().real.end()) mythrow("Expected <bottom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                mythrow("Expected </stem> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <top> and <bottom> sections (for rest-stems)
-        // ----------------------------------------------
-        case RESTSTEMTOPPOS:
-        case RESTSTEMBOTTOMPOS:
-            // read <x1> coordinate
-            if (xmlStrEqual(tag, STR_CAST("x1")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check if <x1> was already read
-                if (spriteset.back().real.find((state == RESTSTEMTOPPOS) ? "stem.top.x1" : "stem.bottom.x1") != spriteset.back().real.end()) mythrow("Unexpected <x1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real[(state == RESTSTEMTOPPOS) ? "stem.top.x1" : "stem.bottom.x1"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </x1>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("x1")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </x1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // read <y1> coordinate
-            else if (xmlStrEqual(tag, STR_CAST("y1")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check if <y1> was already read
-                if (spriteset.back().real.find((state == RESTSTEMTOPPOS) ? "stem.top.y1" : "stem.bottom.y1") != spriteset.back().real.end()) mythrow("Unexpected <y1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real[(state == RESTSTEMTOPPOS) ? "stem.top.y1" : "stem.bottom.y1"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </y1>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("y1")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </y1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // read <x2> coordinate
-            else if (xmlStrEqual(tag, STR_CAST("x2")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check if <x2> was already read
-                if (spriteset.back().real.find((state == RESTSTEMTOPPOS) ? "stem.top.x2" : "stem.bottom.x2") != spriteset.back().real.end()) mythrow("Unexpected <x2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real[(state == RESTSTEMTOPPOS) ? "stem.top.x2" : "stem.bottom.x2"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </x2>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("x2")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </x2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // read <y2> coordinate
-            else if (xmlStrEqual(tag, STR_CAST("y2")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-            {
-                // check if <y2> was already read
-                if (spriteset.back().real.find((state == RESTSTEMTOPPOS) ? "stem.top.y2" : "stem.bottom.y2") != spriteset.back().real.end()) mythrow("Unexpected <y2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // empty tag?
-                if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                // read the tag content
-                std::string buffer;         // content buffer
-                while (xmlTextReaderNodeType(parser) == 3 && xmlTextReaderHasValue(parser) == 1)
-                {
-                    buffer.append(XML_CAST(xmlTextReaderConstValue(parser)));
-                    if (xmlTextReaderRead(parser) != 1) mythrow("XML-Syntax Error (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
-                // parse the number
-                spriteset.back().real[(state == RESTSTEMTOPPOS) ? "stem.top.y2" : "stem.bottom.y2"] = strtof(buffer.c_str(), NULL);
-                
-                // check for end tag </y2>
-                tag = xmlTextReaderConstName(parser);
-                if (xmlStrEqual(tag, STR_CAST("y2")) != 1 || xmlTextReaderNodeType(parser) != XML_READER_TYPE_END_ELEMENT) mythrow("Expected </y2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            }
-            
-            // end tag </top>
-            else if (state == RESTSTEMTOPPOS && xmlStrEqual(tag, STR_CAST("top")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (spriteset.back().real.find("stem.top.x1") == spriteset.back().real.end()) mythrow("Expected <x1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.top.y1") == spriteset.back().real.end()) mythrow("Expected <y1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.top.x2") == spriteset.back().real.end()) mythrow("Expected <x2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.top.y2") == spriteset.back().real.end()) mythrow("Expected <y2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = RESTSTEM;   // return to <stem> parser
-            }
-            
-            // end tag </bottom>
-            else if (state == RESTSTEMBOTTOMPOS && xmlStrEqual(tag, STR_CAST("bottom")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-            {
-                if (spriteset.back().real.find("stem.bottom.x1") == spriteset.back().real.end()) mythrow("Expected <x1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.bottom.y1") == spriteset.back().real.end()) mythrow("Expected <y1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.bottom.x2") == spriteset.back().real.end()) mythrow("Expected <x2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.bottom.y2") == spriteset.back().real.end()) mythrow("Expected <y2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                state = RESTSTEM;   // return to <stem> parser
-            }
-            
-            // any other tag is illegal here
-            else
-            {
-                if (spriteset.back().real.find("stem.top.x1") == spriteset.back().real.end() &&
-                    spriteset.back().real.find("stem.bottom.x1") == spriteset.back().real.end()) mythrow("Expected <x1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.top.y1") == spriteset.back().real.end() &&
-                    spriteset.back().real.find("stem.bottom.y1") == spriteset.back().real.end()) mythrow("Expected <y1> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.top.x2") == spriteset.back().real.end() &&
-                    spriteset.back().real.find("stem.bottom.x2") == spriteset.back().real.end()) mythrow("Expected <x2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                if (spriteset.back().real.find("stem.top.y2") == spriteset.back().real.end() &&
-                    spriteset.back().real.find("stem.bottom.y2") == spriteset.back().real.end()) mythrow("Expected <y2> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                
-                if (state == RESTSTEMTOPPOS) mythrow("Expected </top> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                else mythrow("Expected </bottom> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            };
-            break;
-            
-        //  <movable> user defined symbols
+        //  <movables> user defined symbols
         // --------------------------------
-        case MOVABLE:
-            // TODO: parse <movable> section
+        case MOVABLES:
+            // sprite <group> definition
+            if (xmlStrEqual(tag, STR_CAST("group")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+            {
+                // check id attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("id"));
+                if (attr == NULL) mythrow("Missing \"id\"-attribute for <group> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.groups.push_back(SpriteSet::Group());
+                spriteset.groups.back().id = XML_CAST(attr);
+                spriteset.gids[spriteset.groups.back().id] = spriteset.groups.size() - 1;
+                xmlFree(attr);
+                
+                // parse group contents
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                state = GROUP;
+            }
+            
+            // symbol <typeface> definition
+            else if (xmlStrEqual(tag, STR_CAST("typeface")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+            {
+                // check emtpy tag
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                
+                // check id attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("id"));
+                if (attr == NULL) mythrow("Missing \"id\"-attribute for <typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.typefaces.push_back(SpriteSet::Typeface());
+                spriteset.typefaces.back().id = XML_CAST(attr);
+                spriteset.fids[spriteset.typefaces.back().id] = spriteset.typefaces.size() - 1;
+                xmlFree(attr);
+                
+                // read "ascent" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("ascent"));
+                if (attr == NULL) mythrow("Missing \"ascent\"-attribute for <typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.typefaces.back().ascent = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "descent" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("descent"));
+                if (attr == NULL) mythrow("Missing \"descent\"-attribute for <typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.typefaces.back().descent = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "general-use" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("general-use"));
+                if (attr == NULL)
+                    spriteset.typefaces.back().general_use = true;      // typefaces outside any group are for general use
+                else if (xmlStrcasecmp(attr, STR_CAST("yes")) == 0 || xmlStrcasecmp(attr, STR_CAST("true")) == 0)
+                    spriteset.typefaces.back().general_use = true;
+                else if (xmlStrcasecmp(attr, STR_CAST("no")) == 0 || xmlStrcasecmp(attr, STR_CAST("false")) == 0)
+                    spriteset.typefaces.back().general_use = false;
+                else
+                {
+                    xmlFree(attr);
+                    mythrow("Illegal value of \"general-use\"-attribute for <typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+                xmlFree(attr);
+                
+                // read "custom-use" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("custom-use"));
+                if (attr == NULL)
+                    spriteset.typefaces.back().custom_use = false;
+                else if (xmlStrcasecmp(attr, STR_CAST("yes")) == 0 || xmlStrcasecmp(attr, STR_CAST("true")) == 0)
+                    spriteset.typefaces.back().custom_use = true;
+                else if (xmlStrcasecmp(attr, STR_CAST("no")) == 0 || xmlStrcasecmp(attr, STR_CAST("false")) == 0)
+                    spriteset.typefaces.back().custom_use = false;
+                else
+                {
+                    xmlFree(attr);
+                    mythrow("Illegal value of \"custom-use\"-attribute for <typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+                xmlFree(attr);
+                
+                // parse typeface contents
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                prestate = MOVABLES;
+                state = TYPEFACE;
+            }
+            
+            // end tag </movables>
+            else if (xmlStrEqual(tag, STR_CAST("movables")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                state = SPRITES;
+            
+            // any other tag is illegal here
+            else mythrow("Expected <group>, <typeface> or </movables> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+            break;
+        
+        //  sprite <group> definition
+        // ---------------------------
+        case GROUP:
+            // the group's <name>
+            if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                read_i18n(spriteset.groups.back().name, "name");
+            
+            // <symbol> sprites
+            else if (xmlStrEqual(tag, STR_CAST("symbol")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+            {
+                // check id attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("id"));
+                if (attr == NULL) mythrow("Missing \"id\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // create sprite
+                spriteset.push_back(SpriteInfo(SpriteInfo::SYMBOL));
+                spriteset.back().text[" class "] = "symbol.";
+                spriteset.back().text[" class "].append(spriteset.groups.back().id);
+                spriteset.back().text[" class "].push_back('.');
+                spriteset.back().text[" class "].append(XML_CAST(attr));
+                spriteset.ids[spriteset.back().text[" class "]] = spriteset.size() - 1;
+                xmlFree(attr);
+                
+                // get symbol type
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("type"));
+                if (attr == NULL || xmlStrcasecmp(attr, STR_CAST("single")) == 0)
+                {
+                    xmlFree(attr);
+                    spriteset.back().integer["is_string"] = 0;
+                }
+                else if (xmlStrcasecmp(attr, STR_CAST("string")) == 0)
+                {
+                    xmlFree(attr);
+                    spriteset.back().integer["is_string"] = 1;
+                    
+                    // read "face" attribute
+                    attr = xmlTextReaderGetAttribute(parser, STR_CAST("face"));
+                    if (attr != NULL) 
+                        spriteset.back().text["face"] = XML_CAST(attr);
+                    else if (spriteset.fids.find(spriteset.groups.back().id) != spriteset.fids.end())
+                        spriteset.back().text["face"] = spriteset.groups.back().id; // if not present, use the group name as typeface (if the typeface exists)
+                    else
+                    {
+                        xmlFree(attr);
+                        mythrow("Missing \"face\"-attribute for <symbol> of \"string\" type (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    };
+                }
+                else
+                {
+                    xmlFree(attr);  // free attribute buffer
+                    mythrow("Illegal value of \"type\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+                
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!spriteset.back().integer["is_string"] && !renderer.exist(spriteset.back().path, setid))
+                    mythrow("Unable to find path \"%s\" for <symbol> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read "anchor" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-x"));
+                if (attr != NULL) spriteset.back().real["anchor.x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("anchor-y"));
+                if (attr != NULL) spriteset.back().real["anchor.y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "tempo-type" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("tempo-type"));
+                if (attr == NULL)                                        spriteset.back().integer["tempo.type"] = static_cast<int>(ContextChanging::NONE);
+                else if (xmlStrcasecmp(attr, STR_CAST("none"))     == 0) spriteset.back().integer["tempo.type"] = static_cast<int>(ContextChanging::NONE);
+                else if (xmlStrcasecmp(attr, STR_CAST("abs"))      == 0) spriteset.back().integer["tempo.type"] = static_cast<int>(ContextChanging::ABSOLUTE);
+                else if (xmlStrcasecmp(attr, STR_CAST("absolute")) == 0) spriteset.back().integer["tempo.type"] = static_cast<int>(ContextChanging::ABSOLUTE);
+                else if (xmlStrcasecmp(attr, STR_CAST("rel"))      == 0) spriteset.back().integer["tempo.type"] = static_cast<int>(ContextChanging::RELATIVE);
+                else if (xmlStrcasecmp(attr, STR_CAST("relative")) == 0) spriteset.back().integer["tempo.type"] = static_cast<int>(ContextChanging::RELATIVE);
+                else if (xmlStrcasecmp(attr, STR_CAST("promille")) == 0) spriteset.back().integer["tempo.type"] = static_cast<int>(ContextChanging::PROMILLE);
+                else mythrow("Illegal value of \"tempo-type\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                xmlFree(attr);
+                
+                // read "tempo" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("tempo"));
+                if (attr != NULL)
+                {
+                    char* end;
+                    spriteset.back().integer["tempo"] = strtol(XML_CAST(attr), &end, 0);
+                    if (*end == '%')
+                    {
+                        xmlFree(attr);
+                        if (spriteset.back().integer.find("tempo.type") == spriteset.back().integer.end())
+                            spriteset.back().integer["tempo.type"] = static_cast<int>(ContextChanging::PROMILLE);
+                        else if (spriteset.back().integer["tempo.type"] != static_cast<int>(ContextChanging::PROMILLE))
+                            mythrow("Unexpected percent sign in \"tempo\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                        spriteset.back().integer["tempo"] *= 10;
+                    }
+                    else if (*end != '\0')
+                    {
+                        xmlFree(attr);
+                        mythrow("Illegal value of \"tempo\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    };
+                };
+                
+                // read "volume-type" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("volume-type"));
+                if (attr == NULL) /* NOOP */;
+                else if (xmlStrcasecmp(attr, STR_CAST("none"))     == 0) spriteset.back().integer["volume.type"] = static_cast<int>(ContextChanging::NONE);
+                else if (xmlStrcasecmp(attr, STR_CAST("abs"))      == 0) spriteset.back().integer["volume.type"] = static_cast<int>(ContextChanging::ABSOLUTE);
+                else if (xmlStrcasecmp(attr, STR_CAST("absolute")) == 0) spriteset.back().integer["volume.type"] = static_cast<int>(ContextChanging::ABSOLUTE);
+                else if (xmlStrcasecmp(attr, STR_CAST("rel"))      == 0) spriteset.back().integer["volume.type"] = static_cast<int>(ContextChanging::RELATIVE);
+                else if (xmlStrcasecmp(attr, STR_CAST("relative")) == 0) spriteset.back().integer["volume.type"] = static_cast<int>(ContextChanging::RELATIVE);
+                else if (xmlStrcasecmp(attr, STR_CAST("promille")) == 0) spriteset.back().integer["volume.type"] = static_cast<int>(ContextChanging::PROMILLE);
+                else mythrow("Illegal value of \"volume-type\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                xmlFree(attr);
+                
+                // check "volume-scope" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("volume-scope"));
+                if (attr == NULL) /* NOOP */;
+                else if (xmlStrcasecmp(attr, STR_CAST("voice"))      == 0) spriteset.back().integer["volume.scope"] = static_cast<int>(ContextChanging::VOICE);
+                else if (xmlStrcasecmp(attr, STR_CAST("staff"))      == 0) spriteset.back().integer["volume.scope"] = static_cast<int>(ContextChanging::STAFF);
+                else if (xmlStrcasecmp(attr, STR_CAST("instrument")) == 0) spriteset.back().integer["volume.scope"] = static_cast<int>(ContextChanging::INSTRUMENT);
+                else if (xmlStrcasecmp(attr, STR_CAST("group"))      == 0) spriteset.back().integer["volume.scope"] = static_cast<int>(ContextChanging::GROUP);
+                else if (xmlStrcasecmp(attr, STR_CAST("score"))      == 0) spriteset.back().integer["volume.scope"] = static_cast<int>(ContextChanging::SCORE);
+                else mythrow("Illegal value of \"volume-scope\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                xmlFree(attr);
+                
+                // read "volume" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("volume"));
+                if (attr != NULL)
+                {
+                    char* end;
+                    spriteset.back().integer["volume"] = strtol(XML_CAST(attr), &end, 0);
+                    if (*end == '%')
+                    {
+                        xmlFree(attr);
+                        if (spriteset.back().integer.find("volume.type") == spriteset.back().integer.end())
+                            spriteset.back().integer["volume.type"] = static_cast<int>(ContextChanging::PROMILLE);
+                        else if (spriteset.back().integer["volume.type"] != static_cast<int>(ContextChanging::PROMILLE))
+                            mythrow("Unexpected percent sign in \"volume\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                        spriteset.back().integer["volume"] *= 10;
+                    }
+                    else if (*end != '\0')
+                    {
+                        xmlFree(attr);
+                        mythrow("Illegal value of \"volume\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    }
+                    else
+                    {
+                        xmlFree(attr);
+                        if (spriteset.back().integer.find("volume.type") == spriteset.back().integer.end())
+                            spriteset.back().integer["volume.type"] = static_cast<int>(ContextChanging::ABSOLUTE);
+                    };
+                };
+                
+                // check "value-scope" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("value-scope"));
+                if (attr == NULL) /* NOOP */;
+                else if (xmlStrcasecmp(attr, STR_CAST("voice"))      == 0) spriteset.back().integer["value.scope"] = static_cast<int>(ContextChanging::VOICE);
+                else if (xmlStrcasecmp(attr, STR_CAST("staff"))      == 0) spriteset.back().integer["value.scope"] = static_cast<int>(ContextChanging::STAFF);
+                else if (xmlStrcasecmp(attr, STR_CAST("instrument")) == 0) spriteset.back().integer["value.scope"] = static_cast<int>(ContextChanging::INSTRUMENT);
+                else if (xmlStrcasecmp(attr, STR_CAST("group"))      == 0) spriteset.back().integer["value.scope"] = static_cast<int>(ContextChanging::GROUP);
+                else if (xmlStrcasecmp(attr, STR_CAST("score"))      == 0) spriteset.back().integer["value.scope"] = static_cast<int>(ContextChanging::SCORE);
+                else mythrow("Illegal value of \"value-scope\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                xmlFree(attr);
+                
+                // read "value" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("value"));
+                if (attr != NULL) spriteset.back().integer["value"] = atoi(XML_CAST(attr));
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("symbol")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+            }
+            
+            // symbol <typeface> definition
+            else if (xmlStrEqual(tag, STR_CAST("typeface")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+            {
+                // check emtpy tag
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                
+                // check id attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("id"));
+                if (attr == NULL) mythrow("Missing \"id\"-attribute for <typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.typefaces.push_back(SpriteSet::Typeface());
+                spriteset.typefaces.back().id = XML_CAST(attr);
+                spriteset.fids[spriteset.typefaces.back().id] = spriteset.typefaces.size() - 1;
+                xmlFree(attr);
+                
+                // read "ascent" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("ascent"));
+                if (attr == NULL) mythrow("Missing \"ascent\"-attribute for <typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.typefaces.back().ascent = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "descent" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("descent"));
+                if (attr == NULL) mythrow("Missing \"descent\"-attribute for <typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.typefaces.back().descent = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "general-use" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("general-use"));
+                if (attr == NULL)
+                    spriteset.typefaces.back().general_use = false;         // typefaces within a group are generally not for general use
+                else if (xmlStrcasecmp(attr, STR_CAST("yes")) == 0 || xmlStrcasecmp(attr, STR_CAST("true")) == 0)
+                    spriteset.typefaces.back().general_use = true;
+                else if (xmlStrcasecmp(attr, STR_CAST("no")) == 0 || xmlStrcasecmp(attr, STR_CAST("false")) == 0)
+                    spriteset.typefaces.back().general_use = false;
+                else
+                {
+                    xmlFree(attr);
+                    mythrow("Illegal value of \"general-use\"-attribute for <typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+                xmlFree(attr);
+                
+                // read "custom-use" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("custom-use"));
+                if (attr == NULL)
+                    spriteset.typefaces.back().custom_use = false;
+                else if (xmlStrcasecmp(attr, STR_CAST("yes")) == 0 || xmlStrcasecmp(attr, STR_CAST("true")) == 0)
+                    spriteset.typefaces.back().custom_use = true;
+                else if (xmlStrcasecmp(attr, STR_CAST("no")) == 0 || xmlStrcasecmp(attr, STR_CAST("false")) == 0)
+                    spriteset.typefaces.back().custom_use = false;
+                else
+                {
+                    xmlFree(attr);
+                    mythrow("Illegal value of \"custom-use\"-attribute for <typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+                xmlFree(attr);
+                
+                // parse typeface contents
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                prestate = GROUP;
+                state = TYPEFACE;
+            }
+            
+            // end tag </group>
+            else if (xmlStrEqual(tag, STR_CAST("group")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                state = MOVABLES;
+            
+            // any other tag is illegal here
+            else mythrow("Expected one of <name>, <symbol>, <glyph> or </group> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+            break;
+        
+        //  symbol <typeface>
+        // -------------------
+        case TYPEFACE:
+            // the typeface's <name>
+            if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                read_i18n(spriteset.typefaces.back().name, "name");
+            
+            // <glyph> of the typeface
+            else if (xmlStrEqual(tag, STR_CAST("glyph")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+            {
+                // check char attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("char"));
+                if (attr == NULL) mythrow("Missing \"char\"-attribute for <glyph> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                if (xmlUTF8Strlen(attr) != 1) mythrow("Illegal length of \"char\"-attribute for <glyph> (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                xmlChar* c = xmlUTF8Strndup(attr, 1);
+                xmlFree(attr);
+                
+                if (spriteset.typefaces.back().glyphs.find(XML_CAST(c)) != spriteset.typefaces.back().glyphs.end()) mythrow("Redefition of character by <glyph> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.typefaces.back().glyphs[XML_CAST(c)] = spriteset.size();
+                
+                // create sprite
+                spriteset.push_back(SpriteInfo(SpriteInfo::GLYPH));     // create sprite
+                spriteset.back().text[" class "] = "glyph.";            // set class
+                spriteset.back().text[" class "].append(spriteset.typefaces.back().id);
+                spriteset.back().text[" class "].push_back('.');
+                spriteset.back().text[" class "].append(XML_CAST(c));
+                spriteset.ids[spriteset.back().text[" class "]] = spriteset.size() - 1;
+                spriteset.back().text["char"] = XML_CAST(c);
+                
+                // read "path" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("path"));
+                if (attr == NULL) mythrow("Missing \"path\"-attribute for <glyph> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                spriteset.back().path = XML_CAST(attr);
+                xmlFree(attr);
+                if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for <glyph> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                
+                // read "bearing-x" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("bearing-x"));
+                if (attr != NULL) spriteset.back().real["bearing-x"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "bearing-y" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("bearing-y"));
+                if (attr != NULL) spriteset.back().real["bearing-y"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // read "advance" attribute
+                attr = xmlTextReaderGetAttribute(parser, STR_CAST("advance"));
+                if (attr != NULL) spriteset.back().real["advance"] = strtod(XML_CAST(attr), NULL);
+                xmlFree(attr);
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("glyph")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </glyph> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                };
+            }
+            
+            // end tag </typeface>
+            else if (xmlStrEqual(tag, STR_CAST("typeface")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                state = prestate;
+            
+            // any other tag is illegal here
+            else mythrow("Expected one of <name>, <glyph> or </typeface> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
             break;
         };
     };
     
     // check for return values
     if (parser_return == 1)     // if there is more data behind the complete structure
-        mythrow_eof("Expected EOF (in file \"%s\", at line %i:%i)", filename, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+        mythrow_eof("Expected EOF (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
     if (parser_return == -1)    // if there occured an XML-syntax error
-        mythrow("XML-Syntax Error in description (in file \"%s\", near EOF)", filename);
+        mythrow("XML-Syntax Error in description (in file \"%s\", near EOF)", err_file);
 }
 

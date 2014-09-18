@@ -21,7 +21,8 @@
 #ifndef SCOREPRESS_FILEFORMAT_HH
 #define SCOREPRESS_FILEFORMAT_HH
 
-#include <string>
+#include <string>           // std::string
+#include <map>              // std::map
 #include "file_reader.hh"   // FileReader
 #include "file_writer.hh"   // FileWriter
 #include "export.hh"
@@ -53,6 +54,13 @@ class SCOREPRESS_API XMLFileReader : virtual public FileReader
     static void mythrow(const char* trns, const std::string& symbol, const std::string& filename, const int line, const int column) throw(FormatError);
     static void mythrow(const char* trns, const std::string& filename, const int line, const int column) throw(FormatError);
     static void mythrow_eof(const char* trns, const std::string& filename, const int line, const int column) throw(ExpectedEOF);
+    
+    // reading helper
+    void read_int(int& target, const char* tag);
+    void read_double(double& target, const char* tag);
+    void read_string(std::string& target, const char* tag, bool empty_ok = false);
+    void read_i18n(std::map<std::string, std::string>& target, const char* tag, const char* def = "en", bool empty_ok = false);
+    void read_names(std::map<std::string, std::string>& target);
     
  protected:
     _xmlTextReader* parser;

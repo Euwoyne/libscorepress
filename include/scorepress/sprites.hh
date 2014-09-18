@@ -58,14 +58,15 @@ class SCOREPRESS_API SpriteInfo
                ACCIDENTALS_DOUBLESHARP, ACCIDENTALS_SHARPANDAHALF, ACCIDENTALS_SHARP, ACCIDENTALS_HALFSHARP,
                BRACE, BRACKET,
                DOT,
-               DIGITS_TIME, TIMESIG,
-               CLEF, ARTICULATION, MOVABLE};
+               TIMESIG, TIMESIG_DIGIT,
+               CLEF, ARTICULATION, SYMBOL, SYMBOL_STR, GLYPH};
     
     Type type;          // sprite type
     int width;          // sprite width
     int height;         // sprite height
     std::string path;   // svg path-name
     
+    std::map<std::string, std::string> name;    // sprite name (internationalized; UTF8)
     std::map<std::string, std::string> text;    // text properties
     std::map<std::string, double>      real;    // floating-point properties
     std::map<std::string, int>         integer; // integer properties
@@ -96,13 +97,41 @@ inline bool SpriteInfo::has_integer(const std::string& key) const {return intege
 class SCOREPRESS_API SpriteSet : public std::vector<SpriteInfo>
 {
  public:
+    // sprite typeface
+    struct Typeface
+    {
+        std::string id;                             // typeface id
+        std::map<std::string, std::string> name;    // typeface name (internationalized; UTF8)
+        double ascent;                              // typeface ascent
+        double descent;                             // typeface descent (usually negative)
+        bool general_use;                           // allow use in text-fields
+        bool custom_use;                            // allow creation of custom symbols
+        std::map<std::string, size_t> glyphs;       // glyph sprite ids
+    };
+    
+    // symbol group
+    struct Group
+    {
+        std::string id;                             // group id
+        std::map<std::string, std::string> name;    // group name (internationalized; UTF8)
+        std::vector<size_t> sprites;                // group content (sprite-ids)
+    };
+    
+ public:
     // set information
     std::string file;                           // source file
     std::string title;                          // set title
-    std::map<std::string, std::string> info;    // meta information
     unsigned int head_height;                   // the sprite set's internal head-height (in pixel)
     unsigned int timesig_digit_space;           // space between timesignature-digits (in pixel)
+    
+    std::map<std::string, std::string> info;    // meta information
+    
+    std::vector<Group> groups;                  // group list
+    std::vector<Typeface> typefaces;            // typeface list
+    
     std::map<std::string, size_t> ids;          // map sprite-ids to index
+    std::map<std::string, size_t> gids;         // group-ids
+    std::map<std::string, size_t> fids;         // typeface-ids
     
     // default-symbol ids
     size_t heads_longa;     // longa head

@@ -164,18 +164,18 @@ mpx_t Pick::width(const Sprites& spr, const StaffObject* obj, const mpx_t height
         if (rest.val.exp >= VALUE_BASE - 2) return _width(idx, Rest);
         
         // otherwise calculate width of composed graphic
-        if (spr[idx].real.find("slope") == spr[idx].real.end()) // if there is no slope,
-            return spr[idx].width * 1000;                       //    return simple width
+        if (spr[idx].real.find("stem.slope") == spr[idx].real.end())    // if there is no slope,
+            return spr[idx].width * 1000;                               //    return simple width
         
         return (height == 0) ? (    // if height is not given, suppose the sprite-set's default height
              _round((
                         spr[idx].width + 
-                        spr[idx].real.find("slope")->second * (VALUE_BASE - 2 - rest.val.exp)
+                        spr[idx].real.find("stem.slope")->second * (VALUE_BASE - 2 - rest.val.exp)
                      ) * rest.appearance.scale
                )) : (               // on given height, scale appropriately
              _round(((((
                         spr[idx].width + 
-                        spr[idx].real.find("slope")->second * (VALUE_BASE - 2 - rest.val.exp)
+                        spr[idx].real.find("stem.slope")->second * (VALUE_BASE - 2 - rest.val.exp)
                      ) * height) / spr.head_height(idx)) * rest.appearance.scale) / 1000
                ));
     }

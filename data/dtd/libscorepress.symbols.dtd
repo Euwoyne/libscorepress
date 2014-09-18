@@ -9,85 +9,154 @@
 -->
 
 <!ELEMENT symbols           (info?, sprites?)>
-<!ATTLIST symbols id        CDATA                             #REQUIRED>
+<!ATTLIST symbols id        CDATA                            #REQUIRED>
 
-<!ELEMENT info              (author?, copyright?, license?, description?)>
-<!ELEMENT sprites           (base?, movable?)>
-<!ATTLIST sprites unit      CDATA                             #REQUIRED>
-<!ELEMENT base              (head|flag|rest|accidental|brace|bracket|dot|articulation|clef|timesig)*>
+<!ELEMENT info              (author|copyright|license|description|date)*>
+<!ELEMENT author            CDATA>
+<!ELEMENT copyright         CDATA>
+<!ELEMENT license           CDATA>
+<!ELEMENT description       CDATA>
+<!ELEMENT date              CDATA>
 
-<!ELEMENT author            (#PCDATA)>
-<!ELEMENT copyright         (#PCDATA)>
-<!ELEMENT license           (#PCDATA)>
-<!ELEMENT description       (#PCDATA)>
+<!ELEMENT sprites           (base|movables)*>
+<!ATTLIST sprites unit      CDATA                            #REQUIRED>
+<!ELEMENT base              (head|rest|flag|dot|accidental|brace|bracket|articulation|clef|timesig)*>
 
+<!ELEMENT head              (name)*>
+<!ATTLIST head type         (longa|breve|whole|half|quarter) #REQUIRED
+               path         CDATA                            #REQUIRED
+               anchor-x     CDATA                            #IMPLIED
+               anchor-y     CDATA                            #IMPLIED
+               stem-x       CDATA                            #IMPLIED
+               stem-y       CDATA                            #IMPLIED>
 
+<!ELEMENT rest              (name)*>
+<!ATTLIST rest type         (longa|breve|whole|half|quarter)  #REQUIRED
+               path         CDATA                             #REQUIRED
+               line         CDATA                             #IMPLIED
+               anchor-x     CDATA                             "0"
+               anchor-y     CDATA                             "0">
 
-<!ELEMENT head              (path, anchor?, stem?)>
-<!ATTLIST head type         (longa|breve|whole|half|quarter)  #REQUIRED>
-<!ELEMENT flag              ((path, overlay?, distance?, anchor?)
-                            |(path, restbase?, anchor?, line?, stem?, slope?))>
-<!ATTLIST flag type         (note|rest)                       #REQUIRED>
-<!ELEMENT rest              (path, anchor?, line?)>
-<!ATTLIST rest type         (longa|breve|whole|half|quarter)  #REQUIRED>
-<!ELEMENT accidental        (path, anchor?, offset?)>
-<!ATTLIST accidental type   (natural|sharp|flat|double-sharp|double-flat|
-                             half-sharp|half-flat|sharp-andahalf|flat-andahalf)
-                                                              #REQUIRED>
-<!ELEMENT brace             (path, anchor?, hmin?, hmax?, low?, high?)>
-<!ELEMENT bracket           (path, anchor?, line?)>
-<!ELEMENT dot               (path, anchor?, distance?, offset?)>
-<!ELEMENT articulation      (path, anchor?, offset?, valuemod?, volumemod?)>
-<!ATTLIST articulation type CDATA                             #REQUIRED>
-<!ELEMENT clef              (path, anchor?, basenote, line?, keybound?)>
-<!ATTLIST clef type         CDATA                             #REQUIRED>
-<!ELEMENT timesig           ((path, digit, anchor?)
-                            |(path, enum, denom, anchor?))>
-<!ATTLIST timesig type      (digit|symbol)                    #REQUIRED>
+<!ELEMENT flag              (name)*>
+<!ATTLIST flag type         (note|rest)                       #REQUIRED
+               path         CDATA                             #REQUIRED
+               anchor-x     CDATA                             "0"
+               anchor-y     CDATA                             "0"
 
+               overlay      CDATA                             #IMPLIED
+               distance     CDATA                             #IMPLIED
 
+               base         CDATA                             #IMPLIED
+               line         CDATA                             #IMPLIED
+               stem-top     CDATA                             #IMPLIED
+               stem-bottom  CDATA                             #IMPLIED
+               stem-minlen  CDATA                             #IMPLIED
+               stem-slope   CDATA                             #IMPLIED>
 
-<!ELEMENT path              (#PCDATA)>
-<!ELEMENT anchor            (x,y)>
-<!ELEMENT stem              ((x,y)
-                            |(top,bottom,minlen?))>
-<!ELEMENT x                 (#PCDATA)>
-<!ELEMENT y                 (#PCDATA)>
-<!ELEMENT top               (x1,y1,x2,y2)>
-<!ELEMENT bottom            (x1,y1,x2,y2)>
-<!ELEMENT x1                (#PCDATA)>
-<!ELEMENT y1                (#PCDATA)>
-<!ELEMENT x2                (#PCDATA)>
-<!ELEMENT y2                (#PCDATA)>
-<!ELEMENT minlen            (#PCDATA)>
-<!ELEMENT overlay           (#PCDATA)>
-<!ELEMENT distance          (#PCDATA)>
-<!ELEMENT line              (#PCDATA)>
-<!ELEMENT restbase          (#PCDATA)>
-<!ELEMENT slope             (#PCDATA)>
-<!ELEMENT offset            (#PCDATA)>
-<!ELEMENT hmin              (#PCDATA)>
-<!ELEMENT hmax              (#PCDATA)>
-<!ELEMENT low               (#PCDATA)>
-<!ELEMENT high              (#PCDATA)>
-<!ELEMENT valuemod          (#PCDATA)>
-<!ELEMENT volumemod         (#PCDATA)>
-<!ELEMENT basenote          (#PCDATA)>
-<!ELEMENT keybound          (sharp, flat)>
-<!ELEMENT sharp             (#PCDATA)>
-<!ELEMENT flat              (#PCDATA)>
-<!ELEMENT digit             (#PCDATA)>
-<!ELEMENT enum              (#PCDATA)>
-<!ELEMENT denom             (#PCDATA)>
+<!ELEMENT dot               (name)*>
+<!ATTLIST flag type         (note|rest)                       #REQUIRED
+               path         CDATA                             #REQUIRED
+               anchor-x     CDATA                             "0"
+               anchor-y     CDATA                             "0"
+               distance     CDATA                             #IMPLIED
+               offset       CDATA                             #IMPLIED>
 
 
+<!ELEMENT accidental        (name)*>
+<!ATTLIST accidental
+              type   (natural|sharp|flat
+                             |double-sharp|double-flat
+                             |half-sharp|half-flat
+                             |sharp-andahalf|flat-andahalf)   #REQUIRED
+               path         CDATA                             #REQUIRED
+               anchor-x     CDATA                             "0"
+               anchor-y     CDATA                             "0"
+               offset       CDATA                             #IMPLIED>
 
-<!ELEMENT movable           (normal|context)*>
-<!ELEMENT normal            (path, anchor?, offset?)>
-<!ELEMENT context           (path, anchor?, offset?, volume?, tempo?, value?)>
-<!ELEMENT volume            (#PCDATA)>
-<!ATTLIST volume type       (absolute|relative|percent)       #REQUIRED>
-<!ELEMENT tempo             (#PCDATA)>
-<!ATTLIST tempo type        (absolute|relative|percent)       #REQUIRED>
-<!ELEMENT value             (#PCDATA)>
+<!ELEMENT brace             (name)*>
+<!ATTLIST flag path         CDATA                             #REQUIRED
+               anchor-x     CDATA                             "0"
+               anchor-y     CDATA                             "0"
+               hmin         CDATA                             #IMPLIED
+               hmax         CDATA                             #IMPLIED
+               low          CDATA                             #IMPLIED
+               high         CDATA                             #IMPLIED>
+
+<!ELEMENT bracket           (name)*>
+<!ATTLIST bracket
+               path         CDATA                             #REQUIRED
+               anchor-x     CDATA                             "0"
+               anchor-y     CDATA                             "0"
+               line-width   CDATA                             #REQUIRED>
+
+<!ELEMENT articulation      (name)*>
+<!ATTLIST articulation
+               id           CDATA                             #REQUIRED
+               path         CDATA                             #REQUIRED
+               anchor-x     CDATA                             "0"
+               anchor-y     CDATA                             "0"
+               offset       CDATA                             #IMPLIED
+               valuemod     CDATA                             #IMPLIED
+               volumemod    CDATA                             #IMPLIED>
+
+<!ELEMENT clef              (name)*>
+<!ATTLIST clef id           CDATA                             #REQUIRED
+               path         CDATA                             #REQUIRED
+               anchor-x     CDATA                             "0"
+               anchor-y     CDATA                             "0"
+               basenote     CDATA                             #IMPLIED
+               line         CDATA                             #IMPLIED
+               keybound-sharp  CDATA                          #IMPLIED
+               keybound-flat   CDATA                          #IMPLIED>
+
+<!ELEMENT timesig           (name)*>
+<!ATTLIST timesig
+               type         (digit|symbol)                    #REQUIRED
+               digit        CDATA                             #IMPLIED
+               time         CDATA                             #IMPLIED
+               path         CDATA                             #REQUIRED
+               anchor-x     CDATA                             "0"
+               anchor-y     CDATA                             "0">
+
+<!ELEMENT name              PCDATA>
+<!ATTLIST name lang         CDATA                             "en">
+
+<!ELEMENT movables          (group|typeface)*>
+<!ELEMENT group             (name|symbol|typeface)*>
+<!ATTLIST group id          CDATA                             #REQUIRED>
+
+<!ELEMENT typeface          (name|glyph)*>
+<!ATTLIST typeface
+               id           CDATA                             #REQUIRED
+               ascent       CDATA                             #REQUIRED
+               descent      CDATA                             #REQUIRED
+               general-use  (true|false)                      #IMPLIED
+               custom-use   (true|false)                      #IMPLIED>
+
+<!ELEMENT symbol            (name)*>
+<!ATTLIST symbol
+               id           CDATA                             #REQUIRED
+               type         (single|string)                   #REQUIRED
+               path         CDATA                             #REQUIRED
+               face         CDATA                             #IMPLIED
+               anchor-x     CDATA                             "0"
+               anchor-y     CDATA                             "0"
+               tempo-type   (none|abs|absolute
+                                 |rel|relative|promille       "none"
+               tempo        CDATA                             #IMPLIED
+               volume-type  (none|abs|absolute
+                                 |rel|relative|promille       "none"
+               volume-scope (voice|staff|instrument
+                                  |group|score)               #IMPLIED
+               volume       CDATA
+               value-scope  (voice|staff|instrument
+                                  |group|score)               #IMPLIED
+               value        CDATA>
+
+<!ELEMENT glyph             (name)*>
+<!ATTLIST glyph char        CDATA                             #REQUIRED
+                path        CDATA                             #REQUIRED
+                bearing-x   CDATA                             "0"
+                bearing-y   CDATA                             #IMPLIED
+                advance     CDATA                             #IMPLIED>
 
