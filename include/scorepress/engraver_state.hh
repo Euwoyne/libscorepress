@@ -51,7 +51,7 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
  private:
     // initial parameters
     const Sprites*       sprites;           // pointer to the sprite-library
-    const unsigned int   def_head_height;   // default head-height
+    const umpx_t         def_head_height;   // default head-height
     const EngraverParam* param;             // current engraver-parameters
     const StyleParam*    style;             // current staff-style
     const StyleParam&    default_style;     // default staff-style
@@ -107,7 +107,7 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
                   const unsigned int   start_page,  // page to begin the score on
                         Pageset&       pageset,     // target pageset
                   const Sprites&       sprites,     // sprite set
-                  const unsigned int   head_height, // default head-height (may be overridden by score)
+                  const umpx_t         head_height, // default head-height (may be overridden by score)
                   const EngraverParam& parameters,  // default engraver parameters (may be overridden by score)
                   const StyleParam&    style,       // default staff-style (may be overridden by score)
                   const ViewportParam& viewport);   // viewport parameters
@@ -115,46 +115,46 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     void set_reengrave_info(ReengraveInfo& info);
     
     // state access
-    inline const Sprites&            get_sprites()      const {return *sprites;};
-    inline const EngraverParam&      get_parameters()   const {return *param;};
-    inline const StyleParam&         get_style()        const {return *style;};
-    inline const ViewportParam&      get_viewport()     const {return *viewport;};
-    inline const Score&              get_score()        const {return pick.get_score();};
+    inline const Sprites&            get_sprites()      const {return *sprites;}
+    inline const EngraverParam&      get_parameters()   const {return *param;}
+    inline const StyleParam&         get_style()        const {return *style;}
+    inline const ViewportParam&      get_viewport()     const {return *viewport;}
+    inline const Score&              get_score()        const {return pick.get_score();}
     
-    inline const StaffObject*        get_note()         const {return &*pick.get_cursor();};
-    inline const Staff&              get_staff()        const {return pick.get_cursor().staff();};
-    inline const Voice&              get_voice()        const {return pick.get_cursor().voice();};
-    inline const value_t&            get_time()         const {return pick.get_cursor().time;};
-    inline const value_t&            get_ntime()        const {return pick.get_cursor().ntime;};
-    inline const mpx_t&              get_head_height()  const {return pvoice->head_height;};
+    inline const StaffObject*        get_note()         const {return &*pick.get_cursor();}
+    inline const Staff&              get_staff()        const {return pick.get_cursor().staff();}
+    inline const Voice&              get_voice()        const {return pick.get_cursor().voice();}
+    inline const value_t&            get_time()         const {return pick.get_cursor().time;}
+    inline const value_t&            get_ntime()        const {return pick.get_cursor().ntime;}
+    inline const umpx_t&             get_head_height()  const {return pvoice->head_height;}
     
     inline const Pageset::PageIt     get_target_page_it()     {return page;}
-    inline const Plate::LineIt&      get_target_line_it()     {return pline;};
-    inline const Plate::VoiceIt&     get_target_voice_it()    {return pvoice;};
-    inline const Plate::NoteIt&      get_target_it()          {return pnote;};
+    inline const Plate::LineIt&      get_target_line_it()     {return pline;}
+    inline const Plate::VoiceIt&     get_target_voice_it()    {return pvoice;}
+    inline const Plate::NoteIt&      get_target_it()          {return pnote;}
     
     inline const Pageset&            get_pageset()      const {return *pageset;}
-    inline const Pageset::PlateInfo& get_plateinfo()    const {return *plateinfo;};
+    inline const Pageset::PlateInfo& get_plateinfo()    const {return *plateinfo;}
     inline const Pageset::pPage&     get_target_page()  const {return *page;}
-    inline const Plate::pLine&       get_target_line()  const {return *pline;};
-    inline const Plate::pVoice&      get_target_voice() const {return *pvoice;};
-    inline const Plate::pNote&       get_target()       const {return *pnote;};
+    inline const Plate::pLine&       get_target_line()  const {return *pline;}
+    inline const Plate::pVoice&      get_target_voice() const {return *pvoice;}
+    inline const Plate::pNote&       get_target()       const {return *pnote;}
     
     inline       Pageset&            get_pageset()            {return *pageset;}
-    inline       Pageset::PlateInfo& get_plateinfo()          {return *plateinfo;};
-    inline       Plate::pLine&       get_target_line()        {return *pline;};
-    inline       Plate::pVoice&      get_target_voice()       {return *pvoice;};
-    inline       Plate::pNote&       get_target()             {return *pnote;};
+    inline       Pageset::PlateInfo& get_plateinfo()          {return *plateinfo;}
+    inline       Plate::pLine&       get_target_line()        {return *pline;}
+    inline       Plate::pVoice&      get_target_voice()       {return *pvoice;}
+    inline       Plate::pNote&       get_target()             {return *pnote;}
     
-    inline       ScoreContext&       get_scorectx()           {return pline->context;};
-    inline       StaffContext&       get_staffctx()           {return pline->staffctx[&get_staff()];};
-    inline       VoiceContext&       get_voicectx()           {return pvoice->context;};
+    inline       ScoreContext&       get_scorectx()           {return pline->context;}
+    inline       StaffContext&       get_staffctx()           {return pline->staffctx[&get_staff()];}
+    inline       VoiceContext&       get_voicectx()           {return pvoice->context;}
     
     // miscellaneous state info
     inline unsigned int default_head_height(unsigned int h = 0) const {return (h ? h : def_head_height);}
-    inline mpx_t        min_distance()                          const {return viewport->umtopx_h(param->min_distance);};
-    inline mpx_t        barline_distance()                      const {return viewport->umtopx_h(param->barline_distance);};
-    inline bool         eos()                                   const {return pick.eos();};
+    inline mpx_t        min_distance()                          const {return viewport->umtopx_h(param->min_distance);}
+    inline mpx_t        barline_distance()                      const {return viewport->umtopx_h(param->barline_distance);}
+    inline bool         eos()                                   const {return pick.eos();}
     
     const Staff& get_visual_staff() const;   // get the staff, in which the note is drawn (i.e. apply staff-shift)
     

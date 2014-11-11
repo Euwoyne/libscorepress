@@ -33,9 +33,9 @@ namespace ScorePress
 {
 //  CLASSES
 // ---------
-struct SCOREPRESS_API SpriteInfo;  // sprite graphic information
-struct SCOREPRESS_API SpriteSet;   // set of sprites
-struct SCOREPRESS_API Sprites;     // set of sprite-sets
+class SCOREPRESS_API SpriteInfo;    // sprite graphic information
+class SCOREPRESS_API SpriteSet;     // set of sprites
+class SCOREPRESS_API Sprites;       // set of sprite-sets
 
 
 //
@@ -213,7 +213,7 @@ class SCOREPRESS_API Sprites : public std::deque<SpriteSet>
     inline const SpriteInfo& operator[] (const SpriteId& id) const;
     
     inline unsigned int head_height(const SpriteId& id) const;
-    inline unsigned int head_width (const SpriteId& id) const;
+    inline          int head_width (const SpriteId& id) const;
 };
 
 inline SpriteSet& Sprites::operator[] (const size_t& idx) {
@@ -231,7 +231,7 @@ inline const SpriteInfo& Sprites::operator[] (const SpriteId& id) const {
 inline unsigned int Sprites::head_height(const SpriteId& id) const {
     return std::deque<SpriteSet>::operator[](id.setid).head_height;}
 
-inline unsigned int Sprites::head_width (const SpriteId& id) const {
+inline int Sprites::head_width (const SpriteId& id) const {
     return std::deque<SpriteSet>::operator[](id.setid)[std::deque<SpriteSet>::operator[](id.setid).heads_quarter].width;}
 
 } // end namespace

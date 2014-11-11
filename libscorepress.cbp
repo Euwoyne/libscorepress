@@ -292,6 +292,12 @@
 			<Option target="install-static" />
 			<Option target="clear" />
 		</Unit>
+		<Unit filename="include/scorepress/press_state.hh">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
+		</Unit>
 		<Unit filename="include/scorepress/reengrave_info.hh">
 			<Option target="shared" />
 			<Option target="static" />
@@ -457,6 +463,12 @@
 		<Unit filename="src/press.cpp">
 			<Option target="shared" />
 			<Option target="static" />
+		</Unit>
+		<Unit filename="src/press_state.cpp">
+			<Option target="shared" />
+			<Option target="static" />
+			<Option target="install-shared" />
+			<Option target="install-static" />
 		</Unit>
 		<Unit filename="src/reengrave_info.cpp">
 			<Option target="shared" />

@@ -69,9 +69,9 @@ class SCOREPRESS_API Cursor
     
     // iterator interface
     inline StaffObject& operator * () const         // return the Staff-Object the cursor points to
-        {return (_staff == _voice) ? **_main : **_sub;};
+        {return (_staff == _voice) ? **_main : **_sub;}
     inline StaffObject* operator-> () const         // return a pointer to the Staff-Object the cursor points to
-        {return (_staff == _voice) ?  &**_main :  &**_sub;};
+        {return (_staff == _voice) ?  &**_main :  &**_sub;}
     inline StaffObjectPtr& get_staffobject() const  // return smart-pointer to object
         {if (_staff != _voice) throw IllegalObjectTypeException(); return *_main;}
     inline VoiceObjectPtr& get_voiceobject() const  // return smart-pointer to object
@@ -99,12 +99,12 @@ class SCOREPRESS_API Cursor
     bool at_end() const;            // check, if the cursor is at the end
     
     inline bool ready()   const {return (_staff && _voice);}
-    inline bool is_main() const {return (_staff == _voice);};
-    inline bool is_sub()  const {return (_staff != _voice);};
+    inline bool is_main() const {return (_staff == _voice);}
+    inline bool is_sub()  const {return (_staff != _voice);}
     
     // staff and voice access
-    inline Staff& staff() const {return *_staff;};     // return the staff
-    inline Voice& voice() const {return *_voice;};     // return the voice the cursor points to
+    inline Staff& staff() const {return *_staff;}       // return the staff
+    inline Voice& voice() const {return *_voice;}       // return the voice the cursor points to
     
     void set(Staff& staff);
     void set(SubVoice& voice);
@@ -146,9 +146,9 @@ class SCOREPRESS_API const_Cursor
     
     // iterator interface
     inline const StaffObject& operator * () const  // return the Staff-Object the cursor points to
-        {return (_staff == _voice) ? **_main : **_sub;};
+        {return (_staff == _voice) ? **_main : **_sub;}
     inline const StaffObject* operator-> () const  // return a pointer to the Staff-Object the cursor points to
-        {return (_staff == _voice) ?  &**_main :  &**_sub;};
+        {return (_staff == _voice) ?  &**_main :  &**_sub;}
     inline const StaffObjectPtr& get_staffobject() const  // return smart-pointer to object
         {if (_staff != _voice) throw Cursor::IllegalObjectTypeException(); return *_main;}
     inline const VoiceObjectPtr& get_voiceobject() const  // return smart-pointer to object
@@ -176,12 +176,12 @@ class SCOREPRESS_API const_Cursor
     bool at_end() const;        // check, if the cursor is at the end
     
     inline bool ready()   const {return (_staff && _voice);}
-    inline bool is_main() const {return (_staff == _voice);};
-    inline bool is_sub()  const {return (_staff != _voice);};
+    inline bool is_main() const {return (_staff == _voice);}
+    inline bool is_sub()  const {return (_staff != _voice);}
     
     // staff and voice access
-    inline const Staff& staff() const {return *_staff;};    // return the staff
-    inline const Voice& voice() const {return *_voice;};    // return the voice the cursor points to
+    inline const Staff& staff() const {return *_staff;}     // return the staff
+    inline const Voice& voice() const {return *_voice;}     // return the voice the cursor points to
     
     void set(const Staff& staff);
     void set(const SubVoice& voice);

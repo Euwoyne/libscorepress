@@ -43,6 +43,8 @@ template <typename T> class RefPtr
     
     void dealloc();         // deallocate a reference (decrease count)
     
+    template <typename> friend class RefPtr;    // make all RefPtr friends (for casting)
+    
  public:
     RefPtr();                       // default constructor (NULL-pointer)
     RefPtr(const RefPtr<T>& ptr);   // copy constructor (increase count)
@@ -50,8 +52,8 @@ template <typename T> class RefPtr
     ~RefPtr();                      // destructor
     
     // dereferece operators
-    T& operator * () const {return *data;};
-    T* operator-> () const {return data;};
+    T& operator * () const {return *data;}
+    T* operator-> () const {return data;}
     
     // assignment operator
     RefPtr<T>& operator = (const RefPtr<T>& ptr);
@@ -66,6 +68,9 @@ template <typename T> class RefPtr
     
     template <typename U> bool operator == (const RefPtr<U>& ptr) const;
     template <typename U> bool operator != (const RefPtr<U>& ptr) const;
+    
+    // data cast
+    template <typename U> RefPtr(const RefPtr<U>& ptr);
     
     // pointer cast (for cast to boolean, preventing cast to integral type)
     operator void* () const;
@@ -117,6 +122,9 @@ inline bool RefPtr<T>::operator == (const RefPtr<U>& ptr) const {return data == 
 
 template <typename T> template <typename U>
 inline bool RefPtr<T>::operator != (const RefPtr<U>& ptr) const {return data != ptr.data;}
+
+template <typename T> template <typename U>
+RefPtr<T>::RefPtr(const RefPtr<U>& ptr) : data(static_cast<T*>(ptr.data)), count(ptr.count) {if (count) ++*count;}
 
 template <typename T>
 inline RefPtr<T>::operator void* () const {return data;}

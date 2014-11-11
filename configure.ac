@@ -75,26 +75,42 @@ AS_IF([test "x$SHELL" != "x"],
       [AC_PATH_PROG([SH], [/bin/sh])])
 
 # check compiler
-AC_PROG_CXX
+AC_PROG_CXX([g++ gcc clang c++])
 
 # set compiler specific flags
 case "$CXX" in
 gcc | g++ )
+    # mode flags
     AC_CHECK_PROG([DEBUG], [gdb], [-ggdb], [-g])
     AC_SUBST([DEBUG],      ["$DEBUG -fno-inline -Werror"])
     AC_SUBST([PROFILE],    ["-O2 -fno-omit-frame-pointer"])
-    AC_SUBST([RELEASE],    ["-O2"])
-    AC_SUBST([DEBUG_SO],   [])
-    AC_SUBST([PROFILE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
-    AC_SUBST([RELEASE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
+    AC_SUBST([RELEASE],    ["-Ofast"])
+    
+    # compile flags
+    AC_SUBST([C_FLAGS],   [])
+    AC_SUBST([C_DEBUG],   [])
+    AC_SUBST([C_PROFILE], [])
+    AC_SUBST([C_RELEASE], [])
+    
     case "$host_os" in
-        linux* ) AC_SUBST([SOFLAGS], ["-fPIC -lc"]) ;;
-        * )      AC_SUBST([SOFLAGS], []) ;;
+        linux* ) AC_SUBST([C_FLAGS_SO], ["-fPIC"]) ;;
+        * )      AC_SUBST([C_FLAGS_SO], []) ;;
     esac
+    AC_SUBST([C_DEBUG_SO],   [])
+    AC_SUBST([C_PROFILE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
+    AC_SUBST([C_RELEASE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
+    
+    # linker flags
+    AC_SUBST([LD_FLAGS], ["-shared -lc -Wl,-soname,\${soname}"])
+    AC_SUBST([LD_DEBUG], [])
+    AC_SUBST([LD_PROFILE], [])
+    AC_SUBST([LD_RELEASE], [])
+    
+    # general flags
+    AC_SUBST([CTRLFLAGS],  ["-ansi -pedantic -fno-nonansi-builtins"])
     AS_IF([test "x$enable_rpath" = "xyes"],
         [AC_SUBST([RPATHFLAG],  [])],
         [AC_SUBST([RPATHFLAG],  ["-Wl,-rpath,"])])
-    AC_SUBST([FSIZECHECK], ["-Wno-long-long"])
     AC_SUBST([WARNINGS],   ["-W                   \\
              -Wall                \\
              -Wextra              \\
@@ -109,10 +125,8 @@ gcc | g++ )
              -Wshadow             \\
              -Wundef              \\
              -Wunreachable-code   \\
-             -Wwrite-strings"])
-    AC_SUBST([CTRLFLAGS],  ["-ansi                \\
-             -pedantic            \\
-             -fno-nonansi-builtins"])
+             -Wwrite-strings      \\
+             -Wno-unknown-pragmas"])
     
     # set compiler-version specific flags
     AS_IF([gcc_version=`$CXX -dumpversion 2> /dev/null`],[
@@ -125,19 +139,65 @@ gcc | g++ )
                 AC_SUBST([DEBUG], ["$DEBUG -O0"])
             fi ])
     ;;
+clang )
+    # mode flags
+    AC_SUBST([DEBUG],      ["-g -O0"])
+    AC_SUBST([PROFILE],    ["-O2"])
+    AC_SUBST([RELEASE],    ["-Ofast"])
+    
+    # compile flags
+    AC_SUBST([C_FLAGS],   [])
+    AC_SUBST([C_DEBUG],   [])
+    AC_SUBST([C_PROFILE], [])
+    AC_SUBST([C_RELEASE], [])
+    
+    case "$host_os" in
+        linux* ) AC_SUBST([C_FLAGS_SO], ["-fPIC"]) ;;
+        * )      AC_SUBST([C_FLAGS_SO], []) ;;
+    esac
+    AC_SUBST([C_DEBUG_SO],   [])
+    AC_SUBST([C_PROFILE_SO], ["-fvisibility=hidden"])
+    AC_SUBST([C_RELEASE_SO], ["-fvisibility=hidden"])
+    
+    # linker flags
+    AC_SUBST([LD_FLAGS], ["-shared -lc -lm -lstdc++ -Wl,-soname,\${soname}"])
+    AC_SUBST([LD_DEBUG], [])
+    AC_SUBST([LD_PROFILE], [])
+    AC_SUBST([LD_RELEASE], [])
+    
+    # general flags
+    AC_SUBST([CTRLFLAGS],  ["-ansi -pedantic -fexceptions"])
+    AS_IF([test "x$enable_rpath" = "xyes"],
+        [AC_SUBST([RPATHFLAG],  [])],
+        [AC_SUBST([RPATHFLAG],  ["-Wl,-rpath,"])])
+    AC_SUBST([WARNINGS],   ["-Weverything              \\
+             -Wno-padded                 \\
+             -Wno-switch-enum            \\
+             -Wno-documentation          \\
+             -Wno-global-constructors    \\
+             -Wno-exit-time-destructors  \\
+             -Wno-sign-conversion"])
+    ;;
 *)
     echo "WARNING: Unknown Compiler!"
-    AC_SUBST([DEBUG],      [:])
-    AC_SUBST([PROFILE],    [])
-    AC_SUBST([RELEASE],    [])
-    AC_SUBST([DEBUG_SO],   [])
-    AC_SUBST([PROFILE_SO], [])
-    AC_SUBST([RELEASE_SO], [])
-    AC_SUBST([SOFLAGS],    [])
-    AC_SUBST([RPATHFLAG],  [])
-    AC_SUBST([FSIZECHECK], [])
-    AC_SUBST([WARNINGS],   [])
-    AC_SUBST([CTRLFLAGS],  [])
+    AC_SUBST([DEBUG],        [])
+    AC_SUBST([PROFILE],      [])
+    AC_SUBST([RELEASE],      [])
+    AC_SUBST([C_FLAGS],      [])
+    AC_SUBST([C_DEBUG],      [])
+    AC_SUBST([C_PROFILE],    [])
+    AC_SUBST([C_RELEASE],    [])
+    AC_SUBST([C_FLAGS_SO],   [])
+    AC_SUBST([C_DEBUG_SO],   [])
+    AC_SUBST([C_PROFILE_SO], [])
+    AC_SUBST([C_RELEASE_SO], [])
+    AC_SUBST([LD_FLAGS],     [])
+    AC_SUBST([LD_DEBUG],     [])
+    AC_SUBST([LD_PROFILE],   [])
+    AC_SUBST([LD_RELEASE],   [])
+    AC_SUBST([CTRLFLAGS],    [])
+    AC_SUBST([RPATHFLAG],    [])
+    AC_SUBST([WARNINGS],     [])
 esac
 
 # check for programs

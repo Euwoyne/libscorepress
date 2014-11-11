@@ -28,50 +28,141 @@ using namespace ScorePress;
 
 inline static int _round(const double d) {return static_cast<int>(d + 0.5);}
 
+// virtual destructor
+Class::~Class() {}
+
 // returns a human readable class name (for debugging purposes)
 const std::string ScorePress::classname(Class::classType type)
 {
     switch (type)
     {
-    case Class::VISIBLEOBJECT: return "VisibleObject";
-    case Class::STAFFOBJECT:   return "StaffObject";
-    case Class::VOICEOBJECT:   return "VoiceObject";
-    case Class::NEWLINE:       return "Newline";
-    case Class::PAGEBREAK:     return "Pagebreak";
-    case Class::MUSICOBJECT:   return "MusicObject";
-    case Class::CLEF:          return "Clef";
-    case Class::KEY:           return "Key";
-    case Class::TIMESIG:       return "TimeSig";
-    case Class::CUSTOMTIMESIG: return "CustomTimeSig";
-    case Class::BARLINE:       return "Barline";
-    case Class::NOTEOBJECT:    return "NoteObject";
-    case Class::CHORD:         return "Chord";
-    case Class::REST:          return "Rest";
+    case Class::VISIBLEOBJECT:  return "VisibleObject";
+    case Class::ATTACHEDOBJECT: return "AttachedObject";
+    case Class::STAFFOBJECT:    return "StaffObject";
+    case Class::VOICEOBJECT:    return "VoiceObject";
+    case Class::NEWLINE:        return "Newline";
+    case Class::PAGEBREAK:      return "Pagebreak";
+    case Class::MUSICOBJECT:    return "MusicObject";
+    case Class::CLEF:           return "Clef";
+    case Class::KEY:            return "Key";
+    case Class::TIMESIG:        return "TimeSig";
+    case Class::CUSTOMTIMESIG:  return "CustomTimeSig";
+    case Class::BARLINE:        return "Barline";
+    case Class::NOTEOBJECT:     return "NoteObject";
+    case Class::CHORD:          return "Chord";
+    case Class::REST:           return "Rest";
     
-    case Class::ACCIDENTAL:    return "Accidental";
-    case Class::ARTICULATION:  return "Articulation";
-    case Class::HEAD:          return "Head";
-    case Class::TIEDHEAD:      return "TiedHead";
+    case Class::ACCIDENTAL:     return "Accidental";
+    case Class::ARTICULATION:   return "Articulation";
+    case Class::HEAD:           return "Head";
+    case Class::TIEDHEAD:       return "TiedHead";
     
-    case Class::VOICE:         return "Voice";
-    case Class::STAFF:         return "Staff";
-    case Class::SUBVOICE:      return "SubVoice";
+    case Class::VOICE:          return "Voice";
+    case Class::STAFF:          return "Staff";
+    case Class::SUBVOICE:       return "SubVoice";
     
-    case Class::MOVABLE:       return "Movable";
-    case Class::TEXTAREA:      return "TextArea";
-    case Class::ANNOTATION:    return "Annotation";
-    case Class::PLUGININFO:    return "PluginInfo";
-    case Class::SYMBOL:        return "Symbol";
-    case Class::CUSTOMSYMBOL:  return "CustomSymbol";
-    case Class::DURABLE:       return "Durable";
-    case Class::SLUR:          return "Slur";
-    case Class::HAIRPIN:       return "Hairpin";
+    case Class::MOVABLE:        return "Movable";
+    case Class::TEXTAREA:       return "TextArea";
+    case Class::ANNOTATION:     return "Annotation";
+    case Class::PLUGININFO:     return "PluginInfo";
+    case Class::SYMBOL:         return "Symbol";
+    case Class::CUSTOMSYMBOL:   return "CustomSymbol";
+    case Class::DURABLE:        return "Durable";
+    case Class::SLUR:           return "Slur";
+    case Class::HAIRPIN:        return "Hairpin";
     
-    case Class::EXTERNAL:      return "Unknown (external)";
-    default:                   return "Unknown";
+    default:                    return "Unknown";
     };
 }
 
+// classtypes
+Class::classType VisibleObject  ::classtype() const {return VISIBLEOBJECT;}
+Class::classType AttachedObject ::classtype() const {return ATTACHEDOBJECT;}
+Class::classType StaffObject    ::classtype() const {return STAFFOBJECT;}
+Class::classType MusicObject    ::classtype() const {return MUSICOBJECT;}
+Class::classType Clef           ::classtype() const {return CLEF;}
+Class::classType Key            ::classtype() const {return KEY;}
+Class::classType TimeSig        ::classtype() const {return TIMESIG;}
+Class::classType CustomTimeSig  ::classtype() const {return CUSTOMTIMESIG;}
+Class::classType Barline        ::classtype() const {return BARLINE;}
+Class::classType VoiceObject    ::classtype() const {return VOICEOBJECT;}
+Class::classType Newline        ::classtype() const {return NEWLINE;}
+Class::classType Pagebreak      ::classtype() const {return PAGEBREAK;}
+Class::classType NoteObject     ::classtype() const {return NOTEOBJECT;}
+Class::classType Chord          ::classtype() const {return CHORD;}
+Class::classType Rest           ::classtype() const {return REST;}
+Class::classType Accidental     ::classtype() const {return ACCIDENTAL;}
+Class::classType Articulation   ::classtype() const {return ARTICULATION;}
+Class::classType Head           ::classtype() const {return HEAD;}
+Class::classType TiedHead       ::classtype() const {return TIEDHEAD;}
+Class::classType Voice          ::classtype() const {return VOICE;}
+Class::classType SubVoice       ::classtype() const {return SUBVOICE;}
+Class::classType Staff          ::classtype() const {return STAFF;}
+Class::classType Movable        ::classtype() const {return MOVABLE;}
+Class::classType TextArea       ::classtype() const {return TEXTAREA;}
+Class::classType Symbol         ::classtype() const {return SYMBOL;}
+Class::classType PluginInfo     ::classtype() const {return PLUGININFO;}
+Class::classType Annotation     ::classtype() const {return ANNOTATION;}
+Class::classType CustomSymbol   ::classtype() const {return CUSTOMSYMBOL;}
+Class::classType Durable        ::classtype() const {return DURABLE;}
+Class::classType Slur           ::classtype() const {return SLUR;}
+Class::classType Hairpin        ::classtype() const {return HAIRPIN;}
+
+bool      VisibleObject  ::is(classType type) const {return (type == VISIBLEOBJECT);}
+bool      AttachedObject ::is(classType type) const {return (type == ATTACHEDOBJECT);}
+bool      StaffObject    ::is(classType type) const {return (type == STAFFOBJECT);}
+bool      MusicObject    ::is(classType type) const {return ((type == MUSICOBJECT) || StaffObject::is(type) || VisibleObject::is(type));}
+bool      Clef           ::is(classType type) const {return ((type == CLEF) || MusicObject::is(type));}
+bool      Key            ::is(classType _typ) const {return ((_typ == KEY) || MusicObject::is(_typ));}
+bool      TimeSig        ::is(classType type) const {return ((type == TIMESIG) || MusicObject::is(type));}
+bool      CustomTimeSig  ::is(classType type) const {return ((type == CUSTOMTIMESIG) || TimeSig::is(type));}
+bool      Barline        ::is(classType type) const {return ((type == BARLINE) || MusicObject::is(type));}
+bool      VoiceObject    ::is(classType type) const {return ((type == VOICEOBJECT) || StaffObject::is(type));}
+bool      Newline        ::is(classType type) const {return ((type == NEWLINE) || VoiceObject::is(type));}
+bool      Pagebreak      ::is(classType type) const {return ((type == PAGEBREAK) || Newline::is(type));}
+bool      NoteObject     ::is(classType type) const {return ((type == NOTEOBJECT) || VoiceObject::is(type) || VisibleObject::is(type));}
+bool      Chord          ::is(classType type) const {return ((type == CHORD) || NoteObject::is(type));}
+bool      Rest           ::is(classType type) const {return ((type == REST) || NoteObject::is(type));}
+bool      Accidental     ::is(classType _typ) const {return ((_typ == ACCIDENTAL) || SpriteObject::is(_typ));}
+bool      Articulation   ::is(classType type) const {return ((type == ARTICULATION) || SpriteObject::is(type));}
+bool      Head           ::is(classType type) const {return (type == HEAD);}
+bool      TiedHead       ::is(classType type) const {return ((type == TIEDHEAD) || Head::is(type));}
+bool      Voice          ::is(classType type) const {return (type == VOICE);}
+bool      SubVoice       ::is(classType type) const {return ((type == SUBVOICE) || Voice::is(type));}
+bool      Staff          ::is(classType type) const {return ((type == STAFF) || Voice::is(type));}
+bool      Movable        ::is(classType type) const {return ((type == MOVABLE) || AttachedObject::is(type));}
+bool      TextArea       ::is(classType type) const {return ((type == TEXTAREA) || (Movable::is(type)));}
+bool      Symbol         ::is(classType type) const {return ((type == SYMBOL) || (Movable::is(type)));}
+bool      PluginInfo     ::is(classType type) const {return ((type == PLUGININFO) || (Movable::is(type)));}
+bool      Annotation     ::is(classType type) const {return ((type == ANNOTATION) || (TextArea::is(type)));}
+bool      CustomSymbol   ::is(classType type) const {return ((type == CUSTOMSYMBOL) || (Symbol::is(type)));}
+bool      Durable        ::is(classType type) const {return ((type == DURABLE) || (Symbol::is(type)));}
+bool      Slur           ::is(classType type) const {return ((type == SLUR) || (Durable::is(type)));}
+bool      Hairpin        ::is(classType type) const {return ((type == HAIRPIN) || (Durable::is(type)));}
+
+// cloning
+Clef*          Clef          ::clone()        const {return new Clef(*this);}
+Key*           Key           ::clone()        const {return new Key(*this);}
+TimeSig*       TimeSig       ::clone()        const {return new TimeSig(*this);}
+CustomTimeSig* CustomTimeSig ::clone()        const {return new CustomTimeSig(*this);}
+Barline*       Barline       ::clone()        const {return new Barline(*this);}
+Newline*       Newline       ::clone()        const {return new Newline(*this);}
+Pagebreak*     Pagebreak     ::clone()        const {return new Pagebreak(*this);}
+Chord*         Chord         ::clone()        const {return new Chord(*this);}
+Rest*          Rest          ::clone()        const {return new Rest(*this);}
+Accidental*    Accidental    ::clone()        const {return new Accidental(*this);}
+Articulation*  Articulation  ::clone()        const {return new Articulation(*this);}
+Head*          Head          ::clone()        const {return new Head(*this);}
+TiedHead*      TiedHead      ::clone()        const {return new TiedHead(*this);}
+SubVoice*      SubVoice      ::clone()        const {return new SubVoice(*this);}
+Staff*         Staff         ::clone()        const {return new Staff(*this);}
+TextArea*      TextArea      ::clone()        const {return new TextArea(*this);}
+Annotation*    Annotation    ::clone()        const {return new Annotation(*this);}
+CustomSymbol*  CustomSymbol  ::clone()        const {return new CustomSymbol(*this);}
+Slur*          Slur          ::clone()        const {return new Slur(*this);}
+Hairpin*       Hairpin       ::clone()        const {return new Hairpin(*this);}
+
+// decor box rendering
 void AttachedObject::render_decor(Renderer& renderer, const Plate_pAttachable& object, const PressState& state) const
 {
     // render a boundary box
@@ -694,7 +785,7 @@ void Barline::render(Renderer& renderer, const Plate::pNote& note, const PressSt
     const mpx_t width = state.viewport.umtopx_h(state.style->bar_thickness);
     
     renderer.set_line_width(0.0);
-    for (std::list< Position<mpx_t> >::const_iterator p = note.absolutePos.begin(); p != note.absolutePos.end(); ++p)
+    for (std::list< Position<mpx_t> >::const_iterator p = note.absolutePos.begin(); p != note.absolutePos.end(); ++p, ++p)
     {
         mpx_t x_offset = 0;
         for (std::string::const_iterator i  = this->style.begin(); i != this->style.end(); ++i)
@@ -717,7 +808,6 @@ void Barline::render(Renderer& renderer, const Plate::pNote& note, const PressSt
                 x_offset += *i;
             else break;
         };
-        ++p;
     };
     renderer.stroke();
 }
@@ -1907,15 +1997,15 @@ SpriteId Accidental::get_sprite(const Sprites& spr) const
     {
         switch (type)
         {
-        case Accidental::double_sharp:   return SpriteId(0, spr.front().accidentals_double_sharp);   break;
-        case Accidental::sharp_andahalf: return SpriteId(0, spr.front().accidentals_sharp_andahalf); break;
-        case Accidental::sharp:          return SpriteId(0, spr.front().accidentals_sharp);          break;
-        case Accidental::half_sharp:     return SpriteId(0, spr.front().accidentals_half_sharp);     break;
-        case Accidental::natural:        return SpriteId(0, spr.front().accidentals_natural);        break;
-        case Accidental::half_flat:      return SpriteId(0, spr.front().accidentals_half_flat);      break;
-        case Accidental::flat:           return SpriteId(0, spr.front().accidentals_flat);           break;
-        case Accidental::flat_andahalf:  return SpriteId(0, spr.front().accidentals_flat_andahalf);  break;
-        case Accidental::double_flat:    return SpriteId(0, spr.front().accidentals_double_flat);    break;
+        case Accidental::double_sharp:   return SpriteId(0, spr.front().accidentals_double_sharp);
+        case Accidental::sharp_andahalf: return SpriteId(0, spr.front().accidentals_sharp_andahalf);
+        case Accidental::sharp:          return SpriteId(0, spr.front().accidentals_sharp);
+        case Accidental::half_sharp:     return SpriteId(0, spr.front().accidentals_half_sharp);
+        case Accidental::natural:        return SpriteId(0, spr.front().accidentals_natural);
+        case Accidental::half_flat:      return SpriteId(0, spr.front().accidentals_half_flat);
+        case Accidental::flat:           return SpriteId(0, spr.front().accidentals_flat);
+        case Accidental::flat_andahalf:  return SpriteId(0, spr.front().accidentals_flat_andahalf);
+        case Accidental::double_flat:    return SpriteId(0, spr.front().accidentals_double_flat);
         };
     };
 
@@ -1923,15 +2013,15 @@ SpriteId Accidental::get_sprite(const Sprites& spr) const
     {
         switch (type)
         {
-        case Accidental::double_sharp:   return SpriteId(sprite.setid, spr[sprite.setid].accidentals_double_sharp);   break;
-        case Accidental::sharp_andahalf: return SpriteId(sprite.setid, spr[sprite.setid].accidentals_sharp_andahalf); break;
-        case Accidental::sharp:          return SpriteId(sprite.setid, spr[sprite.setid].accidentals_sharp);          break;
-        case Accidental::half_sharp:     return SpriteId(sprite.setid, spr[sprite.setid].accidentals_half_sharp);     break;
-        case Accidental::natural:        return SpriteId(sprite.setid, spr[sprite.setid].accidentals_natural);        break;
-        case Accidental::half_flat:      return SpriteId(sprite.setid, spr[sprite.setid].accidentals_half_flat);      break;
-        case Accidental::flat:           return SpriteId(sprite.setid, spr[sprite.setid].accidentals_flat);           break;
-        case Accidental::flat_andahalf:  return SpriteId(sprite.setid, spr[sprite.setid].accidentals_flat_andahalf);  break;
-        case Accidental::double_flat:    return SpriteId(sprite.setid, spr[sprite.setid].accidentals_double_flat);    break;
+        case Accidental::double_sharp:   return SpriteId(sprite.setid, spr[sprite.setid].accidentals_double_sharp);
+        case Accidental::sharp_andahalf: return SpriteId(sprite.setid, spr[sprite.setid].accidentals_sharp_andahalf);
+        case Accidental::sharp:          return SpriteId(sprite.setid, spr[sprite.setid].accidentals_sharp);
+        case Accidental::half_sharp:     return SpriteId(sprite.setid, spr[sprite.setid].accidentals_half_sharp);
+        case Accidental::natural:        return SpriteId(sprite.setid, spr[sprite.setid].accidentals_natural);
+        case Accidental::half_flat:      return SpriteId(sprite.setid, spr[sprite.setid].accidentals_half_flat);
+        case Accidental::flat:           return SpriteId(sprite.setid, spr[sprite.setid].accidentals_flat);
+        case Accidental::flat_andahalf:  return SpriteId(sprite.setid, spr[sprite.setid].accidentals_flat_andahalf);
+        case Accidental::double_flat:    return SpriteId(sprite.setid, spr[sprite.setid].accidentals_double_flat);
         };
     };
     

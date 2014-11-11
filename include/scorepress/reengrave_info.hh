@@ -50,6 +50,8 @@ class SCOREPRESS_API Reengraveable
     virtual void   setup_reengrave(ReengraveInfo& info) = 0;    // setup before reengraving takes place
     virtual Status reengrave(EngraverState& state) = 0;         // called by "EngraverState" class, after "trigger" was engraved
     virtual void   finish_reengrave() = 0;                      // executed after reengraving finished
+    
+    virtual ~Reengraveable();                                   // virtual destructor
 };
 
 

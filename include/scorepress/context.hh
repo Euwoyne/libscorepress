@@ -94,7 +94,7 @@ class SCOREPRESS_API VoiceContext
 };
 
 // inline method implementations
-inline       unsigned int VoiceContext::bar(const value_t time)         const {return _time_bar + ((time - _time_time) / static_cast<value_t>(_time_sig)).i();}
+inline       unsigned int VoiceContext::bar(const value_t time)         const {return _time_bar + ((time - _time_time) / static_cast<value_t>(_time_sig)).i_abs();}
 inline       value_t      VoiceContext::beat(const value_t time)        const {return (time - _time_time) % static_cast<value_t>(_time_sig);}
 inline       value_t      VoiceContext::restbar(const value_t time)     const {return _time_sig - beat(time);}
 inline const TimeSig&     VoiceContext::last_timesig()                  const {return _time_sig;}

@@ -115,17 +115,25 @@ Pageset::Iterator Pageset::add_page()
     return --pages.end();
 }
 
-// get the page with the given index (creating non-existing pages)
+// get the page with the given index (creates non-existing pages)
 Pageset::Iterator Pageset::get_page(unsigned int pageno)
 {
     unsigned int idx = 0;   // page index
     for (Iterator i = pages.begin(); i != pages.end(); ++i) // iterate through pages
     {
-        if (i->pageno == pageno) return i;    // if we have got the correct page, return
-        ++idx;                          // count the page
-    }
+        if (i->pageno == pageno) return i;  // if we have got the correct page, return
+        ++idx;                              // count the page
+    };
     do pages.push_back(pPage(idx)); while (++idx < pageno); // append enough pages to be able to return requested page
     return --pages.end();                                   // return page
+}
+
+// get the page with the given index (on not existing page, returns pages.end())
+Pageset::const_Iterator Pageset::get_page(unsigned int pageno) const
+{
+    for (const_Iterator i = pages.begin(); i != pages.end(); ++i)   // iterate through pages
+        if (i->pageno == pageno) return i;                          // if we have got the correct page, return
+    return pages.end();                                             // otherwise, return invalid iterator
 }
 
 // get the first page with the fiven score object

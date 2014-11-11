@@ -24,32 +24,34 @@
 
 using namespace ScorePress;
 
+inline unsigned int _abs(const int x) {return static_cast<unsigned int>((x<0)?-x:x);}
+inline int _round(const double d) {return static_cast<mpx_t>(d + 0.5);}
+
 // exception class
 Engine::Error::Error(const std::string& msg) : ScorePress::Error(msg) {}
 
 // calculate page base position for the given multipage-layout
-const Position<mpx_t> Engine::page_pos(const unsigned int pageno, const MultipageLayout layout)
+const Position<mpx_t> Engine::page_pos(const unsigned int pageno, const MultipageLayout layout) const
 {
     switch (layout.join)
     {
-    case MultipageLayout::SINGLE:
-        return (layout.orientation == MultipageLayout::VERTICAL)
-            ? Position<mpx_t>(0, pageno * (page_height() + layout.distance))
-            : Position<mpx_t>(pageno * (page_width() + layout.distance), 0);
     case MultipageLayout::DOUBLE:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? Position<mpx_t>((pageno % 2) ? page_width() + layout.distance : 0, (pageno / 2) * (page_height() + layout.distance))
+            ? Position<mpx_t>((pageno % 2) ? page_width() + layout.distance : 0, (pageno >> 1) * (page_height() + layout.distance))
             : Position<mpx_t>(pageno * (page_width() + layout.distance), 0);
     case MultipageLayout::JOINED:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? Position<mpx_t>((pageno % 2) ? page_width() : 0, (pageno / 2) * (page_height() + layout.distance))
-            : Position<mpx_t>(pageno * page_width() + (pageno / 2) * layout.distance, 0);
+            ? Position<mpx_t>((pageno % 2) ? page_width() : 0, (pageno >> 1) * (page_height() + layout.distance))
+            : Position<mpx_t>(pageno * page_width() + (pageno >> 1) * layout.distance, 0);
     case MultipageLayout::FIRSTOFF:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? Position<mpx_t>((pageno % 2) ? 0 : page_width(), ((pageno + 1) / 2) * (page_height() + layout.distance))
-            : Position<mpx_t>(pageno * page_width() + ((pageno + 1) / 2) * layout.distance, 0);
+            ? Position<mpx_t>((pageno % 2) ? 0 : page_width(), ((pageno + 1) >> 1) * (page_height() + layout.distance))
+            : Position<mpx_t>(pageno * page_width() + ((pageno + 1) >> 1) * layout.distance, 0);
+    default:
+        return (layout.orientation == MultipageLayout::VERTICAL)
+            ? Position<mpx_t>(0, pageno * (page_height() + layout.distance))
+            : Position<mpx_t>(pageno * (page_width() + layout.distance), 0);
     };
-    return Position<mpx_t>();
 }
 
 // get plateinfo by position (on page)
@@ -92,17 +94,27 @@ void Engine::engrave()
 {
     engraver.engrave(*document);
     cursors.clear();
-    object_cur.reset();
 }
 
 // engrave document (recalculate cursors)
 void Engine::reengrave()
 {
+    // setup reengrave info
     ReengraveInfo info;
-    for (CursorMap::iterator cur = cursors.begin(); cur != cursors.end(); ++cur)
-        cur->second.setup_reengrave(info);
-    if (object_cur.ready() && !object_cur.end())
-        object_cur.setup_reengrave(info);
+    for (CursorList::iterator cur = cursors.begin(); cur != cursors.end();)
+    {
+        if (getRefCount(*cur) == 1)
+        {
+            cur = cursors.erase(cur);
+        }
+        else
+        {
+            (*cur)->setup_reengrave(info);
+            ++cur;
+        };
+    };
+    
+    // reengrave
     engraver.engrave(*document, info);
     info.finish();
     if (!info.is_empty())
@@ -112,13 +124,23 @@ void Engine::reengrave()
 // engrave single score (recalculate cursors)
 void Engine::reengrave(UserCursor& cursor)
 {
+    // setup reengrave info
     ReengraveInfo info;
-    CursorMap::iterator cur = cursors.find(&cursor.get_score());
-    if (cur != cursors.end() && &cur->second != &cursor)
-        cur->second.setup_reengrave(info);
-    cursor.setup_reengrave(info);
-    if (object_cur.ready() && !object_cur.end())
-        object_cur.setup_reengrave(info);
+    for (CursorList::iterator cur = cursors.begin(); cur != cursors.end();)
+    {
+        if (getRefCount(*cur) == 1)
+        {
+            cur = cursors.erase(cur);
+        }
+        else
+        {
+            if (&(*cur)->get_score() == &cursor.get_score())
+                (*cur)->setup_reengrave(info);
+            ++cur;
+        };
+    };
+    
+    // reengrave
     engraver.engrave(cursor.get_score(), cursor.get_start_page(), document->head_height, info);
     info.finish();
     if (!info.is_empty())
@@ -129,8 +151,8 @@ void Engine::reengrave(UserCursor& cursor)
 void Engine::render_page(Renderer& renderer, const Page page, const Position<mpx_t>& offset, bool decor)
 {
     if (pageset.pages.empty()) engrave();
-    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
-                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
+    Position<mpx_t> margin_offset(_round(press.parameters.do_scale(pageset.page_layout.margin.left)),
+                                  _round(press.parameters.do_scale(pageset.page_layout.margin.top)));
     
     if (decor) press.render_decor(renderer, pageset, offset);
     press.render(renderer, *page.it, pageset, offset + margin_offset);
@@ -140,8 +162,8 @@ void Engine::render_page(Renderer& renderer, const Page page, const Position<mpx
 void Engine::render_all(Renderer& renderer, const MultipageLayout layout, const Position<mpx_t>& offset, bool decor)
 {
     if (pageset.pages.empty()) engrave();
-    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
-                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
+    Position<mpx_t> margin_offset(_round(press.parameters.do_scale(pageset.page_layout.margin.left)),
+                                  _round(press.parameters.do_scale(pageset.page_layout.margin.top)));
     
     Position<mpx_t> off;
     unsigned int pageno = 0;
@@ -156,8 +178,8 @@ void Engine::render_all(Renderer& renderer, const MultipageLayout layout, const 
 // render the cursor, assuming the given page root position
 void Engine::render_cursor(Renderer& renderer, const UserCursor& cursor, const Position<mpx_t>& _page_pos)
 {
-    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
-                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
+    Position<mpx_t> margin_offset(_round(press.parameters.do_scale(pageset.page_layout.margin.left)),
+                                  _round(press.parameters.do_scale(pageset.page_layout.margin.top)));
     
     renderer.set_color(0, 0, 0, 255);
     press.render(renderer, cursor, _page_pos + margin_offset);
@@ -166,37 +188,37 @@ void Engine::render_cursor(Renderer& renderer, const UserCursor& cursor, const P
 // render the cursor, calculating page positions according to the given layout
 void Engine::render_cursor(Renderer& renderer, const UserCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset)
 {
-    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
-                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
+    Position<mpx_t> margin_offset(_round(press.parameters.do_scale(pageset.page_layout.margin.left)),
+                                  _round(press.parameters.do_scale(pageset.page_layout.margin.top)));
     
     renderer.set_color(0, 0, 0, 255);
     press.render(renderer, cursor, offset + page_pos(cursor.get_pageno(), layout) + margin_offset);
 }
 
 // render object frame, assuming the given page root position
-void Engine::render_selection(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& _page_pos, const Position<mpx_t>& move_offset)
+void Engine::render_cursor(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& _page_pos)
 {
     if (!cursor.ready() || cursor.end()) return;
-    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
-                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
-    press.render(renderer, cursor, _page_pos + margin_offset, move_offset);
+    Position<mpx_t> margin_offset(_round(press.parameters.do_scale(pageset.page_layout.margin.left)),
+                                  _round(press.parameters.do_scale(pageset.page_layout.margin.top)));
+    press.render(renderer, cursor, _page_pos + margin_offset);
 }
 
 // render object frame, calculating page positions according to the given layout
-void Engine::render_selection(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset, const Position<mpx_t>& move_offset)
+void Engine::render_cursor(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset)
 {
     if (!cursor.ready() || cursor.end()) return;
-    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
-                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
-    press.render(renderer, cursor, offset + page_pos(cursor.get_pageno(), layout) + margin_offset, move_offset);
+    Position<mpx_t> margin_offset(_round(press.parameters.do_scale(pageset.page_layout.margin.left)),
+                                  _round(press.parameters.do_scale(pageset.page_layout.margin.top)));
+    press.render(renderer, cursor, offset + page_pos(cursor.get_pageno(), layout) + margin_offset);
 }
 
 // render selected object, assuming the given page root position
 void Engine::render_object(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t>& _page_pos)
 {
     if (!cursor.ready() || cursor.end()) return;
-    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
-                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
+    Position<mpx_t> margin_offset(_round(press.parameters.do_scale(pageset.page_layout.margin.left)),
+                                  _round(press.parameters.do_scale(pageset.page_layout.margin.top)));
     press.render(renderer, cursor.get_pobject(), cursor.get_staff(), _page_pos + margin_offset);
 }
 
@@ -204,21 +226,17 @@ void Engine::render_object(Renderer& renderer, const ObjectCursor& cursor, const
 void Engine::render_object(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& offset)
 {
     if (!cursor.ready() || cursor.end()) return;
-    Position<mpx_t> margin_offset((press.parameters.scale * pageset.page_layout.margin.left) / 1000,
-                                  (press.parameters.scale * pageset.page_layout.margin.top) / 1000);
+    Position<mpx_t> margin_offset(_round(press.parameters.do_scale(pageset.page_layout.margin.left)),
+                                  _round(press.parameters.do_scale(pageset.page_layout.margin.top)));
     press.render(renderer, cursor.get_pobject(), cursor.get_staff(), offset + page_pos(cursor.get_pageno(), layout) + margin_offset);
 }
 
-// width of complete layout  (in pixel)
-unsigned int Engine::layout_width(const MultipageLayout layout) const
+// width of complete layout
+mpx_t Engine::layout_width(const MultipageLayout layout) const
 {
     if (pageset.pages.empty()) return 0;
     switch (layout.join)
     {
-    case MultipageLayout::SINGLE:
-        return (layout.orientation == MultipageLayout::VERTICAL)
-            ? page_width()
-            : pageset.pages.size() * page_width() + (pageset.pages.size() - 1) * layout.distance;
     case MultipageLayout::DOUBLE:
         return (layout.orientation == MultipageLayout::VERTICAL)
             ? ((pageset.pages.size() > 1) ? 2 * page_width() + layout.distance : page_width())
@@ -226,46 +244,37 @@ unsigned int Engine::layout_width(const MultipageLayout layout) const
     case MultipageLayout::JOINED:
         return (layout.orientation == MultipageLayout::VERTICAL)
             ? ((pageset.pages.size() > 1) ? 2 * page_width() : page_width())
-            : pageset.pages.size() * page_width() + ((pageset.pages.size() - 1) / 2) * layout.distance;
+            : pageset.pages.size() * page_width() + ((pageset.pages.size() - 1) >> 1) * layout.distance;
     case MultipageLayout::FIRSTOFF:
         return (layout.orientation == MultipageLayout::VERTICAL)
             ? 2 * page_width()
-            : pageset.pages.size() * page_width() + (pageset.pages.size() / 2) * layout.distance;
+            : pageset.pages.size() * page_width() + (pageset.pages.size() >> 1) * layout.distance;
+    default:
+        return (layout.orientation == MultipageLayout::VERTICAL)
+            ? page_width()
+            : pageset.pages.size() * page_width() + (pageset.pages.size() - 1) * layout.distance;
     };
-    return 0;
 }
 
-// height of complete layout  (in pixel)
-unsigned int Engine::layout_height(const MultipageLayout layout) const
+// height of complete layout
+mpx_t Engine::layout_height(const MultipageLayout layout) const
 {
     if (pageset.pages.empty()) return 0;
     switch (layout.join)
     {
-    case MultipageLayout::SINGLE:
-        return (layout.orientation == MultipageLayout::VERTICAL)
-            ? pageset.pages.size() * page_height() + (pageset.pages.size() - 1) * layout.distance
-            : page_height();
     case MultipageLayout::DOUBLE:
     case MultipageLayout::JOINED:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? ((pageset.pages.size() + 1) / 2) * page_height() + ((pageset.pages.size() - 1) / 2) * layout.distance
+            ? ((pageset.pages.size() + 1) >> 1) * page_height() + ((pageset.pages.size() - 1) >> 1) * layout.distance
             : page_height();
     case MultipageLayout::FIRSTOFF:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? ((pageset.pages.size() + 2) / 2) * page_height() + (pageset.pages.size() / 2) * layout.distance
+            ? ((pageset.pages.size() + 2) >> 1) * page_height() + (pageset.pages.size() >> 1) * layout.distance
             : page_height();
-    };
-    return 0;
-}
-
-// write plate-content to stdout
-void Engine::plate_dump() const
-{
-    size_t idx = 0;
-    for (Pageset::const_Iterator p = pageset.pages.begin(); p != pageset.pages.end(); ++p)
-    {
-        std::cout << "=== PAGE " << ++idx << " ===\n";
-        p->plates.front().plate->dump();
+    default:
+        return (layout.orientation == MultipageLayout::VERTICAL)
+            ? pageset.pages.size() * page_height() + (pageset.pages.size() - 1) * layout.distance
+            : page_height();
     };
 }
 
@@ -343,168 +352,177 @@ Document::Score& Engine::select_score(Position<mpx_t> pos, const MultipageLayout
 }
 
 // create cursor (front of first score)
-EditCursor& Engine::get_cursor() throw(Error, UserCursor::Error)
+RefPtr<EditCursor> Engine::get_cursor()
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
-    CursorMap::iterator cur = cursors.find(&document->scores.front().score);
-    if (cur != cursors.end()) return cur->second;
-    cur = cursors.insert(CursorMap::value_type(&document->scores.front().score, EditCursor(*document, pageset, interface, style, viewport))).first;
-    cur->second.set_score(document->scores.front());
-    cur->second.log_set(*this);
-    return cur->second;
+    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, style, viewport));
+    cursor->set_score(document->scores.front());
+    cursor->log_set(*this);
+    cursors.push_back(cursor);
+    return cursor;
 }
 
 // create cursor (front of given score)
-EditCursor& Engine::get_cursor(Document::Score& score) throw(Error, UserCursor::Error)
+RefPtr<EditCursor> Engine::get_cursor(Document::Score& score)
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
-    CursorMap::iterator cur = cursors.find(&score.score);
-    if (cur != cursors.end()) return cur->second;
-    cur = cursors.insert(CursorMap::value_type(&score.score, EditCursor(*document, pageset, interface, style, viewport))).first;
-    cur->second.set_score(score);
-    cur->second.log_set(*this);
-    return cur->second;
+    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, style, viewport));
+    cursor->set_score(score);
+    cursor->log_set(*this);
+    cursors.push_back(cursor);
+    return cursor;
 }
 
 // create cursor (on-page position)
-EditCursor& Engine::get_cursor(Position<mpx_t> pos, const Page& page) throw(Error, UserCursor::Error)
+RefPtr<EditCursor> Engine::get_cursor(Position<mpx_t> pos, const Page& page)
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
     Document::Score* const score(&select_score(pos, page));
-    const std::pair<CursorMap::iterator,bool> ret(cursors.insert(CursorMap::value_type(&score->score, EditCursor(*document, pageset, interface, style, viewport))));
-    if (ret.second)
-    {
-        ret.first->second.log_set(*this);
-        ret.first->second.set_score(*score);
-    };
-    ret.first->second.set_pos(page.it, (pos * 1000) / static_cast<int>(press.parameters.scale), viewport);
-    return ret.first->second;
+    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, style, viewport));
+    cursor->set_score(*score);
+    cursor->log_set(*this);
+    cursor->set_pos((pos * 1000) / static_cast<int>(press.parameters.scale), page.it, viewport);
+    cursors.push_back(cursor);
+    return cursor;
 }
 
 // create cursor (multi-page position)
-EditCursor& Engine::get_cursor(Position<mpx_t> pos, const MultipageLayout layout) throw(Error, UserCursor::Error)
+RefPtr<EditCursor> Engine::get_cursor(Position<mpx_t> pos, const MultipageLayout layout)
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
-    Page page(select_page(pos, layout));
+    const Page page(select_page(pos, layout));
     Document::Score* const score(&select_score(pos, page));
-    const std::pair<CursorMap::iterator,bool> ret(cursors.insert(CursorMap::value_type(&score->score, EditCursor(*document, pageset, interface, style, viewport))));
-    if (ret.second)
-    {
-        ret.first->second.log_set(*this);
-        ret.first->second.set_score(*score);
-    };
-    ret.first->second.set_pos(page.it, (pos * 1000) / static_cast<int>(press.parameters.scale), viewport);
-    return ret.first->second;
+    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, style, viewport));
+    cursor->set_score(*score);
+    cursor->log_set(*this);
+    cursor->set_pos((pos * 1000) / static_cast<int>(press.parameters.scale), page.it, viewport);
+    cursors.push_back(cursor);
+    return cursor;
 }
 
-// get object by position (on page)
-bool Engine::select_object(Position<mpx_t> pos, const Page& page) throw(Error)
+// set cursor (front of first score)
+void Engine::set_cursor(RefPtr<EditCursor>& cursor)
 {
-    ObjectCursor buffer;
-    
-    // scale pos
-    pos = (pos * 1000) / static_cast<int>(press.parameters.scale);
-    
-    // set on-page root (substract page margin)
-    pos.x -= pageset.page_layout.margin.left;
-    pos.y -= pageset.page_layout.margin.top;
-    
-    // search for object on page
-    for (Pageset::pPage::AttachableList::iterator a = page.it->attached.begin(); a != page.it->attached.end(); ++a)
-    {
-        if (!(*a)->object->is(Class::MOVABLE)) continue;
-        if ((*a)->contains(pos))
-        {
-            buffer.set_parent(*document, *page.it);
-            buffer.select(*static_cast<const Movable*>((*a)->object));
-            if (!buffer.ready() || buffer.end())
-                return false;
-            object_cur = buffer;
-            return true;
-        };
-    };
-    
-    // search for object within plates
-    Pageset::pPage::const_Iterator pinfo = page.it->get_plate_by_pos(pos);
-    if (pinfo == page.it->plates.end())
-        pinfo = --page.it->plates.end();
-    pos -= pinfo->dimension.position;       // calculate position relative to plate
-    
-    // search the score
-    Document::ScoreList::iterator score = document->scores.begin();
-    for (; score != document->scores.end(); ++score)
-        if (&score->score == pinfo->score)
-            break;
-    if (score == document->scores.end()) return false;
-    
-    // search the object
-    for (Plate::LineIt l = pinfo->plate->lines.begin(); l != pinfo->plate->lines.end(); ++l)
-    {
-        if (!l->contains(pos)) continue;
-        for (Plate::VoiceIt v = l->voices.begin(); v != l->voices.end(); ++v)
-        {
-            for (Plate::NoteIt n = v->notes.begin(); n != v->notes.end() && !n->at_end(); ++n)
-            {
-                if (n->is_inserted()) continue;
-                if (!n->get_note().is(Class::VISIBLEOBJECT)) continue;
-                for (Plate::pNote::AttachableList::iterator a = n->attached.begin(); a != n->attached.end(); ++a)
-                {
-                    if (!(*a)->object->is(Class::MOVABLE)) continue;
-                    if ((*a)->contains(pos))
-                    {
-                        // (casts away const, but not unexpected, since this object got a non-const reference to the document)
-                        if (buffer.set_parent(const_cast<StaffObject&>(n->get_note()).get_visible(), *n, *v, *l, pinfo->pageno))
-                        {
-                            if (buffer.select(*static_cast<const Movable*>((*a)->object)))
-                            {
-                                if (!buffer.ready() || buffer.end())
-                                    return false;
-                                object_cur = buffer;
-                                return true;
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-    
-    // no object found
-    return false;
+    cursor->set_score(document->scores.front());
 }
 
-// move object by "offset"
-void Engine::move_object(const ObjectCursor& cursor, const Position<mpx_t> offset)
+// set cursor (front of given score)
+void Engine::set_cursor(RefPtr<EditCursor>& cursor, Document::Score& score)
 {
-    // apply offset to on-plate data (no reengave neccessary)
-    const Position<mpx_t> scaled_offset(static_cast<mpx_t>((1000.0 * offset.x) / press.parameters.scale),
-                                        static_cast<mpx_t>((1000.0 * offset.y) / press.parameters.scale));
-    cursor.get_pobject().absolutePos += scaled_offset;
-    if (cursor.get_pobject().is_durable())
-        static_cast<Plate::pDurable&>(cursor.get_pobject()).endPos += scaled_offset;
-    cursor.get_pobject().gphBox.pos += scaled_offset;
-    
-    // calculate offset for score data
-    Movable& object(cursor.get_object());
-    const Position<> real_offset(
-        (object.typeX == Movable::PAGE || object.typeX == Movable::LINE)
-            ? viewport.pxtoum_h(offset.x)
-            : (1000 * offset.x) / viewport.umtopx_h(cursor.get_staff().head_height),
-        (object.typeY == Movable::PAGE || object.typeY == Movable::LINE)
-            ? viewport.pxtoum_v(offset.y)
-            : (1000 * offset.y) / viewport.umtopx_v(cursor.get_staff().head_height)
-    );
-    
-    // apply offset to score data
-    object.position += real_offset;
-    if (object.is(Class::DURABLE)) static_cast<Durable&>(object).end_position += real_offset;
-    
-    // update the line's boundary box (casts away const, but not unexpected, since this object got a non-const reference to the pageset)
-    const_cast<Plate::pLine&>(cursor.get_line()).calculate_gphBox();
+    cursor->set_score(score);
+}
+
+// set cursor (on-page position)
+void Engine::set_cursor(RefPtr<EditCursor>& cursor, Position<mpx_t> pos, const Page& page)
+{
+    cursor->set_score(select_score(pos, page));
+    cursor->set_pos((pos * 1000) / static_cast<int>(press.parameters.scale), page.it, viewport);
+}
+
+// set cursor (multi-page position)
+void Engine::set_cursor(RefPtr<EditCursor>& cursor, Position<mpx_t> pos, const MultipageLayout layout)
+{
+    cursor->set_score(select_score(pos, select_page(pos, layout)));
+    cursor->set_pos((pos * 1000) / static_cast<int>(press.parameters.scale), select_page(pos, layout).it, viewport);
+}
+
+// get object cursor (on first page)
+RefPtr<ObjectCursor> Engine::select_object()
+{
+    if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
+    if (pageset.pages.empty()) engrave();
+    RefPtr<ObjectCursor> cursor(new ObjectCursor(*document, pageset));
+    if (!cursor->set_parent(pageset.pages.front()))
+        return RefPtr<ObjectCursor>();
+    cursors.push_back(cursor);
+    return cursor;
+}
+
+// get object cursor (at given note)
+RefPtr<ObjectCursor> Engine::select_object(EditCursor& cur)
+{
+    if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
+    if (pageset.pages.empty()) engrave();
+    RefPtr<ObjectCursor> cursor(new ObjectCursor(*document, pageset));
+    if (!cursor->set_parent(cur))
+        return RefPtr<ObjectCursor>();
+    cursors.push_back(cursor);
+    return cursor;
+}
+
+// get object cursor (on-page position)
+RefPtr<ObjectCursor> Engine::select_object(Position<mpx_t> pos, const Page& page)
+{
+    if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
+    if (pageset.pages.empty()) engrave();
+    RefPtr<ObjectCursor> cursor(new ObjectCursor(*document, pageset));
+    if (!cursor->select(pos, *page.it))
+        return RefPtr<ObjectCursor>();
+    cursors.push_back(cursor);
+    return cursor;
+}
+
+// get object cursor (multi-page position)
+RefPtr<ObjectCursor> Engine::select_object(Position<mpx_t> pos, const MultipageLayout layout)
+{
+    if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
+    if (pageset.pages.empty()) engrave();
+    const Page page(select_page(pos, layout));
+    RefPtr<ObjectCursor> cursor(new ObjectCursor(*document, pageset));
+    if (!cursor->select(pos, *page.it))
+        return RefPtr<ObjectCursor>();
+    cursors.push_back(cursor);
+    return cursor;
+}
+
+// set object cursor (on first page)
+bool Engine::set_cursor(RefPtr<ObjectCursor>& cursor)
+{
+    if (&cursor->get_document() != document || &cursor->get_pageset() != &pageset) return false;
+    if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
+    if (pageset.pages.empty()) engrave();
+    return cursor->set_parent(pageset.pages.front());
+}
+
+// set object cursor (at given note)
+bool Engine::set_cursor(RefPtr<ObjectCursor>& cursor, EditCursor& cur)
+{
+    if (&cursor->get_document() != document || &cursor->get_pageset() != &pageset) return false;
+    if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
+    if (pageset.pages.empty()) engrave();
+    return cursor->set_parent(cur);
+}
+
+// set object cursor (on-page position)
+bool Engine::set_cursor(RefPtr<ObjectCursor>& cursor, Position<mpx_t> pos, const Page& page)
+{
+    if (&cursor->get_document() != document || &cursor->get_pageset() != &pageset) return false;
+    if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
+    if (pageset.pages.empty()) engrave();
+    return cursor->select(pos, *page.it);
+}
+
+// set object cursor (multi-page position)
+bool Engine::set_cursor(RefPtr<ObjectCursor>& cursor, Position<mpx_t> pos, const MultipageLayout layout)
+{
+    if (&cursor->get_document() != document || &cursor->get_pageset() != &pageset) return false;
+    if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
+    if (pageset.pages.empty()) engrave();
+    const Page page(select_page(pos, layout));
+    return cursor->select(pos, *page.it);
+}
+
+// register cursor for reengraving
+bool Engine::register_cursor(RefPtr<CursorBase> cursor)
+{
+    for (CursorList::iterator cur = cursors.begin(); cur != cursors.end(); ++cur)
+        if (*cur == cursor) return false;
+    cursors.push_back(cursor);
+    return true;
 }
 
 // logging control
@@ -520,5 +538,16 @@ void Engine::log_unset()
     this->Logging::log_unset();
     engraver.log_unset();
     press.log_unset();
+}
+
+// write plate-content to stdout
+void Engine::plate_dump() const
+{
+    size_t idx = 0;
+    for (Pageset::const_Iterator p = pageset.pages.begin(); p != pageset.pages.end(); ++p)
+    {
+        std::cout << "=== PAGE " << ++idx << " ===\n";
+        p->plates.front().plate->dump();
+    };
 }
 

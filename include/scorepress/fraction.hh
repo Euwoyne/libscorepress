@@ -40,18 +40,18 @@ class SCOREPRESS_API Fraction;    // class representing a rational number
 class SCOREPRESS_API Fraction
 {
  private:
-    long enumerator;            // the enumerator
-    unsigned long denominator;  // the denominator
+    long enumerator;    // the enumerator
+    long denominator;   // the denominator
     
     // return the greatest common divisor
-    SCOREPRESS_LOCAL static unsigned long gcd(unsigned long x, unsigned long y);
+    SCOREPRESS_LOCAL static long gcd(long x, long y);
     
  public:
     // constructors
-    Fraction(const long x = 0);                             // create from an integer
-    Fraction(const long enu, const unsigned long deno);     // create from a pair of enumerator and denominator
-    Fraction(const long x, const long enu, const unsigned long deno);   // create from a mixed fraction
-    Fraction(const Fraction& fract);                        // copy constructor
+    Fraction(const long x = 0);                         // create from an integer
+    Fraction(const long e, const long d);               // create from a pair of enumerator and denominator
+    Fraction(const long x, const long e, const long d); // create from a mixed fraction
+    Fraction(const Fraction& fract);                    // copy constructor
     
     // assignment operators
     Fraction& operator = (const Fraction& fract);   // assign value
@@ -85,10 +85,11 @@ class SCOREPRESS_API Fraction
     
     // cast operators
     operator double() const;        // casts to floating point values
-    inline double real() const {return operator double();};
+    inline double real() const {return operator double();}
     
     // access methods
     long i() const;                     // returns the integral part of the mixed fraction
+    unsigned long i_abs() const;        // returns the absolute value of the integral part
     long e_short() const;               // returns the enumerator of the mixed fraction
     long e() const;                     // returns the internal enumerator
     long d() const;                     // returns the internal denominator
@@ -105,11 +106,12 @@ class SCOREPRESS_API Fraction
 };
 
 // access methods
-inline long     Fraction::i()       const {return (denominator == 0) ? enumerator : enumerator / denominator;}
-inline long     Fraction::e_short() const {return (denominator != 0) ? (enumerator - (enumerator / denominator) * denominator) : (enumerator);}
-inline long     Fraction::e()       const {return enumerator;}
-inline long     Fraction::d()       const {return denominator;}
-inline Fraction Fraction::abs()     const {return Fraction((enumerator >= 0) ? enumerator : -enumerator, denominator);}
+inline long          Fraction::i()       const {return enumerator / denominator;}
+inline unsigned long Fraction::i_abs()   const {return (enumerator < 0) ? -static_cast<unsigned long>(enumerator) : static_cast<unsigned long>(enumerator);}
+inline long          Fraction::e_short() const {return (denominator != 0) ? (enumerator - (enumerator / denominator) * denominator) : (enumerator);}
+inline long          Fraction::e()       const {return enumerator;}
+inline long          Fraction::d()       const {return denominator;}
+inline Fraction      Fraction::abs()     const {return Fraction((enumerator >= 0) ? enumerator : -enumerator, denominator);}
 
 // arithmetic operators
 inline Fraction operator + (const Fraction& f1, const Fraction& f2) {return Fraction(f1) += f2;}

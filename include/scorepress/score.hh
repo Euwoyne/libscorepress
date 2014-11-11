@@ -67,7 +67,7 @@ class SCOREPRESS_API Score
     
  public:
     // default constructor
-    Score() : head_height(0) {};
+    Score() : head_height(0) {}
     
     // get an iterator for a given staff
     std::list<Staff>::const_iterator get_staff(const Staff& staff) const throw(StaffNotFound);

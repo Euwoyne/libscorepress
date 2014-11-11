@@ -36,6 +36,9 @@ using namespace ScorePress;
 // constructor
 SpriteInfo::SpriteInfo(Type _type) : type(_type), width(0), height(0) {}
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wexit-time-destructors"
+
 // easy access methods (with default returns for non-existing values)
 const std::string& SpriteInfo::get_text(const std::string& key) const
 {
@@ -43,6 +46,8 @@ const std::string& SpriteInfo::get_text(const std::string& key) const
     const std::map<std::string, std::string>::const_iterator i = text.find(key);
     return (i == text.end()) ? nulltext : i->second;
 }
+
+#pragma clang diagnostic pop
 
 double SpriteInfo::get_real(const std::string& key) const
 {

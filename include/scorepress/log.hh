@@ -64,8 +64,8 @@ class SCOREPRESS_API Log
     
     // handle log file
            bool open(const char* filename);
-    inline bool is_open()                  {return file.is_open();};
-    inline void close()                    {file.close();};
+    inline bool is_open()                  {return file.is_open();}
+    inline void close()                    {file.close();}
     
     // messaging methods (logging the given message)
     void info(const char* msg);
@@ -76,17 +76,17 @@ class SCOREPRESS_API Log
     void noprint(const char* msg);      // write message to log file only
     
     // flag setting methods
-    inline void echo_info(bool v = true)    {_flags.ECHO_INFO    = (v?1:0);};
-    inline void echo_debug(bool v = true)   {_flags.ECHO_DEBUG   = (v?1:0);};
-    inline void echo_verbose(bool v = true) {_flags.ECHO_VERBOSE = (v?1:0);};
-    inline void echo_warn(bool v = true)    {_flags.ECHO_WARN    = (v?1:0);};
-    inline void echo_error(bool v = true)   {_flags.ECHO_ERROR   = (v?1:0);};
+    inline void echo_info(bool v = true)    {_flags.ECHO_INFO    = (v?1:0);}
+    inline void echo_debug(bool v = true)   {_flags.ECHO_DEBUG   = (v?1:0);}
+    inline void echo_verbose(bool v = true) {_flags.ECHO_VERBOSE = (v?1:0);}
+    inline void echo_warn(bool v = true)    {_flags.ECHO_WARN    = (v?1:0);}
+    inline void echo_error(bool v = true)   {_flags.ECHO_ERROR   = (v?1:0);}
     
-    inline void log_info(bool v = true)     {_flags.LOG_INFO    = (v?1:0);};
-    inline void log_debug(bool v = true)    {_flags.LOG_DEBUG   = (v?1:0);};
-    inline void log_verbose(bool v = true)  {_flags.LOG_VERBOSE = (v?1:0);};
-    inline void log_warn(bool v = true)     {_flags.LOG_WARN    = (v?1:0);};
-    inline void log_error(bool v = true)    {_flags.LOG_ERROR   = (v?1:0);};
+    inline void log_info(bool v = true)     {_flags.LOG_INFO    = (v?1:0);}
+    inline void log_debug(bool v = true)    {_flags.LOG_DEBUG   = (v?1:0);}
+    inline void log_verbose(bool v = true)  {_flags.LOG_VERBOSE = (v?1:0);}
+    inline void log_warn(bool v = true)     {_flags.LOG_WARN    = (v?1:0);}
+    inline void log_error(bool v = true)    {_flags.LOG_ERROR   = (v?1:0);}
     
     // destructor (closing log file)
     ~Log();
@@ -104,17 +104,17 @@ class SCOREPRESS_API Logging
     mutable Log* logging_log;
     
  public:
-    inline Logging() : logging_log(NULL) {};
-    inline void log_set(Log& log)        {logging_log = &log;};
-    inline void log_set(Logging& log)    {logging_log = log.logging_log;};
-    inline void log_unset()              {logging_log = NULL;};
+    inline Logging() : logging_log(NULL) {}
+    inline void log_set(Log& log)        {logging_log = &log;}
+    inline void log_set(Logging& log)    {logging_log = log.logging_log;}
+    inline void log_unset()              {logging_log = NULL;}
     
-    inline void log_info(const char* msg)    const {if (logging_log) logging_log->info(msg);};
-    inline void log_debug(const char* msg)   const {if (logging_log) logging_log->debug(msg);};
-    inline void log_verbose(const char* msg) const {if (logging_log) logging_log->verbose(msg);};
-    inline void log_warn(const char* msg)    const {if (logging_log) logging_log->warn(msg);};
-    inline void log_error(const char* msg)   const {if (logging_log) logging_log->error(msg);};
-    inline void log_noprint(const char* msg) const {if (logging_log) logging_log->noprint(msg);};
+    inline void log_info(const char* msg)    const {if (logging_log) logging_log->info(msg);}
+    inline void log_debug(const char* msg)   const {if (logging_log) logging_log->debug(msg);}
+    inline void log_verbose(const char* msg) const {if (logging_log) logging_log->verbose(msg);}
+    inline void log_warn(const char* msg)    const {if (logging_log) logging_log->warn(msg);}
+    inline void log_error(const char* msg)   const {if (logging_log) logging_log->error(msg);}
+    inline void log_noprint(const char* msg) const {if (logging_log) logging_log->noprint(msg);}
 };
 
 } // end namespace

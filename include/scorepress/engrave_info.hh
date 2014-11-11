@@ -87,7 +87,7 @@ class SCOREPRESS_LOCAL BeamInfo
  public:
     // constructor
     BeamInfo(Plate::pVoice& voice);
-    BeamInfo() {throw MissingDefaultConstructor("BeamInfo");};
+    BeamInfo() __attribute__((noreturn)) {throw MissingDefaultConstructor("BeamInfo");}
     
     // create beam information (first pass; only top beam; expecting the "object" to correspond to the last note in the "voice")
     void apply1(const Chord& object, const unsigned char beam_group, const StemInfo& info);
@@ -114,7 +114,7 @@ struct SCOREPRESS_LOCAL TieInfo
     mpx_t              refPos;  // horizontal position of the non-head anchor (if present)
     
     // default constructor
-    TieInfo() : source(NULL), target(NULL), refPos(0) {};
+    TieInfo() : source(NULL), target(NULL), refPos(0) {}
 };
 
 
@@ -133,7 +133,7 @@ struct SCOREPRESS_LOCAL DurableInfo
     size_t           durationcountdown; // number of staff-objects remaining up to the end-node
     
     // default constructor
-    DurableInfo() : source(NULL), target(NULL), pnote(NULL), durationcountdown(0) {};
+    DurableInfo() : source(NULL), target(NULL), pnote(NULL), durationcountdown(0) {}
 };
 
 
@@ -149,7 +149,7 @@ struct SCOREPRESS_LOCAL SpaceInfo
     const void* leftcluster_host;   // host object of the last left-cluster, which required spacing
     value_t     rightcluster_time;  // time-stamp of the last right-cluster, which required spacing
     
-    SpaceInfo() : accidental_time(-1), leftcluster_host(NULL), rightcluster_time(-1) {};
+    SpaceInfo() : accidental_time(-1), leftcluster_host(NULL), rightcluster_time(-1) {}
 };
 
 
@@ -172,7 +172,7 @@ struct SCOREPRESS_LOCAL LineInfo
     bool forced_justification;         // use forced justification (do not preserve min-distance)?
     mpx_t right_margin;                // (only for justified lines)
     
-    LineInfo() : dimension(NULL), indent(0), justify(false), forced_justification(false), right_margin(0) {};
+    LineInfo() : dimension(NULL), indent(0), justify(false), forced_justification(false), right_margin(0) {}
 };
 
 } // end namespace

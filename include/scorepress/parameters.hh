@@ -48,18 +48,26 @@ class SCOREPRESS_API ViewportParam
     unsigned int hppm;  // horizontal viewport resolution (in pixels per meter)
     unsigned int vppm;  // vertical viewport resolution   (in pixels per meter)
     
+    inline ViewportParam() : hppm(3780), vppm(3780) {}  // default to 96dpi
+    
     // convert micrometer to millipixel (and vice versa)
-    inline mpx_t umtopx_h(const double um)  const {return static_cast<mpx_t>((um * hppm) / 1e3 + .5);};
-    inline mpx_t umtopx_v(const double um)  const {return static_cast<mpx_t>((um * vppm) / 1e3 + .5);};
-    inline um_t  pxtoum_h(const mpx_t  mpx) const {return (mpx * 1000) / hppm;};
-    inline um_t  pxtoum_v(const mpx_t  mpx) const {return (mpx * 1000) / hppm;};
+    inline mpx_t  umtopx_h(const double um)  const {return static_cast<mpx_t>((um / 1e3) * hppm + .5);}
+    inline mpx_t  umtopx_v(const double um)  const {return static_cast<mpx_t>((um / 1e3) * vppm + .5);}
+    
+    inline mpx_t  umtopx_h(const um_t   um)  const {return static_cast<mpx_t>((um / 1e3) * hppm + .5);}
+    inline mpx_t  umtopx_v(const um_t   um)  const {return static_cast<mpx_t>((um / 1e3) * vppm + .5);}
+    inline um_t   pxtoum_h(const mpx_t  mpx) const {return static_cast<um_t>((mpx * 1000.0) / hppm + .5);}
+    inline um_t   pxtoum_v(const mpx_t  mpx) const {return static_cast<um_t>((mpx * 1000.0) / hppm + .5);}
+    
+    inline umpx_t umtopx_h(const uum_t  um)  const {return static_cast<umpx_t>((um / 1e3) * hppm + .5);}
+    inline umpx_t umtopx_v(const uum_t  um)  const {return static_cast<umpx_t>((um / 1e3) * vppm + .5);}
+    inline uum_t  pxtoum_h(const umpx_t mpx) const {return static_cast<uum_t>((mpx * 1000.0) / hppm + .5);}
+    inline uum_t  pxtoum_v(const umpx_t mpx) const {return static_cast<uum_t>((mpx * 1000.0) / hppm + .5);}
     
     // setup viewport in dpi
-    inline ViewportParam() : hppm(3780), vppm(3780) {};     // default to 96dpi
-    
-    inline void set_dpi(double dpi)               {hppm = vppm = static_cast<unsigned int>(dpi / 0.0254 + .5);};
+    inline void set_dpi(double dpi)               {hppm = vppm = static_cast<unsigned int>(dpi / 0.0254 + .5);}
     inline void set_dpi(double hdpi, double vdpi) {hppm = static_cast<unsigned int>(hdpi / 0.0254 + .5);
-                                                   vppm = static_cast<unsigned int>(vdpi / 0.0254 + .5);};
+                                                   vppm = static_cast<unsigned int>(vdpi / 0.0254 + .5);}
 };
 
 //
@@ -172,7 +180,7 @@ struct SCOREPRESS_API PressParam
     PressParam();
     
     // apply scale
-    inline double do_scale(const double coord) const {return (scale * coord) / 1000.0;};
+    inline double do_scale(const double coord) const {return (scale * coord) / 1000.0;}
 };
 
 //
@@ -187,7 +195,7 @@ struct SCOREPRESS_API InterfaceParam
 {
     enum InputBase {LOWER_C = 0, LOWER_D, LOWER_E, LOWER_F, LOWER_G, LOWER_A, LOWER_B,
                     UPPER_C = 7, UPPER_D, UPPER_E, UPPER_F, UPPER_G, UPPER_A, UPPER_B,
-                    NEAREST = 13};
+                    NEAREST = 14};
     
     //enum InputOctave {SUBSUBCONTRA = 0, SUBCONTRA, CONTRA, GREAT, SMALL, LINE1, LINE2, LINE3, LINE4, LINE5, LINE6};
     

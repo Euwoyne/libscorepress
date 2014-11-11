@@ -19,7 +19,8 @@
 */
 
 #include "edit_cursor.hh"
-#include "log.hh"
+#include "object_cursor.hh" // ObjectCursor
+#include "log.hh"           // Log
 
 using namespace ScorePress;
 
@@ -144,7 +145,7 @@ void EditCursor::set_auto_stem_length(Chord& chord) const throw(NotValidExceptio
     // elongate stem for flags/beams
     if (chord.val.exp < VALUE_BASE - 2)
     {
-        if (!get_staff().style)
+        if (!UserCursor::get_staff().style)
         {
             if (chord.stem_length < 0)
                 chord.stem_length -=
@@ -163,12 +164,12 @@ void EditCursor::set_auto_stem_length(Chord& chord) const throw(NotValidExceptio
                 chord.stem_length -=
                     //get_staff().style->beam_height
                     + (VALUE_BASE - 3 - chord.val.exp)
-                      * (get_staff().style->beam_distance + get_staff().style->beam_height);
+                      * (UserCursor::get_staff().style->beam_distance + UserCursor::get_staff().style->beam_height);
             else
                 chord.stem_length +=
                     //get_staff().style->beam_height
                     + (VALUE_BASE - 3 - chord.val.exp)
-                      * (get_staff().style->beam_distance + get_staff().style->beam_height);
+                      * (UserCursor::get_staff().style->beam_distance + UserCursor::get_staff().style->beam_height);
         };
         
         // round to full 500
@@ -254,22 +255,51 @@ EditCursor::EditCursor(Document& _document, Pageset& _pageset,
                        const InterfaceParam& _param, const StyleParam& _style, const ViewportParam& _viewport)
     : UserCursor(_document, _pageset), param(_param), style(_style), viewport(_viewport) {}
 
+EditCursor::~EditCursor() {}
+
 //  access methods
 // ----------------
 
-/*
+// return the staff
+Staff& EditCursor::get_staff() throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->note.staff();
+}
+
+// return the voice
+Voice& EditCursor::get_voice() throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->note.voice();
+}
+
+// return the score-cursor
+Cursor& EditCursor::get_cursor() throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->note;
+}
+
 // return objects attached to the note
 MovableList& EditCursor::get_attached() throw(NotValidException)
 {
-    if (cursor == vcursors.end()) throw NotValidException();
+    if (cursor == vcursors.end())     throw NotValidException();
     return cursor->note->get_visible().attached;
 }
 
-// return on-plate attached-object info
-Plate::pNote::AttachableList& EditCursor::get_pattached() throw(NotValidException)
+// return the on-plate voice
+Plate::pVoice& EditCursor::get_pvoice() throw(NotValidException)
 {
     if (cursor == vcursors.end()) throw NotValidException();
-    return cursor->pnote->attached;
+    return *cursor->pvoice;
+}
+
+// return the on-plate note
+Plate::pNote& EditCursor::get_platenote() throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return *cursor->pnote;
 }
 
 // return the line layout
@@ -294,21 +324,6 @@ MovableList& EditCursor::get_page_attached() throw(NotValidException)
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).attached
                                        : score->layout.attached;
-}
-*/
-
-// return an object cursor for the referenced note
-ObjectCursor EditCursor::create_object_cursor()
-{
-    if (cursor == vcursors.end()) throw NotValidException();
-    return ObjectCursor(cursor->note->get_visible(), *cursor->pnote, *cursor->pvoice, *line, page->pageno);
-}
-
-// set the object cursor's parent note
-void EditCursor::create_object_cursor(ObjectCursor& objcursor)
-{
-    if (cursor == vcursors.end()) throw NotValidException();
-    objcursor.set_parent(cursor->note->get_visible(), *cursor->pnote, *cursor->pvoice, *line, page->pageno);
 }
 
 //  insertion interface
@@ -629,6 +644,7 @@ void EditCursor::add_voice() throw(NotValidException, Cursor::IllegalObjectTypeE
             vcursors.insert(++inspos, VoiceCursor())->note.set(
                 cursor->note.staff(),
                 *static_cast<NoteObject&>(*cursor->note).subvoice);
+            return;
         };
     };
 }

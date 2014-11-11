@@ -70,14 +70,17 @@ class SCOREPRESS_API Plate_GphBox
     Plate_GphBox();     // constructors
     Plate_GphBox(Plate_Pos pos, mpx_t width, mpx_t height);
     
-    inline mpx_t right()  const {return pos.x + width;};    // calculate the right margin of the box
-    inline mpx_t bottom() const {return pos.y + height;};   // calculate the bottom of the box
+    inline mpx_t right()  const;                // calculate the right margin of the box
+    inline mpx_t bottom() const;                // calculate the bottom of the box
     
     bool contains(const Plate_Pos& p) const;    // check, if a given point is inside the box
     bool overlaps(const Plate_GphBox& box);     // check, if a given box overlaps this box
     void extend(const Plate_Pos& p);            // extend box, such that the given point is covered
     void extend(const Plate_GphBox& box);       // extend box, such that the given box is covered
 };
+
+inline mpx_t Plate_GphBox::right()  const {return pos.x + width;}
+inline mpx_t Plate_GphBox::bottom() const {return pos.y + height;}
 
 inline bool Plate_GphBox::contains(const Plate_Pos& p) const {
     return (p.x >= pos.x && p.y >= pos.y && p.x < pos.x + width && p.y < pos.y + height);}
@@ -89,10 +92,9 @@ class SCOREPRESS_API Plate_pGraphical
  public:
     Plate_GphBox gphBox;
     
-    Plate_pGraphical() {};                                      // default constructor
+    Plate_pGraphical() {}                                       // default constructor
     Plate_pGraphical(Plate_Pos pos, mpx_t width, mpx_t height); // constructor
-    virtual bool contains(Plate_Pos p) const;                   // check if a point is within the object
-    virtual ~Plate_pGraphical() {};                             // virtual destructor
+    bool contains(Plate_Pos p) const;                           // check if a point is within the object
 };
 
 inline bool Plate_pGraphical::contains(Plate_Pos p) const {return gphBox.contains(p);}
@@ -109,12 +111,12 @@ class SCOREPRESS_API Plate_pAttachable : public Plate_pGraphical
     struct {unsigned x : 1; unsigned y : 1;} flipped;   // flipped flags
     
     Plate_pAttachable(const AttachedObject& obj, const Plate_Pos& pos); // constructor
-    Plate_pAttachable();                                                // default constructor
-    
-    virtual bool is_durable() {return false;};
+    Plate_pAttachable() __attribute__((noreturn));                      // default constructor
+    bool is_durable();
 };
 
 inline Plate_pAttachable::Plate_pAttachable() : object(NULL) {throw MissingDefaultConstructor("Plate::pAttachable");}
+inline bool Plate_pAttachable::is_durable() {return object->is(Class::DURABLE);}
 
 
 // durable object (attachable with additional end-position)
@@ -124,9 +126,7 @@ class SCOREPRESS_API Plate_pDurable : public Plate_pAttachable
     Plate_Pos endPos;
     
     Plate_pDurable(const AttachedObject& obj, const Plate_Pos& pos);    // constructor
-    Plate_pDurable();                                                   // default constructor
-    
-    virtual bool is_durable() {return true;};
+    Plate_pDurable() __attribute__((noreturn));                         // default constructor
 };
 
 inline Plate_pDurable::Plate_pDurable() {throw MissingDefaultConstructor("Plate::pDurable");}
@@ -144,7 +144,7 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
         unsigned int count;     // number of ledger lines
         bool         below;     // ledger lines below or above the staff?
         
-        LedgerLines() : length(0), count(0), below(false) {};
+        LedgerLines() : length(0), count(0), below(false) {}
     };
     
     // tie position information
@@ -181,11 +181,11 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     struct Beam
     {
         const Plate_pNote* end;             // reference to the end-note
-        unsigned           end_idx     : 4; // beam index on end-note
+        unsigned           end_idx     : 6; // beam index on end-note
         unsigned           short_beam  : 1; // short beam? (if it is, "end" only defines the slope)
         unsigned           short_left  : 1; // short beam direction 
         
-        Beam() : end(NULL), end_idx(0), short_beam(0), short_left(0) {};
+        Beam() : end(NULL), end_idx(0), short_beam(0), short_left(0) {}
     };
     
     // list and pointer typedefs
@@ -218,8 +218,8 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     bool           noflag;                  // is a flag to be rendered?
     
  public:
-    Plate_pNote(const Plate_Pos& pos, const const_Cursor& note);        // constructor
-    Plate_pNote() {throw MissingDefaultConstructor("Plate::pNote");}    // default constructor
+    Plate_pNote(const Plate_Pos& pos, const const_Cursor& note);    // constructor
+    Plate_pNote() __attribute__((noreturn));                        // default constructor
     
     void add_offset(mpx_t offset);          // add offset to all positions (except to the tie-end)
     void add_tieend_offset(mpx_t offset);   // add offset to tie-end positions
@@ -233,6 +233,7 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     void dump() const;
 };
 
+inline                    Plate_pNote::Plate_pNote() {throw MissingDefaultConstructor("Plate::pNote");}
 inline const StaffObject& Plate_pNote::get_note()    const {return (virtual_obj ? *virtual_obj->object : *note);}
 inline       bool         Plate_pNote::is_virtual()  const {return (virtual_obj != NULL);}
 inline       bool         Plate_pNote::is_inserted() const {return (virtual_obj && virtual_obj->inserted);}
@@ -261,7 +262,7 @@ class SCOREPRESS_API Plate_pVoice
     
  public:
     Plate_Pos     basePos;      // top-right corner of the staff
-    mpx_t         head_height;  // the staffs head-height (in millipixel)
+    umpx_t        head_height;  // the staffs head-height (in millipixel)
     NoteList      notes;        // notes of the voice
     const_Cursor  begin;        // cursor at the beginning of this voice (in the score object)
     VoiceContext  context;      // this voice's context at the END of the line (or voice)
@@ -270,11 +271,13 @@ class SCOREPRESS_API Plate_pVoice
     Brace         brace;        // brace starting here
     Bracket       bracket;      // bracket starting here
     
-    Plate_pVoice(const const_Cursor& cursor);                           // constructor
-    Plate_pVoice() {throw MissingDefaultConstructor("Plate::pVoice");}  // default constructor
+    Plate_pVoice(const const_Cursor& cursor);       // constructor
+    Plate_pVoice() __attribute__((noreturn));       // default constructor
     
     Iterator append(const Plate_Pos& pos, const const_Cursor& note);    // append new note
 };
+
+inline Plate_pVoice::Plate_pVoice() {throw MissingDefaultConstructor("Plate::pVoice");} 
 
 
 // on-plate line object (list of voices)

@@ -29,6 +29,8 @@
 #include "error.hh"      // Error, MissingDefaultConstructor
 #include "export.hh"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wweak-vtables"
 namespace ScorePress
 {
 //  CLASSES
@@ -54,11 +56,11 @@ class SCOREPRESS_API FileReader
  public:
     // exception classes
     class SCOREPRESS_API Error : public ScorePress::Error
-        {public: Error(const std::string& msg) : ScorePress::Error(msg) {};};
+        {public: Error(const std::string& msg) : ScorePress::Error(msg) {}};
     class SCOREPRESS_API IOException : public Error     // thrown, if the file cannot be read
-        {public: IOException(const std::string& msg) : Error(msg) {};};
+        {public: IOException(const std::string& msg) : Error(msg) {}};
     class SCOREPRESS_API FormatError : public Error     // thrown, if the file contains illegal syntax
-        {public: FormatError(const std::string& msg) : Error(msg) {};};
+        {public: FormatError(const std::string& msg) : Error(msg) {}};
     
  private:
     const std::string        name;              // file-type name
@@ -69,9 +71,9 @@ class SCOREPRESS_API FileReader
     // constructor
     FileReader(const std::string& name);
     FileReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
-    FileReader() {throw MissingDefaultConstructor("FileReader");};
+    FileReader() __attribute__((noreturn)) {throw MissingDefaultConstructor("FileReader");}
     
-    virtual ~FileReader() {};
+    virtual ~FileReader() {}
     
     // type information access
     const std::string&             get_name() const;
@@ -113,18 +115,9 @@ inline void FileReader::add_file_extension(const std::string& extension) {file_e
 class SCOREPRESS_API DocumentReader : virtual public FileReader
 {
  public:
-    // constructor
-    DocumentReader(const std::string& name);
-    DocumentReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
-    DocumentReader() {throw MissingDefaultConstructor("DocumentReader");};
-    
     // virtual parser interface
     virtual void parse_document(Document& target) = 0;  // document parser
 };
-
-inline DocumentReader::DocumentReader(const std::string& _name) : FileReader(_name) {}
-inline DocumentReader::DocumentReader(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
-            : FileReader(_name, mime_type, file_extension) {}
 
 
 //
@@ -137,21 +130,12 @@ inline DocumentReader::DocumentReader(const std::string& _name, const std::strin
 class SCOREPRESS_API ParameterReader : virtual public FileReader
 {
  public:
-    // constructor
-    ParameterReader(const std::string& name);
-    ParameterReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
-    ParameterReader() {throw MissingDefaultConstructor("ParameterReader");};
-    
     // virtual parser interface
     virtual void parse_parameter(EngraverParam&  engraver_param,
                                  PressParam&     press_param,
                                  StyleParam&     style_param,
                                  InterfaceParam& interface_param) = 0;
 };
-
-inline ParameterReader::ParameterReader(const std::string& _name) : FileReader(_name) {}
-inline ParameterReader::ParameterReader(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
-            : FileReader(_name, mime_type, file_extension) {}
 
 
 //
@@ -164,20 +148,13 @@ inline ParameterReader::ParameterReader(const std::string& _name, const std::str
 class SCOREPRESS_API SpritesetReader : virtual public FileReader
 {
  public:
-    // constructor
-    SpritesetReader(const std::string& name);
-    SpritesetReader(const std::string& name, const std::string& mime_type, const std::string& file_extension);
-    SpritesetReader() {throw MissingDefaultConstructor("SpritesetReader");};
-    
     // virtual parser interface
     virtual void parse_spriteset(SpriteSet&   target,       // sprite-set parser
                                  Renderer&    renderer,
                                  const size_t setid) = 0;
 };
-
-inline SpritesetReader::SpritesetReader(const std::string& _name) : FileReader(_name) {}
-inline SpritesetReader::SpritesetReader(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
-            : FileReader(_name, mime_type, file_extension) {}
 }
+#pragma clang diagnostic pop
+
 #endif
 

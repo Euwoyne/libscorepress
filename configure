@@ -641,14 +641,21 @@ INSTALL_SCRIPT
 INSTALL_PROGRAM
 LDCONFIG
 LN_S
-CTRLFLAGS
 WARNINGS
-FSIZECHECK
 RPATHFLAG
-SOFLAGS
-RELEASE_SO
-PROFILE_SO
-DEBUG_SO
+CTRLFLAGS
+LD_RELEASE
+LD_PROFILE
+LD_DEBUG
+LD_FLAGS
+C_RELEASE_SO
+C_PROFILE_SO
+C_DEBUG_SO
+C_FLAGS_SO
+C_RELEASE
+C_PROFILE
+C_DEBUG
+C_FLAGS
 RELEASE
 PROFILE
 DEBUG
@@ -2452,7 +2459,7 @@ if test -z "$CXX"; then
     CXX=$CCC
   else
     if test -n "$ac_tool_prefix"; then
-  for ac_prog in g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC xlC_r xlC
+  for ac_prog in g++ gcc clang c++
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -2496,7 +2503,7 @@ fi
 fi
 if test -z "$CXX"; then
   ac_ct_CXX=$CXX
-  for ac_prog in g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC xlC_r xlC
+  for ac_prog in g++ gcc clang c++
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -2953,6 +2960,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # set compiler specific flags
 case "$CXX" in
 gcc | g++ )
+    # mode flags
     # Extract the first word of "gdb", so it can be a program name with args.
 set dummy gdb; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -2995,26 +3003,42 @@ fi
 
     PROFILE="-O2 -fno-omit-frame-pointer"
 
-    RELEASE="-O2"
+    RELEASE="-Ofast"
 
 
-    PROFILE_SO="-fvisibility=hidden -fvisibility-inlines-hidden"
+    # compile flags
 
-    RELEASE_SO="-fvisibility=hidden -fvisibility-inlines-hidden"
+
+
+
 
     case "$host_os" in
-        linux* ) SOFLAGS="-fPIC -lc"
+        linux* ) C_FLAGS_SO="-fPIC"
  ;;
         * )       ;;
     esac
+
+    C_PROFILE_SO="-fvisibility=hidden -fvisibility-inlines-hidden"
+
+    C_RELEASE_SO="-fvisibility=hidden -fvisibility-inlines-hidden"
+
+
+    # linker flags
+    LD_FLAGS="-shared -lc -Wl,-soname,\${soname}"
+
+
+
+
+
+    # general flags
+    CTRLFLAGS="-ansi -pedantic -fno-nonansi-builtins"
+
     if test "x$enable_rpath" = "xyes"; then :
 
 else
   RPATHFLAG="-Wl,-rpath,"
 
 fi
-    FSIZECHECK="-Wno-long-long"
-
     WARNINGS="-W                   \\
              -Wall                \\
              -Wextra              \\
@@ -3029,11 +3053,8 @@ fi
              -Wshadow             \\
              -Wundef              \\
              -Wunreachable-code   \\
-             -Wwrite-strings"
-
-    CTRLFLAGS="-ansi                \\
-             -pedantic            \\
-             -fno-nonansi-builtins"
+             -Wwrite-strings      \\
+             -Wno-unknown-pragmas"
 
 
     # set compiler-version specific flags
@@ -3051,9 +3072,66 @@ fi
             fi
 fi
     ;;
+clang )
+    # mode flags
+    DEBUG="-g -O0"
+
+    PROFILE="-O2"
+
+    RELEASE="-Ofast"
+
+
+    # compile flags
+
+
+
+
+
+    case "$host_os" in
+        linux* ) C_FLAGS_SO="-fPIC"
+ ;;
+        * )       ;;
+    esac
+
+    C_PROFILE_SO="-fvisibility=hidden"
+
+    C_RELEASE_SO="-fvisibility=hidden"
+
+
+    # linker flags
+    LD_FLAGS="-shared -lc -lm -lstdc++ -Wl,-soname,\${soname}"
+
+
+
+
+
+    # general flags
+    CTRLFLAGS="-ansi -pedantic -fexceptions"
+
+    if test "x$enable_rpath" = "xyes"; then :
+
+else
+  RPATHFLAG="-Wl,-rpath,"
+
+fi
+    WARNINGS="-Weverything              \\
+             -Wno-padded                 \\
+             -Wno-switch-enum            \\
+             -Wno-documentation          \\
+             -Wno-global-constructors    \\
+             -Wno-exit-time-destructors  \\
+             -Wno-sign-conversion"
+
+    ;;
 *)
     echo "WARNING: Unknown Compiler!"
-    DEBUG=:
+
+
+
+
+
+
+
 
 
 

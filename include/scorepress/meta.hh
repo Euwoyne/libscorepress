@@ -54,7 +54,7 @@ struct SCOREPRESS_API Meta
     Field number;       // number in collection
     Map   misc;         // additional metadata
     
-    Meta() : title("Untitled") {};
+    Meta() : title("Untitled") {}
 };
 
 //

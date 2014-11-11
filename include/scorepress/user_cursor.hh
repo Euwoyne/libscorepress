@@ -23,11 +23,11 @@
 
 #include <list>                 // std::list
 
-#include "document.hh"          // Document
 #include "cursor.hh"            // Cursor
+#include "cursor_base.hh"       // CursorBase, ReengraveInfo, Reengraveable
+#include "document.hh"          // Document
 #include "pageset.hh"           // Pageset, StaffContext, Plate, value_t
 #include "parameters.hh"        // ViewportParam
-#include "reengrave_info.hh"    // ReengraveInfo, Reengraveable
 #include "error.hh"             // Error, std::string
 #include "log.hh"               // Logging
 #include "export.hh"
@@ -48,7 +48,7 @@ class SCOREPRESS_API UserCursor;   // cursor, with graphical representation, and
 // "Press" instance. It can be manipulated by directions and graphical
 // coorinates. (Modification methods implemented in child-class "EditCursor".)
 //
-class SCOREPRESS_API UserCursor : public Reengraveable, public Logging
+class SCOREPRESS_API UserCursor : public CursorBase, public Logging
 {
  public:
     // exception classes
@@ -143,36 +143,38 @@ class SCOREPRESS_API UserCursor : public Reengraveable, public Logging
     // initialization methods
     UserCursor(Document& document, Pageset& pageset);                       // constructor
     UserCursor(const UserCursor& cursor);                                   // copy constructor
-    UserCursor() {throw MissingDefaultConstructor("UserCursor");};          // default constructor
+    UserCursor() __attribute__((noreturn));                                 // default constructor
+    virtual ~UserCursor();
     
     void set_score(Document::Score& score) throw(Error);                    // initialize the cursor at the beginning of a given score
     void set_score(Score& score, unsigned int start_page) throw(Error);     // initialize the cursor at the beginning of a given score
     
     void set_pos(Position<mpx_t>, const ViewportParam&);                    // set cursor to graphical position (on current page, at 100% Zoom)
-    void set_pos(Pageset::Iterator, Position<mpx_t>, const ViewportParam&); // set cursor to graphical position (on given page, at 100% Zoom)
+    void set_pos(Position<mpx_t>, Pageset::Iterator, const ViewportParam&); // set cursor to graphical position (on given page, at 100% Zoom)
     
     // access methods
-    const Document&       get_document()  const;                            // return the document
-    const Score&          get_score()     const;                            // return the score-object
-    const Staff&          get_staff()     const throw(NotValidException);   // return the staff
-    const Voice&          get_voice()     const throw(NotValidException);   // return the voice
-    const Cursor&         get_cursor()    const throw(NotValidException);   // return the score-cursor
-    const MovableList&    get_attached()  const throw(NotValidException);   // return objects attached to the note
+    const Document&       get_document()   const;                           // return the document
+    const Score&          get_score()      const;                           // return the score-object
+    const Staff&          get_staff()      const throw(NotValidException);  // return the staff
+    const Voice&          get_voice()      const throw(NotValidException);  // return the voice
+    const Cursor&         get_cursor()     const throw(NotValidException);  // return the score-cursor
+    const MovableList&    get_attached()   const throw(NotValidException);  // return objects attached to the note
     
           unsigned int    get_pageno()     const;                           // return the page-number
           unsigned int    get_start_page() const;                           // return the start-page of the score
           unsigned int    get_score_page() const;                           // return the page-number within the score
+    const Pageset&        get_pageset()    const;                           // return the pageset
     const Pageset::pPage& get_page()       const;                           // return the page
     const Plate&          get_plate()      const;                           // return the plate-object
     const Plate::pLine&   get_line()       const;                           // return the on-plate line
     const Plate::pVoice&  get_pvoice()     const throw(NotValidException);  // return the on-plate voice
     const Plate::pNote&   get_platenote()  const throw(NotValidException);  // return the on-plate note
     
-          value_t         get_time()      const throw(NotValidException);   // return the current time-stamp
+          value_t         get_time()       const throw(NotValidException);  // return the current time-stamp
     
-    bool   at_end()      const throw(NotValidException);        // check, if the cursor is at the end of the voice
-    size_t voice_index() const throw(NotValidException);        // return the index of the current voice
-    size_t voice_count() const;                                 // return the number of voices
+    bool   at_end()            const throw(NotValidException);  // check, if the cursor is at the end of the voice
+    size_t voice_index()       const throw(NotValidException);  // return the index of the current voice
+    size_t voice_count()       const;                           // return the number of voices
     size_t staff_voice_index() const throw(NotValidException);  // return index of current voice (in staff)
     size_t staff_voice_count() const throw(NotValidException);  // return the number of voices (in staff)
     
@@ -216,6 +218,8 @@ class SCOREPRESS_API UserCursor : public Reengraveable, public Logging
     mpx_t graphical_y(const ViewportParam& viewport) const      throw(NotValidException);   // vertical position
     mpx_t graphical_height(const ViewportParam& viewport) const throw(NotValidException);   // height of the cursor
     
+    void render(Renderer& renderer, const PressState& state) const;                 // rendering interface
+    
     // reengraving interface
     virtual void   setup_reengrave(ReengraveInfo& info);    // setup reengraving triggers
     virtual Status reengrave(EngraverState& state);         // reengraving function
@@ -234,14 +238,17 @@ inline bool UserCursor::VoiceCursor::at_end()   const {return (pnote->at_end() |
 inline const Newline& UserCursor::VoiceCursor::get_layout() const
     {return line_layout.ready() ? static_cast<Newline&>(*line_layout) : note.staff().layout;}
 
+inline UserCursor::UserCursor() {throw MissingDefaultConstructor("UserCursor");}
+
 inline void UserCursor::set_score(Document::Score& _score) throw (Error)            {set_score(_score.score, _score.start_page);}
-inline void UserCursor::set_pos(Position<mpx_t> pos, const ViewportParam& viewport) {set_pos(page, pos, viewport);}
+inline void UserCursor::set_pos(Position<mpx_t> pos, const ViewportParam& viewport) {set_pos(pos, page, viewport);}
 
 inline const Document&       UserCursor::get_document()   const {return *document;}
 inline const Score&          UserCursor::get_score()      const {return *score;}
 inline       unsigned int    UserCursor::get_pageno()     const {return page->pageno;}
 inline       unsigned int    UserCursor::get_start_page() const {return plateinfo->start_page;}
 inline       unsigned int    UserCursor::get_score_page() const {return plateinfo->pageno;}
+inline const Pageset&        UserCursor::get_pageset()    const {return *pageset;}
 inline const Pageset::pPage& UserCursor::get_page()       const {return *page;}
 inline const Plate&          UserCursor::get_plate()      const {return *plateinfo->plate;}
 inline const Plate::pLine&   UserCursor::get_line()       const {return *line;}

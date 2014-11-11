@@ -60,8 +60,8 @@ class SCOREPRESS_LOCAL Pageset
         } margin;
         
         // constructors
-        PageDimension() : width(0), height(0) {margin.top = margin.bottom = margin.left = margin.right = 0;};
-        PageDimension(const Document::PageDimension& dim, const ViewportParam& viewport) {set(dim, viewport);};
+        PageDimension();
+        PageDimension(const Document::PageDimension& dim, const ViewportParam& viewport);
         
         // set data from page-dimension in micrometer
         void set(const Document::PageDimension& dim, const ViewportParam& viewport);
@@ -76,8 +76,8 @@ class SCOREPRESS_LOCAL Pageset
         mpx_t height;
     
      public:
-        ScoreDimension() : width(0), height(0) {};
-        ScoreDimension(mpx_t x, mpx_t y, mpx_t w, mpx_t h) : position(x, y), width(w), height(h) {};
+        ScoreDimension();
+        ScoreDimension(mpx_t x, mpx_t y, mpx_t w, mpx_t h);
         bool contains(const Position<mpx_t>& pos) const; // check, if the score-object contains a given point
     };
     
@@ -92,7 +92,7 @@ class SCOREPRESS_LOCAL Pageset
         const RefPtr<Plate> plate;          // plate object for the given page of the given score
         
         PlateInfo(const unsigned int pageno, const unsigned int start_page, const Score& score, const ScoreDimension& dim); // constructor
-        PlateInfo() {throw MissingDefaultConstructor("Pageset::PlateInfo");};
+        PlateInfo() __attribute__((noreturn)) {throw MissingDefaultConstructor("Pageset::PlateInfo");}
     };
     
     // all rendering information for one page
@@ -119,8 +119,8 @@ class SCOREPRESS_LOCAL Pageset
         const_Iterator get_plate_by_pos(const Position<mpx_t>& pos) const;
         
         // constructor
-        pPage(unsigned int pno) : pageno(pno) {};
-        pPage() {throw MissingDefaultConstructor("Pageset::pPage");};
+        pPage(unsigned int pno);
+        pPage() __attribute__((noreturn)) {throw MissingDefaultConstructor("Pageset::pPage");}
     };
     
     // typedefs
@@ -135,26 +135,37 @@ class SCOREPRESS_LOCAL Pageset
     PageDimension page_layout;
     
     // on-page object parameters
-    mpx_t head_height;  // default head-height
-    mpx_t stem_width;   // default stem-width
+    umpx_t head_height; // default head-height
+    umpx_t stem_width;  // default stem-width
     
     // list of all pages within the document
     PageList pages;
-    inline void clear() {pages.clear();}
     
-    // remove plates of the given score from all pages 
-    void erase(const Score& score);
+    // remove plates
+    void clear();                   // all
+    void erase(const Score& score); // of the given score
     
     // append a new page to the list (and return iterator)
     Iterator add_page();
     
-    // get the page with the given index (creating non-existing pages)
-    Iterator get_page(unsigned int pageno);
-    Iterator get_first_page(const Score& score);
+    // get the page with the given index
+    Iterator       get_page(unsigned int pageno);       // (creates non-existing pages)
+    const_Iterator get_page(unsigned int pageno) const; // (on not existing page, returns pages.end())
+    Iterator       get_first_page(const Score& score);  // get the first page of the given score
     
     // remove empty pages from the end of the pageset
     void remove_empty_pages();
 };
+
+// inline method implementations
+inline Pageset::PageDimension::PageDimension() : width(0), height(0) {margin.top = margin.bottom = margin.left = margin.right = 0;}
+inline Pageset::PageDimension::PageDimension(const Document::PageDimension& dim, const ViewportParam& viewport) {set(dim, viewport);}
+inline Pageset::ScoreDimension::ScoreDimension() : width(0), height(0) {}
+inline Pageset::ScoreDimension::ScoreDimension(mpx_t x, mpx_t y, mpx_t w, mpx_t h) : position(x, y), width(w), height(h) {}
+inline Pageset::pPage::pPage(unsigned int pno) : pageno(pno) {}
+
+inline void Pageset::clear() {pages.clear();}
+
 
 } // end namespace
 

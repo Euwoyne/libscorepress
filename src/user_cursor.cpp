@@ -23,6 +23,7 @@
 
 #include "user_cursor.hh"    // UserCursor
 #include "engraver_state.hh" // EngraverState
+#include "press.hh"          // PressState, Renderer
 using namespace ScorePress;
 
 
@@ -439,9 +440,9 @@ void UserCursor::update_cursors()
             i->prev();
         };
         
-        if (i->active |= i->is_during(*cursor)) // check, if the voices begin is simultaneous with the cursor
+        if ((i->active |= i->is_during(*cursor)))   // check, if the voices begin is simultaneous with the cursor
         {
-            while (i->is_before(*cursor))       // move foreward if necessary
+            while (i->is_before(*cursor))           // move foreward if necessary
             {
                 if (i->at_end())                    // if movement is impossible
                 {
@@ -602,6 +603,9 @@ UserCursor::UserCursor(const UserCursor& _cursor) : document(_cursor.document), 
     };
 }
 
+// virtual destructor
+UserCursor::~UserCursor() {}
+
 // initialize the cursor at the beginning of a given score
 void UserCursor::set_score(Score& _score, unsigned int start_page) throw(Error)
 {
@@ -631,7 +635,7 @@ void UserCursor::set_score(Score& _score, unsigned int start_page) throw(Error)
 }
 
 // set cursor to graphical position (on given page, at 100% Zoom)
-void UserCursor::set_pos(Pageset::Iterator new_page, Position<mpx_t> pos, const ViewportParam& viewport)
+void UserCursor::set_pos(Position<mpx_t> pos, Pageset::Iterator new_page, const ViewportParam& viewport)
 {
     // set on-page root (substract page margin)
     pos.x -= pageset->page_layout.margin.left;
@@ -1195,6 +1199,33 @@ mpx_t UserCursor::graphical_height(const ViewportParam& viewport) const throw(No
     else h *= 2;
     
     return h;
+}
+
+// rendering interface
+void UserCursor::render(Renderer& renderer, const PressState& state) const
+{
+    // get horizontal position
+    mpx_t x = graphical_x();
+    x -= _round(state.viewport.umtopx_h(state.parameters.cursor_distance));
+    
+    // get vertical position and height
+    mpx_t y = graphical_y(state.viewport);
+    mpx_t h = graphical_height(state.viewport);
+    
+    // render the cursor
+    if (renderer.has_rect_invert())
+    {
+        renderer.rect_invert(
+            (state.scale(x) + state.offset.x) / 1000.0 - state.parameters.cursor_width / 2000.0, (state.scale(y) + state.offset.y) / 1000.0,
+            (state.scale(x) + state.offset.x) / 1000.0 + state.parameters.cursor_width / 2000.0, (state.scale(y + h) + state.offset.y) / 1000.0);
+    }
+    else
+    {
+        renderer.set_line_width(state.parameters.cursor_width / 1000.0);
+        renderer.move_to((state.scale(x) + state.offset.x) / 1000.0, (state.scale(y) + state.offset.y) / 1000.0);
+        renderer.line_to((state.scale(x) + state.offset.x) / 1000.0, (state.scale(y + h) + state.offset.y) / 1000.0);
+        renderer.stroke();
+    };
 }
 
 // setup reengraving triggers

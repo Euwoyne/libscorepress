@@ -39,6 +39,8 @@ using namespace ScorePress;
 //
 //
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
 // throwing function (general file error)
 void XMLFileReader::mythrow(const char* trns, const std::string& filename) throw(IOException)
 {
@@ -81,6 +83,7 @@ void XMLFileReader::mythrow_eof(const char* trns, const std::string& filename, c
     delete[] msg;                                           // delete buffer
     throw ExpectedEOF(s);                                   // throw message
 }
+#pragma clang diagnostic pop
 
 void XMLFileReader::read_int(int& target, const char* tag)
 {
@@ -268,7 +271,7 @@ const char* XMLFileReader::get_filename() const
 //  document parser
 // =================
 //
-XMLDocumentReader::XMLDocumentReader() : FileReader("ScorePress XML"), DocumentReader("ScorePress XML")
+XMLDocumentReader::XMLDocumentReader() : FileReader("ScorePress XML")
 {
     add_mime_type("application/x-scorepress+xml");
     add_mime_type("application/xml");
@@ -334,7 +337,6 @@ void XMLDocumentReader::parse_document(Document& target)
         // ----------------------------------
         case END:
             mythrow_eof("Expected EOF (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            break;
             
         //  <document> root section
         // -------------------------
@@ -431,7 +433,7 @@ void XMLDocumentReader::parse_document(Document& target)
 // This class implements a parser for the sprite-file's meta-information,
 // preparing a "Spriteset" object.
 //
-XMLSpritesetReader::XMLSpritesetReader() : FileReader("ScorePress Spriteset"), SpritesetReader("ScorePress Spriteset")
+XMLSpritesetReader::XMLSpritesetReader() : FileReader("ScorePress Spriteset")
 {
     add_mime_type("application/xml");
     add_mime_type("text/xml");
@@ -494,7 +496,6 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
         // ----------------------------------
         case END:
             mythrow_eof("Expected EOF (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-            break;
             
         //  <symbols> root section
         // ------------------------
@@ -1764,7 +1765,7 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
                 xmlChar* c = xmlUTF8Strndup(attr, 1);
                 xmlFree(attr);
                 
-                if (spriteset.typefaces.back().glyphs.find(XML_CAST(c)) != spriteset.typefaces.back().glyphs.end()) mythrow("Redefition of character by <glyph> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                if (spriteset.typefaces.back().glyphs.find(XML_CAST(c)) != spriteset.typefaces.back().glyphs.end()) mythrow("Redefinition of character by <glyph> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 spriteset.typefaces.back().glyphs[XML_CAST(c)] = spriteset.size();
                 
                 // create sprite

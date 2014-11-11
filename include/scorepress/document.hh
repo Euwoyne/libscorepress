@@ -41,18 +41,18 @@ class SCOREPRESS_API Document
     class PageDimension
     {
      public:
-        unsigned int width;     // in micrometer
-        unsigned int height;    // in micrometer
+        uum_t width;
+        uum_t height;
         struct Margin
         {
-            unsigned int top;       // in micrometer
-            unsigned int bottom;    // in micrometer
-            unsigned int left;      // in micrometer
-            unsigned int right;     // in micrometer
+            uum_t top;
+            uum_t bottom;
+            uum_t left;
+            uum_t right;
         } margin;
         
         // A4: 210 x 297; NE: 231 x 303
-        PageDimension() : width(210000), height(297000) {margin.top = margin.bottom = 15000; margin.left = margin.right = 10000;};
+        PageDimension() : width(210000), height(297000) {margin.top = margin.bottom = 15000; margin.left = margin.right = 10000;}
     };
     
     // score object within the document
@@ -62,7 +62,7 @@ class SCOREPRESS_API Document
         unsigned int start_page;    // document-page number of the first score-page
         ScorePress::Score score;    // score object
         
-        Score(unsigned int _page) : start_page(_page) {};
+        Score(unsigned int _page) : start_page(_page) {}
     };
     
     // list typedefs

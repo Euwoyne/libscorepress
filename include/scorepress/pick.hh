@@ -120,13 +120,13 @@ class SCOREPRESS_LOCAL Pick : public Logging
               T& front();
         
      public:
-        Queue() {};
-        Queue(Compare c) : comp(c) {};
+        Queue() {}
+        Queue(Compare c) : comp(c) {}
         
-        const T& top() const    {return Container::front();};
-        void push(const T& val) {Container::push_back(val); std::push_heap(Container::begin(), Container::end(), comp);};
-        void pop()              {std::pop_heap(Container::begin(), Container::end(), comp); Container::pop_back();};
-        void make_heap()        {std::make_heap(Container::begin(), Container::end(), comp);};
+        const T& top() const    {return Container::front();}
+        void push(const T& val) {Container::push_back(val); std::push_heap(Container::begin(), Container::end(), comp);}
+        void pop()              {std::pop_heap(Container::begin(), Container::end(), comp); Container::pop_back();}
+        void make_heap()        {std::make_heap(Container::begin(), Container::end(), comp);}
     };
     
     typedef Queue<VoiceCursorPtr, std::vector<VoiceCursorPtr>, compare_t> CQueue;

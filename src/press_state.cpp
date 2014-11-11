@@ -18,9 +18,12 @@
   permissions and limitations under the Licence.
 */
 
-// dummy function (for use with autoconf)
-extern "C" {
-void libscorepress_autoconf_check();
-void libscorepress_autoconf_check() {}
-}
+#include "press_state.hh"
+
+using namespace ScorePress;
+
+// constructor
+PressState::PressState(const PressParam& p, const StyleParam& s, const ViewportParam& v)
+    : parameters(p), style(&s), viewport(v), head_height(0), stem_width(0) {}
+
 

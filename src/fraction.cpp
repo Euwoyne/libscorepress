@@ -19,7 +19,7 @@
 */
 
 #include "fraction.hh"    // Fraction
-#include <climits>
+#include <limits>
 using namespace ScorePress;
 
 
@@ -31,51 +31,53 @@ using namespace ScorePress;
 // rational numbers.
 //
 
-#define _abs(x) (((x)<0)?-(x):(x))          // macro calcualting the absolute value
-#define _sgn(x) (((x)<0)?-1:(((x)>0)?1:0))  // macro returning the signum
+#ifdef SIZECHECK
+#define _abs(x) (((x)<0l)?-(x):(x))             // macro calcualting the absolute value
+#endif
 
 // return the greatest common divisor
-unsigned long Fraction::gcd(unsigned long x, unsigned long y)
+long Fraction::gcd(long x, long y)
 {
-    unsigned long t;                    // temporary swap variable
+    long t;                             // temporary swap variable
+    if (x < 0l) x = -x;                 // ensure x to be positive
+    if (y < 0l) y = -y;                 // ensure y to be positive
     if (x < y) {t = x; x = y; y = t;};  // ensure x to be the bigger one
-    if (x == 0) return 1;               // special case x=y=0
+    if (x == 0l) return 1l;             // special case x=y=0
     while (true)                        // run euclid's algorithm
-        if      (y == 0) return x;
-        else if (y == 1) return y;
-        else            {t = y; y = x % y; x = t;};
+        if      (y == 0l) return x;
+        else if (y == 1l) return y;
+        else              {t = y; y = x % y; x = t;};
 }
 
 // create from an integer
-Fraction::Fraction(const long x) : enumerator(x), denominator(1) {}
+Fraction::Fraction(const long x) : enumerator(x), denominator(1l) {}
 
 // create from a pair of enumerator and denominator
-Fraction::Fraction(const long enu, const unsigned long deno) : enumerator(enu), denominator(deno)
+Fraction::Fraction(const long enu, const long deno) : enumerator(enu), denominator(deno)
 {
-    const unsigned long r = gcd(_abs(enu), deno);
+    const long r = gcd(enu, deno);
     enumerator  /= r;
     denominator /= r;
 }
 
 // create from a mixed fraction
-Fraction::Fraction(const long x, const long enu, const unsigned long deno) : enumerator(enu), denominator(deno)
+Fraction::Fraction(const long x, const long enu, const long deno) : enumerator((deno < 0l) ? -enu : enu), denominator((deno < 0l) ? -deno : deno)
 {
-    const unsigned long r = gcd(_abs(enu), deno);
+    const long r = gcd(enumerator, denominator);
     enumerator  /= r;
     denominator /= r;
-#    ifdef SIZECHECK
-        long long t(x);
-        t *= denominator;
-        t += enumerator;
-        if ((t < 0) ? (t < LONG_MIN) : (t > LONG_MAX))  // long sizecheck
-        {
-            enumerator = _sgn(t);
-            denominator = 0;
-        }
-        else enumerator = static_cast<long>(t);
-#    else
+#ifdef SIZECHECK
+    if (   (enumerator > 0 && x > (numeric_limits<long>::max() - enumerator) / denominator)
+        || (enumerator < 0 && x < (numeric_limits<long>::min() - enumerator) / denominator))
+    {
+        enumerator = _sgn(x);
+        denominator = 0l;
+    }
+    else
+#endif
+    {
         enumerator += x * denominator;
-#    endif
+    };
 }
 
 // copy constructor
@@ -93,7 +95,7 @@ Fraction& Fraction::operator = (const Fraction& fract)
 Fraction& Fraction::operator = (const long fract)
 {
     enumerator = fract;
-    denominator = 1;
+    denominator = 1l;
     return *this;
 }
 
@@ -101,36 +103,45 @@ Fraction& Fraction::operator = (const long fract)
 Fraction& Fraction::operator += (const Fraction& fract)
 {
     // handle infinite values
-    if (denominator == 0) return *this;
-    if (fract.denominator == 0) {denominator = 0; enumerator = fract.enumerator; return *this;};
+    if (denominator == 0l) return *this;
+    if (fract.denominator == 0l) {denominator = 0l; enumerator = fract.enumerator; return *this;};
     
     // calculate enumerator and denominator
-    const unsigned long r = gcd(denominator, fract.denominator);
-#    ifdef SIZECHECK
-        {long long t(enumerator);
-        t *= fract.denominator / r;
-        t += static_cast<long long>(fract.enumerator) * (denominator / r);
-        if ((t < 0) ? (t < LONG_MIN) : (t > LONG_MAX))  // long sizecheck
-        {
-            enumerator = _sgn(t);
-            denominator = 0;
-        }
-        else enumerator = static_cast<long>(t);}
-        
-        {unsigned long long t(denominator);
-        t *= fract.denominator / r;
-        if (t > ULONG_MAX)          // unsigned long sizecheck
-        {
-            enumerator = 0;
-            denominator = 1;
-        }
-        else denominator = static_cast<unsigned long>(t);}
-#    else
-        enumerator  *= fract.denominator / r;
-        enumerator  += fract.enumerator * (denominator / r);
-        denominator *= fract.denominator / r;
-#    endif
-        
+    const long r = gcd(denominator, fract.denominator);
+
+#ifdef SIZECHECK
+    if (_abs(enumerator) > numeric_limits<long>::max() / (fract.denominator / r))
+    {
+        enumerator = _sgn(enumerator);
+        if (denominator > numeric_limits<long>::max() / (fract.denominator / r))
+            denominator = 1l;
+        else
+            denominator = 0l;
+        return *this;
+    };
+    if (denominator > numeric_limits<long>::max() / (fract.denominator / r))
+    {
+        enumerator = 0l;
+        denominator = 1l;
+        return *this;
+    }
+#endif    
+    
+    enumerator *= fract.denominator / r;
+
+#ifdef SIZECHECK
+    if (   (enumerator > 0 && fract.enumerator > (numeric_limits<long>::max() - enumerator) / (denominator / r))
+        || (enumerator < 0 && fract.enumerator < (numeric_limits<long>::min() - enumerator) / (denominator / r)))
+    {
+        enumerator = _sgn(fract.enumerator);
+        denominator = 0l;
+        return *this;
+    };
+#endif
+
+    enumerator += fract.enumerator * (denominator / r);
+    denominator *= fract.denominator / r;
+    
     return *this;   // return this instance
 }
 
@@ -140,20 +151,19 @@ Fraction& Fraction::operator += (const long fract)
     // handle infinite values
     if (denominator == 0) return *this;
     
-#    ifdef SIZECHECK
-        long long t(fract);
-        t *= denominator;
-        t += enumerator;
-        if ((t < 0) ? (t < LONG_MIN) : (t > LONG_MAX))  // long sizecheck
-        {
-            enumerator = _sgn(t);
-            denominator = 0;
-        }
-        else enumerator = static_cast<long>(t);
-#    else
+
+#ifdef SIZECHECK
+    if (   (enumerator > 0 && fract > (numeric_limits<long>::max() - enumerator) / denominator)
+        || (enumerator < 0 && fract < (numeric_limits<long>::min() - enumerator) / denominator))
+    {
+        enumerator = _sgn(fract);
+        denominator = 0l;
+    }
+    else
+#endif
+    {
         enumerator += fract * denominator;
-#    endif
-    
+    };
     return *this;   // return this instance
 }
 
@@ -161,36 +171,45 @@ Fraction& Fraction::operator += (const long fract)
 Fraction& Fraction::operator -= (const Fraction& fract)
 {
     // handle infinite values
-    if (denominator == 0) return *this;
-    if (fract.denominator == 0) {denominator = 0; enumerator = -fract.enumerator; return *this;};
+    if (denominator == 0l) return *this;
+    if (fract.denominator == 0l) {denominator = 0l; enumerator = fract.enumerator; return *this;};
     
     // calculate enumerator and denominator
-    const unsigned long r = gcd(denominator, fract.denominator);
-#    ifdef SIZECHECK
-        {long long t(enumerator);
-        t *= fract.denominator / r;
-        t -= static_cast<long long>(fract.enumerator) * (denominator / r);
-        if ((t < 0) ? (t < LONG_MIN) : (t > LONG_MAX))  // long sizecheck
-        {
-            enumerator = _sgn(t);
-            denominator = 0;
-        }
-        else enumerator = static_cast<long>(t);}
-        
-        {unsigned long long t(denominator);
-        t *= fract.denominator / r;
-        if (t > ULONG_MAX)          // unsigned long sizecheck
-        {
-            enumerator = 0;
-            denominator = 1;
-        }
-        else denominator = static_cast<unsigned long>(t);}
-#    else
-        enumerator  *= fract.denominator / r;
-        enumerator  -= fract.enumerator * (denominator / r);
-        denominator *= fract.denominator / r;
-#    endif
-        
+    const long r = gcd(denominator, fract.denominator);
+
+#ifdef SIZECHECK
+    if (_abs(enumerator) > numeric_limits<long>::max() / (fract.denominator / r))
+    {
+        enumerator = _sgn(enumerator);
+        if (denominator > numeric_limits<long>::max() / (fract.denominator / r))
+            denominator = 1l;
+        else
+            denominator = 0l;
+        return *this;
+    };
+    if (denominator > numeric_limits<long>::max() / (fract.denominator / r))
+    {
+        enumerator = 0l;
+        denominator = 1l;
+        return *this;
+    }
+#endif    
+    
+    enumerator *= fract.denominator / r;
+
+#ifdef SIZECHECK
+    if (   (enumerator > 0 && -fract.enumerator > (numeric_limits<long>::max() - enumerator) / (denominator / r))
+        || (enumerator < 0 && -fract.enumerator < (numeric_limits<long>::min() - enumerator) / (denominator / r)))
+    {
+        enumerator = _sgn(-fract.enumerator);
+        denominator = 0l;
+        return *this;
+    };
+#endif
+
+    enumerator -= fract.enumerator * (denominator / r);
+    denominator *= fract.denominator / r;
+    
     return *this;   // return this instance
 }
 
@@ -200,20 +219,19 @@ Fraction& Fraction::operator -= (const long fract)
     // handle infinite values
     if (denominator == 0) return *this;
     
-#    ifdef SIZECHECK
-        long long t(fract);
-        t *= denominator;
-        t = enumerator - t;
-        if ((t < 0) ? (t < LONG_MIN) : (t > LONG_MAX))  // long sizecheck
-        {
-            enumerator = _sgn(t);
-            denominator = 0;
-        }
-        else enumerator = static_cast<long>(t);
-#    else
+
+#ifdef SIZECHECK
+    if (   (enumerator > 0 && -fract > (numeric_limits<long>::max() - enumerator) / denominator)
+        || (enumerator < 0 && -fract < (numeric_limits<long>::min() - enumerator) / denominator))
+    {
+        enumerator = _sgn(-fract);
+        denominator = 0l;
+    }
+    else
+#endif
+    {
         enumerator -= fract * denominator;
-#    endif
-    
+    };
     return *this;   // return this instance
 }
 
@@ -221,34 +239,56 @@ Fraction& Fraction::operator -= (const long fract)
 Fraction& Fraction::operator *= (const Fraction& fract)
 {
     // handle infinite values
-    if (denominator == 0) {enumerator = _sgn(enumerator * fract.enumerator); return *this;};
-    if (fract.denominator == 0) {enumerator = fract.enumerator; denominator = 0; return *this;};
+    if (denominator == 0l)
+    {
+        if (enumerator == 0l) return *this;
+        
+        if      (fract.enumerator == 0)                      enumerator = 0l;
+        else if ((enumerator > 0) == (fract.enumerator > 0)) enumerator = 1l;
+        else                                                 enumerator = -1l;
+        return *this;
+    };
+    if (fract.denominator == 0l)
+    {
+        enumerator = ((enumerator > 0) == (fract.enumerator > 0) ? 1l : -1l);
+        denominator = 0l;
+        return *this;
+    };
     
     // calculate enumerator and denominator
-    const unsigned long r1 = gcd(_abs(enumerator), fract.denominator);
-    const unsigned long r2 = gcd(_abs(fract.enumerator), denominator);
-#    ifdef SIZECHECK
-        {long long t(enumerator / r1);
-        t *= fract.enumerator / r2;
-        if ((t < 0) ? (t < LONG_MIN) : (t > LONG_MAX))  // long sizecheck
-        {
-            enumerator = _sgn(t);
-            denominator = 0;
-        }
-        else enumerator = static_cast<long>(t);}
-        
-        {unsigned long long t(denominator / r2);
-        t *= fract.denominator / r1;
-        if (t > ULONG_MAX)          // unsigned long sizecheck
-        {
-            enumerator = 0;
-            denominator = 1;
-        }
-        else denominator = static_cast<long>(t);}
-#    else
-        enumerator  = (enumerator / r1) * (fract.enumerator / r2);
-        denominator = (denominator / r2) * (fract.denominator / r1);
-#    endif
+    const long r1 = gcd(enumerator, fract.denominator);
+    const long r2 = gcd(fract.enumerator, denominator);
+    
+    enumerator  /= r1;
+    denominator /= r2;
+    
+#ifdef SIZECHECK
+    if ((enumerator > 0) == (fract.enumerator > 0) &&  _abs(enumerator) > numeric_limits<long>::max() / (_abs(fract.enumerator) / r2))
+    {
+        enuemrator = 1l;
+        denominator = 0l;
+    }
+    else if ((enumerator > 0) != (fract.enumerator > 0) && -_abs(enumerator) > numeric_limits<long>::min() / (_abs(fract.enumerator) / r2))
+    {
+        enuemrator = -1l;
+        denominator = 0l;
+    }
+    else if ((enumerator > 0) == (fract.enumerator > 0) &&  _abs(enumerator) > numeric_limits<long>::max() / (_abs(fract.enumerator) / r2))
+    {
+        enuemrator = 1l;
+        denominator = 0l;
+    }
+    else if ((enumerator > 0) != (fract.enumerator > 0) && -_abs(enumerator) > numeric_limits<long>::min() / (_abs(fract.enumerator) / r2))
+    {
+        enuemrator = -1l;
+        denominator = 0l;
+    }
+    else
+#endif
+    {
+        enumerator  *= fract.enumerator / r2;
+        denominator *= fract.denominator / r1;
+    };
     
     return *this;   // return this instance
 }
@@ -257,24 +297,28 @@ Fraction& Fraction::operator *= (const Fraction& fract)
 Fraction& Fraction::operator *= (const long fract)
 {
     // handle infinite values
-    if (denominator == 0) {enumerator = _sgn(enumerator*fract); return *this;};
+    if (denominator == 0) {enumerator = ((enumerator > 0) == (fract > 0) ? 1l : -1l); return *this;};
     
     // calculate enumerator and denominator
-    const unsigned long r = gcd(_abs(fract), denominator);
-#    ifdef SIZECHECK
-        {long long t(enumerator);
-        t *= fract / r;
-        if ((t < 0) ? (t < LONG_MIN) : (t > LONG_MAX))  // long sizecheck
-        {
-            enumerator = _sgn(t);
-            denominator = 0;
-        }
-        else enumerator = static_cast<long>(t);}
-        denominator /= r;
-#    else
+    const long r = gcd(fract, denominator);
+    
+#ifdef SIZECHECK
+    if ((enumerator > 0) == (fract > 0) &&  _abs(enumerator) > numeric_limits<long>::max() / (_abs(fract) / r))
+    {
+        enuemrator = 1l;
+        denominator = 0l;
+    }
+    else if ((enumerator > 0) != (fract > 0) && -_abs(enumerator) > numeric_limits<long>::min() / (_abs(fract) / r))
+    {
+        enuemrator = -1l;
+        denominator = 0l;
+    }
+    else
+#endif
+    {
         enumerator  *= fract / r;
         denominator /= r;
-#    endif
+    };
     
     return *this;   // return this instance
 }
@@ -283,39 +327,65 @@ Fraction& Fraction::operator *= (const long fract)
 Fraction& Fraction::operator /= (const Fraction& fract)
 {
     // handle infinite values
-    if (enumerator == 0 && denominator == 0) return *this;
-    if (fract.enumerator == 0 && fract.denominator == 0) {enumerator = 0; denominator = 0; return *this;};
-    if (denominator == 0 && fract.enumerator == 0) return *this;
-    if (enumerator == 0 && fract.denominator == 0) return *this;
-    if (denominator == 0 && fract.denominator == 0) {enumerator = 0; return *this;};
-    if (enumerator == 0 && fract.enumerator == 0) {denominator = 0; return *this;};
+    if (denominator == 0l)
+    {
+        if (enumerator == 0l) return *this;
+        
+        if      (fract.denominator == 0)                     enumerator = 0l;
+        else if ((enumerator > 0) == (fract.enumerator > 0)) enumerator = 1l;
+        else                                                 enumerator = -1l;
+        return *this;
+    };
+    if (fract.enumerator == 0l)
+    {
+        if      (enumerator > 0l) enumerator = 1l;
+        else if (enumerator < 0l) enumerator = -1l;
+        denominator = 0l;
+        return *this;
+    };
     
     // calculate enumerator and denominator
-    const unsigned long r1 = gcd(_abs(enumerator), fract.enumerator);
-    const unsigned long r2 = gcd(fract.denominator, denominator);
-#    ifdef SIZECHECK
-        {long long t(enumerator / r1);
-        t *= fract.denominator / r2;
-        if ((t < 0) ? (t < LONG_MIN) : (t > LONG_MAX))  // long sizecheck
+    const long r1 = gcd(enumerator, fract.enumerator);
+    const long r2 = gcd(fract.denominator, denominator);
+    
+    enumerator  /= r1;
+    denominator /= r2;
+    
+#ifdef SIZECHECK
+    if ((enumerator > 0) == (fract.denominator > 0) &&  _abs(enumerator) > numeric_limits<long>::max() / (_abs(fract.denominator) / r2))
+    {
+        enuemrator = 1l;
+        denominator = 0l;
+    }
+    else if ((enumerator > 0) != (fract.denominator > 0) && -_abs(enumerator) > numeric_limits<long>::min() / (_abs(fract.denominator) / r2))
+    {
+        enuemrator = -1l;
+        denominator = 0l;
+    }
+    else if ((enumerator > 0) == (fract.denominator > 0) &&  _abs(enumerator) > numeric_limits<long>::max() / (_abs(fract.denominator) / r2))
+    {
+        enuemrator = 1l;
+        denominator = 0l;
+    }
+    else if ((enumerator > 0) != (fract.denominator > 0) && -_abs(enumerator) > numeric_limits<long>::min() / (_abs(fract.denominator) / r2))
+    {
+        enuemrator = -1l;
+        denominator = 0l;
+    }
+    else
+#endif
+    {
+        if (fract.enumerator < 0l)
         {
-            enumerator = (fract.enumerator < 0) ? -_sgn(t) : _sgn(t);
-            denominator = 0;
+            enumerator  *= -fract.denominator / r2;
+            denominator *= -fract.enumerator / r1;
         }
-        else enumerator = (fract.enumerator < 0) ? -static_cast<long>(t) : static_cast<long>(t);}
-        
-        {unsigned long long t(denominator / r2);
-        t *= _abs(fract.enumerator) / r1;
-        if (t > ULONG_MAX)                  // unsigned long sizecheck
+        else
         {
-            enumerator = 0;
-            denominator = 1;
-        }
-        else denominator = static_cast<long>(t);}
-#    else
-        enumerator  = (enumerator / r1) * (fract.denominator / r2);
-        if (fract.enumerator < 0) enumerator = -enumerator;
-        denominator = (denominator / r2) * (fract.enumerator / r1);
-#    endif
+            enumerator  *= fract.denominator / r2;
+            denominator *= fract.enumerator / r1;
+        };
+    };
     
     return *this;   // return this instance
 }
@@ -323,24 +393,51 @@ Fraction& Fraction::operator /= (const Fraction& fract)
 // quotient of fraction and number
 Fraction& Fraction::operator /= (const long fract)
 {
+    // handle infinite values
+    if (denominator == 0l)
+    {
+        if (enumerator == 0l) return *this;
+        
+        else if ((enumerator > 0) == (fract > 0)) enumerator = 1l;
+        else                                      enumerator = -1l;
+        return *this;
+    };
+    if (fract == 0l)
+    {
+        if      (enumerator > 0l) enumerator = 1l;
+        else if (enumerator < 0l) enumerator = -1l;
+        denominator = 0l;
+        return *this;
+    };
+    
     // calculate enumerator and denominator
-    const unsigned long r = gcd(enumerator, _abs(fract));
-#    ifdef SIZECHECK
-        enumerator /= r;
-        if (fract < 0) enumerator = -enumerator;
-        {unsigned long long t(denominator);
-        t *= _abs(fract) / r;
-        if (t > ULONG_MAX)      // unsigned long sizecheck
+    const long r = gcd(fract, enumerator);
+    
+#ifdef SIZECHECK
+    if (fract > 0 &&  denominator > numeric_limits<long>::max() / (_abs(fract) / r))
+    {
+        enuemrator = 1l;
+        denominator = 0l;
+    }
+    else if (fract < 0 && -denominator > numeric_limits<long>::min() / (_abs(fract) / r))
+    {
+        enuemrator = -1l;
+        denominator = 0l;
+    }
+    else
+#endif
+    {
+        if (fract > 0l)
         {
-            enumerator = 0;
-            denominator = 1;
+            enumerator  /= r;
+            denominator *= fract / r;
         }
-        else denominator = static_cast<long>(t);}
-#    else
-        enumerator /= r;
-        if (fract < 0) enumerator = -enumerator;
-        denominator *= _abs(fract) / r;
-#    endif
+        else
+        {
+            enumerator  /= -r;
+            denominator *= -fract / r;
+        };
+    };
     
     return *this;   // return this instance
 }
@@ -366,47 +463,47 @@ Fraction& Fraction::operator %= (const long fract)
 // check equality
 bool Fraction::operator == (const Fraction& fract) const
 {
-    if (    fract.denominator == 0 &&   // check if both fractions are infinite
-        denominator == 0 &&             // and check sign
-        ((enumerator < 0 && fract.enumerator < 0) || (enumerator > 0 && fract.enumerator > 0))) return true;
+    if (fract.denominator == 0l &&  // check if both fractions are infinite
+        denominator == 0l &&        // and check sign
+        ((enumerator < 0l && fract.enumerator < 0l) || (enumerator > 0l && fract.enumerator > 0l))) return true;
     
     return (enumerator == fract.enumerator && denominator == fract.denominator);    // else check normal equality
 }
 
 bool Fraction::operator == (const long fract) const
 {
-    return (enumerator == fract && denominator == 1);   // check integer equality
+    return (enumerator == fract && denominator == 1l);  // check integer equality
 }
 
 // check inequality
 bool Fraction::operator != (const Fraction& fract) const
 {
     if (enumerator == fract.enumerator && denominator == fract.denominator) return false;   // check for normal equality
-    return (    fract.denominator != 0 ||   // else check for infinite equality
-            denominator != 0 ||             // and sign
-            ((enumerator >= 0 || fract.enumerator >= 0) && (enumerator <= 0 || fract.enumerator <= 0)));
+    return (fract.denominator != 0l ||  // else check for infinite equality
+            denominator != 0l ||        // and sign
+            ((enumerator >= 0l || fract.enumerator >= 0l) && (enumerator <= 0l || fract.enumerator <= 0l)));
 }
 
 bool Fraction::operator != (const long fract) const
 {
-    return (enumerator != fract || denominator != 1);   // check integer inequality
+    return (enumerator != fract || denominator != 1l);  // check integer inequality
 }
 
 // check less or equal
-bool Fraction::operator <= (const Fraction& fract) const {return ((Fraction(*this) -= fract).enumerator <= 0);}
-bool Fraction::operator <= (const long fract) const {return ((Fraction(*this) -= fract).enumerator <= 0);}
+bool Fraction::operator <= (const Fraction& fract) const {return ((Fraction(*this) -= fract).enumerator <= 0l);}
+bool Fraction::operator <= (const long      fract) const {return ((Fraction(*this) -= fract).enumerator <= 0l);}
 
 // check greater or equal
-bool Fraction::operator >= (const Fraction& fract) const {return ((Fraction(*this) -= fract).enumerator >= 0);}
-bool Fraction::operator >= (const long fract) const {return ((Fraction(*this) -= fract).enumerator >= 0);}
+bool Fraction::operator >= (const Fraction& fract) const {return ((Fraction(*this) -= fract).enumerator >= 0l);}
+bool Fraction::operator >= (const long      fract) const {return ((Fraction(*this) -= fract).enumerator >= 0l);}
 
 // check less
-bool Fraction::operator < (const Fraction& fract) const {return ((Fraction(*this) -= fract).enumerator < 0);}
-bool Fraction::operator < (const long fract) const {return ((Fraction(*this) -= fract).enumerator < 0);}
+bool Fraction::operator < (const Fraction& fract) const {return ((Fraction(*this) -= fract).enumerator < 0l);}
+bool Fraction::operator < (const long      fract) const {return ((Fraction(*this) -= fract).enumerator < 0l);}
 
 // check greater
-bool Fraction::operator > (const Fraction& fract) const {return ((Fraction(*this) -= fract).enumerator > 0);}
-bool Fraction::operator > (const long fract) const {return ((Fraction(*this) -= fract).enumerator > 0);}
+bool Fraction::operator > (const Fraction& fract) const {return ((Fraction(*this) -= fract).enumerator > 0l);}
+bool Fraction::operator > (const long      fract) const {return ((Fraction(*this) -= fract).enumerator > 0l);}
 
 // cast operators
 Fraction::operator double() const {return static_cast<double>(enumerator) / denominator;}
@@ -414,37 +511,57 @@ Fraction::operator double() const {return static_cast<double>(enumerator) / deno
 // setting methods
 void Fraction::set(const long enu, const long deno)
 {
-    enumerator = enu;    // set values
-    denominator = deno;
-    const unsigned long r = gcd(_abs(enu), deno);
+    if (deno < 0l)
+    {
+        enumerator = -enu;
+        denominator = -deno;
+    }
+    else
+    {
+        enumerator = enu;
+        denominator = deno;
+    };
+    const long r = gcd(enumerator, denominator);
     enumerator  /= r;
     denominator /= r;
 }
 
 void Fraction::set(const long x, const long enu, const long deno)
 {
-    enumerator = enu;
-    denominator = deno;
-    const unsigned long r = gcd(_abs(enu), deno);
+    if (deno < 0l)
+    {
+        enumerator = -enu;
+        denominator = -deno;
+    }
+    else
+    {
+        enumerator = enu;
+        denominator = deno;
+    };
+    const unsigned long r = gcd(enumerator, denominator);
     enumerator  /= r;
     denominator /= r;
-#    ifdef SIZECHECK
-        long long t(x);
-        t *= denominator;
-        t += enumerator;
-        if ((t < 0) ? (t < LONG_MIN) : (t > LONG_MAX))  // long sizecheck
-        {
-            enumerator = _sgn(t);
-            denominator = 0;
-        }
-        else enumerator = static_cast<long>(t);
-#    else
+#ifdef SIZECHECK
+    if (   (enumerator > 0 && x > (numeric_limits<long>::max() - enumerator) / denominator)
+        || (enumerator < 0 && x < (numeric_limits<long>::min() - enumerator) / denominator))
+    {
+        enumerator = _sgn(x);
+        denominator = 0l;
+    }
+    else
+#endif
+    {
         enumerator += x * denominator;
-#    endif
+    };
 }
 
 // static constants
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wglobal-constructors"
+#pragma clang diagnostic ignored "-Wexit-time-destructors"
+
 const Fraction Fraction::POS_INFINITY(1, 0);    // positive infinite fraction
 const Fraction Fraction::NEG_INFINITY(-1, 0);   // negative infinite fraction
 const Fraction Fraction::NDN(0, 0);             // not a number (for values as 0/0 or INF/INF)
 
+#pragma clang diagnostic pop

@@ -26,22 +26,8 @@
                         // this number is interpreted as an undefined value
 using namespace ScorePress;
 
+#define INT(x) (static_cast<int>(x&(~0u>>1)))
 inline int _round(const double d) {return static_cast<mpx_t>(d + 0.5);}
-
-
-//
-//     class PressState
-//    ==================
-//
-// The State structure is the set of data passed to the object class on
-// rendering the object by the press. It contains all necessary parameters
-// and positioning information needed for successful rendering.
-// (Not counting those provided by the on-plate object.)
-//
-
-// constructor
-PressState::PressState(const PressParam& p, const StyleParam& s, const ViewportParam& v)
-    : parameters(p), style(&s), viewport(v), head_height(0), stem_width(0) {}
 
 
 //     class Press
@@ -172,16 +158,16 @@ void Press::render_staff(Renderer& renderer, const Plate& plate, const Position<
                 // prepare the line
                 renderer.move_to(
                     (offset.x + scale(line->basePos.x)) / 1000.0,
-                    (offset.y + scale(pvoice->basePos.y +
-                                    i * state.viewport.umtopx_v(pvoice->begin.staff().head_height))
+                    (offset.y + scale(pvoice->basePos.y) +
+                                scale(i * state.viewport.umtopx_v(pvoice->begin.staff().head_height))
                     ) / 1000.0
                 );
                 
                 renderer.line_to(
                         (offset.x + scale((line->line_end <= 0) ? line->basePos.x + 1e6 : line->line_end)
                         ) / 1000.0,
-                        (offset.y + scale(pvoice->basePos.y +
-                                    i * state.viewport.umtopx_v(pvoice->begin.staff().head_height))
+                        (offset.y + scale(pvoice->basePos.y) +
+                                    scale(i * state.viewport.umtopx_v(pvoice->begin.staff().head_height))
                         ) / 1000.0
                 );
             };
@@ -189,8 +175,8 @@ void Press::render_staff(Renderer& renderer, const Plate& plate, const Position<
             
             // set max-/min-pos (for front line rendering)
             if (min_pos > pvoice->basePos.y) min_pos = pvoice->basePos.y;
-            if (max_pos < pvoice->basePos.y + state.viewport.umtopx_v(pvoice->begin.staff().head_height * (pvoice->begin.staff().line_count - 1)))
-                max_pos = pvoice->basePos.y + state.viewport.umtopx_v(pvoice->begin.staff().head_height * (pvoice->begin.staff().line_count - 1));
+            if (max_pos < pvoice->basePos.y + INT(state.viewport.umtopx_v(pvoice->begin.staff().head_height * (pvoice->begin.staff().line_count - 1))))
+                max_pos = pvoice->basePos.y + INT(state.viewport.umtopx_v(pvoice->begin.staff().head_height * (pvoice->begin.staff().line_count - 1)));
         };
         
         staves.clear(); // erase remembered staves
@@ -210,6 +196,21 @@ void Press::render_staff(Renderer& renderer, const Plate& plate, const Position<
             renderer.set_color(0, 0, 0, 255);   // reset color
         };
     };
+}
+
+// draw a little red cross
+void Press::draw_cross(Renderer& renderer, const Position<mpx_t>& pos, const Position<mpx_t> offset)
+{
+    renderer.set_line_width(1.0);
+    renderer.set_color(static_cast<unsigned char>(parameters.attachbounds_color & 0xFF),
+                       static_cast<unsigned char>((parameters.attachbounds_color >> 8) & 0xFF),
+                       static_cast<unsigned char>((parameters.attachbounds_color >> 16) & 0xFF),
+                       static_cast<unsigned char>((parameters.attachbounds_color >> 24) & 0xFF));
+    renderer.move_to((scale(pos.x) + offset.x) / 1000.0 - 3.0, (scale(pos.y) + offset.y) / 1000.0 - 3.0);
+    renderer.line_to((scale(pos.x) + offset.x) / 1000.0 + 3.0, (scale(pos.y) + offset.y) / 1000.0 + 3.0);
+    renderer.move_to((scale(pos.x) + offset.x) / 1000.0 - 3.0, (scale(pos.y) + offset.y) / 1000.0 + 3.0);
+    renderer.line_to((scale(pos.x) + offset.x) / 1000.0 + 3.0, (scale(pos.y) + offset.y) / 1000.0 - 3.0);
+    renderer.stroke();
 }
 
 // constructor (providing viewport parameters)
@@ -250,21 +251,6 @@ void Press::draw_boundaries(Renderer& renderer, const Plate::GphBox& gphBox, con
     renderer.line_to((scale(gphBox.pos.x + gphBox.width) + offset.x) / 1000.0, (scale(gphBox.pos.y + gphBox.height) + offset.y) / 1000.0);
     renderer.line_to((scale(gphBox.pos.x) + offset.x) / 1000.0, (scale(gphBox.pos.y + gphBox.height) + offset.y) / 1000.0);
     renderer.line_to((scale(gphBox.pos.x) + offset.x) / 1000.0, (scale(gphBox.pos.y) + offset.y) / 1000.0);
-    renderer.stroke();
-}
-
-// draw a little red cross
-void Press::draw_cross(Renderer& renderer, const Position<mpx_t>& pos, const Position<mpx_t> offset)
-{
-    renderer.set_line_width(1.0);
-    renderer.set_color(static_cast<unsigned char>(parameters.attachbounds_color & 0xFF),
-                       static_cast<unsigned char>((parameters.attachbounds_color >> 8) & 0xFF),
-                       static_cast<unsigned char>((parameters.attachbounds_color >> 16) & 0xFF),
-                       static_cast<unsigned char>((parameters.attachbounds_color >> 24) & 0xFF));
-    renderer.move_to((scale(pos.x) + offset.x) / 1000.0 - 3.0, (scale(pos.y) + offset.y) / 1000.0 - 3.0);
-    renderer.line_to((scale(pos.x) + offset.x) / 1000.0 + 3.0, (scale(pos.y) + offset.y) / 1000.0 + 3.0);
-    renderer.move_to((scale(pos.x) + offset.x) / 1000.0 - 3.0, (scale(pos.y) + offset.y) / 1000.0 + 3.0);
-    renderer.line_to((scale(pos.x) + offset.x) / 1000.0 + 3.0, (scale(pos.y) + offset.y) / 1000.0 - 3.0);
     renderer.stroke();
 }
 
@@ -361,6 +347,9 @@ void Press::render(Renderer& renderer, const Plate::pAttachable& object, const S
 // render page decoration
 void Press::render_decor(Renderer& renderer, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException)
 {
+    // check if the renderer is ready
+    if (!renderer.ready()) throw InvalidRendererException();
+    
     // draw shadow
     if (parameters.draw_shadow)
     {
@@ -413,6 +402,16 @@ void Press::render_decor(Renderer& renderer, const Pageset& pageset, const Posit
     }
 }
 
+
+// render a cursor through the given renderer
+void Press::render(Renderer& renderer, const CursorBase& cursor, const Position<mpx_t> offset) throw (InvalidRendererException, UserCursor::NotValidException)
+{
+    if (!renderer.ready()) throw InvalidRendererException();
+    state.offset = offset;
+    cursor.render(renderer, state);
+}
+
+/*
 // render a cursor through the given renderer
 void Press::render(Renderer& renderer, const UserCursor& cursor, const Position<mpx_t> offset) throw (InvalidRendererException, UserCursor::NotValidException)
 {
@@ -461,4 +460,5 @@ void Press::render(Renderer& renderer, const ObjectCursor& cursor, const Positio
     renderer.line_to((scale(origin.x)          + state.offset.x) / 1000.0, (scale(origin.y + 3)      + state.offset.y) / 1000.0);
     renderer.fill();
 }
+*/
 

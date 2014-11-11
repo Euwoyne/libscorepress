@@ -49,8 +49,8 @@ template <typename T, template <typename> class trait = StdTrait> class SmartPtr
     explicit SmartPtr(T* const ptr);
     ~SmartPtr();
     
-    T& operator * () const {return *data;};
-    T* operator-> () const {return data;};
+    T& operator * () const {return *data;}
+    T* operator-> () const {return data;}
     
     SmartPtr<T, trait>& operator = (const SmartPtr<T, trait>& ptr);
     

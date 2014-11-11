@@ -28,6 +28,8 @@
 #include "error.hh"      // Error, MissingDefaultConstructor
 #include "export.hh"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wweak-vtables"
 namespace ScorePress
 {
 //  CLASSES
@@ -51,11 +53,11 @@ class SCOREPRESS_API FileWriter
  public:
     // exception classes
     class SCOREPRESS_API Error : public ScorePress::Error
-        {public: Error(const std::string& msg) : ScorePress::Error(msg) {};};
+        {public: Error(const std::string& msg) : ScorePress::Error(msg) {}};
     class SCOREPRESS_API IOException : public Error     // thrown, if the file cannot be read
-        {public: IOException(const std::string& msg) : Error(msg) {};};
+        {public: IOException(const std::string& msg) : Error(msg) {}};
     class SCOREPRESS_API FormatError : public Error     // thrown, if the file contains illegal syntax
-        {public: FormatError(const std::string& msg) : Error(msg) {};};
+        {public: FormatError(const std::string& msg) : Error(msg) {}};
     
  public:
     const std::string        name;              // file-type name
@@ -64,9 +66,10 @@ class SCOREPRESS_API FileWriter
     
  public:
     // constructor
-    FileWriter() {throw MissingDefaultConstructor("FileWriter");};
+    FileWriter() __attribute__((noreturn)) {throw MissingDefaultConstructor("FileWriter");}
     FileWriter(const std::string& name);
     FileWriter(const std::string& name, const std::string& mime_type, const std::string& file_extension);
+    virtual ~FileWriter() {}
     
     // type information access
     const std::string&             get_name() const;
@@ -157,6 +160,7 @@ inline ParameterWriter::ParameterWriter(const std::string& _name) : FileWriter(_
 inline ParameterWriter::ParameterWriter(const std::string& _name, const std::string& mime_type, const std::string& file_extension)
             : FileWriter(_name, mime_type, file_extension) {}
 }
+#pragma clang diagnostic pop
 
 #endif
 

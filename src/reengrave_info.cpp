@@ -21,6 +21,9 @@
 #include "reengrave_info.hh"
 using namespace ScorePress;
 
+// virtual destructor
+Reengraveable::~Reengraveable() {}
+
 // execute update on note engraving
 void ReengraveInfo::update(const StaffObject& note, EngraverState& state)
 {

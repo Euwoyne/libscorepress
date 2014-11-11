@@ -31,13 +31,14 @@ namespace ScorePress
 // -----------------
 // position and scale units
 typedef int           mpx_t;       // milli-pixel
+typedef unsigned int  umpx_t;      // milli-pixel (unsigned)
 typedef int           um_t;        // micrometer
 typedef unsigned int  uum_t;       // micrometer (unsigned)
-typedef unsigned int  pohh_t;      // promille of head-height
-typedef unsigned int  pohw_t;      // promille of head-width
-typedef int           spohh_t;     // promille of head-height (signed)
-typedef int           spohw_t;     // promille of head-width (signed)
 typedef unsigned int  promille_t;  // promille
+typedef unsigned int  pohh_t;      // promille of head-height
+typedef int           spohh_t;     // promille of head-height (signed)
+typedef unsigned int  pohw_t;      // promille of head-width
+typedef int           spohw_t;     // promille of head-width (signed)
 
 // miscellaneous units
 typedef unsigned char tone_t;      // note-number (as defined by the MIDI standard: a' = 69)
@@ -58,11 +59,11 @@ template <typename T = int> class Position
 {
  public:
     T x; T y;
-    Position(const T _x = 0, const T _y = 0) : x(_x), y(_y) {};
-    Position& operator += (const Position& p) {x += p.x; y += p.y; return *this;};
-    Position& operator -= (const Position& p) {x -= p.x; y -= p.y; return *this;};
-    Position& operator *= (const T& p)        {x *= p;   y *= p;   return *this;};
-    Position& operator /= (const T& p)        {x /= p;   y /= p;   return *this;};
+    Position(const T _x = 0, const T _y = 0) : x(_x), y(_y) {}
+    Position& operator += (const Position& p) {x += p.x; y += p.y; return *this;}
+    Position& operator -= (const Position& p) {x -= p.x; y -= p.y; return *this;}
+    Position& operator *= (const T& p)        {x *= p;   y *= p;   return *this;}
+    Position& operator /= (const T& p)        {x /= p;   y /= p;   return *this;}
 };
 
 template <typename T> Position<T> operator + (const Position<T>& p, const Position<T>& q) {return Position<T>(p.x + q.x, p.y + q.y);}

@@ -749,8 +749,8 @@ struct SCOREPRESS_LOCAL DistanceData
     
     Plate::pVoice* const src;
     
-    DistanceData(Plate::pVoice* v, mpx_t p) : pos(p), src(v) {};
-    inline bool operator < (const DistanceData& data) const {return pos < data.pos;};
+    DistanceData(Plate::pVoice* v, mpx_t p) : pos(p), src(v) {}
+    inline bool operator < (const DistanceData& data) const {return pos < data.pos;}
 };
 
 // graphical mask (union over the line)
@@ -759,8 +759,8 @@ struct SCOREPRESS_LOCAL GraphicData
             mpx_t pos;  // gphBox.pos.x
     mutable mpx_t end;  // gphBox.right
     
-    GraphicData(mpx_t p, mpx_t e) : pos(p), end(e) {};
-    inline bool operator < (const GraphicData& data) const {return pos < data.pos;};
+    GraphicData(mpx_t p, mpx_t e) : pos(p), end(e) {}
+    inline bool operator < (const GraphicData& data) const {return pos < data.pos;}
 };
 
 // justify the given line to fit into the score-area
