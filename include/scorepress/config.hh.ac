@@ -17,8 +17,8 @@
   permissions and limitations under the Licence.
 */
 
-#ifndef CONFIG_HH
-#define CONFIG_HH
+#ifndef SCOREPRESS_CONFIG_HH
+#define SCOREPRESS_CONFIG_HH
 
 #include "export.hh"
 

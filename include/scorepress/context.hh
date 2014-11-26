@@ -22,6 +22,7 @@
 #define SCOREPRESS_CONTEXT_HH
 
 #include <map>          // std::map
+
 #include "classes.hh"   // [score classes]
 #include "error.hh"     // ScorePress::Error
 #include "export.hh"

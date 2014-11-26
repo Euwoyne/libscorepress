@@ -22,6 +22,7 @@
 #define SCOREPRESS_LOG_HH
 
 #include <fstream>      // std::ofstream
+
 #include "export.hh"
 
 namespace ScorePress

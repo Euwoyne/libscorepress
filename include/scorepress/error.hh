@@ -22,6 +22,7 @@
 #define SCOREPRESS_ERROR_HH
 
 #include <string>   // std::string
+
 #include "export.hh"
 
 namespace ScorePress

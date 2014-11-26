@@ -115,12 +115,19 @@ class SCOREPRESS_API Engine : public Logging
     void reengrave(UserCursor& cursor);                                 // reengrave score  (recalculate cursors)
     
     // internal data access
-    Document&        get_document();                                    // the document this engine operates on
-    EngraverParam&   get_engraver_parameters();                         // default engraver parameters
-    PressParam&      get_press_parameters();                            // press parameters
-    StyleParam&      get_style_parameters();                            // default style parameters
-    InterfaceParam&  get_interface_parameters();                        // interface parameters
-    ViewportParam&   get_viewport();                                    // viewport parameters
+    Document&              get_document();                              // the document this engine operates on
+    EngraverParam&         get_engraver_parameters();                   // default engraver parameters
+    PressParam&            get_press_parameters();                      // press parameters
+    StyleParam&            get_style_parameters();                      // default style parameters
+    InterfaceParam&        get_interface_parameters();                  // interface parameters
+    ViewportParam&         get_viewport();                              // viewport parameters
+    
+    const Document&        get_document()             const;            // the document this engine operates on
+    const EngraverParam&   get_engraver_parameters()  const;            // default engraver parameters
+    const PressParam&      get_press_parameters()     const;            // press parameters
+    const StyleParam&      get_style_parameters()     const;            // default style parameters
+    const InterfaceParam&  get_interface_parameters() const;            // interface parameters
+    const ViewportParam&   get_viewport()             const;            // viewport parameters
     
     // dimension information
     mpx_t            page_width()  const;                               // graphical page width
@@ -188,6 +195,13 @@ inline PressParam&     Engine::get_press_parameters()     {return press.paramete
 inline StyleParam&     Engine::get_style_parameters()     {return style;}
 inline InterfaceParam& Engine::get_interface_parameters() {return interface;}
 inline ViewportParam&  Engine::get_viewport()             {return viewport;}
+
+inline const Document&       Engine::get_document()             const {return *document;}
+inline const EngraverParam&  Engine::get_engraver_parameters()  const {return engraver.parameters;}
+inline const PressParam&     Engine::get_press_parameters()     const {return press.parameters;}
+inline const StyleParam&     Engine::get_style_parameters()     const {return style;}
+inline const InterfaceParam& Engine::get_interface_parameters() const {return interface;}
+inline const ViewportParam&  Engine::get_viewport()             const {return viewport;}
 
 inline void Engine::set_document(Document& _document)              {document = &_document; pageset.clear(); cursors.clear();}
 inline void Engine::set_resolution(unsigned int h, unsigned int v) {viewport.hppm = h; viewport.vppm = v;}

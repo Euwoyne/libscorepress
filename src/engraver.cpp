@@ -47,8 +47,8 @@ void Engraver::engrave_attachables(const Document& data)
         {
             while (pageno < apage->first) {++pageno; ++p;};
             p->attached.push_back(Plate::pNote::AttachablePtr(new Plate::pAttachable(
-                            **a, Position<mpx_t>(viewport->umtopx_h((*a)->position.x),
-                                                viewport->umtopx_v((*a)->position.y)))));
+                            **a, Position<mpx_t>(viewport->umtopx_h((*a)->position.co.x),
+                                                viewport->umtopx_v((*a)->position.co.y)))));
             if ((*a)->is(Class::TEXTAREA))
             {
                 const TextArea& obj = *static_cast<const TextArea*>(&**a);

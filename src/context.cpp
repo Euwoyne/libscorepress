@@ -19,8 +19,8 @@
 */
 
 #include "context.hh"    // Context, [score classes]
-using namespace ScorePress;
 
+using namespace ScorePress;
 
 //                                C C#  D D#  E  F F#  G G#  A A#  B
 //                                0  1  2  3  4  5  6  7  8  9 10 11

@@ -505,10 +505,16 @@ void EditCursor::remove() throw(NotValidException)
         VisibleObject& tgt(cursor->note->get_visible());        // target visible object
         for (MovableList::iterator i = src.attached.begin(); i != src.attached.end(); ++i)
         {
-            if ((*i)->is(Class::DURABLE) && static_cast<Durable&>(**i).duration > 1)    // for all durables longer than one note
+            if (!(*i)->is(Class::DURABLE)) continue;
+            if (!del_note->is(Class::NOTEOBJECT))               // if the removed object has no value
             {
-                tgt.attached.push_back(MovablePtr((*i)->clone()));          // attach cloned instance
-                --static_cast<Durable&>(*tgt.attached.back()).duration;     // decrease duration
+                tgt.attached.push_back(MovablePtr((*i)->clone()));      // just attach cloned instance
+            }
+                                                                // if the durable is longer than the removed note
+            else if (static_cast<Durable&>(**i).duration > static_cast<NoteObject&>(*del_note).value())
+            {                                                           // decrease duration
+                static_cast<Durable&>(**i).duration -= static_cast<NoteObject&>(*del_note).value();
+                tgt.attached.push_back(MovablePtr((*i)->clone()));      // attach cloned instance
             };
         };
     };

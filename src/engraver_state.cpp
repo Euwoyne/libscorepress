@@ -481,7 +481,10 @@ void EngraverState::engrave_attachables()
             // check durables
             for (std::list<DurableInfo>::iterator i = durableinfo.begin(); i != durableinfo.end();)
             {
-                if ((--(i->durationcountdown)) == 0)    // if the durable objects ends here
+                if (pnote->get_note().is(Class::NOTEOBJECT))
+                    i->durationcountdown -= static_cast<const NoteObject&>(pnote->get_note()).value();
+                
+                if (i->durationcountdown <= value_t(0)) // if the durable objects ends here
                 {
                     // engrave object (polymorphically call "Durable::engrave")
                     i->source->engrave(*this, *i);
@@ -521,7 +524,9 @@ void EngraverState::engrave_attachables()
                     durableinfo.back().source = &static_cast<const Durable&>(**i);
                     durableinfo.back().target = &static_cast<Plate::pDurable&>(*pnote->attached.back());
                     durableinfo.back().pnote  = pnote;
-                    durableinfo.back().durationcountdown = static_cast<const Durable&>(**i).duration - 1;
+                    durableinfo.back().durationcountdown = static_cast<const Durable&>(**i).duration;
+                    if (pnote->get_note().is(Class::NOTEOBJECT))
+                        durableinfo.back().durationcountdown -= static_cast<const NoteObject&>(pnote->get_note()).value();
                 }
                 
                 // append attachable

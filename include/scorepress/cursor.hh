@@ -22,6 +22,7 @@
 #define SCOREPRESS_CURSOR_HH
 
 #include <list>        // std::list
+
 #include "classes.hh"  // Staff, Voice, SubVoice, StaffObject, VoiceObject
 #include "error.hh"    // Error
 #include "export.hh"

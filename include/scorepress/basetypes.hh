@@ -22,6 +22,7 @@
 #define SCOREPRESS_BASETYPES_HH
 
 #include <string>          // std::string
+
 #include "fraction.hh"     // Fraction
 #include "export.hh"
 

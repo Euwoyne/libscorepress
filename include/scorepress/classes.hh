@@ -23,6 +23,7 @@
 
 #include <string>          // std::string
 #include <list>            // std::list
+
 #include "basetypes.hh"    // mpx_t, tone_t, value_t, Position, Color, Font
 #include "smartptr.hh"     // SmartPtr
 #include "refptr.hh"       // RefPtr
@@ -40,6 +41,7 @@ namespace ScorePress
 class  EngraverState;       // engraver state class prototype (see "engraver_state.hh")
 class  PressState;          // press state class prototype (see "press.hh")
 class  Renderer;            // renderer class prototype (see "renderer.hh")
+class  ObjectCursor;        // object cursor prototype (see "object_cursor.hh")
 class  Plate_pNote;         // pNote prototype (see "plate.hh")
 class  Plate_pAttachable;   // pAttachable prototype (see "plate.hh")
 class  Sprites;             // sprites prototype (see "sprites.hh")
@@ -51,7 +53,6 @@ class SCOREPRESS_API Class;         // abstract base class for all classes
 
 // MAIN MUSIC OBJECT CLASSES
 class SCOREPRESS_API VisibleObject;     // base class for visible objects
-class SCOREPRESS_API AttachedObject;    // base class for visible objects, attached to notes
 class SCOREPRESS_API SpriteObject;      // base class for objects, which appearance is defined by a sprite
 class SCOREPRESS_API StaffObject;       // class for objects to reside within a staff (clefs, keys, time-signatures, notes and newlines)
 class SCOREPRESS_API MusicObject;       // visible staff-objects
@@ -69,10 +70,11 @@ class SCOREPRESS_API Chord;             // a chord (note-object consisting of se
 class SCOREPRESS_API Rest;              // a rest (inherits note-object interface)
 
 // MISCELLANEOUS CLASSES (AS PARTS OF MAIN MUSIC CLASSES)
-class SCOREPRESS_API Accidental;    // accidental abstraction (type, offset)
-class SCOREPRESS_API Articulation;  // articulation symbol (temporarily context changing)
-class SCOREPRESS_API Head;          // note-head class (with tone, accidental, etc.)
-class SCOREPRESS_API TiedHead;      // note-head with tie-position information
+class SCOREPRESS_API AttachedObject;    // base class for visible objects, attached to notes
+class SCOREPRESS_API Accidental;        // accidental abstraction (type, offset)
+class SCOREPRESS_API Articulation;      // articulation symbol (temporarily context changing)
+class SCOREPRESS_API Head;              // note-head class (with tone, accidental, etc.)
+class SCOREPRESS_API TiedHead;          // note-head with tie-position information
 
 // VOICE STRUCTURE CLASSES
 class SCOREPRESS_API Voice;         // voice base type
@@ -130,7 +132,7 @@ class SCOREPRESS_API Class
 {
  public:
     // type enumeration
-    enum classType {VISIBLEOBJECT, ATTACHEDOBJECT,     // ABSTRACT BASE CLASSES
+    enum classType {VISIBLEOBJECT,                     // ABSTRACT BASE CLASSES
                     STAFFOBJECT, MUSICOBJECT, CLEF,    // MAIN MUSIC OBJECT CLASSES
                                               KEY,
                                               TIMESIG, CUSTOMTIMESIG,
@@ -139,13 +141,15 @@ class SCOREPRESS_API Class
                                  NOTEOBJECT, CHORD,
                                              REST,
                     
+                    ATTACHEDOBJECT,                    // ATTACHED OBJECT BASE CLASS
                     ACCIDENTAL, ARTICULATION,          // SPECIAL ATTACHED OBJECTS
                     HEAD, TIEDHEAD,                    // SPECIAL HEADS
                     
                     VOICE, STAFF,                      // VOICE STRUCTURE CLASSES
                            SUBVOICE,
                     
-                    MOVABLE, TEXTAREA, ANNOTATION,     // MOVABLE AND ATTACHABLE OBJECTS
+                    MOVABLE, SCALABLE,                 // MOVABLE AND ATTACHABLE OBJECTS
+                             TEXTAREA, ANNOTATION,
                              PLUGININFO,
                              SYMBOL, CUSTOMSYMBOL,
                                      DURABLE, SLUR,
@@ -182,34 +186,6 @@ class SCOREPRESS_API VisibleObject : virtual public Class
     virtual bool is(classType type) const;
     virtual classType classtype() const;
     virtual VisibleObject* clone() const = 0;
-};
-
-// base class for visible objects, attached to notes
-class SCOREPRESS_API AttachedObject : virtual public Class
-{
- public:
-    Appearance appearance;      // graphical appearance properties
-    
- protected: AttachedObject() {}
- public:
-    virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
-    virtual void render_decor(Renderer& renderer, const Plate_pAttachable&, const PressState&) const;
-    virtual bool is(classType type) const;
-    virtual classType classtype() const;
-    virtual AttachedObject* clone() const = 0;
-};
-
-// base class for visible objects, attached to notes
-class SCOREPRESS_API SpriteObject : public AttachedObject
-{
- public:
-    SpriteId sprite;            // sprite id
-    
- protected: SpriteObject() {}
- public:
-    virtual SpriteId get_sprite(const Sprites&) const {return sprite;}
-    virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const;
-    virtual AttachedObject* clone() const = 0;
 };
 
 // class for objects to reside within a staff (clefs, keys, time-signatures, notes and newlines)
@@ -496,6 +472,34 @@ class SCOREPRESS_API Rest : public NoteObject
 //    ========================================================
 //
 
+// base class for visible objects, attached to notes
+class SCOREPRESS_API AttachedObject : virtual public Class
+{
+ public:
+    Appearance appearance;      // graphical appearance properties
+    
+ protected: AttachedObject() {}
+ public:
+    virtual void render_decor(Renderer& renderer, const Plate_pAttachable&, const PressState&) const;
+    virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
+    virtual bool is(classType type) const;
+    virtual classType classtype() const;
+    virtual AttachedObject* clone() const = 0;
+};
+
+// base class for sprites, attached to notes
+class SCOREPRESS_API SpriteObject : public AttachedObject
+{
+ public:
+    SpriteId sprite;            // sprite id
+    
+ protected: SpriteObject() {}
+ public:
+    virtual SpriteId get_sprite(const Sprites&) const {return sprite;}
+    virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const;
+    virtual SpriteObject* clone() const = 0;
+};
+
 // accidental abstraction (type, offset)
 class SCOREPRESS_API Accidental : public SpriteObject
 {
@@ -516,9 +520,10 @@ class SCOREPRESS_API Accidental : public SpriteObject
     };
     
  public:
-    Type   type;        // accidental type
-    pohw_t offset_x;    // horizontal offset (in promille of head-width)
-    bool   force;       // force rendering (do not check key signature)
+    SpriteId sprite;    // sprite id
+    Type     type;      // accidental type
+    pohw_t   offset_x;  // horizontal offset (in promille of head-width)
+    bool     force;     // force rendering (do not check key signature)
     
  public:
     Accidental() : type(natural), offset_x(0), force(false) {}
@@ -532,6 +537,7 @@ class SCOREPRESS_API Accidental : public SpriteObject
 class SCOREPRESS_API Articulation : public SpriteObject
 {
  public:
+    SpriteId   sprite;          // sprite id
     pohh_t     offset_y;        // vertical offset (in promille of head-height)
     bool       far;             // symbol placed far from the heads (i.e. on top of the stem)
     promille_t value_modifier;  // value coefficient
@@ -653,27 +659,63 @@ class SCOREPRESS_API Staff : public Voice
 //    ================================
 //
 
+// position with unit class
+template <typename T = int> class UnitPosition
+{
+ public:
+    // position coordinates (in micrometer or promille of head-height)
+    Position<T> co;
+    
+    // position unit (micrometer or promille of head-height)
+    enum Unit {METRIC, HEAD};
+    struct UnitXY
+    {
+        Unit x;
+        Unit y;
+        
+        UnitXY() : x(METRIC), y(METRIC) {}
+    } unit;
+    
+    // grid origin (ignored for on-page objects)
+    enum Origin {PAGE, LINE, STAFF, NOTE};
+    struct OriginXY
+    {
+        Origin x;
+        Origin y;
+        
+        OriginXY() : x(PAGE), y(PAGE) {}
+    } orig;
+};
+
 // base class for movable, attachable objects (position data)
 class SCOREPRESS_API Movable : public AttachedObject
 {
  public:
-    Position<> position;                   // position data (in micrometer or promille of head-height)
-    enum Type {PAGE, LINE, STAFF, PARENT}; // position type (origin position; ignored for on-page objects)
-    enum Unit {METRIC, HEAD};              // position unit (micrometer or promille of head-height)
-    Type typeX, typeY;                     // position type for X- and Y-coordinate
-    Unit unitX, unitY;                     // position unit for X- and Y-coordinate
+    UnitPosition<> position;    // position data
     
  public:
-    Movable() : typeX(PAGE), typeY(PAGE), unitX(METRIC), unitY(METRIC) {}
     virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
     virtual bool is(classType type) const;
     virtual classType classtype() const;
     virtual Movable* clone() const = 0;
-    virtual ContextChanging* ctxchange() {return NULL;}
-    virtual const ContextChanging* ctxchange() const {return NULL;}
     
-    Position<mpx_t> engrave_pos(const EngraverState& engraver, const Position<>& pos) const;
+    static Position<mpx_t> engrave_pos(const EngraverState& engraver, const UnitPosition<>& pos);
+    
+    virtual void register_nodes(ObjectCursor&);
+    virtual ContextChanging* ctxchange();
+    virtual const ContextChanging* ctxchange() const;
+};
+
+// base class for scalable, attachable objects (dimension data)
+class SCOREPRESS_API Scalable : public Movable
+{
+ public:
+    uum_t width;    // width
+    uum_t height;   // height
+    
+    virtual bool is(classType type) const;
+    virtual classType classtype() const;
 };
 
 // plain-text object (text with formatting information)
@@ -697,11 +739,9 @@ class SCOREPRESS_API Paragraph
 };
 
 // text-area object (movable list of consequent paragraphs)
-class SCOREPRESS_API TextArea : public Movable
+class SCOREPRESS_API TextArea : public Scalable
 {
  public:
-    uum_t                width;    // width of the text-area
-    uum_t                height;   // height of the text-area
     std::list<Paragraph> text;     // paragraphs
     
  public:
@@ -811,8 +851,8 @@ class SCOREPRESS_API CustomSymbol : public Symbol
 class SCOREPRESS_API Durable : public Symbol
 {
  public:
-    size_t duration;            // number of staff-objects within the scope of the symbol
-    Position<> end_position;    // position of the end-node (same unit as position; see "Movable")
+    value_t        duration;    // duration of the symbol
+    UnitPosition<> end;         // position of the end-node
     
  public:
     Durable() : duration(1) {}
@@ -828,10 +868,10 @@ class SCOREPRESS_API Durable : public Symbol
 class SCOREPRESS_API Slur : public Durable
 {
  public:
-    Position<> control1;        // first control point        (same unit as position; see "Movable")
-    Position<> control2;        // second control point       (same unit as position; see "Movable")
-    promille_t thickness1;      // line-width at the ends     (in promille of stem-width)
-    promille_t thickness2;      // line-width at the center   (in promille of stem-width)
+    UnitPosition<> control1;    // first control point
+    UnitPosition<> control2;    // second control point
+    promille_t     thickness1;  // line-width at the ends     (in promille of stem-width)
+    promille_t     thickness2;  // line-width at the center   (in promille of stem-width)
     
  public:
     Slur() : thickness1(500), thickness2(2000) {}

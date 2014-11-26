@@ -19,6 +19,7 @@
 */
 
 #include <cmath>                // sqrt
+
 #include "classes.hh"           // [score classes]
 #include "engraver_state.hh"    // EngraverState
 #include "press.hh"             // PressState, Plate::pNote, Plate::pAttachable, Renderer
@@ -37,7 +38,6 @@ const std::string ScorePress::classname(Class::classType type)
     switch (type)
     {
     case Class::VISIBLEOBJECT:  return "VisibleObject";
-    case Class::ATTACHEDOBJECT: return "AttachedObject";
     case Class::STAFFOBJECT:    return "StaffObject";
     case Class::VOICEOBJECT:    return "VoiceObject";
     case Class::NEWLINE:        return "Newline";
@@ -52,6 +52,7 @@ const std::string ScorePress::classname(Class::classType type)
     case Class::CHORD:          return "Chord";
     case Class::REST:           return "Rest";
     
+    case Class::ATTACHEDOBJECT: return "AttachedObject";
     case Class::ACCIDENTAL:     return "Accidental";
     case Class::ARTICULATION:   return "Articulation";
     case Class::HEAD:           return "Head";
@@ -62,6 +63,7 @@ const std::string ScorePress::classname(Class::classType type)
     case Class::SUBVOICE:       return "SubVoice";
     
     case Class::MOVABLE:        return "Movable";
+    case Class::SCALABLE:       return "Scalable";
     case Class::TEXTAREA:       return "TextArea";
     case Class::ANNOTATION:     return "Annotation";
     case Class::PLUGININFO:     return "PluginInfo";
@@ -77,7 +79,6 @@ const std::string ScorePress::classname(Class::classType type)
 
 // classtypes
 Class::classType VisibleObject  ::classtype() const {return VISIBLEOBJECT;}
-Class::classType AttachedObject ::classtype() const {return ATTACHEDOBJECT;}
 Class::classType StaffObject    ::classtype() const {return STAFFOBJECT;}
 Class::classType MusicObject    ::classtype() const {return MUSICOBJECT;}
 Class::classType Clef           ::classtype() const {return CLEF;}
@@ -91,6 +92,7 @@ Class::classType Pagebreak      ::classtype() const {return PAGEBREAK;}
 Class::classType NoteObject     ::classtype() const {return NOTEOBJECT;}
 Class::classType Chord          ::classtype() const {return CHORD;}
 Class::classType Rest           ::classtype() const {return REST;}
+Class::classType AttachedObject ::classtype() const {return ATTACHEDOBJECT;}
 Class::classType Accidental     ::classtype() const {return ACCIDENTAL;}
 Class::classType Articulation   ::classtype() const {return ARTICULATION;}
 Class::classType Head           ::classtype() const {return HEAD;}
@@ -99,6 +101,7 @@ Class::classType Voice          ::classtype() const {return VOICE;}
 Class::classType SubVoice       ::classtype() const {return SUBVOICE;}
 Class::classType Staff          ::classtype() const {return STAFF;}
 Class::classType Movable        ::classtype() const {return MOVABLE;}
+Class::classType Scalable       ::classtype() const {return SCALABLE;}
 Class::classType TextArea       ::classtype() const {return TEXTAREA;}
 Class::classType Symbol         ::classtype() const {return SYMBOL;}
 Class::classType PluginInfo     ::classtype() const {return PLUGININFO;}
@@ -109,7 +112,6 @@ Class::classType Slur           ::classtype() const {return SLUR;}
 Class::classType Hairpin        ::classtype() const {return HAIRPIN;}
 
 bool      VisibleObject  ::is(classType type) const {return (type == VISIBLEOBJECT);}
-bool      AttachedObject ::is(classType type) const {return (type == ATTACHEDOBJECT);}
 bool      StaffObject    ::is(classType type) const {return (type == STAFFOBJECT);}
 bool      MusicObject    ::is(classType type) const {return ((type == MUSICOBJECT) || StaffObject::is(type) || VisibleObject::is(type));}
 bool      Clef           ::is(classType type) const {return ((type == CLEF) || MusicObject::is(type));}
@@ -123,15 +125,17 @@ bool      Pagebreak      ::is(classType type) const {return ((type == PAGEBREAK)
 bool      NoteObject     ::is(classType type) const {return ((type == NOTEOBJECT) || VoiceObject::is(type) || VisibleObject::is(type));}
 bool      Chord          ::is(classType type) const {return ((type == CHORD) || NoteObject::is(type));}
 bool      Rest           ::is(classType type) const {return ((type == REST) || NoteObject::is(type));}
-bool      Accidental     ::is(classType _typ) const {return ((_typ == ACCIDENTAL) || SpriteObject::is(_typ));}
-bool      Articulation   ::is(classType type) const {return ((type == ARTICULATION) || SpriteObject::is(type));}
+bool      AttachedObject ::is(classType type) const {return (type == ATTACHEDOBJECT);}
+bool      Accidental     ::is(classType _typ) const {return ((_typ == ACCIDENTAL) || AttachedObject::is(_typ));}
+bool      Articulation   ::is(classType type) const {return ((type == ARTICULATION) || AttachedObject::is(type));}
 bool      Head           ::is(classType type) const {return (type == HEAD);}
 bool      TiedHead       ::is(classType type) const {return ((type == TIEDHEAD) || Head::is(type));}
 bool      Voice          ::is(classType type) const {return (type == VOICE);}
 bool      SubVoice       ::is(classType type) const {return ((type == SUBVOICE) || Voice::is(type));}
 bool      Staff          ::is(classType type) const {return ((type == STAFF) || Voice::is(type));}
 bool      Movable        ::is(classType type) const {return ((type == MOVABLE) || AttachedObject::is(type));}
-bool      TextArea       ::is(classType type) const {return ((type == TEXTAREA) || (Movable::is(type)));}
+bool      Scalable       ::is(classType type) const {return ((type == SCALABLE) || Movable::is(type));}
+bool      TextArea       ::is(classType type) const {return ((type == TEXTAREA) || (Scalable::is(type)));}
 bool      Symbol         ::is(classType type) const {return ((type == SYMBOL) || (Movable::is(type)));}
 bool      PluginInfo     ::is(classType type) const {return ((type == PLUGININFO) || (Movable::is(type)));}
 bool      Annotation     ::is(classType type) const {return ((type == ANNOTATION) || (TextArea::is(type)));}
@@ -861,7 +865,7 @@ static bool engrave_head(Head&          head,           // head to be engraved
                const StaffContext&      gph_context,    // staff-context for note-offset
                const mpx_t              sprite_width,   // width of the head's sprite
                const mpx_t              head_height,    // the staff's head-height
-               const double             chord_scale,    // the scale of the chord (and such for the head, too)
+               const double             chord_scale,    // the scale of the chord (and thus for the head, too)
                      bool               no_accidental,  // omit accidental?
                const Sprites&           sprites,        // sprite set
                      EngraverState&     engraver)       // the engraver instance
@@ -2035,30 +2039,38 @@ void Movable::engrave(EngraverState& engraver) const
 }
 
 // calculate on-plate position of movable object
-Position<mpx_t> Movable::engrave_pos(const EngraverState& engraver, const Position<>& pos) const
+Position<mpx_t> Movable::engrave_pos(const EngraverState& engraver, const UnitPosition<>& pos)
 {
     return Position<mpx_t>(
         _round(
-            ((this->typeX == Movable::PAGE)   ? 0 : (
-             (this->typeX == Movable::LINE)   ? engraver.get_target_line().basePos.x : (
-             (this->typeX == Movable::STAFF)  ? engraver.get_target_voice().basePos.x : (
-             (this->typeX == Movable::PARENT) ? engraver.get_target().absolutePos.back().x :
-                                                0))))
+            ((pos.orig.x == pos.PAGE)  ? 0 : (
+             (pos.orig.x == pos.LINE)  ? engraver.get_target_line().basePos.x : (
+             (pos.orig.x == pos.STAFF) ? engraver.get_target_voice().basePos.x : (
+             (pos.orig.x == pos.NOTE)  ? engraver.get_target().absolutePos.back().x :
+                                         0))))
             +
-            ((this->unitX == Movable::METRIC) ? engraver.get_viewport().umtopx_h(pos.x) : (
-             (this->unitX == Movable::HEAD)   ? (engraver.get_head_height() * pos.x) / 1000.0 :
-                                                0))),
+            ((pos.unit.x == pos.METRIC) ? engraver.get_viewport().umtopx_h(pos.co.x) : (
+             (pos.unit.x == pos.HEAD)   ? (engraver.get_head_height() / 1000.0) * pos.co.x :
+                                          0))),
         _round(
-            ((this->typeY == Movable::PAGE)   ? 0 : (
-             (this->typeY == Movable::LINE)   ? engraver.get_target_line().basePos.y : (
-             (this->typeY == Movable::STAFF)  ? engraver.get_target_voice().basePos.y : (
-             (this->typeY == Movable::PARENT) ? engraver.get_target().absolutePos.back().y :
-                                                0))))
+            ((pos.orig.y == pos.PAGE)  ? 0 : (
+             (pos.orig.y == pos.LINE)  ? engraver.get_target_line().basePos.y : (
+             (pos.orig.y == pos.STAFF) ? engraver.get_target_voice().basePos.y : (
+             (pos.orig.y == pos.NOTE)  ? engraver.get_target().absolutePos.back().y :
+                                         0))))
             +
-            ((this->unitY == Movable::METRIC) ? engraver.get_viewport().umtopx_v(pos.y) : (
-             (this->unitY == Movable::HEAD)   ? (engraver.get_head_height() * pos.y) / 1000.0 :
-                                                0))));
+            ((pos.unit.y == pos.METRIC) ? engraver.get_viewport().umtopx_v(pos.co.y) : (
+             (pos.unit.y == pos.HEAD)   ? (engraver.get_head_height() / 1000.0) * pos.co.y :
+                                          0))));
 }
+
+void Movable::register_nodes(ObjectCursor&)
+{
+    // NOOP
+}
+
+ContextChanging*       Movable::ctxchange()       {return NULL;}
+const ContextChanging* Movable::ctxchange() const {return NULL;}
 
 // engraving method (TextArea)
 void TextArea::engrave(EngraverState& engraver) const
@@ -2260,29 +2272,16 @@ void Slur::engrave(EngraverState& engraver, DurableInfo& info) const
     // get data
     const StyleParam&    style       = engraver.get_style();
     const ViewportParam& viewport    = engraver.get_viewport();
-    const mpx_t&         head_height = engraver.get_head_height();
     
     // calculate position of the end-node
-    info.target->endPos = engrave_pos(engraver, end_position);
+    info.target->endPos = engrave_pos(engraver, end);
     
     // calculate the graphical boundary box
     info.target->gphBox = calculate_gphBox(
             info.target->absolutePos,
             info.target->endPos,
-            Position<mpx_t>(
-                (this->unitX == METRIC)
-                    ? info.target->absolutePos.x + _round(viewport.umtopx_h(this->control1.x))
-                    : info.target->absolutePos.x + _round((head_height * this->control1.x) / 1000.0),
-                (this->unitY == METRIC)
-                    ? info.target->absolutePos.y + _round(viewport.umtopx_v(this->control1.y))
-                    : info.target->absolutePos.y + _round((head_height * this->control1.y) / 1000.0)),
-            Position<mpx_t>(
-                (this->unitX == METRIC)
-                    ? info.target->endPos.x + _round(viewport.umtopx_h(this->control2.x))
-                    : info.target->endPos.x + _round((head_height * this->control2.x) / 1000.0),
-                (this->unitY == METRIC)
-                    ? info.target->endPos.y + _round(viewport.umtopx_v(this->control2.y))
-                    : info.target->endPos.y + _round((head_height * this->control2.y) / 1000.0)),
+            info.target->absolutePos + engrave_pos(engraver, control1),
+            info.target->endPos + engrave_pos(engraver, control2),
             _round((this->thickness1 * viewport.umtopx_h(style.stem_width)) / 1000.0),
             _round((this->thickness2 * viewport.umtopx_h(style.stem_width)) / 1000.0));
     
@@ -2307,31 +2306,25 @@ void Slur::render(Renderer& renderer, const Plate::pAttachable& object, const Pr
     pos2.y = static_cast<const Plate::pDurable&>(object).endPos.y / 1000.0;
     
     // calculate control-point positions
-    if (unitX == METRIC)
-    {
-        // coordinates given in millipixel
-        ctrl1.x = pos1.x + state.viewport.umtopx_h(control1.x) / 1000.0;
-        ctrl2.x = pos2.x + state.viewport.umtopx_h(control2.x) / 1000.0;
-    }
+    if (control1.unit.x == UnitPosition<>::METRIC)
+        ctrl1.x = pos1.x + state.viewport.umtopx_h(control1.co.x) / 1000.0;
     else
-    {
-        // coordinates given in promille of head-height
-        ctrl1.x = pos1.x + (static_cast<int>(state.head_height) * control1.x) / 1.0e6;
-        ctrl2.x = pos2.x + (static_cast<int>(state.head_height) * control2.x) / 1.0e6;
-    };
+        ctrl1.x = pos1.x + (static_cast<int>(state.head_height) * control1.co.x) / 1.0e6;
     
-    if (unitY == METRIC)
-    {
-        // coordinates given in millipixel
-        ctrl1.y = pos1.y + state.viewport.umtopx_v(control1.y) / 1000.0;
-        ctrl2.y = pos2.y + state.viewport.umtopx_v(control2.y) / 1000.0;
-    }
+    if (control1.unit.y == UnitPosition<>::METRIC)
+        ctrl1.y = pos1.y + state.viewport.umtopx_v(control1.co.y) / 1000.0;
     else
-    {
-        // coordinates given in promille of head-height
-        ctrl1.y = pos1.y + (static_cast<int>(state.head_height) * control1.y) / 1.0e6;
-        ctrl2.y = pos2.y + (static_cast<int>(state.head_height) * control2.y) / 1.0e6;
-    };
+        ctrl1.y = pos1.y + (static_cast<int>(state.head_height) * control1.co.y) / 1.0e6;
+    
+    if (control2.unit.x == UnitPosition<>::METRIC)
+        ctrl2.x = pos2.x + state.viewport.umtopx_h(control2.co.x) / 1000.0;
+    else
+        ctrl2.x = pos2.x + (static_cast<int>(state.head_height) * control2.co.x) / 1.0e6;
+    
+    if (control2.unit.y == UnitPosition<>::METRIC)
+        ctrl2.y = pos2.y + state.viewport.umtopx_v(control2.co.y) / 1000.0;
+    else
+        ctrl2.y = pos2.y + (static_cast<int>(state.head_height) * control2.co.y) / 1.0e6;
     
     // apply scaling
     ctrl1 = pos1 + (static_cast<double>(appearance.scale) * (ctrl1 - pos1)) / 1000.0;
@@ -2357,7 +2350,7 @@ void Slur::render(Renderer& renderer, const Plate::pAttachable& object, const Pr
 void Hairpin::engrave(EngraverState& engraver, DurableInfo& info) const
 {
     // calculate position of the end-node
-    info.target->endPos = engrave_pos(engraver, end_position);
+    info.target->endPos = engrave_pos(engraver, end);
     
     // calculate the graphical boundary box
     info.target->gphBox.pos = info.target->absolutePos;

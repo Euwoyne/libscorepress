@@ -254,7 +254,6 @@ if test -z "$LIBXML_LIBS"; then
     fi
 fi
 CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CFLAGS"
-LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
 LIBS="$LIBS_ORI $LIBXML_LIBS"
 AC_CHECK_LIB([xml2], [xmlReaderForFile],, AC_MSG_ERROR([cannot find library 'libxml2']))
 

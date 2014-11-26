@@ -23,6 +23,7 @@
 
 #include <list>             // std::list
 #include <map>              // std::map
+
 #include "classes.hh"       // [score classes]
 #include "parameters.hh"    // StyleParam
 #include "smartptr.hh"      // SmartPtr

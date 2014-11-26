@@ -19,8 +19,8 @@
 */
 
 #include "cursor.hh"
-using namespace ScorePress;
 
+using namespace ScorePress;
 
 //
 //     class Cursor

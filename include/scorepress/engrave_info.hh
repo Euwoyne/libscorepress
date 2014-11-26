@@ -130,7 +130,7 @@ struct SCOREPRESS_LOCAL DurableInfo
     const Durable*   source;            // the durable object
     Plate::pDurable* target;            // the respective on-plate object
     Plate::NoteIt    pnote;             // the parent note (on-plate)
-    size_t           durationcountdown; // number of staff-objects remaining up to the end-node
+    value_t          durationcountdown; // time remaining up to the end-node
     
     // default constructor
     DurableInfo() : source(NULL), target(NULL), pnote(NULL), durationcountdown(0) {}

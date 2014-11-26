@@ -8,80 +8,60 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="shared">
-				<Option output="$(BUILDDIR)/$(SOFILE)" prefix_auto="0" extension_auto="0" />
-				<Option working_dir="$(BUILDDIR)" />
-				<Option object_output="build/" />
+				<Option output="${objdir}/${sofile}" imp_lib=".a" def_file=".def" prefix_auto="0" extension_auto="0" />
+				<Option working_dir="${objdir}" />
+				<Option object_output="/home/dominik/sources/cpp/score/libscorepress/.objs" />
 				<Option type="3" />
 				<Option compiler="gcc" />
-				<Option createDefFile="1" />
-				<Option createStaticLib="1" />
-				<Compiler>
-					<Add option="-O2" />
-				</Compiler>
-				<MakeCommands>
-					<Build command="$make -f $makefile $target" />
-					<CompileFile command="$make -f $makefile $file" />
-					<Clean command="$make -f $makefile clean$target" />
-					<DistClean command="$make -f $makefile distclean$target" />
-					<AskRebuildNeeded command="$make -q -f $makefile $target" />
-					<SilentBuild command="$make -f $makefile $target" />
-				</MakeCommands>
 			</Target>
 			<Target title="static">
-				<Option output="$(BUILDDIR)/$(AFILE)" prefix_auto="0" extension_auto="0" />
+				<Option output="${objdir}/${afile}" prefix_auto="0" extension_auto="0" />
 				<Option working_dir="" />
-				<Option object_output="build/" />
 				<Option type="2" />
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
-				<Compiler>
-					<Add option="-O2" />
-				</Compiler>
-				<MakeCommands>
-					<Build command="$make -f $makefile $target" />
-					<CompileFile command="$make -f $makefile $file" />
-					<Clean command="$make -f $makefile clean$target" />
-					<DistClean command="$make -f $makefile distclean$target" />
-					<AskRebuildNeeded command="$make -q -f $makefile $target" />
-					<SilentBuild command="$make -f $makefile $target" />
-				</MakeCommands>
-			</Target>
-			<Target title="doc">
-				<Option type="4" />
-				<Option compiler="gcc" />
 			</Target>
 			<Target title="install-shared">
-				<Option output="$(BINDIR)/$(SOBASE)" prefix_auto="0" extension_auto="0" />
-				<Option working_dir="$(BINDIR)" />
-				<Option object_output="build/" />
+				<Option output="${libdir}/${sofile}" imp_lib=".a" def_file=".def" prefix_auto="0" extension_auto="0" />
+				<Option working_dir="${libdir}" />
+				<Option object_output="/home/dominik/sources/cpp/score/libscorepress/.objs" />
 				<Option type="3" />
 				<Option compiler="gcc" />
-				<Compiler>
-					<Add option="-ggdb -O0" />
-				</Compiler>
 			</Target>
 			<Target title="install-static">
-				<Option output="$(BINDIR)/$(AFILE)" prefix_auto="0" extension_auto="0" />
+				<Option output="${libdir}/${afile}" prefix_auto="0" extension_auto="0" />
 				<Option working_dir="" />
+				<Option object_output="/home/dominik/sources/cpp/score/libscorepress/.objs" />
 				<Option type="2" />
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 			</Target>
-			<Target title="dist-clean">
+			<Target title="install-shared-dev">
+				<Option output="${libdir}/${sofile}" imp_lib=".a" def_file=".def" prefix_auto="0" extension_auto="0" />
+				<Option working_dir="${libdir}" />
+				<Option object_output="/home/dominik/sources/cpp/score/libscorepress/.objs" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+			</Target>
+			<Target title="install-static-dev">
+				<Option output="${libdir}/${afile}" prefix_auto="0" extension_auto="0" />
+				<Option working_dir="" />
+				<Option object_output="/home/dominik/sources/cpp/score/libscorepress/.objs" />
+				<Option type="2" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+			</Target>
+			<Target title="uninstall-all">
 				<Option type="4" />
 				<Option compiler="gcc" />
 			</Target>
-			<Target title="uninstall">
-				<Option type="4" />
-				<Option compiler="gcc" />
-			</Target>
-			<Target title="clear">
+			<Target title="clean">
 				<Option type="4" />
 				<Option compiler="gcc" />
 			</Target>
 		</Build>
 		<VirtualTargets>
-			<Add alias="default" targets="shared;static;install-shared;install-static;" />
+			<Add alias="all" targets="shared;static;" />
 		</VirtualTargets>
 		<Compiler>
 			<Add option="-Wshadow" />
@@ -105,397 +85,215 @@
 		<Linker>
 			<Add option="`pkg-config libxml-2.0 --libs`" />
 		</Linker>
+		<ExtraCommands>
+			<Add before="if [ ! -e Makefile ]; then ./configure --enable-debug --prefix=${home}/sources/cpp/score/build; fi" />
+		</ExtraCommands>
 		<Unit filename="doc/Doxyfile.ac">
-			<Option target="doc" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="doc/classes.dox">
-			<Option target="doc" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="doc/engraver.dox">
-			<Option target="doc" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="doc/undefined.dox">
-			<Option target="doc" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/basetypes.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/classes.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/config.hh.ac">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/context.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/cursor.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/cursor_base.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="doc" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="uninstall" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/document.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="uninstall" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/edit_cursor.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/engine.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/engrave_info.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/engraver.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/engraver_state.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/error.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/export.hh">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/file_format.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/file_reader.hh">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/file_writer.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/fraction.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/log.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/meta.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/object_cursor.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="uninstall" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/pageset.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/parameters.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/pick.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/plate.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/press.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/press_state.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/reengrave_info.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="uninstall" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/refptr.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/renderer.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/score.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/smartptr.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/sprite_id.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/sprites.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/stem_info.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/ui.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/undefined.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="include/scorepress/user_cursor.hh">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/autoconf_check.cpp">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="dist-clean" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/classes.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/config.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/context.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/cursor.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/edit_cursor.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/engine.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/engrave_info.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/engraver.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/engraver_state.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
-		<Unit filename="src/error.cpp" />
+		<Unit filename="src/error.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="src/file_format.cpp">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/fraction.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/log.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/object_cursor.cpp">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="uninstall" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/pageset.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/parameters.cpp">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="clear" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/pick.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/plate.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/press.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/press_state.cpp">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/reengrave_info.cpp">
-			<Option target="shared" />
-			<Option target="static" />
-			<Option target="install-shared" />
-			<Option target="install-static" />
-			<Option target="uninstall" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/renderer.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/score.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/sprite_id.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/sprites.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/user_cursor.cpp">
-			<Option target="shared" />
-			<Option target="static" />
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Extensions>
 			<code_completion />

@@ -22,6 +22,7 @@
 #define SCOREPRESS_SPRITEID_HH
 
 #include <cstddef>  // size_t
+
 #include "export.hh"
 
 namespace ScorePress

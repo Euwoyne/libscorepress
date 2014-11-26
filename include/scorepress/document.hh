@@ -23,6 +23,7 @@
 
 #include <list>             // std::list
 #include <map>              // std::map
+
 #include "score.hh"         // Score, Movable, DocumentMeta
 #include "export.hh"
 

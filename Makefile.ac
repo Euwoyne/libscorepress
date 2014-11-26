@@ -126,12 +126,16 @@ CTRLFLAGS := @CTRLFLAGS@
 RPATHFLAG := @RPATHFLAG@
 WARNINGS  := @WARNINGS@
 
-CPPFLAGS  := -I${includesrc} -I${builddir} ${USER_CPPFLAGS}
+CPPFLAGS  := -I${includesrc} -I${srcdir} ${USER_CPPFLAGS}
 FLAGS     := ${WARNINGS} ${CTRLFLAGS} ${C_FLAGS}    ${${MODE}} ${C_${MODE}}    ${USER_CXXFLAGS} ${CPPFLAGS}
 FLAGS_SO  := ${WARNINGS} ${CTRLFLAGS} ${C_FLAGS_SO} ${${MODE}} ${C_${MODE}_SO} ${USER_CXXFLAGS} ${CPPFLAGS}
 LFLAGS    := ${LD_FLAGS} ${LD_${MODE}} ${XMLLIBS} ${RPATH} ${USER_LIBS} ${USER_LDFLAGS} ${USER_RPATH}
 
-CONFIGFLAGS := -DPREFIX="\"${PREFIX}\"" -DLIBDIR="\"${libdir}\"" -DINCLUDEDIR="\"${includedir_pkg}\"" -DDATADIR="\"${datadir_pkg}\"" -DDESTDIR="\"${DESTDIR}\""
+CONFIGFLAGS := -DPREFIX="\"${PREFIX}\""             \
+               -DLIBDIR="\"${libdir}\""             \
+               -DINCLUDEDIR="\"${includedir_pkg}\"" \
+               -DDATADIR="\"${datadir_pkg}\""       \
+               -DDESTDIR="\"${DESTDIR}\""
 
 SIZECHECK_ON    := -DSIZECHECK
 SIZECHECK_OFF   :=
@@ -168,8 +172,7 @@ cfiles := ${cppsrc}/autoconf_check.cpp \
 
 hfiles := ${includesrc}/basetypes.hh      \
           ${includesrc}/classes.hh        \
-          ${includesrc}/config.hh.ac      \
-          ${srcdir}/config.hh           \
+          ${srcdir}/config.hh             \
           ${includesrc}/context.hh        \
           ${includesrc}/cursor_base.hh    \
           ${includesrc}/cursor.hh         \
@@ -291,6 +294,7 @@ distfiles := ${srcdir}/AUTHORS      \
 deps_smartptr_hh        := ${includesrc}/smartptr.hh
 deps_refptr_hh          := ${includesrc}/refptr.hh
 deps_export_hh          := ${includesrc}/export.hh
+deps_undefined_hh       := ${includesrc}/undefined.hh
 deps_config_hh          := ${srcdir}/config.hh ${deps_export_hh}
 deps_sprite_id_hh       := ${includesrc}/sprite_id.hh ${deps_export_hh}
 deps_fraction_hh        := ${includesrc}/fraction.hh ${deps_export_hh}
@@ -319,9 +323,8 @@ deps_cursor_base_hh     := ${includesrc}/cursor_base.hh ${deps_reengrave_info_hh
 deps_user_cursor_hh     := ${includesrc}/user_cursor.hh ${deps_cursor_base_hh} ${deps_pageset_hh} ${deps_log_hh}
 deps_object_cursor_hh   := ${includesrc}/object_cursor.hh ${deps_cursor_base_hh} ${deps_pageset_hh}
 deps_press_hh           := ${includesrc}/press.hh ${deps_renderer_hh} ${deps_user_cursor_hh} ${deps_object_cursor_hh}
-deps_undefined_hh       := ${includesrc}/undefined.hh
 deps_engraver_hh        := ${includesrc}/engraver.hh ${deps_pageset_hh} ${deps_sprites_hh} ${deps_reengrave_info_hh} ${deps_log_hh}
-deps_edit_cursor_hh     := ${includesrc}/edit_cursor.hh ${deps_user_cursor_hh} ${deps_object_cursor_hh} ${deps_engraver_hh}
+deps_edit_cursor_hh     := ${includesrc}/edit_cursor.hh ${deps_user_cursor_hh} ${deps_engraver_hh}
 deps_engine_hh          := ${includesrc}/engine.hh ${deps_press_hh} ${deps_edit_cursor_hh}
 deps_file_writer_hh     := ${includesrc}/file_writer.hh ${deps_document_hh}
 deps_file_format_hh     := ${includesrc}/file_format.hh ${deps_file_reader_hh} ${deps_file_writer_hh}
@@ -331,7 +334,7 @@ deps_classes_cpp        := ${cppsrc}/classes.cpp ${deps_engraver_state_hh} ${dep
 deps_config_cpp         := ${cppsrc}/config.cpp ${deps_config_hh}
 deps_context_cpp        := ${cppsrc}/context.cpp ${deps_context_hh}
 deps_cursor_cpp         := ${cppsrc}/cursor.cpp ${deps_cursor_hh}
-deps_edit_cursor_cpp    := ${cppsrc}/edit_cursor.cpp ${deps_edit_cursor_hh}
+deps_edit_cursor_cpp    := ${cppsrc}/edit_cursor.cpp ${deps_edit_cursor_hh} ${deps_object_cursor_hh}
 deps_engine_cpp         := ${cppsrc}/engine.cpp ${deps_engine_hh}
 deps_engrave_info_cpp   := ${cppsrc}/engrave_info.cpp ${deps_engrave_info_hh}
 deps_engraver_cpp       := ${cppsrc}/engraver.cpp ${deps_engraver_hh} ${deps_engraver_state_hh} ${deps_undefined_hh}
@@ -340,7 +343,7 @@ deps_error_cpp          := ${cppsrc}/error.cpp ${deps_error_hh}
 deps_file_format_cpp    := ${cppsrc}/file_format.cpp ${deps_file_format_hh} ${deps_renderer_hh}
 deps_fraction_cpp       := ${cppsrc}/fraction.cpp ${deps_fraction_hh}
 deps_log_cpp            := ${cppsrc}/log.cpp ${deps_log_hh}
-deps_object_cursor_cpp  := ${cppsrc}/object_cursor.cpp ${deps_object_cursor_hh} ${deps_engraver_state_hh}
+deps_object_cursor_cpp  := ${cppsrc}/object_cursor.cpp ${deps_object_cursor_hh} ${deps_engraver_state_hh} ${deps_renderer_hh} ${deps_edit_cursor_hh}
 deps_pageset_cpp        := ${cppsrc}/pageset.cpp ${deps_pageset_hh}
 deps_parameters_cpp     := ${cppsrc}/parameters.cpp ${deps_parameters_hh}
 deps_pick_cpp           := ${cppsrc}/pick.cpp ${deps_pick_hh} ${deps_undefined_hh}
@@ -353,6 +356,7 @@ deps_score_cpp          := ${cppsrc}/score.cpp ${deps_score_hh}
 deps_sprite_id_cpp      := ${cppsrc}/sprite_id.cpp ${deps_sprite_id_hh} ${deps_undefined_hh}
 deps_sprites_cpp        := ${cppsrc}/sprites.cpp ${deps_sprites_hh} ${deps_undefined_hh}
 deps_user_cursor_cpp    := ${cppsrc}/user_cursor.cpp ${deps_engraver_state_hh} ${deps_press_hh}
+
 
 
 # string table
@@ -848,9 +852,10 @@ configinfo:
 	@printf '  psdir:         %s\n' "${psdir}"
 	@echo
 	@echo 'COMPILER FLAGS:'
-	@if test -n "${USER_CFLAGS}";   then printf '  CFLAGS:   %s\n' "${USER_CFLAGS}";  fi
-	@if test -n "${USER_LIBS}";     then printf '  LIBS:     %s\n' "${USER_LIBS}";    fi
-	@if test -n "${USER_LDFLAGS}";  then printf '  LDFLAGS:  %s\n' "${USER_LDFLAGS}"; fi
+	@if test -n "${USER_CPPFLAGS}"; then printf '  CPPFLAGS: %s\n' "${USER_CPPFLAGS}"; fi
+	@if test -n "${USER_CXXFLAGS}"; then printf '  CXXFLAGS: %s\n' "${USER_CXXFLAGS}"; fi
+	@if test -n "${USER_LDFLAGS}";  then printf '  LDFLAGS:  %s\n' "${USER_LDFLAGS}";  fi
+	@if test -n "${USER_LIBS}";     then printf '  LIBS:     %s\n' "${USER_LIBS}";     fi
 	@echo
 	@echo "CONFIGURE OPTIONS:"
 	@if test "${MODE}" = "DEBUG";   then echo   '  --enable-debug';   fi
@@ -887,8 +892,8 @@ Makefile:
 	@if test "${DOXYGEN}" != ":";   then printf '--with-doxygen '            >> /tmp/$$.confargs; fi
 	
 	@echo -n > /tmp/$$.envvars
-	@if test -n "${USER_CXXFLAGS}"; then printf 'CXXFLAGS=%s ' "${USER_CXXFLAGS}" >> /tmp/$$.envvars; fi
 	@if test -n "${USER_CPPFLAGS}"; then printf 'CPPFLAGS=%s ' "${USER_CPPFLAGS}" >> /tmp/$$.envvars; fi
+	@if test -n "${USER_CXXFLAGS}"; then printf 'CXXFLAGS=%s ' "${USER_CXXFLAGS}" >> /tmp/$$.envvars; fi
 	@if test -n "${USER_LDFLAGS}";  then printf 'LDFLAGS=%s '  "${USER_LDFLAGS}"  >> /tmp/$$.envvars; fi
 	@if test -n "${USER_LIBS}";     then printf 'LIBS=%s '     "${USER_LIBS}"     >> /tmp/$$.envvars; fi
 	@if test -n "${USER_RPATH}";    then printf 'RPATH=%s '    "${USER_RPATH}"    >> /tmp/$$.envvars; fi
