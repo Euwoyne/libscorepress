@@ -143,32 +143,33 @@ FRACT_SIZECHECK := @FRACT_SIZECHECK@
 
 # file lists
 cfiles := ${cppsrc}/autoconf_check.cpp \
+          ${cppsrc}/classes.cpp        \
+          ${cppsrc}/config.cpp         \
+          ${cppsrc}/context.cpp        \
+          ${cppsrc}/cursor.cpp         \
+          ${cppsrc}/edit_cursor.cpp    \
           ${cppsrc}/engine.cpp         \
-          ${cppsrc}/press.cpp          \
-          ${cppsrc}/press_state.cpp    \
+          ${cppsrc}/engrave_info.cpp   \
           ${cppsrc}/engraver.cpp       \
           ${cppsrc}/engraver_state.cpp \
-          ${cppsrc}/engrave_info.cpp   \
-          ${cppsrc}/reengrave_info.cpp \
-          ${cppsrc}/context.cpp        \
-          ${cppsrc}/pageset.cpp        \
-          ${cppsrc}/plate.cpp          \
-          ${cppsrc}/pick.cpp           \
-          ${cppsrc}/cursor.cpp         \
-          ${cppsrc}/user_cursor.cpp    \
-          ${cppsrc}/edit_cursor.cpp    \
-          ${cppsrc}/object_cursor.cpp  \
-          ${cppsrc}/renderer.cpp       \
-          ${cppsrc}/sprites.cpp        \
-          ${cppsrc}/sprite_id.cpp      \
-          ${cppsrc}/score.cpp          \
-          ${cppsrc}/classes.cpp        \
-          ${cppsrc}/log.cpp            \
-          ${cppsrc}/fraction.cpp       \
-          ${cppsrc}/parameters.cpp     \
           ${cppsrc}/error.cpp          \
           ${cppsrc}/file_format.cpp    \
-          ${cppsrc}/config.cpp
+          ${cppsrc}/fraction.cpp       \
+          ${cppsrc}/log.cpp            \
+          ${cppsrc}/object_cursor.cpp  \
+          ${cppsrc}/pageset.cpp        \
+          ${cppsrc}/parameters.cpp     \
+          ${cppsrc}/pick.cpp           \
+          ${cppsrc}/plate.cpp          \
+          ${cppsrc}/press.cpp          \
+          ${cppsrc}/press_state.cpp    \
+          ${cppsrc}/reengrave_info.cpp \
+          ${cppsrc}/renderer.cpp       \
+          ${cppsrc}/score.cpp          \
+          ${cppsrc}/sprite_id.cpp      \
+          ${cppsrc}/sprites.cpp        \
+          ${cppsrc}/test.cpp           \
+          ${cppsrc}/user_cursor.cpp
 
 hfiles := ${includesrc}/basetypes.hh      \
           ${includesrc}/classes.hh        \
@@ -205,6 +206,7 @@ hfiles := ${includesrc}/basetypes.hh      \
           ${includesrc}/sprite_id.hh      \
           ${includesrc}/sprites.hh        \
           ${includesrc}/stem_info.hh      \
+          ${includesrc}/test.hh           \
           ${includesrc}/ui.hh             \
           ${includesrc}/undefined.hh      \
           ${includesrc}/user_cursor.hh
@@ -212,60 +214,62 @@ hfiles := ${includesrc}/basetypes.hh      \
 srcfiles := ${cfiles} ${hfiles}
 
 sofiles := ${objdir}/autoconf_check.s.o \
+           ${objdir}/classes.s.o        \
+           ${objdir}/config.s.o         \
+           ${objdir}/context.s.o        \
+           ${objdir}/cursor.s.o         \
+           ${objdir}/edit_cursor.s.o    \
            ${objdir}/engine.s.o         \
-           ${objdir}/press.s.o          \
-           ${objdir}/press_state.s.o    \
+           ${objdir}/engrave_info.s.o   \
            ${objdir}/engraver.s.o       \
            ${objdir}/engraver_state.s.o \
-           ${objdir}/engrave_info.s.o   \
-           ${objdir}/reengrave_info.s.o \
-           ${objdir}/context.s.o        \
-           ${objdir}/pageset.s.o        \
-           ${objdir}/plate.s.o          \
-           ${objdir}/pick.s.o           \
-           ${objdir}/cursor.s.o         \
-           ${objdir}/user_cursor.s.o    \
-           ${objdir}/edit_cursor.s.o    \
-           ${objdir}/object_cursor.s.o  \
-           ${objdir}/renderer.s.o       \
-           ${objdir}/sprites.s.o        \
-           ${objdir}/sprite_id.s.o      \
-           ${objdir}/score.s.o          \
-           ${objdir}/classes.s.o        \
-           ${objdir}/log.s.o            \
-           ${objdir}/fraction.s.o       \
-           ${objdir}/parameters.s.o     \
            ${objdir}/error.s.o          \
            ${objdir}/file_format.s.o    \
-           ${objdir}/config.s.o
+           ${objdir}/fraction.s.o       \
+           ${objdir}/log.s.o            \
+           ${objdir}/object_cursor.s.o  \
+           ${objdir}/pageset.s.o        \
+           ${objdir}/parameters.s.o     \
+           ${objdir}/pick.s.o           \
+           ${objdir}/plate.s.o          \
+           ${objdir}/press.s.o          \
+           ${objdir}/press_state.s.o    \
+           ${objdir}/reengrave_info.s.o \
+           ${objdir}/renderer.s.o       \
+           ${objdir}/score.s.o          \
+           ${objdir}/sprite_id.s.o      \
+           ${objdir}/sprites.s.o        \
+           ${objdir}/test.s.o           \
+           ${objdir}/user_cursor.s.o
 
 afiles := ${objdir}/autoconf_check.o \
+          ${objdir}/classes.o        \
+          ${objdir}/config.o         \
+          ${objdir}/context.o        \
+          ${objdir}/cursor.o         \
+          ${objdir}/edit_cursor.o    \
           ${objdir}/engine.o         \
-          ${objdir}/press.o          \
-          ${objdir}/press_state.o    \
+          ${objdir}/engrave_info.o   \
           ${objdir}/engraver.o       \
           ${objdir}/engraver_state.o \
-          ${objdir}/engrave_info.o   \
-          ${objdir}/reengrave_info.o \
-          ${objdir}/context.o        \
-          ${objdir}/pageset.o        \
-          ${objdir}/plate.o          \
-          ${objdir}/pick.o           \
-          ${objdir}/cursor.o         \
-          ${objdir}/user_cursor.o    \
-          ${objdir}/edit_cursor.o    \
-          ${objdir}/object_cursor.o  \
-          ${objdir}/renderer.o       \
-          ${objdir}/sprites.o        \
-          ${objdir}/sprite_id.o      \
-          ${objdir}/score.o          \
-          ${objdir}/classes.o        \
-          ${objdir}/log.o            \
-          ${objdir}/fraction.o       \
-          ${objdir}/parameters.o     \
           ${objdir}/error.o          \
           ${objdir}/file_format.o    \
-          ${objdir}/config.o
+          ${objdir}/fraction.o       \
+          ${objdir}/log.o            \
+          ${objdir}/object_cursor.o  \
+          ${objdir}/pageset.o        \
+          ${objdir}/parameters.o     \
+          ${objdir}/pick.o           \
+          ${objdir}/plate.o          \
+          ${objdir}/press.o          \
+          ${objdir}/press_state.o    \
+          ${objdir}/reengrave_info.o \
+          ${objdir}/renderer.o       \
+          ${objdir}/score.o          \
+          ${objdir}/sprite_id.o      \
+          ${objdir}/sprites.o        \
+          ${objdir}/test.o           \
+          ${objdir}/user_cursor.o
 
 docfiles := ${srcdir}/AUTHORS       \
             ${srcdir}/LICENCE.pdf   \
@@ -328,6 +332,7 @@ deps_edit_cursor_hh     := ${includesrc}/edit_cursor.hh ${deps_user_cursor_hh} $
 deps_engine_hh          := ${includesrc}/engine.hh ${deps_press_hh} ${deps_edit_cursor_hh}
 deps_file_writer_hh     := ${includesrc}/file_writer.hh ${deps_document_hh}
 deps_file_format_hh     := ${includesrc}/file_format.hh ${deps_file_reader_hh} ${deps_file_writer_hh}
+deps_test_hh            := ${includesrc}/test.hh ${deps_document_hh} ${deps_sprites_hh}
 
 deps_autoconf_check_cpp := ${cppsrc}/autoconf_check.cpp
 deps_classes_cpp        := ${cppsrc}/classes.cpp ${deps_engraver_state_hh} ${deps_press_hh} ${deps_undefined_hh}
@@ -356,6 +361,7 @@ deps_score_cpp          := ${cppsrc}/score.cpp ${deps_score_hh}
 deps_sprite_id_cpp      := ${cppsrc}/sprite_id.cpp ${deps_sprite_id_hh} ${deps_undefined_hh}
 deps_sprites_cpp        := ${cppsrc}/sprites.cpp ${deps_sprites_hh} ${deps_undefined_hh}
 deps_user_cursor_cpp    := ${cppsrc}/user_cursor.cpp ${deps_engraver_state_hh} ${deps_press_hh}
+deps_test_cpp           := ${cppsrc}/test.cpp ${deps_test_hh}
 
 
 
@@ -1139,4 +1145,11 @@ ${objdir}/config.o:			${deps_config_cpp}
 ${objdir}/config.s.o:		${deps_config_cpp}
 							printf ${STR_compile} 'config.cpp'
 							${CXX} ${SOFLAGS} -c ${cppsrc}/config.cpp -o ${objdir}/config.s.o ${CONFIGFLAGS} ${FLAGS}
+
+${objdir}/test.o:			${deps_test_cpp}
+							printf ${STR_compile} 'test.cpp'
+							${CXX} -c ${cppsrc}/test.cpp -o ${objdir}/test.o ${FLAGS}
+${objdir}/test.s.o:			${deps_test_cpp}
+							printf ${STR_compile} 'test.cpp'
+							${CXX} ${SOFLAGS} -c ${cppsrc}/test.cpp -o ${objdir}/test.s.o ${FLAGS}
 
