@@ -46,37 +46,22 @@ void EngraverState::engrave()
     if (cursor.at_end()) {log_warn("Cursor at end during engraving process. (class: EngraverState)"); return;};
     
     // get the voice on the plate
-    pvoice = pline->get_voice(cursor.voice());  // get the voice
-    if (pvoice == pline->voices.end())          // if the voice doesn't exists
+    VoiceMap::iterator pvoice_it = voiceinfo.find(&cursor.voice());
+    if (pvoice_it != voiceinfo.end())
     {
-        // create the new voice
-        if (cursor.is_main())  // for a main-voice, just...
-        {
-            pline->voices.push_back(Plate::pVoice(cursor));     // add new voice...
-            pvoice = --pline->voices.end();                     // and get the voice
-        }
-        else    // for a sub-voice
-        {
-            std::list<Plate::pVoice>::iterator parent   // get parent voice
-                = pline->get_voice(static_cast<const SubVoice&>(cursor.voice()).get_parent());
-            
-            if (parent != pline->voices.end())  // if it exists
-            {
-                if (static_cast<const SubVoice&>(cursor.voice()).on_top)    // check, where to insert
-                {
-                    pvoice = pline->voices.insert(parent, Plate::pVoice(cursor));
-                }
-                else
-                {
-                    pvoice = pline->voices.insert(++parent, Plate::pVoice(cursor));
-                };
-            }
-            else
-            {
-                pline->voices.push_back(Plate::pVoice(cursor));     // add new voice...
-                pvoice = --pline->voices.end();                     // and get the voice
-            };
-        };
+        pvoice = pvoice_it->second;
+    }
+    else
+    {
+        // search, where to insert the new on-plate voice
+        Plate::VoiceIt next_pvoice = pline->voices.begin();
+        while (next_pvoice != pline->voices.end() && pick.is_above(next_pvoice->begin.voice(), cursor.voice()))
+            ++next_pvoice;
+        
+        // insert the new voice
+        pvoice = pline->voices.insert(next_pvoice, Plate::pVoice(cursor));
+        pvoice_it = voiceinfo.insert(VoiceMap::value_type(&cursor.voice(), pvoice)).first;
+        pvoice->parent = cursor.parent;
         
         // search for the context
         bool got_ctx = false;               // set to true, if context is found
@@ -96,23 +81,23 @@ void EngraverState::engrave()
         // check in the parent voice
         if (!got_ctx && cursor.is_sub())    // if no context found and parent-voice exists
         {
-            std::list<Plate::pVoice>::iterator parent;     // parent voice
-            parent = pline->get_voice(static_cast<const SubVoice&>(cursor.voice()).get_parent()); // get parent
+            std::list<Plate::pVoice>::iterator parent;          // parent voice
+            parent = pline->get_voice(cursor.parent.voice());   // get parent
             
-            if (parent != pline->voices.end())  // if we got the parent voice
+            if (parent != pline->voices.end())          // if we got the parent voice
             {
-                pvoice->context = parent->context;  // copy the context
-                pvoice->context.reset_buffer();     // reset the buffer
-                got_ctx = true;                     // got it!
+                pvoice->context = parent->context;              // copy the context
+                pvoice->context.reset_buffer();                 // reset the buffer
+                got_ctx = true;                                 // got it!
             }
-            else if (pline != plate->lines.begin()) // else try to find it in the previous line
+            else if (pline != plate->lines.begin())     // else try to find it in the previous line
             {
-                parent = (--pline)->get_voice(static_cast<const SubVoice&>(cursor.voice()).get_parent());
-                if (parent != pline->voices.end())  // if it exists
+                parent = (--pline)->get_voice(cursor.parent.voice());
+                if (parent != pline->voices.end())          // if it exists
                 {
-                    pvoice->context = parent->context;  // copy the context
-                    pvoice->context.set_buffer(NULL);   // reset the buffer
-                    got_ctx = true;                     // got it!
+                    pvoice->context = parent->context;          // copy the context
+                    pvoice->context.set_buffer(NULL);           // reset the buffer
+                    got_ctx = true;                             // got it!
                 };
                 ++pline;        // reset line iterator
             };
@@ -154,7 +139,9 @@ void EngraverState::engrave()
     
     pnote = pvoice->append(pos, cursor);    // append the new note to the plate
     if (cursor.virtual_obj)                 // set virtual object
+    {
         pnote->virtual_obj = Plate::pNote::VirtualPtr(new Plate::pNote::Virtual(*cursor.virtual_obj, cursor.inserted));
+    };
     
     // engrave object (polymorphically call "StaffObject::engrave")
     pnote->get_note().engrave(*this);
@@ -186,16 +173,21 @@ void EngraverState::engrave()
         };
     };
     
-    // engrave empty voice (ignored by pick!)
+    // engrave empty voices (ignored by pick!)
     if (cursor->is(Class::NOTEOBJECT))
     {
-        const RefPtr<SubVoice>& subvoice = static_cast<const NoteObject&>(*cursor).subvoice;
-        if (subvoice && subvoice->notes.empty())
+        for (SubVoiceList::const_iterator subvoice = static_cast<const NoteObject&>(*cursor).subvoices.begin(); subvoice != static_cast<const NoteObject&>(*cursor).subvoices.end(); ++subvoice)
         {
-            // insert new voice
+            if (!(*subvoice)->notes.empty()) continue;
+            
+            // search, where to insert the new on-plate voice
+            Plate::VoiceIt next_pvoice = pline->voices.begin();
+            while (next_pvoice != pline->voices.end() && pick.is_above(next_pvoice->begin.voice(), cursor.voice()))
+                ++next_pvoice;
+            
+            // insert the new voice
             Plate::VoiceIt parent(pvoice);
-            if (!subvoice->on_top) ++pvoice;
-            pvoice = pline->voices.insert(pvoice, Plate::pVoice(const_Cursor(cursor.staff(), *subvoice)));
+            pvoice = pline->voices.insert(next_pvoice, Plate::pVoice(const_Cursor(cursor.staff(), **subvoice)));
             pvoice->context = parent->context;
             
             // add position information to the new voice
@@ -215,7 +207,7 @@ void EngraverState::engrave()
             if (reengrave_info)
             {
                 pnote = --pvoice->notes.end();              // set pnote to end-of-voice indicator
-                reengrave_info->update(*subvoice, *this);   // update external data
+                reengrave_info->update(**subvoice, *this);  // update external data
                 pvoice = parent;                            // reset on-plate voice
                 pnote = --pvoice->notes.end();              // reset on-plate note-object
             };
@@ -252,7 +244,9 @@ void EngraverState::engrave()
         pick.insert_barline(Barline::singlebar);    // insert barline to be engraved
     }
     
-    // check for end of voice
+    // Check for end of voice, if we did not just engrave a Newline.
+    // In case we did end a line here, the EOV marker must be added to the NEXT line,
+    //    which is done by the "engrave_next()" routine after creating the new line on-plate.
     else if (   !cursor.has_next()          && cursor.remaining_duration <= 0L
              && !cursor->is(Class::NEWLINE) && pick.eov())
     {
@@ -297,6 +291,9 @@ void EngraverState::create_lineend()
                    pick.eos() ? 0 : pick.get_indent(),
                    voice->head_height);
     };
+    
+    // clear voice-map
+    voiceinfo.clear();
 }
 
 // apply all non-accumulative offsets
@@ -1085,55 +1082,47 @@ bool EngraverState::engrave_next()
     lineinfo.forced_justification = pick.get_forced_justification();
     lineinfo.right_margin = pick.get_right_margin();
     
-    // add voices
-    const Pick::VoiceCursor* cur;
-    Position<mpx_t>          pos;
+    // add voice-ends for voices, that ended after the newline
+    Position<mpx_t> pos;
     for (Plate::VoiceList::iterator v = pline->voices.begin(); v != pline->voices.end(); ++v)
     {
-        if (v->notes.back().at_end()) continue;
-        if (!v->notes.back().get_note().is(Class::NEWLINE))
-            log_warn("Found unfinished voice not ending with a Newline. (class: EngraverState)");
-        
-        cur = pick.peek(v->begin.voice());
-        if (!cur)
+        if (v->notes.empty())   // ignore empty voices (should not occur anyway)
         {
-            // add the voice (with "begin" at end)
-            plate->lines.back().voices.push_back(Plate::pVoice(v->begin));
-            pvoice = --plate->lines.back().voices.end();
-            pvoice->begin.to_end();
-            pvoice->context = v->context;
-            
-            // calculate the voice position
-            pvoice->basePos.x = pick.get_indent();
-            pvoice->basePos.y = pick.get_cursor().ypos + viewport->umtopx_v(pick.staff_offset(v->begin.staff()));
-            pvoice->time = start_time;
-            pvoice->head_height = _round(viewport->umtopx_v(HEAD_HEIGHT(v->begin.staff())));
-
-            // calculate the EOV indicator position
-            pos = pvoice->basePos;
-            pos.x += viewport->umtopx_h(param->min_distance);
-            
-            // add end-of-voice indicator object
-            pvoice->notes.push_back(Plate::pNote(pos, const_Cursor(v->begin)));
-            pvoice->notes.back().note.to_end();
-            pvoice->notes.back().gphBox.pos = pos;
-            pvoice->notes.back().gphBox.width = 1000;
-            pvoice->notes.back().gphBox.height = _round(viewport->umtopx_v(  HEAD_HEIGHT(v->begin.staff())
-                                                                           * (v->begin.staff().line_count - 1)));
-        }
-        else
-        {
-            // add the voice (with "begin" at end)
-            plate->lines.back().voices.push_back(Plate::pVoice(*cur));
-            pvoice = --plate->lines.back().voices.end();
-            pvoice->context = v->context;
-            
-            // calculate the voice position
-            pvoice->basePos.x = pick.get_indent();
-            pvoice->basePos.y = cur->ypos + viewport->umtopx_v(pick.staff_offset(v->begin.staff()));
-            pvoice->time = start_time;
-            pvoice->head_height = _round(viewport->umtopx_v(HEAD_HEIGHT(v->begin.staff())));
+            log_warn("Found empty voice without EOV marker. (class: EngraverState)");
+            continue;
         };
+        if (v->notes.back().at_end())    continue;  // ignore already finished voices
+        if (pick.peek(v->begin.voice())) continue;  // ignore voices, that have notes left
+        
+        // Here we have got a voice, that has ended right after engraving the newline.
+        // For this the voice-end has not been written to the Plate yet, because by the time,
+        // the last object (i.e. the Newline) had been engraved, the next line had not existed
+        // on the plate yet.
+        
+        // add the voice (with "begin" at end)
+        plate->lines.back().voices.push_back(Plate::pVoice(v->begin));
+        pvoice = --plate->lines.back().voices.end();
+        pvoice->begin.to_end();
+        pvoice->parent = v->parent;
+        pvoice->context = v->context;
+        
+        // calculate the voice position
+        pvoice->basePos.x = pick.get_indent();
+        pvoice->basePos.y = pick.get_cursor().ypos + viewport->umtopx_v(pick.staff_offset(v->begin.staff()));
+        pvoice->time = start_time;
+        pvoice->head_height = _round(viewport->umtopx_v(HEAD_HEIGHT(v->begin.staff())));
+
+        // calculate the EOV indicator position
+        pos = pvoice->basePos;
+        pos.x += viewport->umtopx_h(param->min_distance);
+        
+        // add end-of-voice indicator object
+        pvoice->notes.push_back(Plate::pNote(pos, const_Cursor(v->begin)));
+        pvoice->notes.back().note.to_end();
+        pvoice->notes.back().gphBox.pos = pos;
+        pvoice->notes.back().gphBox.width = 1000;
+        pvoice->notes.back().gphBox.height = _round(viewport->umtopx_v(  HEAD_HEIGHT(v->begin.staff())
+                                                                           * (v->begin.staff().line_count - 1)));
     };
     
     // increment on-plate line iterator
@@ -1193,12 +1182,6 @@ void EngraverState::add_offset(const mpx_t offset)
 
 // logging control
 void EngraverState::log_set(Log& log)
-{
-    this->Logging::log_set(log);
-    pick.log_set(log);
-}
-
-void EngraverState::log_set(Logging& log)
 {
     this->Logging::log_set(log);
     pick.log_set(log);

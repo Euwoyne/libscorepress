@@ -205,6 +205,9 @@
 		<Unit filename="include/scorepress/stem_info.hh">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
+		<Unit filename="include/scorepress/test.hh">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="include/scorepress/ui.hh">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
@@ -290,6 +293,9 @@
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/sprites.cpp">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="src/test.cpp">
 			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="src/user_cursor.cpp">

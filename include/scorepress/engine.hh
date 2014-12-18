@@ -129,6 +129,8 @@ class SCOREPRESS_API Engine : public Logging
     const InterfaceParam&  get_interface_parameters() const;            // interface parameters
     const ViewportParam&   get_viewport()             const;            // viewport parameters
     
+    void plate_dump() const;                                            // write plate-content to stdout
+    
     // dimension information
     mpx_t            page_width()  const;                               // graphical page width
     mpx_t            page_height() const;                               // graphical page height
@@ -178,10 +180,9 @@ class SCOREPRESS_API Engine : public Logging
     bool register_cursor(RefPtr<CursorBase> cursor);                                        // register cursor for reengraving
                                                                                             // (cursors created by "get_cursor" are already registered)
     // logging control
+    using Logging::log_set;
     void log_set(Log& log);     // set log instance
     void log_unset();           // unset log instance
-    
-    void plate_dump() const;    // write plate-content to stdout
 };
 
 // inline method implementations

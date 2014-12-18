@@ -273,7 +273,7 @@ void UserCursor::prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice)
     // calculate on-plate data
     newvoice.pnote = pvoice.notes.begin();      // initialize on-plate begin
     newvoice.pvoice = &pvoice;                  // set voice
-    newvoice.active = true;                     // set cursor to active (updated below in "prepare_vocies")
+    newvoice.active = true;                     // set cursor to active (updated below in "prepare_voices")
     newvoice.time = pvoice.time;                // initialize time
     
     // search for correct begin
@@ -291,8 +291,8 @@ void UserCursor::prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice)
     assert(newvoice.pnote->at_end() || !newvoice.note.at_end());
 }
 
-// set "VoiceCursor" layout data  (helper function for "prepare_voice" and "finish_reengrave")
-Cursor UserCursor::prepare_layout(VoiceCursor& newvoice, Plate::pVoice& pvoice)
+// return "VoiceCursor" first note and prepare layout if defined (helper function for "prepare_voice" and "finish_reengrave")
+Cursor UserCursor::prepare_note(VoiceCursor& newvoice, Plate::pVoice& pvoice)
 {
     // calculate note (casts away const, but not unexpected, since this object got a non-const reference to the score)
     Cursor note;
@@ -328,7 +328,7 @@ Cursor UserCursor::prepare_layout(VoiceCursor& newvoice, Plate::pVoice& pvoice)
 bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
 {
     // find front note and prepare layout
-    newvoice.note = prepare_layout(newvoice, pvoice);
+    newvoice.note = prepare_note(newvoice, pvoice);
     if (!newvoice.note.ready())
         return false;
     
@@ -339,9 +339,46 @@ bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
     return true;
 }
 
+// inherit layout from parent voice (if neccessary)
+void UserCursor::prepare_layout(VoiceCursor& newvoice)
+{
+    // check for default-layout
+    if (newvoice.page_layout.ready() && newvoice.line_layout.ready())
+        return;                 // if layout is already there, abort
+    if (newvoice.note.is_main())
+        return;                 // if the main-voice has got default layout, abort
+    
+    // look for parent voice
+    if (!newvoice.pvoice->parent.ready())   // check, if plate knows about parent
+    {                                       // (this indicates bug in the "EngraverState")
+        log_error("Got on-plate sub-voice without a parent. (class: UserCursor)");
+        return;
+    };
+    
+    std::list<VoiceCursor>::iterator parent;        // the parent voice
+    parent = find(newvoice.pvoice->parent.voice()); // find the parent
+    
+    if (parent == vcursors.end())           // check, if the parent is known to this cursor
+    {                                       // (this indicates bug in the "preapre_voices" algorithm)
+        log_error("Unable to find sub-voice parent in cursor. (class: UserCursor)");
+        return;
+    };
+    
+    // prepare parent layout
+    prepare_layout(*parent);
+    
+    // copy layout from parent
+    if (!newvoice.page_layout.ready())              // if no page-layout is given
+        newvoice.page_layout = parent->page_layout; //     inherit from parent
+    if (!newvoice.line_layout.ready())              // if no line-layout is given
+        newvoice.line_layout = parent->line_layout; //     inherit from parent
+}
+
+/*
 // prepare voice-cursor of a given sub-voice (called recursively to ensure that parents are prepared)
 std::list<UserCursor::VoiceCursor>::iterator UserCursor::prepare_subvoice(const Voice& voice, Plate::pVoice& pvoice)
 {
+    std::cout << "subvoice (" << &voice << ")...";
     // voice cursor iterators
     std::list<VoiceCursor>::iterator newvoice;      // the prepared voice
     std::list<VoiceCursor>::iterator parent;        // the parent voice
@@ -349,23 +386,33 @@ std::list<UserCursor::VoiceCursor>::iterator UserCursor::prepare_subvoice(const 
     // check voice
     newvoice = find(voice);             // try to find the voice
     if (newvoice != vcursors.end())     // if the voice does exist already...
+    {
+        std::cout << " already there\n";
         return newvoice;                //  ...ignore
+    }
     
     if (!voice.is(Class::SUBVOICE))     // if the voice is not a sub-voice...
     {                                   //  ...something is wrong
+        std::cout << " FAIL! (is main voice)\n";
         log_warn("Unable to add a misplaced MainVoice to cursor. (class: UserCursor)");
         return vcursors.end();
     };
     
     // prepare the parent voice
+    std::cout << "parent->";
     parent = find(static_cast<const SubVoice&>(voice).get_parent()); // find parent
     
     if (parent == vcursors.end())                               // if there is no parent, prepare it
+    {
+        std::cout << "not ready\n\t";
         parent = prepare_subvoice(static_cast<const SubVoice&>(voice).get_parent(),
                                   *line->get_voice(static_cast<const SubVoice&>(voice).get_parent()));
+        std::cout << "\t";
+    };
     
     if (parent == vcursors.end())                               // if the parent can not be prepared
     {                                                           //     abort!
+        std::cout << " FAIL! (unknown parent)\n";
         log_warn("Unable to add a SubVoice, which has no parent, to cursor. (class: UserCursor)");
         return vcursors.end();
     };
@@ -379,6 +426,7 @@ std::list<UserCursor::VoiceCursor>::iterator UserCursor::prepare_subvoice(const 
     // prepare the voice cursor
     if (!prepare_voice(*newvoice, pvoice))              // if preparation fails,
     {
+        std::cout << " FAIL! (prepare_voice() failed)\n";
         vcursors.erase(newvoice);                       //     remove the voice
         return vcursors.end();                          //     abort
     };
@@ -392,36 +440,64 @@ std::list<UserCursor::VoiceCursor>::iterator UserCursor::prepare_subvoice(const 
     // set active state
     if (cursor != vcursors.end())                           // if we got a main-voice
         newvoice->active = newvoice->is_during(*cursor);    //     choose active state
-    else    cursor = newvoice;
+    else
+        cursor = newvoice;
     
     // return new voice-cursor
     assert(newvoice->pnote->at_end() || !newvoice->note.at_end());
+    std::cout << " SUCCESS!\n";
     return newvoice;
 }
-
+*/
 // set all voice-cursors to the beginning of the current line
 void UserCursor::prepare_voices()
 {
     // clear current data
     vcursors.clear();
     cursor = vcursors.end();
+    if (line->voices.empty()) return;
     
+    // prepare all voices of the current line
+    for (std::list<Plate::pVoice>::iterator voice = line->voices.begin(); voice != line->voices.end(); ++voice)
+    {
+        vcursors.push_back(VoiceCursor());
+        if (!prepare_voice(vcursors.back(), *voice))    // prepare the voice cursor
+            vcursors.pop_back();                        //     if this fails, remove the voice
+    };
+    
+    // initialize cursor to top main-voice
+    cursor = find(line->voices.front().begin.voice());
+    
+    // prepare sub-voice layouts and setup active-state
+    for (std::list<VoiceCursor>::iterator i = vcursors.begin(); i != vcursors.end(); ++i)
+    {
+        prepare_layout(*i);                 // prepare layouts
+        i->active = i->is_during(*cursor);  // set active state
+    };
+    
+    /*
     // prepare all main-voices of the current line
     for (std::list<Staff>::iterator staff = score->staves.begin(); staff != score->staves.end(); ++staff)
     {
         // prepare voice
         std::list<Plate::pVoice>::iterator pvoice = line->get_voice(*staff);    // get staff on the plate
-        if (pvoice == line->voices.end()) continue;                             // if the staff is not on the plate, we do not need a cursor
+        if (pvoice == line->voices.end()) {std::cout << "NO staff\n"; continue;}                             // if the staff is not on the plate, we do not need a cursor
+        std::cout << "Staff... ";
         vcursors.push_back(VoiceCursor());                                      // add cursor
         
         if (!prepare_voice(vcursors.back(), *pvoice))   // prepare the voice cursor
+        {
+            std::cout << "FAIL!\n";
             vcursors.pop_back();                        //     if this fails, remove the voice
+        };
+        std::cout << "OK (" << &static_cast<Voice&>(*staff) << ")\n";
     };
     cursor = vcursors.begin();  // initialize cursor to first main-voice
     
     // prepare all sub-voices of the current line (expecting all main-voices to exist)
     for (std::list<Plate::pVoice>::iterator i = line->voices.begin(); i != line->voices.end(); ++i)
         static_cast<void>(prepare_subvoice(i->begin.voice(), *i));
+    */
 }
 
 // move the voice-cursors to the corresponding position within the currently referenced voice
@@ -1311,7 +1387,7 @@ void UserCursor::finish_reengrave()
         };
         
         // update layout
-        prepare_layout(*i, *i->pvoice);
+        prepare_layout(*i);
         ++i;
      };
 }
@@ -1319,12 +1395,8 @@ void UserCursor::finish_reengrave()
 // check for missing voice-cursors
 void UserCursor::update_voices()
 {
-    // prepare all sub-voices of the current line (expecting all main-voices to exist)
-    for (std::list<Plate::pVoice>::iterator i = line->voices.begin(); i != line->voices.end(); ++i)
-        static_cast<void>(prepare_subvoice(i->begin.voice(), *i));
-    
-    // move added cursors to correct position
-    update_cursors();
+    prepare_voices();   // prepare all voices again
+    update_cursors();   // move added cursors to correct position
 }
 
 // dump cursor state to stdout

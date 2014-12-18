@@ -265,6 +265,7 @@ class SCOREPRESS_API Plate_pVoice
     umpx_t        head_height;  // the staffs head-height (in millipixel)
     NoteList      notes;        // notes of the voice
     const_Cursor  begin;        // cursor at the beginning of this voice (in the score object)
+    const_Cursor  parent;       // cursor to the voice's parent note (in the score object)
     VoiceContext  context;      // this voice's context at the END of the line (or voice)
     value_t       time;         // time-stamp of the voice's first note
     value_t       end_time;     // time-stamp at the voice's last note

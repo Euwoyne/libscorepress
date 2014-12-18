@@ -48,8 +48,8 @@ class  Sprites;             // sprites prototype (see "sprites.hh")
 struct DurableInfo;         // durable-information prototype (see "engrave_info.hh")
 
 // BASE CLASSES
-class SCOREPRESS_API Appearance;    // graphical appearance properties (visibility, color, scale)
-class SCOREPRESS_API Class;         // abstract base class for all classes
+class SCOREPRESS_API Appearance;        // graphical appearance properties (visibility, color, scale)
+class SCOREPRESS_API Class;             // abstract base class for all classes
 
 // MAIN MUSIC OBJECT CLASSES
 class SCOREPRESS_API VisibleObject;     // base class for visible objects
@@ -77,30 +77,31 @@ class SCOREPRESS_API Head;              // note-head class (with tone, accidenta
 class SCOREPRESS_API TiedHead;          // note-head with tie-position information
 
 // VOICE STRUCTURE CLASSES
-class SCOREPRESS_API Voice;         // voice base type
-class SCOREPRESS_API SubVoice;      // sub-voice; wrapper for a list of note-objects
-class SCOREPRESS_API Staff;         // staff; wrapper for a list of staff-objects
+class SCOREPRESS_API Voice;             // voice base type
+class SCOREPRESS_API Staff;             // staff; wrapper for a list of staff-objects
+class SCOREPRESS_API SubVoice;          // sub-voice; wrapper for a list of note-objects
+class SCOREPRESS_API NamedVoice;        // named sub-voice (to be referenced by VoiceRef)
 
 // MOVABLE AND ATTACHABLE OBJECTS
-class SCOREPRESS_API Movable;         // base class for movable, attachable objects (position data)
-class SCOREPRESS_API PlainText;       // plain-text object (text with formatting information)
-class SCOREPRESS_API Paragraph;       // paragraph object (list of consequent plain-text objects with alignment information)
-class SCOREPRESS_API TextArea;        // text-area object (movable list of consequent plain-text objects)
-class SCOREPRESS_API ContextChanging; // context-changing object (see "context.hh")
-class SCOREPRESS_API Symbol;          // base class for interpretable symbols (has context-changing information)
-class SCOREPRESS_API PluginInfo;      // a movable object carrying arbitrary information for a plugin
-class SCOREPRESS_API Annotation;      // a text-area with context-changing information
-class SCOREPRESS_API CustomSymbol;    // a custom symbol is a symbol with custom graphical representation (sprite-id)
-class SCOREPRESS_API Durable;         // base class for symbols with two anchor points
-class SCOREPRESS_API Slur;            // legato slur (a symbol, rendered as a cubic bezier curve)
-class SCOREPRESS_API Hairpin;         // crescendo and diminuendo "hairpin" symbols
+class SCOREPRESS_API Movable;           // base class for movable, attachable objects (position data)
+class SCOREPRESS_API PlainText;         // plain-text object (text with formatting information)
+class SCOREPRESS_API Paragraph;         // paragraph object (list of consequent plain-text objects with alignment information)
+class SCOREPRESS_API TextArea;          // text-area object (movable list of consequent plain-text objects)
+class SCOREPRESS_API ContextChanging;   // context-changing object (see "context.hh")
+class SCOREPRESS_API Symbol;            // base class for interpretable symbols (has context-changing information)
+class SCOREPRESS_API PluginInfo;        // a movable object carrying arbitrary information for a plugin
+class SCOREPRESS_API Annotation;        // a text-area with context-changing information
+class SCOREPRESS_API CustomSymbol;      // a custom symbol is a symbol with custom graphical representation (sprite-id)
+class SCOREPRESS_API Durable;           // base class for symbols with two anchor points
+class SCOREPRESS_API Slur;              // legato slur (a symbol, rendered as a cubic bezier curve)
+class SCOREPRESS_API Hairpin;           // crescendo and diminuendo "hairpin" symbols
 
 // TYPE DEFINTIONS
 typedef SmartPtr<Movable,     CloneTrait> MovablePtr;       // smart pointer to movable object
 typedef SmartPtr<Head,        CloneTrait> HeadPtr;          // smart pointer to head
 typedef SmartPtr<StaffObject, CloneTrait> StaffObjectPtr;   // smart pointer to staff-object
 typedef SmartPtr<VoiceObject, CloneTrait> VoiceObjectPtr;   // smart pointer to note-object
-typedef RefPtr<SubVoice>                  SubVoicePtr;      // smart pointer to sub-voice
+typedef SmartPtr<SubVoice,    CloneTrait> SubVoicePtr;      // smart pointer to sub-voice
 
 typedef std::list<MovablePtr>             MovableList;      // list of smart pointers to movable objects
 typedef std::list<HeadPtr>                HeadList;         // list of smart pointers to heads
@@ -146,7 +147,7 @@ class SCOREPRESS_API Class
                     HEAD, TIEDHEAD,                    // SPECIAL HEADS
                     
                     VOICE, STAFF,                      // VOICE STRUCTURE CLASSES
-                           SUBVOICE,
+                           SUBVOICE, NAMEDVOICE,
                     
                     MOVABLE, SCALABLE,                 // MOVABLE AND ATTACHABLE OBJECTS
                              TEXTAREA, ANNOTATION,
@@ -385,20 +386,42 @@ class SCOREPRESS_API Pagebreak : public Newline
 class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
 {
  public:
-    SubVoicePtr subvoice;       // sub voice attached to this note
-    int         staff_shift;    // note in different staff (if neq 0)
-    
+    // value structure
     struct Value
     {
         unsigned exp  : 4;
         unsigned dots : 3;
         unsigned mute : 1;
-    } val;
+    };
     
+    // list of sub-voices attached to this note
+    class SubVoices : public SubVoiceList
+    {
+     private:
+        SubVoiceList::iterator below;   // first sub voice below this voice (others on top)
+        
+     public:
+        SubVoices();                    // default constructor
+        SubVoices(const SubVoices&);    // copy constructor (iterator initializing)
+        
+        SubVoicePtr& add_top();         // create new sub-voice atop all sub-voices
+        SubVoicePtr& add_above();       // create new sub-voice above this voice
+        SubVoicePtr& add_below();       // create new sub-voice below this voice
+        SubVoicePtr& add_bottom();      // create new sub-voice below all sub-voices
+        
+        // iterator checking
+        inline bool is_first_below(const SubVoiceList::const_iterator it) const {return it == below;};
+        inline bool is_first_below(const SubVoiceList::iterator       it)       {return it == below;};
+    };
+    
+    // note object data
+    Value         val;          // value of this note
     unsigned char irr_enum;     // tuplet enumerator
     unsigned char irr_denom;    // tuplet denominator
+    int           staff_shift;  // note in different staff (if neq 0)
+    SubVoices     subvoices;    // sub-voices attached to this note
     
- protected: NoteObject() : subvoice(NULL), staff_shift(0), irr_enum(0), irr_denom(0) {val.exp = 5; val.dots = 0; val.mute = 0;}
+ protected: NoteObject() : irr_enum(0), irr_denom(0), staff_shift(0) {val.exp = 5; val.dots = 0; val.mute = 0;}
  public:
     virtual VisibleObject& get_visible() {return *this;}
     virtual const VisibleObject& get_visible() const {return *this;}
@@ -414,21 +437,21 @@ class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
     
     value_t set_value(value_t v);   // create note object from length (return error factor)
     const value_t value() const;    // calculate the note-object's value
-    
-    void add_subvoice(RefPtr<SubVoice>& newvoice);
 };
 
 // a chord (note-object consisting of several heads)
 class SCOREPRESS_API Chord : public NoteObject
 {
  public:
-    enum BeamType {NO_BEAM, AUTO_BEAM, FORCE_BEAM, CUT_BEAM};
+    enum BeamType      {NO_BEAM, AUTO_BEAM, FORCE_BEAM, CUT_BEAM};
+    enum StemDirection {STEM_AUTO, STEM_UP, STEM_DOWN};
     
  public:
     // TODO: sprite per head, not per chord
     HeadList         heads;             // heads of the chord (in ascending order)
     ArticulationList articulation;      // articulation symbols
     SpriteId         sprite;            // head sprite id
+    StemDirection    stem_direction;    // stem direction (AUTO means 'dictated by VoiceRef')
     spohh_t          stem_length;       // stem length
     Color            stem_color;        // stem color
     unsigned char    stem_tremolo;      // tremolo stem count
@@ -437,7 +460,7 @@ class SCOREPRESS_API Chord : public NoteObject
     BeamType         beam;              // type of the beam to the next note
     
  public:
-    Chord() : stem_length(3000), invisible_flag(false), beam(AUTO_BEAM) {stem_color.r = stem_color.g = stem_color.b = 0; stem_color.a = 255;}
+    Chord() : stem_direction(STEM_AUTO), stem_length(3000), stem_tremolo(0), invisible_flag(false), beam(AUTO_BEAM) {stem_color.r = stem_color.g = stem_color.b = 0; stem_color.a = 255;}
     virtual SpriteId get_sprite(const Sprites&) const;
     virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
@@ -593,34 +616,15 @@ class SCOREPRESS_API TiedHead : public Head
 class SCOREPRESS_API Voice : public Class
 {
  public:
-    enum StemDirection {STEM_AUTOMATIC, STEM_UPWARDS, STEM_DOWNWARDS};
+    enum StemDirection {STEM_AUTO, STEM_UP, STEM_DOWN};
     
     StemDirection stem_direction;   // default stem direction of chords in this voice
     
  public:
-    Voice() : stem_direction(STEM_AUTOMATIC) {}
+    Voice() : stem_direction(STEM_AUTO) {}
     virtual bool is(classType type) const;
     virtual classType classtype() const;
     virtual Voice* clone() const = 0;
-};
-
-// sub-voice; wrapper for a list of note-objects
-class SCOREPRESS_API SubVoice : public Voice
-{
- private:
-    Voice* parent;          // parent voice (either a staff or another sub-voice)
-    
- public:
-    bool            on_top; // voice insertion direction (for cursor movement control)
-    VoiceObjectList notes;  // content of the voice (no staff objects; i.e. clefs and key/time signatures)
-    
- public:
-    SubVoice(Voice& _parent) : parent(&_parent), on_top(false) {}
-    Voice& get_parent() {return *parent;}
-    const Voice& get_parent() const {return *parent;}
-    virtual bool is(classType type) const;
-    virtual classType classtype() const;
-    virtual SubVoice* clone() const;
 };
 
 // staff; wrapper for a list of staff-objects
@@ -651,6 +655,30 @@ class SCOREPRESS_API Staff : public Voice
     virtual bool is(classType type) const;
     virtual classType classtype() const;
     virtual Staff* clone() const;
+};
+
+// sub-voice; wrapper for a list of note-objects
+class SCOREPRESS_API SubVoice : public Voice
+{
+ public:
+    VoiceObjectList notes;  // content of the voice (no staff objects; i.e. clefs and key/time signatures)
+    
+ public:
+    virtual bool is(classType type) const;
+    virtual classType classtype() const;
+    virtual SubVoice* clone() const;
+};
+
+// named sub-voice (to be referenced by VoiceRef)
+class SCOREPRESS_API NamedVoice : public SubVoice
+{
+ public:
+    std::string name;
+    
+ public:
+    virtual bool is(classType type) const;
+    virtual classType classtype() const;
+    virtual NamedVoice* clone() const;
 };
 
 

@@ -53,6 +53,7 @@ template <typename T, template <typename> class trait = StdTrait> class SmartPtr
     T* operator-> () const {return data;}
     
     SmartPtr<T, trait>& operator = (const SmartPtr<T, trait>& ptr);
+    SmartPtr<T, trait>& transfer_to(SmartPtr<T, trait>& ptr);
     
     bool operator ! () const;
     
@@ -86,6 +87,10 @@ inline SmartPtr<T, trait>::~SmartPtr() {delete data;}
 template <typename T, template <typename> class trait>
 inline SmartPtr<T, trait>& SmartPtr<T, trait>::operator = (const SmartPtr<T, trait>& ptr)
 {if (data != ptr.data) {delete data; data = trait<T>::clone(ptr.data);}; return *this;}
+
+template <typename T, template <typename> class trait>
+inline SmartPtr<T, trait>& SmartPtr<T, trait>::transfer_to(SmartPtr<T, trait>& ptr)
+{if (data != ptr.data) {delete ptr.data; ptr.data = data;}; data = 0; return ptr;}
 
 template <typename T, template <typename> class trait>
 inline bool SmartPtr<T, trait>::operator ! () const {return (data == 0);}

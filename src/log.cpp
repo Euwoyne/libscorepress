@@ -118,3 +118,13 @@ Log::~Log()
     if (file.is_open()) file.close();
 }
 
+// Logging interface
+void Logging::log_set(Log& log)
+{
+    logging_log = &log;
+}
+
+void Logging::log_unset()
+{
+    logging_log = NULL;
+}

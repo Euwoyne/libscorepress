@@ -65,7 +65,6 @@ class SCOREPRESS_API Cursor
     // constructors
     Cursor();
     Cursor(Staff& staff);
-    Cursor(SubVoice& voice);
     Cursor(Staff& staff, SubVoice& voice);
     
     // iterator interface
@@ -108,7 +107,6 @@ class SCOREPRESS_API Cursor
     inline Voice& voice() const {return *_voice;}       // return the voice the cursor points to
     
     void set(Staff& staff);
-    void set(SubVoice& voice);
     void set(Staff& staff, SubVoice& voice);
     
     // modification methods (ownership of inserted object is with the voice object thereafter!)
@@ -141,7 +139,6 @@ class SCOREPRESS_API const_Cursor
     // constructors
     const_Cursor();
     const_Cursor(const Staff& staff);
-    const_Cursor(const SubVoice& voice);
     const_Cursor(const Staff& staff, const SubVoice& voice);
     const_Cursor(const Cursor& cursor);
     
@@ -185,7 +182,6 @@ class SCOREPRESS_API const_Cursor
     inline const Voice& voice() const {return *_voice;}     // return the voice the cursor points to
     
     void set(const Staff& staff);
-    void set(const SubVoice& voice);
     void set(const Staff& staff, const SubVoice& voice);
 };
 

@@ -117,9 +117,10 @@ class SCOREPRESS_API UserCursor : public CursorBase, public Logging
     
     // set all voice-cursors to the beginning of the current line
     SCOREPRESS_LOCAL void                             prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice);
-    SCOREPRESS_LOCAL Cursor                           prepare_layout(VoiceCursor& newvoice, Plate::pVoice& pvoice);
+    SCOREPRESS_LOCAL Cursor                           prepare_note(VoiceCursor& newvoice, Plate::pVoice& pvoice);
     SCOREPRESS_LOCAL bool                             prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice);
-    SCOREPRESS_LOCAL std::list<VoiceCursor>::iterator prepare_subvoice(const Voice& voice, Plate::pVoice& pvoice);
+    SCOREPRESS_LOCAL void                             prepare_layout(VoiceCursor& newvoice);
+    //SCOREPRESS_LOCAL std::list<VoiceCursor>::iterator prepare_subvoice(const Voice& voice, Plate::pVoice& pvoice);
     SCOREPRESS_LOCAL void                             prepare_voices();
     
     // move the voice-cursors to the corresponding position within the currently referenced voice

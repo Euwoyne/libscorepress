@@ -203,16 +203,6 @@ void Plate_pNote::dump() const
 // voice constructor
 Plate_pVoice::Plate_pVoice(const const_Cursor& cursor) : begin(cursor) {}
 
-// find the given voice in this line
-Plate_pLine::Iterator Plate_pLine::get_voice(const Voice& voice)
-{
-    for (VoiceList::iterator i = voices.begin(); i != voices.end(); ++i)    // check each on-plate voice
-    {
-        if (&i->begin.voice() == &voice) return i;  // if it refers to the given voice, return
-    };
-    return voices.end();    // if it cannot be found, return empty iterator
-}
-
 // append new note to voice
 Plate_pVoice::Iterator Plate_pVoice::append(const Plate_Pos& pos, const const_Cursor& note)
 {
@@ -221,13 +211,19 @@ Plate_pVoice::Iterator Plate_pVoice::append(const Plate_Pos& pos, const const_Cu
     return --notes.end();
 }
 
+// find the given voice in this line
+Plate_pLine::Iterator Plate_pLine::get_voice(const Voice& voice)
+{
+    for (VoiceList::iterator i = voices.begin(); i != voices.end(); ++i)    // check each on-plate voice
+        if (&i->begin.voice() == &voice) return i;  // if it refers to the given voice, return
+    return voices.end();    // if it cannot be found, return empty iterator
+}
+
 // find the given voice in this line (constant version)
 Plate_pLine::const_Iterator Plate_pLine::get_voice(const Voice& voice) const
 {
     for (VoiceList::const_iterator i = voices.begin(); i != voices.end(); ++i)  // check each on-plate voice
-    {
         if (&i->begin.voice() == &voice) return i;  // if it refers to the given voice, return
-    };
     return voices.end();    // if it cannot be found, return empty iterator
 }
 
@@ -235,9 +231,7 @@ Plate_pLine::const_Iterator Plate_pLine::get_voice(const Voice& voice) const
 Plate_pLine::Iterator Plate_pLine::get_staff(const Staff& staff)
 {
     for (VoiceList::iterator i = voices.begin(); i != voices.end(); ++i) // check each on-plate voice
-    {
         if (&i->begin.staff() == &staff) return i;      // if it refers to the given voice, return
-    };
     return voices.end();    // if it cannot be found, return empty iterator
 }
 
@@ -245,9 +239,7 @@ Plate_pLine::Iterator Plate_pLine::get_staff(const Staff& staff)
 Plate_pLine::const_Iterator Plate_pLine::get_staff(const Staff& staff) const
 {
     for (VoiceList::const_iterator i = voices.begin(); i != voices.end(); ++i) // check each on-plate voice
-    {
         if (&i->begin.staff() == &staff) return i;      // if it refers to the given voice, return
-    };
     return voices.end();    // if it cannot be found, return empty iterator
 }
 
@@ -284,7 +276,10 @@ void Plate::dump() const
         j = 0;
         for (VoiceList::const_iterator v = l->voices.begin(); v != l->voices.end(); ++v)
         {
-            std::cout << "    Voice " << j++ << ": (" << v->basePos.x << ", " << v->basePos.y << ") t=" << v->time << "  " << &*v << "\n";
+            if (v->begin.is_main())
+                std::cout << "    Voice " << j++ << " [Staff]: (" << v->basePos.x << ", " << v->basePos.y << ") t=" << v->time << "  " << &*v << "\n";
+            else
+                std::cout << "    Voice " << j++ << " [Voice]: (" << v->basePos.x << ", " << v->basePos.y << ") t=" << v->time << "  " << &*v << "\n";
             k = 0;
             for (NoteList::const_iterator n = v->notes.begin(); n != v->notes.end(); ++n)
             {

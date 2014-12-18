@@ -49,6 +49,9 @@ class SCOREPRESS_LOCAL EngraverState;    // engraver, computing a renderable pla
 class SCOREPRESS_LOCAL EngraverState : public Logging
 {
  private:
+    // voice map type (maps "Voice" to the corresponding on-plate voice)
+    typedef std::map<const Voice*, Plate::VoiceIt> VoiceMap;
+    
     // initial parameters
     const Sprites*       sprites;           // pointer to the sprite-library
     const umpx_t         def_head_height;   // default head-height
@@ -59,6 +62,7 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
           ReengraveInfo* reengrave_info;    // reengrave information
     
     // info structures
+    VoiceMap    voiceinfo;          // maps "VoiceCursor" to the corresponding on-plate voice
     BeamInfoMap beaminfo;           // beam-information for each voice
     TieInfoMap  tieinfo;            // tie positioning information
     SpaceInfo   spaceinfo;          // information about accidental- and cluster-spacing
@@ -177,8 +181,8 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     bool has_accidental_space();                      // check, if this chord has been moved yet, due to clustering
     
     // logging control
+    using Logging::log_set;
     void log_set(Log& log);
-    void log_set(Logging& log);
     void log_unset();
 };
 

@@ -121,20 +121,20 @@ void EditCursor::set_auto_stem_length(Chord& chord) const throw(NotValidExceptio
     const StaffContext& ctx(get_staff_context());
     switch (get_voice().stem_direction)
     {
-    case Voice::STEM_AUTOMATIC:
+    case Voice::STEM_AUTO:
         chord.stem_length =   ctx.note_offset(*chord.heads.front(), 500)
                             + ctx.note_offset(*chord.heads.back(), 500)
                             - 500 * (cursor->note.staff().line_count - 2);
         if (chord.stem_length < param.stem_length && chord.stem_length > -param.stem_length)
             chord.stem_length = (chord.stem_length > 0) ? param.stem_length : -param.stem_length;
         break;
-    case Voice::STEM_UPWARDS:
+    case Voice::STEM_UP:
         chord.stem_length =   ctx.note_offset(*chord.heads.back(), 1000)
                             - 500 * (cursor->note.staff().line_count - 2);
         if (chord.stem_length < param.stem_length)
             chord.stem_length = param.stem_length;
         break;
-    case Voice::STEM_DOWNWARDS:
+    case Voice::STEM_DOWN:
         chord.stem_length =   ctx.note_offset(*chord.heads.front(), 1000)
                             - 500 * (cursor->note.staff().line_count - 2);
         if (chord.stem_length > -param.stem_length)
@@ -482,27 +482,35 @@ void EditCursor::remove() throw(NotValidException)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) return;                           // no note at end
-    //if (cursor->pvoice->begin == cursor->note)      // if the front note is removed...
-    //    ++cursor->pvoice->begin;                    //    increment on-plate voice front (needed by "reengrave()")
     StaffObject* del_note = cursor->note->clone();
     
-    // remove note
-    cursor->note.remove();                          // remove the note
+    Cursor nextnote = cursor->note;
+    ++nextnote;
     
     // migrate subvoice and durable objects to next note
-    if (!cursor->note.at_end() && !cursor->note->is(Class::NEWLINE))    // if there is a next note
+    if (!nextnote.at_end() && !nextnote->is(Class::NEWLINE))    // if there is a next note
     {
-        // migrate subvoice
-        if (   cursor->note->is(Class::NOTEOBJECT)              // if this note can hold a subvoice
-            && del_note->is(Class::NOTEOBJECT)
-            && static_cast<NoteObject&>(*del_note).subvoice)    // and there was a subvoice
-        {                                                       //    migrate subvoice to new parent note
-            static_cast<NoteObject&>(*cursor->note).add_subvoice(static_cast<NoteObject&>(*del_note).subvoice);
+        // migrate subvoices
+        if (nextnote->is(Class::NOTEOBJECT) && cursor->note->is(Class::NOTEOBJECT))
+        {
+            bool below = false;
+            NoteObject& src(static_cast<NoteObject&>(*cursor->note));
+            NoteObject& tgt(static_cast<NoteObject&>(*nextnote));
+            for (SubVoiceList::iterator v = src.subvoices.begin(); v != src.subvoices.end(); ++v)
+            {
+                if (src.subvoices.is_first_below(v))    // if this is the first voice below
+                    below = true;                       //     all coming voices will be below
+                
+                if (below)                                      // if below,
+                    v->transfer_to(tgt.subvoices.add_bottom()); //     add voice at the bottom
+                else                                            // if above
+                    v->transfer_to(tgt.subvoices.add_above());  //     add voice above
+            };
         };
         
         // migrate durable objects
-        VisibleObject& src(del_note->get_visible());            // source visible object
-        VisibleObject& tgt(cursor->note->get_visible());        // target visible object
+        VisibleObject& src(cursor->note->get_visible());
+        VisibleObject& tgt(nextnote->get_visible());
         for (MovableList::iterator i = src.attached.begin(); i != src.attached.end(); ++i)
         {
             if (!(*i)->is(Class::DURABLE)) continue;
@@ -518,12 +526,15 @@ void EditCursor::remove() throw(NotValidException)
             };
         };
     };
-    delete del_note;                                // free old note
+    
+    // remove note
+    cursor->note.remove();
 }
 
 // remove a voice
 void EditCursor::remove_voice() throw(NotValidException, Cursor::IllegalObjectTypeException)
 {
+    /*
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) return;                           // no note at end
     
@@ -559,6 +570,7 @@ void EditCursor::remove_voice() throw(NotValidException, Cursor::IllegalObjectTy
     vcursors.erase(cursor);
     cursor = find(static_cast<SubVoice&>(cursor->note.voice()).get_parent());
     if (cursor == vcursors.end()) --cursor;
+    */
 }
 
 // remove newline/pagebreak
@@ -633,6 +645,7 @@ void EditCursor::remove_break() throw(NotValidException)
 // add empty voice
 void EditCursor::add_voice() throw(NotValidException, Cursor::IllegalObjectTypeException)
 {
+    /*
     if (!ready()) throw NotValidException();        // check cursor
     for (;;)
     {
@@ -653,6 +666,7 @@ void EditCursor::add_voice() throw(NotValidException, Cursor::IllegalObjectTypeE
             return;
         };
     };
+    */
 }
 
 //  stem comtrol
@@ -831,24 +845,24 @@ void EditCursor::set_stem_length_auto() throw(Cursor::IllegalObjectTypeException
     Chord& begin_chord = static_cast<Chord&>(*b.note);
     Chord& end_chord   = static_cast<Chord&>(*i.note);
     set_auto_stem_length(begin_chord);
-    if (cursor->note.voice().stem_direction == Voice::STEM_AUTOMATIC)
+    if (cursor->note.voice().stem_direction == Voice::STEM_AUTO)
     {
         switch (dir)
         {
         case -1: // for default and undecided, rely on the first note
         case  0: cursor->note.voice().stem_direction =
-                    (begin_chord.stem_length > 0) ? Voice::STEM_UPWARDS : Voice::STEM_DOWNWARDS;
+                    (begin_chord.stem_length > 0) ? Voice::STEM_UP : Voice::STEM_DOWN;
                  break;
-        case  1: cursor->note.voice().stem_direction = Voice::STEM_UPWARDS;   break;
-        case  2: cursor->note.voice().stem_direction = Voice::STEM_DOWNWARDS; break;
+        case  1: cursor->note.voice().stem_direction = Voice::STEM_UP;   break;
+        case  2: cursor->note.voice().stem_direction = Voice::STEM_DOWN; break;
         };
         set_auto_stem_length(begin_chord);
         set_auto_stem_length(end_chord);
-        cursor->note.voice().stem_direction = Voice::STEM_AUTOMATIC;
+        cursor->note.voice().stem_direction = Voice::STEM_AUTO;
     }
     else    // if the stem direction is dictated by the voice
     {       // and the calculated direction does not comply
-        if (dir > 0 && dir != ((cursor->note.voice().stem_direction == Voice::STEM_UPWARDS) ? 1 : 2))
+        if (dir > 0 && dir != ((cursor->note.voice().stem_direction == Voice::STEM_UP) ? 1 : 2))
             dir = 0;                        // render the beam horizontally
         set_auto_stem_length(end_chord);
     };
@@ -873,7 +887,7 @@ void EditCursor::set_stem_dir_auto() throw(Cursor::IllegalObjectTypeException)
     
     switch (get_voice().stem_direction)
     {
-    case Voice::STEM_AUTOMATIC:
+    case Voice::STEM_AUTO:
         {
         const StaffContext& ctx(get_staff_context());
         int stemdir =   ctx.note_offset(*static_cast<Chord&>(*cursor->note).heads.front(), 500)
@@ -883,11 +897,11 @@ void EditCursor::set_stem_dir_auto() throw(Cursor::IllegalObjectTypeException)
             log_warn("Unable to find beam begin. (class: EditCursor)");
         }
         break;
-    case Voice::STEM_UPWARDS:
+    case Voice::STEM_UP:
         if (!for_each_chord_in_beam_do(*cursor, &_set_stem_dir, -1))
             log_warn("Unable to find beam begin. (class: EditCursor)");
         break;
-    case Voice::STEM_DOWNWARDS:
+    case Voice::STEM_DOWN:
         if (!for_each_chord_in_beam_do(*cursor, &_set_stem_dir, 1))
             log_warn("Unable to find beam begin. (class: EditCursor)");
         break;

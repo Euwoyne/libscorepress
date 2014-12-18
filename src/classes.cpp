@@ -18,6 +18,7 @@
   permissions and limitations under the Licence.
 */
 
+#include <iterator>             // std::distance, std::advance
 #include <cmath>                // sqrt
 
 #include "classes.hh"           // [score classes]
@@ -61,6 +62,7 @@ const std::string ScorePress::classname(Class::classType type)
     case Class::VOICE:          return "Voice";
     case Class::STAFF:          return "Staff";
     case Class::SUBVOICE:       return "SubVoice";
+    case Class::NAMEDVOICE:     return "NamedVoice";
     
     case Class::MOVABLE:        return "Movable";
     case Class::SCALABLE:       return "Scalable";
@@ -74,7 +76,7 @@ const std::string ScorePress::classname(Class::classType type)
     case Class::HAIRPIN:        return "Hairpin";
     
     default:                    return "Unknown";
-    };
+    }
 }
 
 // classtypes
@@ -98,8 +100,9 @@ Class::classType Articulation   ::classtype() const {return ARTICULATION;}
 Class::classType Head           ::classtype() const {return HEAD;}
 Class::classType TiedHead       ::classtype() const {return TIEDHEAD;}
 Class::classType Voice          ::classtype() const {return VOICE;}
-Class::classType SubVoice       ::classtype() const {return SUBVOICE;}
 Class::classType Staff          ::classtype() const {return STAFF;}
+Class::classType SubVoice       ::classtype() const {return SUBVOICE;}
+Class::classType NamedVoice     ::classtype() const {return NAMEDVOICE;}
 Class::classType Movable        ::classtype() const {return MOVABLE;}
 Class::classType Scalable       ::classtype() const {return SCALABLE;}
 Class::classType TextArea       ::classtype() const {return TEXTAREA;}
@@ -131,8 +134,9 @@ bool      Articulation   ::is(classType type) const {return ((type == ARTICULATI
 bool      Head           ::is(classType type) const {return (type == HEAD);}
 bool      TiedHead       ::is(classType type) const {return ((type == TIEDHEAD) || Head::is(type));}
 bool      Voice          ::is(classType type) const {return (type == VOICE);}
-bool      SubVoice       ::is(classType type) const {return ((type == SUBVOICE) || Voice::is(type));}
 bool      Staff          ::is(classType type) const {return ((type == STAFF) || Voice::is(type));}
+bool      SubVoice       ::is(classType type) const {return ((type == SUBVOICE) || Voice::is(type));}
+bool      NamedVoice     ::is(classType type) const {return ((type == NAMEDVOICE) || SubVoice::is(type));}
 bool      Movable        ::is(classType type) const {return ((type == MOVABLE) || AttachedObject::is(type));}
 bool      Scalable       ::is(classType type) const {return ((type == SCALABLE) || Movable::is(type));}
 bool      TextArea       ::is(classType type) const {return ((type == TEXTAREA) || (Scalable::is(type)));}
@@ -158,8 +162,9 @@ Accidental*    Accidental    ::clone()        const {return new Accidental(*this
 Articulation*  Articulation  ::clone()        const {return new Articulation(*this);}
 Head*          Head          ::clone()        const {return new Head(*this);}
 TiedHead*      TiedHead      ::clone()        const {return new TiedHead(*this);}
-SubVoice*      SubVoice      ::clone()        const {return new SubVoice(*this);}
 Staff*         Staff         ::clone()        const {return new Staff(*this);}
+SubVoice*      SubVoice      ::clone()        const {return new SubVoice(*this);}
+NamedVoice*    NamedVoice    ::clone()        const {return new NamedVoice(*this);}
 TextArea*      TextArea      ::clone()        const {return new TextArea(*this);}
 Annotation*    Annotation    ::clone()        const {return new Annotation(*this);}
 CustomSymbol*  CustomSymbol  ::clone()        const {return new CustomSymbol(*this);}
@@ -299,21 +304,41 @@ value_t NoteObject::set_value(value_t v)
     return v.abs();
 }
 
-void NoteObject::add_subvoice(RefPtr<SubVoice>& newvoice)
+// sub-voice list default constructor
+NoteObject::SubVoices::SubVoices() : below(end()) {}
+
+// sub-voice list copy constructor (iterator initializing)
+NoteObject::SubVoices::SubVoices(const SubVoices& subvoices) : SubVoiceList(subvoices), below(begin())
 {
-    if (!subvoice) subvoice = newvoice;
-    else
-    {
-        RefPtr<SubVoice>* sub = &subvoice;
-        while (!!*sub)
-        {
-            VoiceObjectList::iterator i = (*sub)->notes.begin();
-            while (i != (*sub)->notes.end() && !(*i)->is(NOTEOBJECT)) ++i;
-            if (i == (*sub)->notes.end()) return;
-            sub = &static_cast<NoteObject&>(**i).subvoice;
-        };
-        *sub = newvoice;
-    };
+    std::advance(below, std::distance(subvoices.begin(), SubVoiceList::const_iterator(subvoices.below)));
+}
+
+// create new sub-voice atop all sub-voices
+SubVoicePtr& NoteObject::SubVoices::add_top()
+{
+    return *insert(begin(), SubVoicePtr(new SubVoice()));
+}
+
+// create new sub-voice above this voice
+SubVoicePtr& NoteObject::SubVoices::add_above()
+{
+    return *insert(below, SubVoicePtr(new SubVoice()));
+}
+
+// create new sub-voice below this voice
+SubVoicePtr& NoteObject::SubVoices::add_below()
+{
+    SubVoicePtr& ret = *insert(below, SubVoicePtr(new SubVoice()));
+    --below;
+    return ret;
+}
+
+// create new sub-voice below all sub-voices
+SubVoicePtr& NoteObject::SubVoices::add_bottom()
+{
+    SubVoicePtr& ret = *insert(end(), SubVoicePtr(new SubVoice()));
+    if (below == end()) --below;
+    return ret;
 }
 
 // sprite calculation (Clef)
@@ -1060,6 +1085,7 @@ void Chord::engrave(EngraverState& engraver) const
     const mpx_t stem_len = (this->stem_length * head_height) / 1000;                // calculate stem length
     const mpx_t sprite_width = _round(headsprite.width * scale * this->appearance.scale);
     const double head_width = sprites.head_width(pnote.sprite) * scale * 1000.0;
+    // TODO: stem_len should respect this->stem_direction
     
     // engrave heads
     if (stem_len >= 0)    // upward stem

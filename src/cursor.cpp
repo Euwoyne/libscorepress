@@ -40,13 +40,6 @@ Cursor::IllegalObjectTypeException::IllegalObjectTypeException()
 // constructors for the "Cursor" class
 Cursor::Cursor() : _staff(NULL), _voice(NULL) {}
 Cursor::Cursor(Staff& s) : _staff(&s), _voice(&s), _main(s.notes.begin()) {}
-Cursor::Cursor(SubVoice& v) : _voice(&v), _sub(v.notes.begin())
-{
-    Voice* s = &v.get_parent();
-    while (s->is(Class::SUBVOICE))
-        s = &static_cast<SubVoice*>(s)->get_parent();
-    _staff = static_cast<Staff*>(s);
-}
 Cursor::Cursor(Staff& s, SubVoice& v) : _staff(&s), _voice(&v), _sub(v.notes.begin()) {}
 
 // increment operator; move cursor to the next note (prefix)
@@ -180,17 +173,6 @@ void Cursor::set(Staff& s)
     _voice = &s;
 }
 
-void Cursor::set(SubVoice& v)
-{
-    _sub = v.notes.begin();
-    _voice = &v;
-
-    Voice* s = &v.get_parent();
-    while (s->is(Class::SUBVOICE))
-        s = &static_cast<SubVoice*>(s)->get_parent();
-    _staff = static_cast<Staff*>(s);
-}
-
 void Cursor::set(Staff& s, SubVoice& v)
 {
     _sub = v.notes.begin();
@@ -234,13 +216,6 @@ void Cursor::remove()
 // constructors for the "const_Cursor" class
 const_Cursor::const_Cursor() : _staff(NULL), _voice(NULL) {}
 const_Cursor::const_Cursor(const Staff& s) : _staff(&s), _voice(&s), _main(s.notes.begin()) {}
-const_Cursor::const_Cursor(const SubVoice& v) : _voice(&v), _sub(v.notes.begin())
-{
-    const Voice* s = &v.get_parent();
-    while (s->is(Class::SUBVOICE))
-        s = &static_cast<const SubVoice*>(s)->get_parent();
-    _staff = static_cast<const Staff*>(s);
-}
 const_Cursor::const_Cursor(const Staff& s, const SubVoice& v) : _staff(&s), _voice(&v), _sub(v.notes.begin()) {}
 const_Cursor::const_Cursor(const Cursor& c) : _staff(c._staff), _voice(c._voice), _main(c._main), _sub(c._sub) {}
 
@@ -373,17 +348,6 @@ void const_Cursor::set(const Staff& s)
     _main = s.notes.begin();
     _staff = &s;
     _voice = &s;
-}
-
-void const_Cursor::set(const SubVoice& v)
-{
-    _sub = v.notes.begin();
-    _voice = &v;
-    
-    const Voice* s = &v.get_parent();
-    while (s->is(Class::SUBVOICE))
-        s = &static_cast<const SubVoice*>(s)->get_parent();
-    _staff = static_cast<const Staff*>(s);
 }
 
 void const_Cursor::set(const Staff& s, const SubVoice& v)

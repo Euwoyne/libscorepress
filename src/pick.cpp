@@ -30,49 +30,27 @@ inline int _round(const double d) {return static_cast<mpx_t>(d + 0.5);}
 
 
 //
-//     class Pick
-//    ============
+//     class VoiceCursor
+//    ===================
 //
-// This class is an iterator for "Score", which, for each iteration step,
-// calculates the position of the current Staff-Object.
-// This is done parallely for each voice in the score to ensure, that the
-// Objects are ordered according to their position along the score.
+// a special cursor containing position and time information about the note
+// pointed to
 //
 
 // constructor for the "VoiceCursor" class
 Pick::VoiceCursor::VoiceCursor() : const_Cursor(), pos(0), npos(0), ypos(0), time(0), ntime(0),
                                    virtual_obj(NULL), inserted(false), remaining_duration(-1) {}
 
-// comparison defining the engraving order for VoiceCursor
-bool Pick::compare(const VoiceCursorPtr& cur1, const VoiceCursorPtr& cur2)
-{
-    if ((*cur1)->is(Class::PAGEBREAK))
-        return (!(*cur2)->is(Class::PAGEBREAK) || cur2->time < cur1->time);
-    if ((*cur2)->is(Class::PAGEBREAK))
-        return false;
-    if ((*cur1)->is(Class::NEWLINE))
-        return (!(*cur2)->is(Class::NEWLINE) || cur2->time < cur1->time);
-    if ((*cur2)->is(Class::NEWLINE))
-        return false;
-    if (cur1->time != cur2->time)
-        return (cur2->time < cur1->time);
-    if (cur1->ntime != cur2->ntime)
-        return (cur2->ntime < cur1->ntime);
-    if ((*cur1)->classtype() == (*cur2)->classtype())
-        return (cur2->time < cur1->time);
-    
-    if ((*cur1)->is(Class::TIMESIG)) return true;
-    if ((*cur2)->is(Class::TIMESIG)) return false;
-    if ((*cur1)->is(Class::KEY))     return true;
-    if ((*cur2)->is(Class::KEY))     return false;
-    if ((*cur1)->is(Class::BARLINE)) return true;
-    if ((*cur2)->is(Class::BARLINE)) return false;
-    return !((*cur1)->is(Class::CLEF));
-}
+
+//     class LineLayout
+//    ==================
+//
+// collection of newlines for each voice
+//
 
 // exception class
 Pick::LineLayout::VoiceNotFoundException::VoiceNotFoundException()
-    : ScorePress::Error("Cannot find layout of requested voice.") {}
+    : ScorePress::Error("Cannot find layout of requested voice. (class Pick::LineLayout)") {}
 
 // associate a voice with its newline object
 void Pick::LineLayout::set(const Voice& voice, const Newline& layout)
@@ -115,6 +93,111 @@ void Pick::LineLayout::set_first_voice(const Voice& voice) throw(VoiceNotFoundEx
 {
     if (data.find(&voice) == data.end()) throw VoiceNotFoundException();
     first_voice = &voice;
+}
+
+//
+//     class VoiceOrder
+//    ==================
+//
+// maps voices to their index thus providing an order comparison for voices
+//
+
+// exception class
+Pick::VoiceOrder::VoiceNotFoundException::VoiceNotFoundException()
+    : ScorePress::Error("Cannot find index of parent voice. (class Pick::VoiceOrder)") {}
+
+// insert new voice above "parent"
+void Pick::VoiceOrder::add_above(const Voice& voice, const Voice& parent)
+{
+    iterator i = find(&parent);
+    if (i == end()) throw VoiceNotFoundException();
+    const unsigned int idx = i->second;
+    for (i = begin(); i != end(); ++i)
+        if (i->second >= idx)
+            ++i->second;
+    insert(value_type(&voice, idx));
+}
+
+// insert new voice above "parent"
+void Pick::VoiceOrder::add_below(const Voice& voice, const Voice& parent)
+{
+    iterator i = find(&parent);
+    if (i == end()) throw VoiceNotFoundException();
+    const unsigned int idx = i->second + 1;
+    for (i = begin(); i != end(); ++i)
+        if (i->second >= idx)
+            ++i->second;
+    insert(value_type(&voice, idx));
+}
+
+// insert new staff at the top
+void Pick::VoiceOrder::add_above(const Staff& staff)
+{
+    for (iterator i = begin(); i != end(); ++i)
+        ++i->second;
+    insert(value_type(&static_cast<const Voice&>(staff), 0));
+}
+
+// insert new staff at the bottom
+void Pick::VoiceOrder::add_below(const Staff& staff)
+{
+    insert(value_type(&static_cast<const Voice&>(staff), size()));
+}
+
+// check voice order ("v1" above "v2"?)
+bool Pick::VoiceOrder::is_above(const Voice& v1, const Voice& v2) const
+{
+    const const_iterator i1 = find(&v1);
+    const const_iterator i2 = find(&v2);
+    if (i1 == end() || i2 == end()) throw VoiceNotFoundException();
+    return i1->second < i2->second;
+}
+
+// check voice order ("v1" below "v2"?)
+bool Pick::VoiceOrder::is_below(const Voice& v1, const Voice& v2) const
+{
+    const const_iterator i1 = find(&v1);
+    const const_iterator i2 = find(&v2);
+    if (i1 == end() || i2 == end()) throw VoiceNotFoundException();
+    return i1->second > i2->second;
+}
+
+
+//
+//     class Pick
+//    ============
+//
+// This class is an iterator for "Score", which, for each iteration step,
+// calculates the position of the current Staff-Object.
+// This is done parallely for each voice in the score to ensure, that the
+// Objects are ordered according to their position along the score.
+//
+
+// comparison defining the engraving order for VoiceCursor
+bool Pick::compare(const VoiceCursorPtr& cur1, const VoiceCursorPtr& cur2)
+{
+    if ((*cur1)->is(Class::PAGEBREAK))
+        return (!(*cur2)->is(Class::PAGEBREAK) || cur2->time < cur1->time);
+    if ((*cur2)->is(Class::PAGEBREAK))
+        return false;
+    if ((*cur1)->is(Class::NEWLINE))
+        return (!(*cur2)->is(Class::NEWLINE) || cur2->time < cur1->time);
+    if ((*cur2)->is(Class::NEWLINE))
+        return false;
+    if (cur1->time != cur2->time)
+        return (cur2->time < cur1->time);
+    if (cur1->ntime != cur2->ntime)
+        return (cur2->ntime < cur1->ntime);
+    if ((*cur1)->classtype() == (*cur2)->classtype())
+        return (cur2->time < cur1->time);
+    
+    if ((*cur1)->is(Class::TIMESIG)) return true;
+    if ((*cur2)->is(Class::TIMESIG)) return false;
+    if ((*cur1)->is(Class::KEY))     return true;
+    if ((*cur2)->is(Class::KEY))     return false;
+    if ((*cur1)->is(Class::BARLINE)) return true;
+    if ((*cur2)->is(Class::BARLINE)) return false;
+    return !((*cur1)->is(Class::CLEF));
 }
 
 // return the graphical width for the number
@@ -234,35 +317,43 @@ mpx_t Pick::value_width(const value_t& value, const EngraverParam& param, const 
 // add cursors for the sub-voices of a note to the queue
 void Pick::add_subvoices(const VoiceCursor& parent, CQueue& cqueue)
 {
-    if (!parent->is(Class::NOTEOBJECT)) return;  // check if object can have voices
-    const NoteObject& obj = static_cast<const NoteObject&>(*parent);
-    if (obj.subvoice == NULL) return;           // check if object has got a sub-voice
-    
-    if (!obj.subvoice->notes.empty())   // ignore empty voices (checked by engraver)
+    if (!parent->is(Class::NOTEOBJECT)) return;                         // check if object can have voices
+    const NoteObject& obj = static_cast<const NoteObject&>(*parent);    // cast to "NoteObject"
+    bool below = false;                                                 // SubVoice position indicator
+    for (SubVoiceList::const_iterator voice = obj.subvoices.begin(); voice != obj.subvoices.end(); ++voice)
     {
-        // create cursor to the new voice's beginning
-        VoiceCursorPtr cursor = VoiceCursorPtr(new VoiceCursor());
-        cursor->set(parent.staff(), *obj.subvoice);
+        if (obj.subvoices.is_first_below(voice))
+            below = true;
         
-        // set layout
-        _layout.set(*obj.subvoice, _layout.get(parent.voice()));
-        
-        // set position
-        cursor->pos = parent.pos;   // copy horizontal position
-        cursor->ypos = parent.ypos; // copy vertical position
-        calculate_npos(*cursor);    // calculate estimated position of the following note
-        
-        // setup time-stamp
-        cursor->time = parent.time;             // set time to current timestamp
-        cursor->ntime = parent.time;            // initialize end-time
-        if ((*cursor)->is(Class::NOTEOBJECT))   // if we got a note-object
+        if (!(*voice)->notes.empty())   // ignore empty voices (checked by engraver)
         {
-            cursor->ntime += static_cast<const NoteObject&>(**cursor).value();  // increase end-time
+            // create cursor to the new voice's beginning
+            VoiceCursorPtr cursor = VoiceCursorPtr(new VoiceCursor());
+            cursor->set(parent.staff(), **voice);
+            cursor->parent = parent;
+            
+            // set layout
+            _layout.set(**voice, _layout.get(parent.voice()));
+            
+            // set position
+            cursor->pos = parent.pos;   // copy horizontal position
+            cursor->ypos = parent.ypos; // copy vertical position
+            calculate_npos(*cursor);    // calculate estimated position of the following note
+            
+            // setup time-stamp
+            cursor->time = parent.time;             // set time to current timestamp
+            cursor->ntime = parent.time;            // initialize end-time
+            if ((*cursor)->is(Class::NOTEOBJECT))   // if we got a note-object
+            {
+                cursor->ntime += static_cast<const NoteObject&>(**cursor).value();  // increase end-time
+            };
+            
+            // insert note
+            if (below) _voice_order.add_below(**voice, parent.voice());
+            else       _voice_order.add_above(**voice, parent.voice());
+            cqueue.push(cursor);            // add cursor to the queue
+            add_subvoices(*cursor, cqueue); // add the subvoices of the first note of the new voice
         };
-        
-        // insert note
-        add_subvoices(*cursor, cqueue); // add the subvoices of the first note of the new voice
-        cqueue.push(cursor);            // add cursor to the queue
     };
 }
 
@@ -273,29 +364,28 @@ void Pick::_initialize()
     {
         if (!s->notes.empty())  // if the staff contains any notes...
         {
-            VoiceCursorPtr curptr = VoiceCursorPtr(new VoiceCursor);
-            VoiceCursor& cur = *curptr;
+            VoiceCursorPtr cursor = VoiceCursorPtr(new VoiceCursor);
             
             // append main-voice
-            cur.set(*s);            // create cursor to the staff's beginning
+            cursor->set(*s);            // create cursor to the staff's beginning
             if (s->notes.front()->is(Class::NOTEOBJECT))
-                cur.pos = viewport->umtopx_h(param->barline_distance +              // set pos to barline distance
+                cursor->pos = viewport->umtopx_h(param->barline_distance +              // set pos to barline distance
                                              score->staves.front().layout.indent);  // plus the initial line indent
             else
-                cur.pos = viewport->umtopx_h(param->min_distance +                  // set pos to min-distance
+                cursor->pos = viewport->umtopx_h(param->min_distance +                  // set pos to min-distance
                                              score->staves.front().layout.indent);  // plus the initial line indent
             
             // calculate estimated position of the following note
-            calculate_npos(cur);
+            calculate_npos(*cursor);
             
             // add initial top-distance
-            cur.ypos = 0;
+            cursor->ypos = 0;
             
             // setup List time-stamp
-            cur.time = 0;                   // initialize with zero
-            if (cur->is(Class::NOTEOBJECT)) // if we got a note-object
-            {                               //    set future time-stamp
-                cur.ntime = static_cast<const NoteObject*>(&*cur)->value();
+            cursor->time = 0;                       // initialize with zero
+            if ((*cursor)->is(Class::NOTEOBJECT))   // if we got a note-object
+            {                                       //    set future time-stamp
+                cursor->ntime = static_cast<const NoteObject&>(**cursor).value();
             };
             
             // set layout
@@ -303,8 +393,9 @@ void Pick::_initialize()
             _layout.set_first_voice(*s);
             
             // insert note
-            add_subvoices(cur);     // add the subvoices of the first note of the new voice
-            cursors.push(curptr);   // add cursor to the queue
+            _voice_order.add_below(*s);
+            cursors.push(cursor);   // add cursor to the queue
+            add_subvoices(*cursor); // add the subvoices of the first note of the new voice
         };
     };
     
@@ -358,20 +449,20 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         }
         else if (engravedNote->is(Class::CHORD))    // if it was a virtually tied note
         {
-            Chord* nchord = new Chord(*static_cast<const Chord*>(&engravedNote.original()));
+            Chord* nchord = new Chord(static_cast<const Chord&>(engravedNote.original()));
             nchord->set_value(engravedNote.remaining_duration);
             nchord->attached.clear();
-            free(nchord->subvoice);
+            nchord->subvoices.clear();                      // TODO: make initial copy without subvoices!!!
             nextNote.virtual_obj = StaffObjectPtr(nchord);
             nextNote.inserted = true;
             nextNote.remaining_duration = 0;
         }
         else if (engravedNote->is(Class::REST)) // if it was a broken rest
         {
-            Rest* nrest = new Rest(*static_cast<const Rest*>(&engravedNote.original()));
+            Rest* nrest = new Rest(static_cast<const Rest&>(engravedNote.original()));
             nrest->set_value(engravedNote.remaining_duration);
             nrest->attached.clear();
-            free(nrest->subvoice);
+            nrest->subvoices.clear();                       // TODO: make initial copy without subvoices!!!
             nextNote.virtual_obj = StaffObjectPtr(nrest);
             nextNote.inserted = true;
             nextNote.remaining_duration = 0;
@@ -768,7 +859,7 @@ void Pick::cut(value_t duration)
         // create first part of virtually tied note
         const Chord& chord = static_cast<const Chord&>(**cursors.top());
         Chord* nchord = new Chord(static_cast<const Chord&>(cursors.top()->original()));
-        free(nchord->subvoice);
+        nchord->subvoices.clear();          // TODO: make initial copy without subvoices!!!
         nchord->set_value(duration);
         nchord->attached.clear();
         nchord->heads.clear();
@@ -794,7 +885,7 @@ void Pick::cut(value_t duration)
     {
         // create first part of virtually tied note
         Rest* nrest = new Rest(static_cast<const Rest&>(cursors.top()->original()));
-        free(nrest->subvoice);
+        nrest->subvoices.clear();       // TODO: make initial copy without subvoices!!!
         nrest->set_value(duration);
         nrest->attached.clear();
         cursors.top()->remaining_duration = cursors.top()->ntime - cursors.top()->time - duration;

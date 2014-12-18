@@ -867,20 +867,6 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
                     xmlFree(attr);
                 };
                 
-                // check for name entries
-                if (xmlTextReaderIsEmptyElement(parser)) break;
-                while (xmlTextReaderRead(parser) == 1)
-                {
-                    tag = xmlTextReaderConstName(parser);
-                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
-                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
-                        read_i18n(spriteset.back().name, "name", "en", true);
-                    else if (xmlStrEqual(tag, STR_CAST("flag")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
-                        break;
-                    else
-                        mythrow("Expected either <name> or </flag> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                };
-                
                 // prepare additional paths
                 if (spriteset.back().type == SpriteInfo::FLAGS_NOTE)
                 {
@@ -908,6 +894,20 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
                         spriteset.back().path = spriteset[spriteset.size() - 2].text["restbase"];
                         if (!renderer.exist(spriteset.back().path, setid)) mythrow("Unable to find path \"%s\" for \"restbase\" in <flag> (requested in file \"%s\", at line %i:%i)", spriteset.back().path, err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
+                };
+                
+                // check for name entries
+                if (xmlTextReaderIsEmptyElement(parser)) break;
+                while (xmlTextReaderRead(parser) == 1)
+                {
+                    tag = xmlTextReaderConstName(parser);
+                    if (xmlTextReaderNodeType(parser) == XML_READER_TYPE_COMMENT) continue;
+                    if (xmlStrEqual(tag, STR_CAST("name")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_ELEMENT)
+                        read_i18n(spriteset.back().name, "name", "en", true);
+                    else if (xmlStrEqual(tag, STR_CAST("flag")) == 1 && xmlTextReaderNodeType(parser) == XML_READER_TYPE_END_ELEMENT)
+                        break;
+                    else
+                        mythrow("Expected either <name> or </flag> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                 };
             }
             

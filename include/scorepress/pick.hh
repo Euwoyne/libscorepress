@@ -57,32 +57,26 @@ class SCOREPRESS_LOCAL Pick : public Logging
     class VoiceCursor : public const_Cursor
     {
      public:
-        mpx_t pos;      // horizontal position
-        mpx_t npos;     // position of the next note
-        mpx_t ypos;     // vertical position
-        value_t time;   // time-stamp of the note
-        value_t ntime;  // time-stamp after the note
+        const_Cursor   parent;              // parent note
         
-        StaffObjectPtr virtual_obj; // virtual object
-        bool inserted;              // inserted or replacing the original object?
-        value_t remaining_duration; // duration of the part not yet engraved
+        mpx_t          pos;                 // horizontal position
+        mpx_t          npos;                // position of the next note
+        mpx_t          ypos;                // vertical position
+        value_t        time;                // time-stamp of the note
+        value_t        ntime;               // time-stamp after the note
+        
+        StaffObjectPtr virtual_obj;         // virtual object
+        bool           inserted;            // inserted or replacing the original object?
+        value_t        remaining_duration;  // duration of the part not yet engraved
         
      public:
-        VoiceCursor();          // default constructor
-        bool at_end() const;    // overwrite "at_end" to return "false", if virtual
+        VoiceCursor();                              // default constructor
+        bool at_end() const;                        // overwrite "at_end" to return "false", if virtual
         
         const StaffObject& original() const;        // return the original staff-object
         const StaffObject& operator * () const;     // return the staff-object the cursor points to
         const StaffObject* operator -> () const;    // return a pointer to the staff-object
     };
-    
-    // voice-cursor smart pointer and comparison function types
-    typedef SmartPtr<VoiceCursor> VoiceCursorPtr;
-    typedef bool (*compare_t)(const VoiceCursorPtr& cur1, const VoiceCursorPtr& cur2);
-    
-    // comparison function on pointers of VoiceCursors
-    // returns true, if "cur2" should be engraved before "cur1"
-    static bool compare(const VoiceCursorPtr& cur1, const VoiceCursorPtr& cur2);
     
     // line layout (collection of newlines for each voice)
     class LineLayout
@@ -106,31 +100,59 @@ class SCOREPRESS_LOCAL Pick : public Logging
         void clear();                                                               // clear data
     };
     
+    // maps voices to their index thus providing an order comparison for voices
+    class VoiceOrder : private std::map<const Voice*, unsigned int>
+    {
+     public:
+        class VoiceNotFoundException : public ScorePress::Error     // thrown, if non-existant voice is given
+        {public: VoiceNotFoundException();};
+        
+     public:
+        void add_above(const Voice& voice, const Voice& parent);    // insert new voice above "parent"
+        void add_below(const Voice& voice, const Voice& parent);    // insert new voice above "parent"
+        void add_above(const Staff& staff);                         // insert new staff at the top
+        void add_below(const Staff& staff);                         // insert new staff at the bottom
+        
+        bool is_above(const Voice& v1, const Voice& v2) const;      // check voice order ("v1" above "v2"?)
+        bool is_below(const Voice& v1, const Voice& v2) const;      // check voice order ("v1" below "v2"?)
+    };
+    
+    // voice-cursor smart pointer and comparison function types
+    typedef SmartPtr<VoiceCursor> VoiceCursorPtr;
+    typedef bool (*compare_t)(const VoiceCursorPtr& cur1, const VoiceCursorPtr& cur2);
+    
+    // comparison function on pointers of VoiceCursors
+    // returns true, if "cur2" should be engraved before "cur1"
+    static bool compare(const VoiceCursorPtr& cur1, const VoiceCursorPtr& cur2);
+    
     // queue of voice-cursors ordered according to the compare object above
     template <class T, class Container = std::vector<T>, class Compare = std::less<typename Container::value_type> >
     class Queue : public Container
     {
      private:
+        // comparison object
         Compare comp;
         
      private:
+        // hide default back/front interface
         const T& back() const;
               T& back();
         const T& front() const;
               T& front();
         
      public:
+        // constructors
         Queue() {}
         Queue(Compare c) : comp(c) {}
         
+        // queue interface
         const T& top() const    {return Container::front();}
         void push(const T& val) {Container::push_back(val); std::push_heap(Container::begin(), Container::end(), comp);}
         void pop()              {std::pop_heap(Container::begin(), Container::end(), comp); Container::pop_back();}
-        void make_heap()        {std::make_heap(Container::begin(), Container::end(), comp);}
     };
     
+    // cursor queue type (with comparison function as defined above)
     typedef Queue<VoiceCursorPtr, std::vector<VoiceCursorPtr>, compare_t> CQueue;
-    typedef CQueue Cursors;
     
  public:
     // return the graphical width for the number
@@ -143,59 +165,65 @@ class SCOREPRESS_LOCAL Pick : public Logging
     static mpx_t value_width(const value_t& value, const EngraverParam& param, const ViewportParam& vparam);
     
  private:
-    const Score* const score;               // pointer to the score object to be engraved
+    // constant external source objects
+    const Score*         const score;       // pointer to the score object to be engraved
     const EngraverParam* const param;       // engraving-parameters (see "parameters.hh")
     const ViewportParam* const viewport;    // viewport-paramters (see "parameters.hh")
-    const Sprites* const sprites;           // pointer to the sprite-library (access to the graphical widths)
-    const int head_height;                  // default head-hight
+    const Sprites*       const sprites;     // pointer to the sprite-library (access to the graphical widths)
+    const int                  head_height; // default head-hight
     
-    Cursors cursors;                        // containing cursors to the notes next to be read of all voices
+    // cursor queues
+    CQueue cursors;                         // containing cursors to the notes next to be read of all voices
                                             // ordered descending! by "time" (the last entry is the next note)
-    Cursors next_cursors;                   // cursors for the next line (stored seperately, so that they do not
+    CQueue next_cursors;                    // cursors for the next line (stored seperately, so that they do not
                                             // get mixed up with the currently processed newlines)
     
+    // internal layout information
     const ScoreDimension* _dimension;       // dimension of the score object on the currently engraved page
-    LineLayout _layout;                     // layout information for the current line
-    LineLayout _next_layout;                // layout information for the next line (used during newline processing)
-    bool       _newline;                    // newline indicator (set during the processing of a newline block)
-    bool       _pagebreak;                  // pagebreak indicator (set during the processing of a pagebreak block)
-    value_t    _newline_time;               // timestamp of the first newline object (during newline processing)
-    mpx_t      _line_height;                // height of the line (during newline processing)
+    LineLayout            _layout;          // layout information for the current line
+    LineLayout            _next_layout;     // layout information for the next line (used during newline processing)
+    VoiceOrder            _voice_order;     // voice order information
+    bool                  _newline;         // newline indicator (set during the processing of a newline block)
+    bool                  _pagebreak;       // pagebreak indicator (set during the processing of a pagebreak block)
+    value_t               _newline_time;    // timestamp of the first newline object (during newline processing)
+    mpx_t                 _line_height;     // height of the line (during newline processing)
     
-    void add_subvoices(const VoiceCursor&); // add cursors for the sub-voices of a note to the stack
+    // helper functions
+    void add_subvoices(const VoiceCursor&);         // add cursors for the sub-voices of a note to the stack
     void add_subvoices(const VoiceCursor&, CQueue&);
-    void _initialize();                     // intialize the cursors to the score's beginning
+    void _initialize();                             // intialize the cursors to the score's beginning
     
     void calculate_npos(VoiceCursor& nextNote);                      // calculate estimated position of the following note
     void insert_next(const VoiceCursor& engravedNote);               // insert next note of current voice
     void prepare_next(const VoiceCursor& engravedNote, mpx_t width); // prepare next note to be engraved
 
  public:
+    // constructor
     Pick(const Score& score, const EngraverParam& param, const ViewportParam& viewport, const Sprites& sprites, int def_head_height);
     
     // movement methods
-    void next(mpx_t width = 0); // pop current note from stack and add next note in voice
-    void reset();               // reset cursors to the beginning of the score
+    void next(mpx_t width = 0);                         // pop current note from stack and add next note in voice
+    void reset();                                       // reset cursors to the beginning of the score
     
-    const VoiceCursor& get_cursor(const Voice& voice) const;    // get cursor of a special voice
+    const VoiceCursor& get_cursor(const Voice&) const;  // get cursor of a special voice
     
     // pick manipulation interface
-    void add_distance(mpx_t dst, value_t time);       // apply additional distance to all notes at/after a given time
-    void add_distance_after(mpx_t dst, value_t time); // apply additional distance to all notes after a given time
+    void add_distance(mpx_t dst, value_t time);         // apply additional distance to all notes at/after a given time
+    void add_distance_after(mpx_t dst, value_t time);   // apply additional distance to all notes after a given time
     
-    void insert(const StaffObject& obj);              // insert a virtual object (after the current one)
-    void insert_barline(const Barline::Style& style); // insert a virtual barline object after current object
-    bool insert_before(const StaffObject& obj);       // insert a virtual object (changes current cursor)
-    bool insert_before(const StaffObject& obj,        // insert a virtual object (into given voice)
+    void insert(const StaffObject& obj);                // insert a virtual object (after the current one)
+    void insert_barline(const Barline::Style& style);   // insert a virtual barline object after current object
+    bool insert_before(const StaffObject& obj);         // insert a virtual object (changes current cursor)
+    bool insert_before(const StaffObject& obj,          // insert a virtual object (into given voice)
                        const Voice& voice);
     
-    void cut(value_t duration);                       // cut the note into two tied notes (given duration of the first)
+    void cut(value_t duration);                         // cut the note into two tied notes (given duration of the first)
     
     // distance calculation
-    const Staff& get_staff(int idx_shift = 0) const;  // get the current staff (shifted)
-    int staff_offset(int idx_shift = 0) const;        // calculate (current) staff's offset relative to the line's position
-    int staff_offset(const Staff& staff) const;       //      (in micrometer)
-    int line_height() const;                          // calculate the complete line height (in micrometer)
+    const Staff& get_staff(int idx_shift = 0) const;    // get the current staff (shifted)
+    int staff_offset(int idx_shift = 0) const;          // calculate (current) staff's offset relative to the line's position
+    int staff_offset(const Staff& staff) const;         //      (in micrometer)
+    int line_height() const;                            // calculate the complete line height (in micrometer)
     
     // inline status reporter
     const VoiceCursor&    get_cursor()                const; // return current cursor (it is ensured, that this cursor is valid
@@ -212,9 +240,13 @@ class SCOREPRESS_LOCAL Pick : public Logging
     const LineLayout&     get_layout()                const; // return the layout information for the current line
     const Newline&        get_layout(const Voice& v)  const; // return the layout of the given voice
     const Score&          get_score()                 const; // return the score object which is to be engraved
+    
+    // voice order interface
+    bool is_above(const Voice& v1, const Voice& v2) const;   // check voice order ("v1" above "v2"?)
+    bool is_below(const Voice& v1, const Voice& v2) const;   // check voice order ("v1" below "v2"?)
 };
 
-// inline method implementations
+// inline method implementations (Voice Cursor)
 inline       bool         Pick::VoiceCursor::at_end() const
             {return (!!virtual_obj ? false : const_Cursor::at_end());}
 inline const StaffObject& Pick::VoiceCursor::original() const
@@ -224,9 +256,11 @@ inline const StaffObject& Pick::VoiceCursor::operator * () const
 inline const StaffObject* Pick::VoiceCursor::operator -> () const
             {return (!!virtual_obj ? &*virtual_obj : const_Cursor::operator ->());}
 
+// inline method implementations (Line layout)
 inline void Pick::LineLayout::swap(LineLayout& a) {std::swap(data, a.data); std::swap(first_voice, a.first_voice);}
 inline void Pick::LineLayout::clear()             {data.clear();}
 
+// inline method implementations (Pick)
 inline void Pick::add_subvoices(const VoiceCursor& cursor) {add_subvoices(cursor, cursors);}
 
 inline const Pick::VoiceCursor& Pick::get_cursor()                const {return *cursors.top();}
@@ -240,6 +274,9 @@ inline       mpx_t              Pick::get_right_margin()          const {return 
 inline const Pick::LineLayout&  Pick::get_layout()                const {return _layout;}
 inline const Newline&           Pick::get_layout(const Voice& v)  const {return _layout.get(v);}
 inline const Score&             Pick::get_score()                 const {return *score;}
+
+inline bool Pick::is_above(const Voice& v1, const Voice& v2) const {return _voice_order.is_above(v1, v2);}
+inline bool Pick::is_below(const Voice& v1, const Voice& v2) const {return _voice_order.is_below(v1, v2);}
 
 } // end namespace
 
