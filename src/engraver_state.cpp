@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -127,7 +127,7 @@ void EngraverState::engrave()
     if (pvoice->end_time > end_time)   end_time = pvoice->end_time;
     
     // set staff-style and head-height
-    style = (!!cursor.staff().style) ? &*cursor.staff().style : &default_style; // set staff-style
+    style = (!cursor.staff().style) ? &default_style : &*cursor.staff().style;  // set staff-style
     
     // cut object on barline (if not necessary, method simply does nothing; no need to double check)
     pick.cut(pvoice->context.restbar(cursor.time));
@@ -315,14 +315,25 @@ void EngraverState::apply_offsets()
         };
     };
 }
+/*
+inline static bool is_below(const Position<mpx_t>& p, const Position<mpx_t>& p1, const Position<mpx_t>& p2, const mpx_t e)
+{   // NOTE: it is mandatory, that p2.x > p1.x
+    return ((p.y - p1.y) * (p2.x - p1.x) < (p.x - p1.x) * (p2.y - p1.y) - e);
+}
 
+inline static bool is_above(const Position<mpx_t>& p, const Position<mpx_t>& p1, const Position<mpx_t>& p2, const mpx_t e)
+{   // NOTE: it is mandatory, that p2.x > p1.x
+    return ((p.y - p1.y) * (p2.x - p1.x) > (p.x - p1.x) * (p2.y - p1.y) + e);
+}
+*/
 // engrave all stems within beams in the current line
 void EngraverState::engrave_stems()
 {
-    bool got_beam = false;  // indicating notes with beam
-    mpx_t  x1(0), y1(0);    // beam coordinates
-    double slope(0.0);      // beam slope
-    double top(0.0);        // new stem top position
+    bool          got_beam(false);  // indicating notes with beam
+    mpx_t         x1(0), y1(0);     // beam coordinates
+    double        slope(0.0);       // beam slope
+    double        top(0.0);         // new stem top position
+    Plate::NoteIt beam_it;          // beam group iterator (first on-plate note)
     
     // iterate the voices
     for (pvoice = pline->voices.begin(); pvoice != pline->voices.end(); ++pvoice)
@@ -331,83 +342,157 @@ void EngraverState::engrave_stems()
         style = &*pvoice->begin.staff().style;
         if (!style) style = &default_style;
         
-        // iterate the voice
-        std::list<Plate::pNote>::iterator beam_it;      // beam group iterator
-        
-        // correct stem length for notes with beam (I)
+        //  I. correct stem length for notes with beam (I)
+        // ------------------------------------------------
         got_beam = false;
         for (pnote = pvoice->notes.begin(); pnote != pvoice->notes.end(); ++pnote)
         {
             pnote->beam_begin = pvoice->notes.end();    // reset beam_begin
             
-            if (got_beam)   // while on beamed note
+            // while on beamed note with stem
+            if (got_beam && pnote->stem_info)
             {
                 // set begin iterator
                 pnote->beam_begin = beam_it;
+                
+                // correct stems within the beam
+                top = y1 + (pnote->stem.x - x1) * slope;
+                if ((pnote->stem.base > top) != (pnote->stem.base > pnote->stem.top))
+                {
+                    // correct stem position
+                    const SpriteInfo& headsprite = (*sprites)[pnote->sprite];       // get sprite-info
+                    const double scale = pvoice->head_height / (sprites->head_height(pnote->sprite) * 1000.0);
+                    const unsigned int app_scale = pnote->get_note().get_visible().appearance.scale;
+                    const mpx_t stem_width = viewport->umtopx_h(style->stem_width); // get stem width
+                    const mpx_t sprite_width = _round(headsprite.width * scale * app_scale);
+                    Position<mpx_t> stem;                                           // stem position
+                    stem.x = _round(headsprite.get_real("stem.x") * scale * app_scale);
+                    stem.y = _round(headsprite.get_real("stem.y") * scale * app_scale);
+                    
+                    if (pnote->stem.base > top)     // an upward stem is right of the chord
+                    {
+                        pnote->stem.x = pnote->absolutePos.front().x        // base position
+                            + stem.x                                        // offset for the sprite
+                                                                            // offset for the stem's width
+                            - _round(pnote->stem_info->cluster ? 0 : stem_width * scale / 2);
+                        
+                        pnote->stem.top = _round(y1 + (pnote->stem.x - x1) * slope);
+                        pnote->stem.base = pnote->stem_info->base_pos + (pnote->stem_info->base_side ?
+                            _round(((headsprite.height * scale * app_scale - stem.y) * pnote->stem_info->base_scale) / 1000.0) :
+                            stem.y);
+                    };
+                    
+                    if (pnote->stem.base < top)     // downward stems are placed left of the chord
+                    {
+                        pnote->stem.x = pnote->absolutePos.front().x        // base position
+                         + _round(pnote->stem_info->cluster ? stem.x : sprite_width - stem.x + stem_width * scale / 2);
+                        
+                        pnote->stem.top = _round(y1 + (pnote->stem.x - x1) * slope);
+                        pnote->stem.base = pnote->stem_info->top_pos + (pnote->stem_info->top_side ?
+                            stem.y :
+                            _round(((headsprite.height * scale * app_scale - stem.y) * pnote->stem_info->top_scale) / 1000.0));
+                    };
+                    
+                    pnote->gphBox.extend(Position<mpx_t>(pnote->stem.x, pnote->stem.top));
+                }
+                else pnote->stem.top = _round(top);
                 
                 // on the end of the beam
                 if (beam_it->beam[VALUE_BASE - 3]->end == &*pnote)
                 {
                     got_beam = false;   // reset beam indicator
-                }
-                else if (pnote->stem_info)  // correct stems within the beam
-                {
-                    top = y1 + (pnote->stem.x - x1) * slope;
-                    if ((pnote->stem.base > top) != (pnote->stem.base > pnote->stem.top))
-                    {
-                        // correct stem position
-                        const SpriteInfo& headsprite = (*sprites)[pnote->sprite];       // get sprite-info
-                        const double scale = pvoice->head_height / (sprites->head_height(pnote->sprite) * 1000.0);
-                        const unsigned int app_scale = pnote->get_note().get_visible().appearance.scale;
-                        const mpx_t stem_width = viewport->umtopx_h(style->stem_width); // get stem width
-                        const mpx_t sprite_width = _round(headsprite.width * scale * app_scale);
-                        Position<mpx_t> stem;                                           // stem position
-                        stem.x = _round(headsprite.get_real("stem.x") * scale * app_scale);
-                        stem.y = _round(headsprite.get_real("stem.y") * scale * app_scale);
-                        
-                        if (pnote->stem.base > top)     // an upward stem is right of the chord
-                        {
-                            pnote->stem.x = pnote->absolutePos.front().x        // base position
-                                + stem.x                                        // offset for the sprite
-                                                                                // offset for the stem's width
-                                - _round(pnote->stem_info->cluster ? 0 : stem_width * scale / 2);
-                            
-                            pnote->stem.top = _round(y1 + (pnote->stem.x - x1) * slope);
-                            pnote->stem.base = pnote->stem_info->base_pos + (pnote->stem_info->base_side ?
-                                _round(((headsprite.height * scale * app_scale - stem.y) * pnote->stem_info->base_scale) / 1000.0) :
-                                stem.y);
-                        };
-                        
-                        if (pnote->stem.base < top)     // downward stems are placed left of the chord
-                        {
-                            pnote->stem.x = pnote->absolutePos.front().x        // base position
-                             + _round(pnote->stem_info->cluster ? stem.x : sprite_width - stem.x + stem_width * scale / 2);
-                            
-                            pnote->stem.top = _round(y1 + (pnote->stem.x - x1) * slope);
-                            pnote->stem.base = pnote->stem_info->top_pos + (pnote->stem_info->top_side ?
-                                stem.y :
-                                _round(((headsprite.height * scale * app_scale - stem.y) * pnote->stem_info->top_scale) / 1000.0));
-                        };
-                        
-                        pnote->gphBox.extend(Position<mpx_t>(pnote->stem.x, pnote->stem.top));
-                    }
-                    else pnote->stem.top = _round(top);
                 };
             };
             
-            if (!got_beam && pnote->beam[VALUE_BASE - 3]) // on beam's begin
+            // on beam's begin
+            if (!got_beam && pnote->beam[VALUE_BASE - 3])
             {
+                // prepare beam data
                 pnote->beam_begin = pnote;  // set on-plate begin iterator
                 beam_it = pnote;            // set begin iterator
                 got_beam = true;            // set beam indicator
                 x1 = pnote->stem.x;         // set coordinates
-                y1 = pnote->stem.top;       // set slope
-                slope  = pnote->beam[VALUE_BASE - 3]->end->stem.top - y1;
-                slope /= pnote->beam[VALUE_BASE - 3]->end->stem.x - x1;
+                y1 = pnote->stem.top;
+                
+                // calculate correct slope
+                const mpx_t x2 = pnote->beam[VALUE_BASE - 3]->end->stem.x;
+                const mpx_t y2 = pnote->beam[VALUE_BASE - 3]->end->stem.top;
+                const Chord& chord = static_cast<const Chord&>(*pnote->note);
+                
+                switch (chord.stem.slope_type)
+                {
+                case Chord::SLOPE_CUSTOM:   // set customized slope
+                    slope = -(chord.stem.slope / 1000.0) * pvoice->head_height;
+                    break;
+                    
+                case Chord::SLOPE_STEM:     // set current slope
+                    slope = y2 - y1;
+                    break;
+                    
+                case Chord::SLOPE_BOUNDED:  // bound current slope by "chord.stem.slope"
+                    if (y2 - y1 < 0)
+                    {
+                        slope = (-chord.stem.slope / 1000.0) * pvoice->head_height;
+                        if (slope < y2 - y1)
+                            slope = y2 - y1;
+                    }
+                    else
+                    {
+                        slope = (chord.stem.slope / 1000.0) * pvoice->head_height;
+                        if (slope > y2 - y1)
+                            slope = y2 - y1;
+                    };
+                    break;
+                    
+                case Chord::SLOPE_AUTO:     // bound current slope by "style.beam_slope_max"
+                    if (y2 - y1 < 0)
+                    {
+                        slope = -(style->beam_slope_max / 1000.0) * pvoice->head_height;
+                        if (slope > y2 - y1)
+                            slope = y2 - y1;
+                    }
+                    else
+                    {
+                        slope = (style->beam_slope_max / 1000.0) * pvoice->head_height;
+                        if (slope < y2 - y1)
+                            slope = y2 - y1;
+                    };
+                    break;
+                };
+                
+                // respect "style.stem_length_min", if stem-length is not customized
+                if (chord.stem.type != Chord::STEM_CUSTOM)
+                {
+                    // adjust front stem length, if the last-notes stem-direction would be switched
+                    const double min_stemlen = (style->stem_length_min / 1000.0) * pvoice->head_height;
+                    const double end_stemlen = y1 + slope - pnote->beam[VALUE_BASE - 3]->end->stem_info->base_pos;
+                    if (end_stemlen < min_stemlen && !(pnote->beam[VALUE_BASE - 3]->end->stem.is_up()))
+                    {
+                        y1 = pnote->stem.top += _round( min_stemlen - end_stemlen);
+                    }
+                    else if (end_stemlen > -min_stemlen && (pnote->beam[VALUE_BASE - 3]->end->stem.is_up()))
+                    {
+                        y1 = pnote->stem.top += _round(-min_stemlen - end_stemlen);
+                    };
+                    
+                    // check front stem length
+                    if (y1 - pnote->stem_info->base_pos < min_stemlen && !pnote->stem.is_up())
+                    {
+                        y1 = pnote->stem.top = _round(pnote->stem_info->base_pos - min_stemlen);
+                    }
+                    else if (y1 - pnote->stem_info->base_pos > -min_stemlen && pnote->stem.is_up())
+                    {
+                        y1 = pnote->stem.top = _round(pnote->stem_info->base_pos + min_stemlen);
+                    };
+                };
+                
+                // calculate real slope
+                slope /= x2 - x1;
             };
         };
         
-        // engrave beams (second pass)
+        //  II. engrave beams (second pass)
+        // ---------------------------------
         BeamInfo beam_info(*pvoice);
         value_t time(pvoice->time);
         beam_it = pvoice->notes.begin();
@@ -418,13 +503,15 @@ void EngraverState::engrave_stems()
                 time += static_cast<const NoteObject&>(pnote->get_note()).value();
                 if (pnote->get_note().is(Class::CHORD))
                 {
+                    // NOTE: this deletes the BeamInfo from the Plate
                     beam_info.apply2(static_cast<const Chord&>(pnote->get_note()), pnote, time, param->beam_group);
                 };
             };
         };
         beam_info.finish();
         
-        // correct stem length for notes with beam (II)
+        //  III. correct stem length for notes with beam (II)
+        // ---------------------------------------------------
         got_beam = false;
         for (pnote = pvoice->notes.begin(); pnote != pvoice->notes.end(); ++pnote)
         {
@@ -441,11 +528,13 @@ void EngraverState::engrave_stems()
                 // update stem lengths by beam-offset
                 if (pnote->stem.base < pnote->stem.top)
                     pnote->stem.top = _round(pnote->stem.top + pvoice->head_height *
+                        static_cast<double>
                         (((beam_it->stem.base > beam_it->stem.top) ? style->beam_height : 0)
                            + pnote->stem.beam_off * (style->beam_height + style->beam_distance))
                         / 1000.0);
                 else
                     pnote->stem.top = _round(pnote->stem.top - pvoice->head_height *
+                        static_cast<double>
                         (((beam_it->stem.base < beam_it->stem.top) ? style->beam_height : 0)
                            + pnote->stem.beam_off * (style->beam_height + style->beam_distance))
                         / 1000.0);
@@ -593,7 +682,6 @@ mpx_t curlybrace_width(const double s,      // scale [mpx/svg]
         return _round(s * (w_0 - m_hi * h_max) + m_hi * h);
     }
     // h \in [h_min, h_max]
-    else
     {
         // W(H) = w_0
         return _round(s * w_0);
@@ -744,7 +832,7 @@ struct SCOREPRESS_LOCAL DistanceData
 {
     mutable mpx_t begin;    // empty space in front of the note
             mpx_t pos;      // position of the note
-    mutable mpx_t end;      // end of the graphical objec (start of the next empty space)
+    mutable mpx_t end;      // end of the graphical object (start of the next empty space)
     mutable mpx_t dist;     // distance available for scaling
     
     mutable std::string tag;
@@ -829,7 +917,8 @@ void EngraverState::justify_line()
         while (git->end > it->begin && git != gphs.begin()) --git;
         for (; git != gphs.end(); ++git)
         {
-            if (git->end <= it->begin) ;        // case:   ,,|           | |
+            if (git->end <= it->begin)          // case:   ,,|           | |
+            	continue;
             else if (git->pos <= it->begin)
             {
                 if (git->end <= it->pos)        // case:    ,|,          | |
@@ -938,7 +1027,7 @@ void EngraverState::break_ties(      TieInfoChord&  tieinfo,        // tie infor
 
 // constructor (will erase "score" from the "pageset" and prepare for engraving)
 EngraverState::EngraverState(const Score&         _score,
-                             const unsigned int   _start_page,
+                             const size_t         _start_page,
                                    Pageset&       _pageset,
                              const Sprites&       _sprites,
                              const unsigned int   _head_height,
@@ -1022,7 +1111,7 @@ bool EngraverState::engrave_next()
         if (pick.get_cursor().is_main())
         {
             Pick::VoiceCursor vcur(pick.get_cursor());
-            const Newline& layout = static_cast<const Newline&>(*vcur);
+            const LayoutParam& layout = static_cast<const Newline&>(*vcur).layout;
             const Plate::pLine::StaffContextMap::const_iterator ctx = pline->staffctx.find(&vcur.staff());
             if (vcur.has_next())                            ++vcur;
             if (!vcur.at_end() && vcur->is(Class::CLEF))    ++vcur;

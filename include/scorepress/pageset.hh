@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -72,8 +72,8 @@ class SCOREPRESS_LOCAL Pageset
     {
      public:
         Position<mpx_t> position;
-        mpx_t width;
-        mpx_t height;
+        mpx_t           width;
+        mpx_t           height;
     
      public:
         ScoreDimension();
@@ -85,14 +85,13 @@ class SCOREPRESS_LOCAL Pageset
     class PlateInfo
     {
      public:
-        unsigned int pageno;                // pagenumber relative to the score-object's beginning
-        unsigned int start_page;            // start-page of the score (see Document::Score)
-        const Score* score;                 // pointer to the score object
+        size_t               pageno;        // pagenumber relative to the score-object's beginning
+        size_t               start_page;    // start-page of the score (see Document::Score)
+        const Score*         score;         // pointer to the score object
         const ScoreDimension dimension;     // score dimension
-        const RefPtr<Plate> plate;          // plate object for the given page of the given score
+        const RefPtr<Plate>  plate;         // plate object for the given page of the given score
         
-        PlateInfo(const unsigned int pageno, const unsigned int start_page, const Score& score, const ScoreDimension& dim); // constructor
-        PlateInfo() __attribute__((noreturn)) {throw MissingDefaultConstructor("Pageset::PlateInfo");}
+        PlateInfo(const size_t pageno, const size_t start_page, const Score& score, const ScoreDimension& dim); // constructor
     };
     
     // all rendering information for one page
@@ -106,7 +105,7 @@ class SCOREPRESS_LOCAL Pageset
         typedef Plate::pNote::AttachableList         AttachableList;
         
      public:
-        unsigned int   pageno;          // pagenumber (within the document)
+        size_t         pageno;          // pagenumber (within the document)
         PlateList      plates;          // plates for each visible score-object
         AttachableList attached;        // independent movable objects on the page
         
@@ -119,8 +118,7 @@ class SCOREPRESS_LOCAL Pageset
         const_Iterator get_plate_by_pos(const Position<mpx_t>& pos) const;
         
         // constructor
-        pPage(unsigned int pno);
-        pPage() __attribute__((noreturn)) {throw MissingDefaultConstructor("Pageset::pPage");}
+        pPage(size_t pno);
     };
     
     // typedefs
@@ -149,8 +147,8 @@ class SCOREPRESS_LOCAL Pageset
     Iterator add_page();
     
     // get the page with the given index
-    Iterator       get_page(unsigned int pageno);       // (creates non-existing pages)
-    const_Iterator get_page(unsigned int pageno) const; // (on not existing page, returns pages.end())
+    Iterator       get_page(size_t pageno);             // (creates non-existing pages)
+    const_Iterator get_page(size_t pageno) const;       // (on not existing page, returns pages.end())
     Iterator       get_first_page(const Score& score);  // get the first page of the given score
     
     // remove empty pages from the end of the pageset
@@ -162,7 +160,7 @@ inline Pageset::PageDimension::PageDimension() : width(0), height(0) {margin.top
 inline Pageset::PageDimension::PageDimension(const Document::PageDimension& dim, const ViewportParam& viewport) {set(dim, viewport);}
 inline Pageset::ScoreDimension::ScoreDimension() : width(0), height(0) {}
 inline Pageset::ScoreDimension::ScoreDimension(mpx_t x, mpx_t y, mpx_t w, mpx_t h) : position(x, y), width(w), height(h) {}
-inline Pageset::pPage::pPage(unsigned int pno) : pageno(pno) {}
+inline Pageset::pPage::pPage(size_t pno) : pageno(pno) {}
 
 inline void Pageset::clear() {pages.clear();}
 

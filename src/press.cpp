@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -149,7 +149,7 @@ void Press::render_staff(Renderer& renderer, const Plate& plate, const Position<
                 scale(state.viewport.umtopx_h(
                     (pvoice->begin.staff().style) ?
                         pvoice->begin.staff().style->line_thickness :
-                        default_style.line_thickness
+                        default_style->line_thickness
                 ) / 1000.0));
             
             // render the staff lines
@@ -182,7 +182,7 @@ void Press::render_staff(Renderer& renderer, const Plate& plate, const Position<
         staves.clear(); // erase remembered staves
         
         // render the front line
-        renderer.set_line_width(scale(state.viewport.umtopx_h(default_style.bar_thickness)) / 1000.0);
+        renderer.set_line_width(scale(state.viewport.umtopx_h(default_style->bar_thickness)) / 1000.0);
         renderer.move_to((offset.x + scale(line->basePos.x)) / 1000.0,
                          (offset.y + scale(min_pos)) / 1000.0);
         renderer.line_to((offset.x + scale(line->basePos.x)) / 1000.0,
@@ -215,7 +215,7 @@ void Press::draw_cross(Renderer& renderer, const Position<mpx_t>& pos, const Pos
 
 // constructor (providing viewport parameters)
 Press::Press(const StyleParam& style, const ViewportParam& viewport) : state(parameters, style, viewport),
-                                                                       default_style(style) {}
+                                                                       default_style(&style) {}
 
 // draw the boundary box of a graphical object
 void Press::draw_boundaries(Renderer& renderer, const Plate::GphBox& gphBox, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException)
@@ -286,7 +286,7 @@ void Press::render(Renderer& renderer, const Plate& plate, const Position<mpx_t>
             ++v;
             
             // setup style parameters
-            state.set_style((!!pvoice->begin.staff().style) ? *pvoice->begin.staff().style : default_style);
+            state.set_style((!!pvoice->begin.staff().style) ? *pvoice->begin.staff().style : *default_style);
             state.head_height = state.viewport.umtopx_v(pvoice->begin.staff().head_height);
             state.stem_width  = state.viewport.umtopx_h(state.style->stem_width);
             
@@ -302,7 +302,7 @@ void Press::render(Renderer& renderer, const Plate& plate, const Position<mpx_t>
     };
     
     // reset style
-    state.set_style(default_style);
+    state.set_style(*default_style);
 }
 
 // render a page through the given renderer
@@ -335,7 +335,7 @@ void Press::render(Renderer& renderer, const Plate::pAttachable& object, const S
     
     // setup state
     state.offset = offset;
-    state.set_style((!!staff.style) ? *staff.style : default_style);
+    state.set_style((!!staff.style) ? *staff.style : *default_style);
     state.head_height = state.viewport.umtopx_v(staff.head_height);
     state.stem_width  = state.viewport.umtopx_h(state.style->stem_width);
     
@@ -343,7 +343,6 @@ void Press::render(Renderer& renderer, const Plate::pAttachable& object, const S
     object.object->render(renderer, object, state);
 }
 
-#include <iostream>
 // render page decoration
 void Press::render_decor(Renderer& renderer, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException)
 {
@@ -402,7 +401,6 @@ void Press::render_decor(Renderer& renderer, const Pageset& pageset, const Posit
     }
 }
 
-
 // render a cursor through the given renderer
 void Press::render(Renderer& renderer, const CursorBase& cursor, const Position<mpx_t> offset) throw (InvalidRendererException, UserCursor::NotValidException)
 {
@@ -410,55 +408,3 @@ void Press::render(Renderer& renderer, const CursorBase& cursor, const Position<
     state.offset = offset;
     cursor.render(renderer, state);
 }
-
-/*
-// render a cursor through the given renderer
-void Press::render(Renderer& renderer, const UserCursor& cursor, const Position<mpx_t> offset) throw (InvalidRendererException, UserCursor::NotValidException)
-{
-    // get horizontal position
-    mpx_t x = cursor.graphical_x();
-    x -= _round(state.viewport.umtopx_h(parameters.cursor_distance));
-    
-    // get vertical position and height
-    mpx_t y = cursor.graphical_y(state.viewport);
-    mpx_t h = cursor.graphical_height(state.viewport);
-    
-    // render the cursor
-    if (renderer.has_rect_invert())
-    {
-        renderer.rect_invert(
-            (scale(x) + offset.x) / 1000.0 - parameters.cursor_width / 2000.0, (scale(y) + offset.y) / 1000.0,
-            (scale(x) + offset.x) / 1000.0 + parameters.cursor_width / 2000.0, (scale(y + h) + offset.y) / 1000.0);
-    }
-    else
-    {
-        renderer.set_line_width(parameters.cursor_width / 1000.0);
-        renderer.move_to((scale(x) + offset.x) / 1000.0, (scale(y) + offset.y) / 1000.0);
-        renderer.line_to((scale(x) + offset.x) / 1000.0, (scale(y + h) + offset.y) / 1000.0);
-        renderer.stroke();
-    };
-}
-
-void Press::render(Renderer& renderer, const ObjectCursor& cursor, const Position<mpx_t> offset, const Position<mpx_t>& move_offset) throw (InvalidRendererException)
-{
-    const Plate::pAttachable& object = cursor.get_pobject();
-    const Plate::pNote&       note   = cursor.get_parent();
-    
-    state.offset = offset + move_offset;
-    cursor.get_object().render_decor(renderer, object, state);
-    
-    const Position<mpx_t> origin((move_offset.x + scale(object.gphBox.pos.x + object.gphBox.right())  / 2 < scale(note.gphBox.pos.x)) ? object.gphBox.right()  : object.gphBox.pos.x,
-                                 (move_offset.y + scale(object.gphBox.pos.y + object.gphBox.bottom()) / 2 < scale(note.gphBox.pos.y)) ? object.gphBox.bottom() : object.gphBox.pos.y);
-    
-    renderer.set_line_width(1.0);
-    renderer.move_to((scale(note.gphBox.pos.x) + offset.x)       / 1000.0, (scale(note.gphBox.pos.y) + offset.y)       / 1000.0);
-    renderer.line_to((scale(origin.x)          + state.offset.x) / 1000.0, (scale(origin.y)          + state.offset.y) / 1000.0);
-    renderer.stroke();
-    renderer.move_to((scale(origin.x)          + state.offset.x) / 1000.0, (scale(origin.y)          + state.offset.y) / 1000.0);
-    renderer.line_to((scale(origin.x + 3)      + state.offset.x) / 1000.0, (scale(origin.y)          + state.offset.y) / 1000.0);
-    renderer.line_to((scale(origin.x + 3)      + state.offset.x) / 1000.0, (scale(origin.y + 3)      + state.offset.y) / 1000.0);
-    renderer.line_to((scale(origin.x)          + state.offset.x) / 1000.0, (scale(origin.y + 3)      + state.offset.y) / 1000.0);
-    renderer.fill();
-}
-*/
-

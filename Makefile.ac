@@ -468,6 +468,7 @@ install-so: ${objdir} ${objdir}/${sofile} ${DESTDIR}${libdir}
 	$(NORMAL_INSTALL)
 	@printf ${STR_install} "${sofile}"
 	@${INSTALL_PROGRAM} ${objdir}/${sofile} ${DESTDIR}${libdir}
+	@-${LN} -f ${DESTDIR}${libdir}/${sofile} ${DESTDIR}${libdir}/${soname}
 	@-${LN} -f ${DESTDIR}${libdir}/${sofile} ${DESTDIR}${libdir}/${sobase}
 	$(POST_INSTALL)
 	@${LDCONFIG} -n ${DESTDIR}${libdir}
@@ -962,194 +963,194 @@ ${objdir}/autoconf_check.o:		${deps_autoconf_check_cpp}
 								${CXX} -c ${cppsrc}/autoconf_check.cpp -o ${objdir}/autoconf_check.o ${FLAGS}
 ${objdir}/autoconf_check.s.o:	${deps_autoconf_check_cpp}
 								printf ${STR_compile} 'autoconf_check.cpp'
-								${CXX} ${SOFLAGS} -c ${cppsrc}/autoconf_check.cpp -o ${objdir}/autoconf_check.s.o ${FLAGS}
+								${CXX} -c ${cppsrc}/autoconf_check.cpp -o ${objdir}/autoconf_check.s.o ${FLAGS_SO}
 
 ${objdir}/engine.o:			${deps_engine_cpp}
 							printf ${STR_compile} 'engine.cpp'
 							${CXX} -c ${cppsrc}/engine.cpp -o ${objdir}/engine.o ${FLAGS}
 ${objdir}/engine.s.o:		${deps_engine_cpp}
 							printf ${STR_compile} 'engine.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/engine.cpp -o ${objdir}/engine.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/engine.cpp -o ${objdir}/engine.s.o ${FLAGS_SO}
 
 ${objdir}/press.o:			${deps_press_cpp}
 							printf ${STR_compile} 'press.cpp'
 							${CXX} -c ${cppsrc}/press.cpp -o ${objdir}/press.o ${FLAGS}
 ${objdir}/press.s.o:		${deps_press_cpp}
 							printf ${STR_compile} 'press.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/press.cpp -o ${objdir}/press.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/press.cpp -o ${objdir}/press.s.o ${FLAGS_SO}
 
 ${objdir}/press_state.o:	${deps_press_state_cpp}
 							printf ${STR_compile} 'press_state.cpp'
 							${CXX} -c ${cppsrc}/press_state.cpp -o ${objdir}/press_state.o ${FLAGS}
 ${objdir}/press_state.s.o:	${deps_press_state_cpp}
 							printf ${STR_compile} 'press_state.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/press_state.cpp -o ${objdir}/press_state.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/press_state.cpp -o ${objdir}/press_state.s.o ${FLAGS_SO}
 
 ${objdir}/engraver.o:		${deps_engraver_cpp}
 							printf ${STR_compile} 'engraver.cpp'
 							${CXX} -c ${cppsrc}/engraver.cpp -o ${objdir}/engraver.o ${FLAGS}
 ${objdir}/engraver.s.o:		${deps_engraver_cpp}
 							printf ${STR_compile} 'engraver.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/engraver.cpp -o ${objdir}/engraver.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/engraver.cpp -o ${objdir}/engraver.s.o ${FLAGS_SO}
 
 ${objdir}/engraver_state.o:		${deps_engraver_state_cpp}
 								printf ${STR_compile} 'engraver_state.cpp'
 								${CXX} -c ${cppsrc}/engraver_state.cpp -o ${objdir}/engraver_state.o ${FLAGS}
 ${objdir}/engraver_state.s.o:	${deps_engraver_state_cpp}
 								printf ${STR_compile} 'engraver_state.cpp'
-								${CXX} ${SOFLAGS} -c ${cppsrc}/engraver_state.cpp -o ${objdir}/engraver_state.s.o ${FLAGS}
+								${CXX} -c ${cppsrc}/engraver_state.cpp -o ${objdir}/engraver_state.s.o ${FLAGS_SO}
 
 ${objdir}/engrave_info.o:		${deps_engrave_info_cpp}
 								printf ${STR_compile} 'engrave_info.cpp'
 								${CXX} -c ${cppsrc}/engrave_info.cpp -o ${objdir}/engrave_info.o ${FLAGS}
 ${objdir}/engrave_info.s.o:		${deps_engrave_info_cpp}
 								printf ${STR_compile} 'engrave_info.cpp'
-								${CXX} ${SOFLAGS} -c ${cppsrc}/engrave_info.cpp -o ${objdir}/engrave_info.s.o ${FLAGS}
+								${CXX} -c ${cppsrc}/engrave_info.cpp -o ${objdir}/engrave_info.s.o ${FLAGS_SO}
 
 ${objdir}/reengrave_info.o:		${deps_reengrave_info_cpp}
 								printf ${STR_compile} 'reengrave_info.cpp'
 								${CXX} -c ${cppsrc}/reengrave_info.cpp -o ${objdir}/reengrave_info.o ${FLAGS}
 ${objdir}/reengrave_info.s.o:	${deps_reengrave_info_cpp}
 								printf ${STR_compile} 'reengrave_info.cpp'
-								${CXX} ${SOFLAGS} -c ${cppsrc}/reengrave_info.cpp -o ${objdir}/reengrave_info.s.o ${FLAGS}
+								${CXX} -c ${cppsrc}/reengrave_info.cpp -o ${objdir}/reengrave_info.s.o ${FLAGS_SO}
 
 ${objdir}/context.o:		${deps_context_cpp}
 							printf ${STR_compile} 'context.cpp'
 							${CXX} -c ${cppsrc}/context.cpp -o ${objdir}/context.o ${FLAGS}
 ${objdir}/context.s.o:		${deps_context_cpp}
 							printf ${STR_compile} 'context.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/context.cpp -o ${objdir}/context.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/context.cpp -o ${objdir}/context.s.o ${FLAGS_SO}
 
 ${objdir}/pageset.o:		${deps_pageset_cpp}
 							printf ${STR_compile} 'pageset.cpp'
 							${CXX} -c ${cppsrc}/pageset.cpp -o ${objdir}/pageset.o ${FLAGS}
 ${objdir}/pageset.s.o:		${deps_pageset_cpp}
 							printf ${STR_compile} 'pageset.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/pageset.cpp -o ${objdir}/pageset.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/pageset.cpp -o ${objdir}/pageset.s.o ${FLAGS_SO}
 
 ${objdir}/plate.o:			${deps_plate_cpp}
 							printf ${STR_compile} 'plate.cpp'
 							${CXX} -c ${cppsrc}/plate.cpp -o ${objdir}/plate.o ${FLAGS}
 ${objdir}/plate.s.o:		${deps_plate_cpp}
 							printf ${STR_compile} 'plate.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/plate.cpp -o ${objdir}/plate.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/plate.cpp -o ${objdir}/plate.s.o ${FLAGS_SO}
 
 ${objdir}/cursor.o:			${deps_cursor_cpp}
 							printf ${STR_compile} 'cursor.cpp'
 							${CXX} -c ${cppsrc}/cursor.cpp -o ${objdir}/cursor.o ${FLAGS}
 ${objdir}/cursor.s.o:		${deps_cursor_cpp}
 							printf ${STR_compile} 'cursor.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/cursor.cpp -o ${objdir}/cursor.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/cursor.cpp -o ${objdir}/cursor.s.o ${FLAGS_SO}
 
 ${objdir}/user_cursor.o:	${deps_user_cursor_cpp}
 							printf ${STR_compile} 'user_cursor.cpp'
 							${CXX} -c ${cppsrc}/user_cursor.cpp -o ${objdir}/user_cursor.o ${FLAGS}
 ${objdir}/user_cursor.s.o:	${deps_user_cursor_cpp}
 							printf ${STR_compile} 'user_cursor.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/user_cursor.cpp -o ${objdir}/user_cursor.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/user_cursor.cpp -o ${objdir}/user_cursor.s.o ${FLAGS_SO}
 
 ${objdir}/edit_cursor.o:	${deps_edit_cursor_cpp}
 							printf ${STR_compile} 'edit_cursor.cpp'
 							${CXX} -c ${cppsrc}/edit_cursor.cpp -o ${objdir}/edit_cursor.o ${FLAGS}
 ${objdir}/edit_cursor.s.o:	${deps_edit_cursor_cpp}
 							printf ${STR_compile} 'edit_cursor.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/edit_cursor.cpp -o ${objdir}/edit_cursor.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/edit_cursor.cpp -o ${objdir}/edit_cursor.s.o ${FLAGS_SO}
 
 ${objdir}/object_cursor.o:		${deps_object_cursor_cpp}
 								printf ${STR_compile} 'object_cursor.cpp'
 								${CXX} -c ${cppsrc}/object_cursor.cpp -o ${objdir}/object_cursor.o ${FLAGS}
 ${objdir}/object_cursor.s.o:	${deps_object_cursor_cpp}
 								printf ${STR_compile} 'object_cursor.cpp'
-								${CXX} ${SOFLAGS} -c ${cppsrc}/object_cursor.cpp -o ${objdir}/object_cursor.s.o ${FLAGS}
+								${CXX} -c ${cppsrc}/object_cursor.cpp -o ${objdir}/object_cursor.s.o ${FLAGS_SO}
 
 ${objdir}/pick.o:			${deps_pick_cpp}
 							printf ${STR_compile} 'pick.cpp'
 							${CXX} -c ${cppsrc}/pick.cpp -o ${objdir}/pick.o ${FLAGS}
 ${objdir}/pick.s.o:			${deps_pick_cpp}
 							printf ${STR_compile} 'pick.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/pick.cpp -o ${objdir}/pick.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/pick.cpp -o ${objdir}/pick.s.o ${FLAGS_SO}
 
 ${objdir}/renderer.o:		${deps_renderer_cpp}
 							printf ${STR_compile} 'renderer.cpp'
 							${CXX} -c ${cppsrc}/renderer.cpp -o ${objdir}/renderer.o ${XMLFLAGS} ${FLAGS}
 ${objdir}/renderer.s.o:		${deps_renderer_cpp}
 							printf ${STR_compile} 'renderer.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/renderer.cpp -o ${objdir}/renderer.s.o ${XMLFLAGS} ${FLAGS}
+							${CXX} -c ${cppsrc}/renderer.cpp -o ${objdir}/renderer.s.o ${XMLFLAGS} ${FLAGS_SO}
 
 ${objdir}/sprites.o:		${deps_sprites_cpp}
 							printf ${STR_compile} 'sprites.cpp'
 							${CXX} -c ${cppsrc}/sprites.cpp -o ${objdir}/sprites.o ${FLAGS}
 ${objdir}/sprites.s.o:		${deps_sprites_cpp}
 							printf ${STR_compile} 'sprites.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/sprites.cpp -o ${objdir}/sprites.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/sprites.cpp -o ${objdir}/sprites.s.o ${FLAGS_SO}
 
 ${objdir}/sprite_id.o:		${deps_sprite_id_cpp}
 							printf ${STR_compile} 'sprite_id.cpp'
 							${CXX} -c ${cppsrc}/sprite_id.cpp -o ${objdir}/sprite_id.o ${FLAGS}
 ${objdir}/sprite_id.s.o:	${deps_sprite_id_cpp}
 							printf ${STR_compile} 'sprite_id.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/sprite_id.cpp -o ${objdir}/sprite_id.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/sprite_id.cpp -o ${objdir}/sprite_id.s.o ${FLAGS_SO}
 
 ${objdir}/score.o:			${deps_score_cpp}
 							printf ${STR_compile} 'score.cpp'
 							${CXX} -c ${cppsrc}/score.cpp -o ${objdir}/score.o ${FLAGS}
 ${objdir}/score.s.o:		${deps_score_cpp}
 							printf ${STR_compile} 'score.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/score.cpp -o ${objdir}/score.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/score.cpp -o ${objdir}/score.s.o ${FLAGS_SO}
 
 ${objdir}/classes.o:		${deps_classes_cpp}
 							printf ${STR_compile} 'classes.cpp'
 							${CXX} -c ${cppsrc}/classes.cpp -o ${objdir}/classes.o ${FLAGS}
 ${objdir}/classes.s.o:		${deps_classes_cpp}
 							printf ${STR_compile} 'classes.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/classes.cpp -o ${objdir}/classes.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/classes.cpp -o ${objdir}/classes.s.o ${FLAGS_SO}
 
 ${objdir}/log.o:			${deps_log_cpp}
 							printf ${STR_compile} 'log.cpp'
 							${CXX} -c ${cppsrc}/log.cpp -o ${objdir}/log.o ${FLAGS}
 ${objdir}/log.s.o:			${deps_log_cpp}
 							printf ${STR_compile} 'log.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/log.cpp -o ${objdir}/log.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/log.cpp -o ${objdir}/log.s.o ${FLAGS_SO}
 
 ${objdir}/fraction.o:		${deps_fraction_cpp}
 							printf ${STR_compile} 'fraction.cpp'
 							${CXX} -c ${cppsrc}/fraction.cpp -o ${objdir}/fraction.o ${FRACT_SIZECHECK} ${FLAGS}
 ${objdir}/fraction.s.o:		${deps_fraction_cpp}
 							printf ${STR_compile} 'fraction.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/fraction.cpp -o ${objdir}/fraction.s.o ${FRACT_SIZECHECK} ${FLAGS}
+							${CXX} -c ${cppsrc}/fraction.cpp -o ${objdir}/fraction.s.o ${FRACT_SIZECHECK} ${FLAGS_SO}
 
 ${objdir}/parameters.o:		${deps_parameters_cpp}
 							printf ${STR_compile} 'parameters.cpp'
 							${CXX} -c ${cppsrc}/parameters.cpp -o ${objdir}/parameters.o ${FLAGS}
 ${objdir}/parameters.s.o:	${deps_parameters_cpp}
 							printf ${STR_compile} 'parameters.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/parameters.cpp -o ${objdir}/parameters.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/parameters.cpp -o ${objdir}/parameters.s.o ${FLAGS_SO}
 
 ${objdir}/error.o:			${deps_error_cpp}
 							printf ${STR_compile} 'error.cpp'
 							${CXX} -c ${cppsrc}/error.cpp -o ${objdir}/error.o ${FLAGS}
 ${objdir}/error.s.o:		${deps_error_cpp}
 							printf ${STR_compile} 'error.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/error.cpp -o ${objdir}/error.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/error.cpp -o ${objdir}/error.s.o ${FLAGS_SO}
 
 ${objdir}/file_format.o:	${deps_file_format_cpp}
 							printf ${STR_compile} 'file_format.cpp'
 							${CXX} -c ${cppsrc}/file_format.cpp -o ${objdir}/file_format.o ${XMLFLAGS} ${FLAGS}
 ${objdir}/file_format.s.o:	${deps_file_format_cpp}
 							printf ${STR_compile} 'file_format.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/file_format.cpp -o ${objdir}/file_format.s.o ${XMLFLAGS} ${FLAGS}
+							${CXX} -c ${cppsrc}/file_format.cpp -o ${objdir}/file_format.s.o ${XMLFLAGS} ${FLAGS_SO}
 
 ${objdir}/config.o:			${deps_config_cpp}
 							printf ${STR_compile} 'config.cpp'
 							${CXX} -c ${cppsrc}/config.cpp -o ${objdir}/config.o ${CONFIGFLAGS} ${FLAGS}
 ${objdir}/config.s.o:		${deps_config_cpp}
 							printf ${STR_compile} 'config.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/config.cpp -o ${objdir}/config.s.o ${CONFIGFLAGS} ${FLAGS}
+							${CXX} -c ${cppsrc}/config.cpp -o ${objdir}/config.s.o ${CONFIGFLAGS} ${FLAGS_SO}
 
 ${objdir}/test.o:			${deps_test_cpp}
 							printf ${STR_compile} 'test.cpp'
 							${CXX} -c ${cppsrc}/test.cpp -o ${objdir}/test.o ${FLAGS}
 ${objdir}/test.s.o:			${deps_test_cpp}
 							printf ${STR_compile} 'test.cpp'
-							${CXX} ${SOFLAGS} -c ${cppsrc}/test.cpp -o ${objdir}/test.s.o ${FLAGS}
+							${CXX} -c ${cppsrc}/test.cpp -o ${objdir}/test.s.o ${FLAGS_SO}
 

@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -61,7 +61,7 @@ class SCOREPRESS_API Score
     std::list<Staff> staves;    // the staves within the score
     Layout layout;              // layout information for the first page
                                 // (consequent page information given with pagebreak-objects)
-    unsigned int head_height;   // optional score-specific default head-height (when 0, inherit from document)
+    uum_t head_height;          // optional score-specific default head-height
     StyleParamPtr style;        // optional style parameters
     EngraverParamPtr param;     // optional engraver parameters
     Meta meta;                  // meta information

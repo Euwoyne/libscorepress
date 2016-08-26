@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -121,11 +121,14 @@ struct SCOREPRESS_API EngraverParam
 //
 // This structure provides parameters to control the engraving process
 // dependant on the rendered staff (one instance per staff, and a default one
-// within the press instance).
+// within the document).
 //
 struct SCOREPRESS_API StyleParam
 {
+    spohh_t     stem_length;        // automatic stem length within staff boundaries
+    spohh_t     stem_length_min;    // minimal stem length
     uum_t       stem_width;         // stem width
+    pohh_t      beam_slope_max;     // maximal beam slope
     pohw_t      ledger_length;      // ledger line length
     
     pohh_t      flag_distance;      // distance of flags
@@ -141,6 +144,39 @@ struct SCOREPRESS_API StyleParam
     
     // default parameters
     StyleParam();
+};
+
+//
+//     struct LayoutParam
+//    ====================
+//
+// These parameters control the geometrical layout of a line and initial
+// design parameters of a staff in the line. This struct is primarily used
+// within the "Newline" voice-object, where it defines the layout of the next
+// line.
+//
+// The engine should take care, that all parameters regarding the line and
+// staff are kept consistent within each group of simultaneous newlines.
+//
+struct LayoutParam
+{
+    // line layout
+    um_t   indent;                // line indentation (vertical)
+    bool   justify;               // width justification for this line?
+    bool   forced_justification;  // use forced justification (do not preserve min-distance)?
+    um_t   right_margin;          // distance from right page margin (only for justified lines)
+    
+    // staff layout
+    pohh_t distance;              // in promille of head-height
+    bool   auto_clef;             // insert clef at the line front
+    bool   auto_key;              // insert key at the line front
+    bool   auto_timesig;          // insert time-signature at the line front
+    
+    // voice layout
+    bool   visible;               // voice visible in this line?
+
+    // default parameters
+    LayoutParam();
 };
 
 //

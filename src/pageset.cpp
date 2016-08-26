@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -48,7 +48,7 @@ bool Pageset::ScoreDimension::contains(const Position<mpx_t>& pos) const
 }
 
 // plate-info constructor
-Pageset::PlateInfo::PlateInfo(const unsigned int _pageno, const unsigned int _start, const Score& _score, const ScoreDimension& _dim)
+Pageset::PlateInfo::PlateInfo(const size_t _pageno, const size_t _start, const Score& _score, const ScoreDimension& _dim)
     : pageno(_pageno), start_page(_start), score(&_score), dimension(_dim), plate(new Plate()) {}
 
 // find a plate belonging to a given score on this page
@@ -116,7 +116,7 @@ Pageset::Iterator Pageset::add_page()
 }
 
 // get the page with the given index (creates non-existing pages)
-Pageset::Iterator Pageset::get_page(unsigned int pageno)
+Pageset::Iterator Pageset::get_page(size_t pageno)
 {
     unsigned int idx = 0;   // page index
     for (Iterator i = pages.begin(); i != pages.end(); ++i) // iterate through pages
@@ -129,7 +129,7 @@ Pageset::Iterator Pageset::get_page(unsigned int pageno)
 }
 
 // get the page with the given index (on not existing page, returns pages.end())
-Pageset::const_Iterator Pageset::get_page(unsigned int pageno) const
+Pageset::const_Iterator Pageset::get_page(size_t pageno) const
 {
     for (const_Iterator i = pages.begin(); i != pages.end(); ++i)   // iterate through pages
         if (i->pageno == pageno) return i;                          // if we have got the correct page, return

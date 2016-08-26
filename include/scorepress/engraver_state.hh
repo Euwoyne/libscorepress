@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -81,10 +81,10 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
     Plate::NoteIt    pnote;         // target on-plate note
     
     // miscellaneous data
-    unsigned int pagecnt;           // page counter
-    unsigned int barcnt;            // bar counter
-    value_t      start_time;        // line start time
-    value_t      end_time;          // line end time
+    size_t  pagecnt;                // page counter
+    size_t  barcnt;                 // bar counter
+    value_t start_time;             // line start time
+    value_t end_time;               // line end time
     
  private:
     void engrave();             // engrave current note-object
@@ -108,7 +108,7 @@ class SCOREPRESS_LOCAL EngraverState : public Logging
  public:
     // constructor (will erase "score" from the "pageset" and prepare for engraving)
     EngraverState(const Score&         score,       // score object to be engraved
-                  const unsigned int   start_page,  // page to begin the score on
+                  const size_t         start_page,  // page to begin the score on
                         Pageset&       pageset,     // target pageset
                   const Sprites&       sprites,     // sprite set
                   const umpx_t         head_height, // default head-height (may be overridden by score)

@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -52,7 +52,7 @@ class SCOREPRESS_API CursorBase : public Reengraveable
     // base data access
     virtual const Document& get_document() const = 0;           // return the document
     virtual const Score&    get_score()    const = 0;           // return the score-object
-    virtual unsigned int    get_pageno()   const = 0;           // return the page-number
+    virtual size_t          get_pageno()   const = 0;           // return the page-number
     virtual bool            has_score()    const = 0;           // is a score set?
     
     // rendering interface

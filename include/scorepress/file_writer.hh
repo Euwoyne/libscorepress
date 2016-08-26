@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -67,7 +67,6 @@ class SCOREPRESS_API FileWriter
     
  public:
     // constructor
-    FileWriter() __attribute__((noreturn)) {throw MissingDefaultConstructor("FileWriter");}
     FileWriter(const std::string& name);
     FileWriter(const std::string& name, const std::string& mime_type, const std::string& file_extension);
     virtual ~FileWriter() {}

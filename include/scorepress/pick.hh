@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -86,22 +86,22 @@ class SCOREPRESS_LOCAL Pick : public Logging
         {public: VoiceNotFoundException();};
         
      private:
-        std::map<const Voice*, const Newline*> data;    // maps voices to their newline objects
-        const Voice* first_voice;                       // voice with line-properties
+        std::map<const Voice*, const LayoutParam*> data;    // maps voices to their layout parameters
+        const Voice* first_voice;                           // voice with line-properties
         
      public:
-        void set(const Voice& voice, const Newline& layout);                        // associate a voice with its newline object
-        bool exist(const Voice& voice) const;                                       // check, if the voice has a newline object
-        const Newline& get() const throw(VoiceNotFoundException);                   // get first newline object (for line-properties)
-        const Newline& get(const Voice& voice) const throw(VoiceNotFoundException); // get the newline object
-        void remove(const Voice& voice);                                            // remove a voice's layout
-        void set_first_voice(const Voice& voice) throw(VoiceNotFoundException);     // set the voice for line-properties
-        void swap(LineLayout& a);                                                   // swap contents
-        void clear();                                                               // clear data
+        void set(const Voice&, const LayoutParam& layout);                        // associate a voice with its newline object
+        bool exist(const Voice&) const;                                           // check, if the voice has a newline object
+        const LayoutParam& get() const throw(VoiceNotFoundException);             // get first newline object (for line-properties)
+        const LayoutParam& get(const Voice&) const throw(VoiceNotFoundException); // get the newline object
+        void remove(const Voice&);                                                // remove a voice's layout
+        void set_first_voice(const Voice&) throw(VoiceNotFoundException);         // set the voice for line-properties
+        void swap(LineLayout&);                                                   // swap contents
+        void clear();                                                             // clear data
     };
     
     // maps voices to their index thus providing an order comparison for voices
-    class VoiceOrder : private std::map<const Voice*, unsigned int>
+    class VoiceOrder : private std::map<const Voice*, size_t>
     {
      public:
         class VoiceNotFoundException : public ScorePress::Error     // thrown, if non-existant voice is given
@@ -238,7 +238,7 @@ class SCOREPRESS_LOCAL Pick : public Logging
           bool            get_forced_justification()  const; // return the forced justification for the current line
           mpx_t           get_right_margin()          const; // return the distance from the right border of the score object
     const LineLayout&     get_layout()                const; // return the layout information for the current line
-    const Newline&        get_layout(const Voice& v)  const; // return the layout of the given voice
+    const LayoutParam&    get_layout(const Voice& v)  const; // return the layout of the given voice
     const Score&          get_score()                 const; // return the score object which is to be engraved
     
     // voice order interface
@@ -247,7 +247,7 @@ class SCOREPRESS_LOCAL Pick : public Logging
 };
 
 // inline method implementations (Voice Cursor)
-inline       bool         Pick::VoiceCursor::at_end() const
+inline bool Pick::VoiceCursor::at_end() const
             {return (!!virtual_obj ? false : const_Cursor::at_end());}
 inline const StaffObject& Pick::VoiceCursor::original() const
             {return const_Cursor::operator *();}
@@ -272,7 +272,7 @@ inline       bool               Pick::get_justify()               const {return 
 inline       bool               Pick::get_forced_justification()  const {return _layout.get().forced_justification;}
 inline       mpx_t              Pick::get_right_margin()          const {return viewport->umtopx_h(_layout.get().right_margin);}
 inline const Pick::LineLayout&  Pick::get_layout()                const {return _layout;}
-inline const Newline&           Pick::get_layout(const Voice& v)  const {return _layout.get(v);}
+inline const LayoutParam&       Pick::get_layout(const Voice& v)  const {return _layout.get(v);}
 inline const Score&             Pick::get_score()                 const {return *score;}
 
 inline bool Pick::is_above(const Voice& v1, const Voice& v2) const {return _voice_order.is_above(v1, v2);}

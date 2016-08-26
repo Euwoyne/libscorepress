@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -203,14 +203,14 @@ void SpriteObject::render(Renderer& renderer, const Plate::pAttachable& object, 
                               / (1000.0 * renderer.get_sprites().head_height(object.sprite));
     
     renderer.draw_sprite(object.sprite,
-                         (state.parameters.do_scale(object.absolutePos.x) + state.offset.x) / 1000.0,
-                         (state.parameters.do_scale(object.absolutePos.y) + state.offset.y) / 1000.0,
+                         (state.scale(object.absolutePos.x) + state.offset.x) / 1000.0,
+                         (state.scale(object.absolutePos.y) + state.offset.y) / 1000.0,
                          object.flipped.x
-                            ? -state.parameters.do_scale(sprite_scale) / 1000.0
-                            :  state.parameters.do_scale(sprite_scale) / 1000.0,
+                            ? -state.scale(sprite_scale) / 1000.0
+                            :  state.scale(sprite_scale) / 1000.0,
                          object.flipped.y
-                            ? -state.parameters.do_scale(sprite_scale) / 1000.0
-                            :  state.parameters.do_scale(sprite_scale) / 1000.0);
+                            ? -state.scale(sprite_scale) / 1000.0
+                            :  state.scale(sprite_scale) / 1000.0);
 }
 
 // check, if the score-object contains a given point
@@ -276,13 +276,13 @@ value_t NoteObject::set_value(value_t v)
     unsigned long ndenom = 0x00;
     
     // calculate biggest possible exponent
-    while ((1u << nexp) <= vi && nexp <= 0x0F) ++nexp;
+    while ((1u << nexp) <= vi && nexp <= 0x10) ++nexp;
     if (nexp) v /= (1u << --nexp);
     
     // if there may be any dots, calculate biggest number of dots
     if (2 * v.e() <= static_cast<long>(v.d()) || v.d() % 2 == 0)
     {
-            while (value_t((1l << (ndots + 1)) - 1l, 1l << ndots) <= v && ndots <= 0x08) ++ndots;
+            while (value_t((1l << (ndots + 1)) - 1l, 1l << ndots) <= v && ndots <= 0x10) ++ndots;
             if (ndots) --ndots;
             v /= value_t((1l << (ndots + 1)) - 1l, 1l << ndots);
     };
@@ -295,7 +295,7 @@ value_t NoteObject::set_value(value_t v)
     
     // set values
     val.exp = nexp & 0x0F;
-    val.dots = ndots & 0x07;
+    val.dots = ndots & 0x0F;
     irr_enum = nenum & 0xFF;
     irr_denom = ndenom & 0xFF;
     
@@ -311,6 +311,15 @@ NoteObject::SubVoices::SubVoices() : below(end()) {}
 NoteObject::SubVoices::SubVoices(const SubVoices& subvoices) : SubVoiceList(subvoices), below(begin())
 {
     std::advance(below, std::distance(subvoices.begin(), SubVoiceList::const_iterator(subvoices.below)));
+}
+
+// sub-voice list assignment operator (iterator update)
+NoteObject::SubVoices& NoteObject::SubVoices::operator = (const SubVoices& subvoices)
+{
+    SubVoiceList::operator=(subvoices);
+    below = begin();
+    std::advance(below, std::distance(subvoices.begin(), SubVoiceList::const_iterator(subvoices.below)));
+    return *this;
 }
 
 // create new sub-voice atop all sub-voices
@@ -339,6 +348,30 @@ SubVoicePtr& NoteObject::SubVoices::add_bottom()
     SubVoicePtr& ret = *insert(end(), SubVoicePtr(new SubVoice()));
     if (below == end()) --below;
     return ret;
+}
+
+// remove sub-voice
+void NoteObject::SubVoices::remove(const Voice& voice)
+{
+    for (iterator i = begin(); i != end();)
+    {
+        if (&**i == &voice)
+            i = erase(i);
+        else
+            ++i;
+    };
+}
+
+NoteObject::NoteObject(const NoteObject& note, bool no_sub)
+    : VoiceObject  (note),
+      VisibleObject(note, no_sub),
+      val          (note.val),
+      irr_enum     (note.irr_enum),
+      irr_denom    (note.irr_denom),
+      staff_shift  (note.staff_shift)
+{
+    if (!no_sub)
+        subvoices = note.subvoices;
 }
 
 // sprite calculation (Clef)
@@ -399,10 +432,10 @@ void Clef::render(Renderer& renderer, const Plate::pNote& note, const PressState
                               / (1000.0 * renderer.get_sprites().head_height(note.sprite));
     
     renderer.draw_sprite(note.sprite,
-                         (state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0,
-                         (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0,
-                         state.parameters.do_scale(sprite_scale) / 1000.0,
-                         state.parameters.do_scale(sprite_scale) / 1000.0);
+                         (state.scale(note.absolutePos.front().x) + state.offset.x) / 1000.0,
+                         (state.scale(note.absolutePos.front().y) + state.offset.y) / 1000.0,
+                         state.scale(sprite_scale) / 1000.0,
+                         state.scale(sprite_scale) / 1000.0);
 }
 
 // sprite calculation (Key)
@@ -493,10 +526,10 @@ void Key::render(Renderer& renderer, const Plate::pNote& note, const PressState&
     for (std::list< Position<mpx_t> >::const_iterator p = ++note.absolutePos.begin(); p != note.absolutePos.end(); ++p)
     {
         renderer.draw_sprite(note.sprite,
-                             (state.parameters.do_scale(p->x) + state.offset.x) / 1000.0,
-                             (state.parameters.do_scale(p->y) + state.offset.y) / 1000.0,
-                             state.parameters.do_scale(sprite_scale) / 1000.0,
-                             state.parameters.do_scale(sprite_scale) / 1000.0);
+                             (state.scale(p->x) + state.offset.x) / 1000.0,
+                             (state.scale(p->y) + state.offset.y) / 1000.0,
+                             state.scale(sprite_scale) / 1000.0,
+                             state.scale(sprite_scale) / 1000.0);
     };
 }
 
@@ -647,10 +680,10 @@ void TimeSig::render(Renderer& renderer, const Plate::pNote& note, const PressSt
                           (renderer.get_sprites()[note.sprite.setid].digits_time[n % 10] == UNDEFINED) ?
                             renderer.get_sprites()[note.sprite.setid].undefined_symbol :
                             renderer.get_sprites()[note.sprite.setid].digits_time[n % 10]),
-                (state.parameters.do_scale(p->x) + state.offset.x) / 1000.0,
-                (state.parameters.do_scale(p->y) + state.offset.y) / 1000.0,
-                state.parameters.do_scale(sprite_scale) / 1000.0,
-                state.parameters.do_scale(sprite_scale) / 1000.0);
+                (state.scale(p->x) + state.offset.x) / 1000.0,
+                (state.scale(p->y) + state.offset.y) / 1000.0,
+                state.scale(sprite_scale) / 1000.0,
+                state.scale(sprite_scale) / 1000.0);
         
         n /= 10;
         if (n == 0) n = this->beat;
@@ -729,10 +762,10 @@ void CustomTimeSig::render(Renderer& renderer, const Plate::pNote& note, const P
                               / (1000.0 * renderer.get_sprites().head_height(note.sprite));
     
     renderer.draw_sprite(note.sprite,
-                         (state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0,
-                         (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0,
-                         state.parameters.do_scale(sprite_scale) / 1000.0,
-                         state.parameters.do_scale(sprite_scale) / 1000.0);
+                         (state.scale(note.absolutePos.front().x) + state.offset.x) / 1000.0,
+                         (state.scale(note.absolutePos.front().y) + state.offset.y) / 1000.0,
+                         state.scale(sprite_scale) / 1000.0,
+                         state.scale(sprite_scale) / 1000.0);
 }
 
 // engraving method (Barline)
@@ -763,7 +796,7 @@ void Barline::engrave(EngraverState& engraver) const
     std::list<Staff>::const_iterator end = engraver.get_score().staves.end();
     std::list<Plate::pVoice>::const_iterator pvoice = pline.get_voice(*i);
     pnote.absolutePos.front().y = pvoice->basePos.y;
-    while (i != end)    // iterate the staffs
+    while (i != end)    // iterate the staves
     {
         if (pline.voices.end() != pline.get_voice(*i))  // if voice exists,...
             pvoice = pline.get_voice(*i);               // get on-plate voice
@@ -782,7 +815,7 @@ void Barline::engrave(EngraverState& engraver) const
             if (++i != end)
                 pnote.absolutePos.push_back(Position<mpx_t>(posx, pvoice->basePos.y));
         }
-        else if (++i == end)    // if the barline is a long one, but we have no further staffs
+        else if (++i == end)    // if the barline is a long one, but we have no further staves
         {
             --i;                // get the last staff
             pnote.absolutePos.push_back(    // and add end-point at the staff's bottom
@@ -819,15 +852,15 @@ void Barline::render(Renderer& renderer, const Plate::pNote& note, const PressSt
         mpx_t x_offset = 0;
         for (std::string::const_iterator i  = this->style.begin(); i != this->style.end(); ++i)
         {
-            renderer.move_to((state.parameters.do_scale(p->x +  x_offset       * width) + state.offset.x) / 1000.0,
-                             (state.parameters.do_scale(p->y)                           + state.offset.y) / 1000.0);
-            renderer.line_to((state.parameters.do_scale(p->x + (x_offset + *i) * width) + state.offset.x) / 1000.0,
-                             (state.parameters.do_scale(p->y)                           + state.offset.y) / 1000.0);
+            renderer.move_to((state.scale(p->x +  x_offset       * width) + state.offset.x) / 1000.0,
+                             (state.scale(p->y)                           + state.offset.y) / 1000.0);
+            renderer.line_to((state.scale(p->x + (x_offset + *i) * width) + state.offset.x) / 1000.0,
+                             (state.scale(p->y)                           + state.offset.y) / 1000.0);
             ++p;
-            renderer.line_to((state.parameters.do_scale(p->x + (x_offset + *i) * width) + state.offset.x) / 1000.0,
-                             (state.parameters.do_scale(p->y)                           + state.offset.y) / 1000.0);
-            renderer.line_to((state.parameters.do_scale(p->x +  x_offset       * width) + state.offset.x) / 1000.0,
-                             (state.parameters.do_scale(p->y)                           + state.offset.y) / 1000.0);
+            renderer.line_to((state.scale(p->x + (x_offset + *i) * width) + state.offset.x) / 1000.0,
+                             (state.scale(p->y)                           + state.offset.y) / 1000.0);
+            renderer.line_to((state.scale(p->x +  x_offset       * width) + state.offset.x) / 1000.0,
+                             (state.scale(p->y)                           + state.offset.y) / 1000.0);
             --p;
             renderer.fill();
             renderer.stroke();
@@ -852,6 +885,78 @@ void Newline::engrave(EngraverState& engraver) const
 
 // rendering method (Newline)
 void Newline::render(Renderer&, const Plate::pNote&, const PressState&) const {}
+
+// calculate actual stem length
+spohh_t Chord::calculate_stem_length(const Staff& staff, const Voice& voice, const StaffContext& context, const StyleParam& style) const
+{
+    // get actual stem-direction
+    StemType actual_type(this->stem.type);
+    if (actual_type == STEM_VOICE)
+    {
+        switch (voice.stem_direction)
+        {
+        case Voice::STEM_AUTO: actual_type = STEM_AUTO; break;
+        case Voice::STEM_UP:   actual_type = STEM_UP;   break;
+        case Voice::STEM_DOWN: actual_type = STEM_DOWN; break;
+        }
+    }
+    
+    // calculate base stem length
+    mpx_t stem_len;
+    switch (actual_type)
+    {
+    case STEM_UP:
+        stem_len =   context.note_offset(*this->heads.back(), 1000)
+                   - 500 * (staff.line_count - 2);
+        if (stem_len < style.stem_length)
+            stem_len = style.stem_length;
+        break;
+    case STEM_DOWN:
+        stem_len =   context.note_offset(*this->heads.front(), 1000)
+                   - 500 * (staff.line_count - 2);
+        if (stem_len > -style.stem_length)
+            stem_len = -style.stem_length;
+        break;
+    case STEM_AUTO:
+        stem_len =   context.note_offset(*this->heads.front(), 500)
+                   + context.note_offset(*this->heads.back(), 500)
+                   - 500 * (staff.line_count - 2);
+        if (stem_len < style.stem_length && stem_len > -style.stem_length)
+            stem_len = (stem_len <= 0) ? -style.stem_length : style.stem_length;
+        break;
+    default:
+        stem_len = this->stem.length;
+        break;
+    };
+    
+    // elongate stem for flags/beams
+    if (this->val.exp < VALUE_BASE - 3)
+    {
+            if (stem_len < 0)
+                stem_len -=   style.beam_height
+                            + (VALUE_BASE - 4 - this->val.exp) * (style.beam_distance + style.beam_height);
+            else
+                stem_len +=   style.beam_height
+                            + (VALUE_BASE - 4 - this->val.exp) * (style.beam_distance + style.beam_height);
+        
+        // round to full 500 (i.e. half space)
+        stem_len -= stem_len % 500;
+    };
+    
+    // return result
+    return stem_len;
+}
+
+// copy-constructor (optionally without sub-voices)
+Chord::Chord(const Chord& c, bool no_sub)
+    : NoteObject  (c, no_sub),
+      heads       (c.heads),
+      articulation(c.articulation),
+      sprite      (c.sprite),
+      stem        (c.stem),
+      beam        (c.beam),
+      tremolo     (c.tremolo),
+      flag_color  (c.flag_color) {}
 
 // sprite calculation (Chord, for heads)
 SpriteId Chord::get_sprite(const Sprites& spr) const
@@ -1039,6 +1144,7 @@ void Chord::engrave(EngraverState& engraver) const
     const Staff&         staff       = engraver.get_staff();
           StaffContext&  src_context = engraver.get_target_line().staffctx[&staff];
           StaffContext&  gph_context = engraver.get_target_line().staffctx[&engraver.get_visual_staff()];
+    const StyleParam&    style       = engraver.get_style();
     const Sprites&       sprites     = engraver.get_sprites();
     const ViewportParam& viewport    = engraver.get_viewport();
     const mpx_t&         head_height = engraver.get_head_height();
@@ -1053,11 +1159,11 @@ void Chord::engrave(EngraverState& engraver) const
     
     // get sprite attributes
     Position<mpx_t> anchor;                  // anchor position
-    Position<mpx_t> stem;                    // stem position
+    Position<mpx_t> stempos;                 // stem position
     anchor.x = _round(headsprite.get_real("anchor.x") * scale * this->appearance.scale);
     anchor.y = _round(headsprite.get_real("anchor.y") * scale * this->appearance.scale);
-    stem.x   = _round(headsprite.get_real("stem.x") * scale * this->appearance.scale);
-    stem.y   = _round(headsprite.get_real("stem.y") * scale * this->appearance.scale);
+    stempos.x = _round(headsprite.get_real("stem.x") * scale * this->appearance.scale);
+    stempos.y = _round(headsprite.get_real("stem.y") * scale * this->appearance.scale);
     
     // get dot sprite and distance
     const SpriteInfo& dotsprite =
@@ -1081,11 +1187,10 @@ void Chord::engrave(EngraverState& engraver) const
     int max_cluster_ledger = 0;     // highest ledger count of clustered note (ledger count above)
     int min_cluster_ledger = 0;     // lowest ledger count of clustered note (ledger count below)
     
-    const mpx_t stem_width = viewport.umtopx_h(engraver.get_style().stem_width);    // get stem width
-    const mpx_t stem_len = (this->stem_length * head_height) / 1000;                // calculate stem length
+    const mpx_t stem_width = viewport.umtopx_h(style.stem_width);
+    const mpx_t stem_len = (calculate_stem_length(engraver.get_visual_staff(), engraver.get_voice(), gph_context, style) * head_height) / 1000;
     const mpx_t sprite_width = _round(headsprite.width * scale * this->appearance.scale);
     const double head_width = sprites.head_width(pnote.sprite) * scale * 1000.0;
-    // TODO: stem_len should respect this->stem_direction
     
     // engrave heads
     if (stem_len >= 0)    // upward stem
@@ -1255,24 +1360,24 @@ void Chord::engrave(EngraverState& engraver) const
     // engrave stem
     if (stem_len >= 0)  // an upward stem is right of the chord
     {
-        pnote.stem.x = pnote.absolutePos.front().x                      // base position
-            + stem.x                                                    // offset for the sprite
-            - _round(stem_info.cluster ? 0 : stem_width * scale );   // offset for the stem's width
+        pnote.stem.x = pnote.absolutePos.front().x                  // base position
+            + stempos.x                                             // offset for the sprite
+            - _round(stem_info.cluster ? 0 : stem_width * scale);   // offset for the stem's width
         
         pnote.stem.top = stem_info.top_pos + head_height / 2 - stem_len;
         pnote.stem.base = stem_info.base_pos + (stem_info.base_side ?
-            _round(((headsprite.height * scale * this->appearance.scale - stem.y) * stem_info.base_scale) / 1000.0) :
-            stem.y);
+            _round(((headsprite.height * scale * this->appearance.scale - stempos.y) * stem_info.base_scale) / 1000.0) :
+            stempos.y);
     }
     else                // downward stems are placed left of the chord
     {
         pnote.stem.x = pnote.absolutePos.front().x             // base position
-         + _round(stem_info.cluster ? stem.x : sprite_width - stem.x + stem_width * scale);
+            + _round(stem_info.cluster ? stempos.x : sprite_width - stempos.x + stem_width * scale);
         
         pnote.stem.top = stem_info.base_pos + head_height / 2 - stem_len;
         pnote.stem.base = stem_info.top_pos + (stem_info.top_side ?
-            stem.y :
-            _round(((headsprite.height * scale * this->appearance.scale - stem.y) * stem_info.top_scale) / 1000.0));
+            stempos.y :
+            _round(((headsprite.height * scale * this->appearance.scale - stempos.y) * stem_info.top_scale) / 1000.0));
     };
     pnote.gphBox.extend(Position<mpx_t>(pnote.stem.x, pnote.stem.top));
     
@@ -1304,7 +1409,7 @@ void Chord::engrave(EngraverState& engraver) const
     
     // engrave ledger lines
     {
-    const mpx_t ledger_length = engraver.get_style().ledger_length;
+    const mpx_t ledger_length = style.ledger_length;
     if (min_ledger < 0)         // if there are ledger lines above the staff
     {
         if (min_cluster_ledger < 0)           // engrave wide ledger lines
@@ -1530,10 +1635,10 @@ void Chord::render(Renderer& renderer, const Plate::pNote& note, const PressStat
     {
         renderer.set_color((*h)->appearance.color.r, (*h)->appearance.color.g, (*h)->appearance.color.b, (*h)->appearance.color.a);
         renderer.draw_sprite(note.sprite,
-                             (state.parameters.do_scale(p->x) + state.offset.x) / 1000.0,
-                             (state.parameters.do_scale(p->y) + state.offset.y) / 1000.0,
-                              state.parameters.do_scale(sprite_scale * (*h)->appearance.scale) / 1.0e6,
-                              state.parameters.do_scale(sprite_scale * (*h)->appearance.scale) / 1.0e6);
+                             (state.scale(p->x) + state.offset.x) / 1000.0,
+                             (state.scale(p->y) + state.offset.y) / 1000.0,
+                              state.scale(sprite_scale * (*h)->appearance.scale) / 1.0e6,
+                              state.scale(sprite_scale * (*h)->appearance.scale) / 1.0e6);
     };
     
     // reset color
@@ -1547,21 +1652,21 @@ void Chord::render(Renderer& renderer, const Plate::pNote& note, const PressStat
                      (renderer.get_sprites()[note.sprite.setid].dot != UNDEFINED) ?
                             renderer.get_sprites()[note.sprite.setid].dot :
                             renderer.get_sprites()[note.sprite.setid].undefined_symbol),
-            (state.parameters.do_scale(p->x) + state.offset.x) / 1000.0,
-            (state.parameters.do_scale(p->y) + state.offset.y) / 1000.0,
-            state.parameters.do_scale(sprite_scale) / 1000.0,
-            state.parameters.do_scale(sprite_scale) / 1000.0);
+            (state.scale(p->x) + state.offset.x) / 1000.0,
+            (state.scale(p->y) + state.offset.y) / 1000.0,
+            state.scale(sprite_scale) / 1000.0,
+            state.scale(sprite_scale) / 1000.0);
     };
     
     // render stem
     if (val.exp != VALUE_BASE)  // no stem for whole notes
     {
-        renderer.set_color(stem_color.r, stem_color.g, stem_color.b, stem_color.a);
-        renderer.set_line_width(state.parameters.do_scale(state.stem_width) / 1000.0);  // set line width
-        renderer.move_to((state.parameters.do_scale(note.stem.x)    + state.offset.x) / 1000.0,
-                         (state.parameters.do_scale(note.stem.base) + state.offset.y) / 1000.0);
-        renderer.line_to((state.parameters.do_scale(note.stem.x)    + state.offset.x) / 1000.0,
-                         (state.parameters.do_scale(note.stem.top)  + state.offset.y) / 1000.0);
+        renderer.set_color(stem.color.r, stem.color.g, stem.color.b, stem.color.a);
+        renderer.set_line_width(state.scale(state.stem_width) / 1000.0);  // set line width
+        renderer.move_to((state.scale(note.stem.x)    + state.offset.x) / 1000.0,
+                         (state.scale(note.stem.base) + state.offset.y) / 1000.0);
+        renderer.line_to((state.scale(note.stem.x)    + state.offset.x) / 1000.0,
+                         (state.scale(note.stem.top)  + state.offset.y) / 1000.0);
         renderer.stroke();
     };
     
@@ -1569,29 +1674,29 @@ void Chord::render(Renderer& renderer, const Plate::pNote& note, const PressStat
     this->render_beam(renderer, note, state);
     
     // render ledger lines
-    size_t l = 0;
-    renderer.set_line_width(state.parameters.do_scale(state.viewport.umtopx_v(state.style->ledger_thickness)) / 1000.0);
+    double ledger_pos = 0.0;
+    renderer.set_line_width(state.scale(state.viewport.umtopx_v(state.style->ledger_thickness)) / 1000.0);
     for (Plate::pNote::LedgerLineList::const_iterator i = note.ledgers.begin(); i != note.ledgers.end(); ++i)
     {
-        for (size_t j = 0; j < i->count; ++j, ++l)
+        for (size_t j = 0; j < i->count; ++j, ledger_pos += state.head_height)
         {
             if (i->below)
             {
                 renderer.move_to(
-                    (state.parameters.do_scale(i->basepos.x)                         + state.offset.x) / 1000.0,
-                    (state.parameters.do_scale(i->basepos.y + l * state.head_height) + state.offset.y) / 1000.0);
+                    (state.scale(i->basepos.x)              + state.offset.x) / 1000.0,
+                    (state.scale(i->basepos.y + ledger_pos) + state.offset.y) / 1000.0);
                 renderer.line_to(
-                    (state.parameters.do_scale(i->basepos.x + i->length)             + state.offset.x) / 1000.0,
-                    (state.parameters.do_scale(i->basepos.y + l * state.head_height) + state.offset.y) / 1000.0);
+                    (state.scale(i->basepos.x + i->length)  + state.offset.x) / 1000.0,
+                    (state.scale(i->basepos.y + ledger_pos) + state.offset.y) / 1000.0);
             }
             else
             {
                 renderer.move_to(
-                    (state.parameters.do_scale(i->basepos.x)                         + state.offset.x) / 1000.0,
-                    (state.parameters.do_scale(i->basepos.y - l * state.head_height) + state.offset.y) / 1000.0);
+                    (state.scale(i->basepos.x)              + state.offset.x) / 1000.0,
+                    (state.scale(i->basepos.y - ledger_pos) + state.offset.y) / 1000.0);
                 renderer.line_to(
-                    (state.parameters.do_scale(i->basepos.x + i->length)             + state.offset.x) / 1000.0,
-                    (state.parameters.do_scale(i->basepos.y - l * state.head_height) + state.offset.y) / 1000.0);
+                    (state.scale(i->basepos.x + i->length)  + state.offset.x) / 1000.0,
+                    (state.scale(i->basepos.y - ledger_pos) + state.offset.y) / 1000.0);
             };
         };
         renderer.stroke();
@@ -1607,19 +1712,19 @@ void Chord::render_beam(Renderer& renderer, const Plate::pNote& note, const Pres
     double yoffset_end;             // vertical beam position on end note (in mpx)
     
     const double beam_height        // height of beam (in mpx)
-                = state.parameters.do_scale(state.style->beam_height * state.head_height) / 1000.0;
+                = state.scale(state.style->beam_height * state.head_height) / 1000.0;
     const double head_width         // width of head (in mpx)
                 = (state.head_height * renderer.get_sprites().head_width(note.sprite))
                   / renderer.get_sprites().head_height(note.sprite);
     
     // render beams
     renderer.set_line_width(state.parameters.scale / 1000.0);   // set line width
-    for (size_t i = 0; i < VALUE_BASE - 2; i++)                 // iterate through the beams, beginning at this note
+    for (short i = 0; i < VALUE_BASE - 2; i++)                 // iterate through the beams, beginning at this note
     {
         if (note.beam[VALUE_BASE - 3 - i] == NULL) continue;    // check if a beam is to be drawn
         
         // calculate vertical offset (front)
-        yoffset = state.parameters.do_scale(state.style->beam_height + state.style->beam_distance)
+        yoffset = state.scale(state.style->beam_height + state.style->beam_distance)
                     * i * state.head_height / 1000.0;
         
         if (note.beam[VALUE_BASE - 3 - i]->short_beam)  // if the beam is short
@@ -1627,7 +1732,7 @@ void Chord::render_beam(Renderer& renderer, const Plate::pNote& note, const Pres
             // calculate vertical offset (back)
             if ((note.beam[VALUE_BASE - 3 - i]->end->stem.top < note.beam[VALUE_BASE - 3 - i]->end->stem.base) ^ (note.stem.top < note.stem.base))
                 yoffset_end =
-                    state.parameters.do_scale(
+                    state.scale(
                         (state.style->beam_height + state.style->beam_distance)
                         * (static_cast<double>(note.stem.beam_off + note.beam[VALUE_BASE - 3 - i]->end->stem.beam_off)
                                  - note.beam[VALUE_BASE - 3 - i]->end_idx)
@@ -1635,7 +1740,7 @@ void Chord::render_beam(Renderer& renderer, const Plate::pNote& note, const Pres
                     )
                     * state.head_height / 1000.0;
             else
-                yoffset_end = state.parameters.do_scale(state.style->beam_height + state.style->beam_distance)
+                yoffset_end = state.scale(state.style->beam_height + state.style->beam_distance)
                             * note.beam[VALUE_BASE - 3 - i]->end_idx * state.head_height / 1000.0;
             
             // render the short beam
@@ -1643,15 +1748,15 @@ void Chord::render_beam(Renderer& renderer, const Plate::pNote& note, const Pres
             if (abs_less((note.beam[VALUE_BASE - 3 - i]->end->stem.x - note.stem.x) * static_cast<int>(state.style->shortbeam_short), length))
                 length = (note.beam[VALUE_BASE - 3 - i]->end->stem.x - note.stem.x) * static_cast<int>(state.style->shortbeam_short);
             if ((length < 0) ^ note.beam[VALUE_BASE - 3 - i]->short_left) length = -length;
-            length = state.parameters.do_scale(length) / 1000.0;
+            length = state.scale(length) / 1000.0;
             
-            const double x0 = state.parameters.do_scale(note.beam[VALUE_BASE - 3 - i]->end->stem.x) + state.offset.x;
-            const double y0 = state.parameters.do_scale(note.beam[VALUE_BASE - 3 - i]->end->stem.top) + state.offset.y
+            const double x0 = state.scale(note.beam[VALUE_BASE - 3 - i]->end->stem.x) + state.offset.x;
+            const double y0 = state.scale(note.beam[VALUE_BASE - 3 - i]->end->stem.top) + state.offset.y
                             + (  (note.beam[VALUE_BASE - 3 - i]->end->stem.top < note.beam[VALUE_BASE - 3 - i]->end->stem.base)
                                ? yoffset_end : -yoffset_end);
-            const double x1 = state.parameters.do_scale(note.stem.x) + state.offset.x;
-            const double y1 = state.parameters.do_scale(note.stem.top) + state.offset.y + ((note.stem.top < note.stem.base) ? yoffset : -yoffset);
-            const double x2 = state.parameters.do_scale(note.stem.x) + state.offset.x + length;
+            const double x1 = state.scale(note.stem.x) + state.offset.x;
+            const double y1 = state.scale(note.stem.top) + state.offset.y + ((note.stem.top < note.stem.base) ? yoffset : -yoffset);
+            const double x2 = state.scale(note.stem.x) + state.offset.x + length;
             const double y2 = y1 + (length * (y1 - y0)) / (x1 - x0);
             
             if (note.stem.top < note.stem.base) // upward stem
@@ -1674,38 +1779,38 @@ void Chord::render_beam(Renderer& renderer, const Plate::pNote& note, const Pres
         else                                            // else, we have got a normal beam
         {
             // calculate vertical offset (back)
-            yoffset_end = state.parameters.do_scale(state.style->beam_height + state.style->beam_distance)
+            yoffset_end = state.scale(state.style->beam_height + state.style->beam_distance)
                         * note.beam[VALUE_BASE - 3 - i]->end_idx * state.head_height / 1000.0;
             
             // render beam
             if (note.stem.top < note.stem.base) // upward stem
             {
-                renderer.move_to((state.parameters.do_scale(note.stem.x) + state.offset.x) / 1000.0,
-                                 (state.parameters.do_scale(note.stem.top) + state.offset.y + yoffset) / 1000.0);
-                renderer.line_to((state.parameters.do_scale(note.stem.x) + state.offset.x) / 1000.0,
-                                 (state.parameters.do_scale(note.stem.top) + state.offset.y + yoffset + beam_height) / 1000.0);
+                renderer.move_to((state.scale(note.stem.x) + state.offset.x) / 1000.0,
+                                 (state.scale(note.stem.top) + state.offset.y + yoffset) / 1000.0);
+                renderer.line_to((state.scale(note.stem.x) + state.offset.x) / 1000.0,
+                                 (state.scale(note.stem.top) + state.offset.y + yoffset + beam_height) / 1000.0);
             }
             else                                // downward stem
             {
-                renderer.move_to((state.parameters.do_scale(note.stem.x) + state.offset.x) / 1000.0,
-                                 (state.parameters.do_scale(note.stem.top) + state.offset.y - yoffset - beam_height) / 1000.0);
-                renderer.line_to((state.parameters.do_scale(note.stem.x) + state.offset.x) / 1000.0,
-                                 (state.parameters.do_scale(note.stem.top) + state.offset.y - yoffset) / 1000.0);
+                renderer.move_to((state.scale(note.stem.x) + state.offset.x) / 1000.0,
+                                 (state.scale(note.stem.top) + state.offset.y - yoffset - beam_height) / 1000.0);
+                renderer.line_to((state.scale(note.stem.x) + state.offset.x) / 1000.0,
+                                 (state.scale(note.stem.top) + state.offset.y - yoffset) / 1000.0);
             };
             
             if (note.beam[VALUE_BASE - 3 - i]->end->stem.top < note.beam[VALUE_BASE - 3 - i]->end->stem.base)   // upward stem
             {
-                renderer.line_to((state.parameters.do_scale(note.beam[VALUE_BASE - 3 - i]->end->stem.x) + state.offset.x) / 1000.0,
-                                 (state.parameters.do_scale(note.beam[VALUE_BASE - 3 - i]->end->stem.top) + state.offset.y + yoffset_end + beam_height) / 1000.0);
-                renderer.line_to((state.parameters.do_scale(note.beam[VALUE_BASE - 3 - i]->end->stem.x) + state.offset.x) / 1000.0,
-                                 (state.parameters.do_scale(note.beam[VALUE_BASE - 3 - i]->end->stem.top) + state.offset.y + yoffset_end) / 1000.0);
+                renderer.line_to((state.scale(note.beam[VALUE_BASE - 3 - i]->end->stem.x) + state.offset.x) / 1000.0,
+                                 (state.scale(note.beam[VALUE_BASE - 3 - i]->end->stem.top) + state.offset.y + yoffset_end + beam_height) / 1000.0);
+                renderer.line_to((state.scale(note.beam[VALUE_BASE - 3 - i]->end->stem.x) + state.offset.x) / 1000.0,
+                                 (state.scale(note.beam[VALUE_BASE - 3 - i]->end->stem.top) + state.offset.y + yoffset_end) / 1000.0);
             }
             else                                                                                                // downward stem
             {
-                renderer.line_to((state.parameters.do_scale(note.beam[VALUE_BASE - 3 - i]->end->stem.x) + state.offset.x) / 1000.0,
-                                 (state.parameters.do_scale(note.beam[VALUE_BASE - 3 - i]->end->stem.top) + state.offset.y - yoffset_end) / 1000.0);
-                renderer.line_to((state.parameters.do_scale(note.beam[VALUE_BASE - 3 - i]->end->stem.x) + state.offset.x) / 1000.0,
-                                 (state.parameters.do_scale(note.beam[VALUE_BASE - 3 - i]->end->stem.top) + state.offset.y - yoffset_end - beam_height) / 1000.0);
+                renderer.line_to((state.scale(note.beam[VALUE_BASE - 3 - i]->end->stem.x) + state.offset.x) / 1000.0,
+                                 (state.scale(note.beam[VALUE_BASE - 3 - i]->end->stem.top) + state.offset.y - yoffset_end) / 1000.0);
+                renderer.line_to((state.scale(note.beam[VALUE_BASE - 3 - i]->end->stem.x) + state.offset.x) / 1000.0,
+                                 (state.scale(note.beam[VALUE_BASE - 3 - i]->end->stem.top) + state.offset.y - yoffset_end - beam_height) / 1000.0);
             }
             
             renderer.fill();    // close and fill the path
@@ -1778,10 +1883,10 @@ void Chord::render_beam(Renderer& renderer, const Plate::pNote& note, const Pres
                     overlay_flag_id,    // each other flag is overlaid by the next
                 
                 // calculate position
-                (  state.parameters.do_scale(note.stem.x - flag_anchor.x + (state.stem_width * sprite_scale) / 1000.0)
+                (  state.scale(note.stem.x - flag_anchor.x + (state.stem_width * sprite_scale) / 1000.0)
                  + state.offset.x) / 1000.0,
                 
-                (state.parameters.do_scale((note.stem.top < note.stem.base) ?
+                (state.scale((note.stem.top < note.stem.base) ?
                                note.stem.top        // upward stem
                              + ((flag_distance * i - flag_anchor.y) * sprite_scale) / 1000.0 :
                                note.stem.top        // downward stem
@@ -1789,12 +1894,18 @@ void Chord::render_beam(Renderer& renderer, const Plate::pNote& note, const Pres
                 + state.offset.y) / 1000.0,
                 
                 // caluclate scale
-                state.parameters.do_scale(sprite_scale) / 1000.0,
-                state.parameters.do_scale((note.stem.top < note.stem.base) ? sprite_scale : -sprite_scale) / 1000.0
+                state.scale(sprite_scale) / 1000.0,
+                state.scale((note.stem.top < note.stem.base) ? sprite_scale : -sprite_scale) / 1000.0
             );
         };
     };
 }
+
+Rest::Rest(const Rest& rest, bool no_sub)
+    : NoteObject(rest, no_sub),
+      offset_y  (rest.offset_y),
+      dot_offset(rest.dot_offset),
+      sprite    (rest.sprite) {}
 
 // sprite calculation (Rest)
 SpriteId Rest::get_sprite(const Sprites& spr) const
@@ -1891,7 +2002,7 @@ void Rest::engrave(EngraverState& engraver) const
         pnote.absolutePos.front().y -= head_height * ((VALUE_BASE - 3 - this->val.exp) / 2);
         
         // add further flags
-        for (size_t i = this->val.exp; i < VALUE_BASE - 3; ++i)
+        for (short i = this->val.exp; i < VALUE_BASE - 3; ++i)
         {
             pnote.absolutePos.push_back(pnote.absolutePos.front());    // get position
             pnote.absolutePos.back().y += head_height * (i - this->val.exp + 1);
@@ -1953,7 +2064,7 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
 
     const double sprite_scale = (state.head_height * appearance.scale)
                               / (1000.0 * renderer.get_sprites().head_height(note.sprite));
-    const double app_scale = state.parameters.do_scale(sprite_scale * appearance.scale) / 1.0e6;
+    const double app_scale = state.scale(sprite_scale * appearance.scale) / 1.0e6;
     
     // if we have a short rest, that is flagged
     if (this->val.exp < VALUE_BASE - 2)
@@ -1962,8 +2073,8 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
         for (Plate::pNote::PositionList::const_iterator p = note.absolutePos.begin(); p != --note.absolutePos.end(); ++p)
         {
             renderer.draw_sprite(note.sprite,
-                                 (state.parameters.do_scale(p->x) + state.offset.x) / 1000.0,
-                                 (state.parameters.do_scale(p->y) + state.offset.y) / 1000.0,
+                                 (state.scale(p->x) + state.offset.x) / 1000.0,
+                                 (state.scale(p->y) + state.offset.y) / 1000.0,
                                   app_scale,
                                   app_scale);
         };
@@ -1974,8 +2085,8 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
             renderer.draw_sprite(
                         SpriteId(note.sprite.setid,
                                 renderer.get_sprites()[note.sprite.setid].flags_base),
-                        (state.parameters.do_scale(note.absolutePos.back().x) + state.offset.x) / 1000.0,
-                        (state.parameters.do_scale(note.absolutePos.back().y) + state.offset.y) / 1000.0,
+                        (state.scale(note.absolutePos.back().x) + state.offset.x) / 1000.0,
+                        (state.scale(note.absolutePos.back().y) + state.offset.y) / 1000.0,
                          app_scale,
                          app_scale);
         };
@@ -1983,14 +2094,14 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
         // draw stem
         const SpriteInfo& info = renderer.get_sprites()[note.sprite];
         renderer.set_line_width(state.stem_width * sprite_scale);         // set line width
-        renderer.move_to((state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0 + info.real.find("stem.top.x1")->second    * app_scale,
-                         (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0 + info.real.find("stem.top.y1")->second    * app_scale);
-        renderer.line_to((state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0 + info.real.find("stem.top.x2")->second    * app_scale,
-                         (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0 + info.real.find("stem.top.y2")->second    * app_scale);
-        renderer.line_to((state.parameters.do_scale(note.absolutePos.back().x)  + state.offset.x) / 1000.0 + info.real.find("stem.bottom.x2")->second * app_scale,
-                         (state.parameters.do_scale(note.absolutePos.back().y)  + state.offset.y) / 1000.0 + info.real.find("stem.bottom.y2")->second * app_scale);
-        renderer.line_to((state.parameters.do_scale(note.absolutePos.back().x)  + state.offset.x) / 1000.0 + info.real.find("stem.bottom.x1")->second * app_scale,
-                         (state.parameters.do_scale(note.absolutePos.back().y)  + state.offset.y) / 1000.0 + info.real.find("stem.bottom.y1")->second * app_scale);
+        renderer.move_to((state.scale(note.absolutePos.front().x) + state.offset.x) / 1000.0 + info.real.find("stem.top.x1")->second    * app_scale,
+                         (state.scale(note.absolutePos.front().y) + state.offset.y) / 1000.0 + info.real.find("stem.top.y1")->second    * app_scale);
+        renderer.line_to((state.scale(note.absolutePos.front().x) + state.offset.x) / 1000.0 + info.real.find("stem.top.x2")->second    * app_scale,
+                         (state.scale(note.absolutePos.front().y) + state.offset.y) / 1000.0 + info.real.find("stem.top.y2")->second    * app_scale);
+        renderer.line_to((state.scale(note.absolutePos.back().x)  + state.offset.x) / 1000.0 + info.real.find("stem.bottom.x2")->second * app_scale,
+                         (state.scale(note.absolutePos.back().y)  + state.offset.y) / 1000.0 + info.real.find("stem.bottom.y2")->second * app_scale);
+        renderer.line_to((state.scale(note.absolutePos.back().x)  + state.offset.x) / 1000.0 + info.real.find("stem.bottom.x1")->second * app_scale,
+                         (state.scale(note.absolutePos.back().y)  + state.offset.y) / 1000.0 + info.real.find("stem.bottom.y1")->second * app_scale);
         renderer.fill();
         renderer.stroke();
     }
@@ -1999,10 +2110,10 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
     {
         // just draw the sprite
         renderer.draw_sprite(note.sprite,
-                             (state.parameters.do_scale(note.absolutePos.front().x) + state.offset.x) / 1000.0,
-                             (state.parameters.do_scale(note.absolutePos.front().y) + state.offset.y) / 1000.0,
-                              state.parameters.do_scale(sprite_scale * appearance.scale) / 1.0e6,
-                              state.parameters.do_scale(sprite_scale * appearance.scale) / 1.0e6);
+                             (state.scale(note.absolutePos.front().x) + state.offset.x) / 1000.0,
+                             (state.scale(note.absolutePos.front().y) + state.offset.y) / 1000.0,
+                              state.scale(sprite_scale * appearance.scale) / 1.0e6,
+                              state.scale(sprite_scale * appearance.scale) / 1.0e6);
     };
     
     // render dots
@@ -2013,10 +2124,10 @@ void Rest::render(Renderer& renderer, const Plate::pNote& note, const PressState
                      (renderer.get_sprites()[note.sprite.setid].dot != UNDEFINED) ?
                             renderer.get_sprites()[note.sprite.setid].dot :
                             renderer.get_sprites()[note.sprite.setid].undefined_symbol),
-            (state.parameters.do_scale(p->x) + state.offset.x) / 1000.0,
-            (state.parameters.do_scale(p->y) + state.offset.y) / 1000.0,
-            state.parameters.do_scale(sprite_scale) / 1000.0,
-            state.parameters.do_scale(sprite_scale) / 1000.0);
+            (state.scale(p->x) + state.offset.x) / 1000.0,
+            (state.scale(p->y) + state.offset.y) / 1000.0,
+            state.scale(sprite_scale) / 1000.0,
+            state.scale(sprite_scale) / 1000.0);
     };
 }
 
@@ -2061,11 +2172,11 @@ SpriteId Accidental::get_sprite(const Sprites& spr) const
 // engraving method (Movable)
 void Movable::engrave(EngraverState& engraver) const
 {
-    engraver.get_target().attached.push_back(Plate::pNote::AttachablePtr(new Plate::pAttachable(*this, engrave_pos(engraver, this->position))));
+    engraver.get_target().attached.push_back(Plate::pNote::AttachablePtr(new Plate::pAttachable(*this, engrave_pos(this->position, engraver))));
 }
 
 // calculate on-plate position of movable object
-Position<mpx_t> Movable::engrave_pos(const EngraverState& engraver, const UnitPosition<>& pos)
+Position<mpx_t> Movable::engrave_pos(const UnitPosition& pos, const EngraverState& engraver)
 {
     return Position<mpx_t>(
         _round(
@@ -2087,6 +2198,20 @@ Position<mpx_t> Movable::engrave_pos(const EngraverState& engraver, const UnitPo
             +
             ((pos.unit.y == pos.METRIC) ? engraver.get_viewport().umtopx_v(pos.co.y) : (
              (pos.unit.y == pos.HEAD)   ? (engraver.get_head_height() / 1000.0) * pos.co.y :
+                                          0))));
+}
+
+// calculate on-plate offset of movable object
+Position<mpx_t> Movable::engrave_pos(const UnitPosition& pos, const ViewportParam& viewport, umpx_t head_height)
+{
+    return Position<mpx_t>(
+        _round(
+            ((pos.unit.x == pos.METRIC) ? viewport.umtopx_h(pos.co.x) : (
+             (pos.unit.x == pos.HEAD)   ? (head_height / 1000.0) * pos.co.x :
+                                          0))),
+        _round(
+            ((pos.unit.y == pos.METRIC) ? viewport.umtopx_v(pos.co.y) : (
+             (pos.unit.y == pos.HEAD)   ? (head_height / 1000.0) * pos.co.y :
                                           0))));
 }
 
@@ -2121,9 +2246,9 @@ void TextArea::render(Renderer& renderer, const Plate::pAttachable& object, cons
     renderer.set_color(appearance.color.r, appearance.color.g, appearance.color.b, appearance.color.a);
     
     // prepare textbox
-    renderer.move_to((state.parameters.do_scale(object.absolutePos.x) + state.offset.x) / 1000.0,
-                     (state.parameters.do_scale(object.absolutePos.y) + state.offset.y) / 1000.0);
-    renderer.set_text_width(state.parameters.do_scale(object.gphBox.width) / 1000.0);
+    renderer.move_to((state.scale(object.absolutePos.x) + state.offset.x) / 1000.0,
+                     (state.scale(object.absolutePos.y) + state.offset.y) / 1000.0);
+    renderer.set_text_width(state.scale(object.gphBox.width) / 1000.0);
     
     // render text
     for (std::list<Paragraph>::const_iterator p = text.begin(); p != text.end(); ++p)
@@ -2142,7 +2267,7 @@ void TextArea::render(Renderer& renderer, const Plate::pAttachable& object, cons
         {
             // setup the font
             renderer.set_font_family(i->font.family);
-            renderer.set_font_size(state.parameters.do_scale(i->font.size * appearance.scale) / 1000.0);
+            renderer.set_font_size(state.scale(i->font.size * appearance.scale) / 1000.0);
             renderer.set_font_bold(i->font.bold);
             renderer.set_font_italic(i->font.italic);
             renderer.set_font_underline(i->font.underline);
@@ -2193,20 +2318,20 @@ void CustomSymbol::render(Renderer& renderer, const Plate::pAttachable& object, 
                               / (1000.0 * renderer.get_sprites().head_height(object.sprite));
     
     renderer.draw_sprite(object.sprite,
-                         (state.parameters.do_scale(object.absolutePos.x) + state.offset.x) / 1000.0,
-                         (state.parameters.do_scale(object.absolutePos.y) + state.offset.y) / 1000.0,
+                         (state.scale(object.absolutePos.x) + state.offset.x) / 1000.0,
+                         (state.scale(object.absolutePos.y) + state.offset.y) / 1000.0,
                          object.flipped.x
-                            ? -state.parameters.do_scale(sprite_scale) / 1000.0
-                            :  state.parameters.do_scale(sprite_scale) / 1000.0,
+                            ? -state.scale(sprite_scale) / 1000.0
+                            :  state.scale(sprite_scale) / 1000.0,
                          object.flipped.y
-                            ? -state.parameters.do_scale(sprite_scale) / 1000.0
-                            :  state.parameters.do_scale(sprite_scale) / 1000.0);
+                            ? -state.scale(sprite_scale) / 1000.0
+                            :  state.scale(sprite_scale) / 1000.0);
 }
 
 // engraving method (Durable)
 void Durable::engrave(EngraverState& engraver) const
 {
-    engraver.get_target().attached.push_back(Plate::pNote::AttachablePtr(new Plate::pDurable(*this, engrave_pos(engraver, this->position))));
+    engraver.get_target().attached.push_back(Plate::pNote::AttachablePtr(new Plate::pDurable(*this, engrave_pos(this->position, engraver))));
 }
 
 // calculate the graphical box for the given bezier spline
@@ -2287,7 +2412,6 @@ static Plate::GphBox calculate_gphBox(const Plate::Pos& p1, const Plate::Pos& p2
                            ((y2 < p1.y && y2 < p2.y)            ? y2   - 2*(w1-w0)*ty2*(1-ty2)-w0 :
                            ((p1.y < p2.y)                       ? p1.y - w0 / 2 :
                                                             p2.y - w0 / 2 )));
-    
     // create box
     return Plate::GphBox(Position<mpx_t>(mx, my), Mx - mx, My - my);
 }
@@ -2296,18 +2420,18 @@ static Plate::GphBox calculate_gphBox(const Plate::Pos& p1, const Plate::Pos& p2
 void Slur::engrave(EngraverState& engraver, DurableInfo& info) const
 {
     // get data
-    const StyleParam&    style       = engraver.get_style();
-    const ViewportParam& viewport    = engraver.get_viewport();
+    const StyleParam&    style    = engraver.get_style();
+    const ViewportParam& viewport = engraver.get_viewport();
     
     // calculate position of the end-node
-    info.target->endPos = engrave_pos(engraver, end);
+    info.target->endPos = engrave_pos(end, engraver);
     
     // calculate the graphical boundary box
     info.target->gphBox = calculate_gphBox(
             info.target->absolutePos,
             info.target->endPos,
-            info.target->absolutePos + engrave_pos(engraver, control1),
-            info.target->endPos + engrave_pos(engraver, control2),
+            info.target->absolutePos + engrave_pos(control1, viewport, engraver.get_head_height()),
+            info.target->endPos + engrave_pos(control2, viewport, engraver.get_head_height()),
             _round((this->thickness1 * viewport.umtopx_h(style.stem_width)) / 1000.0),
             _round((this->thickness2 * viewport.umtopx_h(style.stem_width)) / 1000.0));
     
@@ -2332,22 +2456,22 @@ void Slur::render(Renderer& renderer, const Plate::pAttachable& object, const Pr
     pos2.y = static_cast<const Plate::pDurable&>(object).endPos.y / 1000.0;
     
     // calculate control-point positions
-    if (control1.unit.x == UnitPosition<>::METRIC)
+    if (control1.unit.x == UnitPosition::METRIC)
         ctrl1.x = pos1.x + state.viewport.umtopx_h(control1.co.x) / 1000.0;
     else
         ctrl1.x = pos1.x + (static_cast<int>(state.head_height) * control1.co.x) / 1.0e6;
     
-    if (control1.unit.y == UnitPosition<>::METRIC)
+    if (control1.unit.y == UnitPosition::METRIC)
         ctrl1.y = pos1.y + state.viewport.umtopx_v(control1.co.y) / 1000.0;
     else
         ctrl1.y = pos1.y + (static_cast<int>(state.head_height) * control1.co.y) / 1.0e6;
     
-    if (control2.unit.x == UnitPosition<>::METRIC)
+    if (control2.unit.x == UnitPosition::METRIC)
         ctrl2.x = pos2.x + state.viewport.umtopx_h(control2.co.x) / 1000.0;
     else
         ctrl2.x = pos2.x + (static_cast<int>(state.head_height) * control2.co.x) / 1.0e6;
     
-    if (control2.unit.y == UnitPosition<>::METRIC)
+    if (control2.unit.y == UnitPosition::METRIC)
         ctrl2.y = pos2.y + state.viewport.umtopx_v(control2.co.y) / 1000.0;
     else
         ctrl2.y = pos2.y + (static_cast<int>(state.head_height) * control2.co.y) / 1.0e6;
@@ -2357,26 +2481,26 @@ void Slur::render(Renderer& renderer, const Plate::pAttachable& object, const Pr
     ctrl2 = pos1 + (static_cast<double>(appearance.scale) * (ctrl2 - pos1)) / 1000.0;
     
     // apply rendering scale and offset
-    pos1.x  = state.parameters.do_scale(pos1.x)  + state.offset.x / 1000.0;
-    pos1.y  = state.parameters.do_scale(pos1.y)  + state.offset.y / 1000.0;
-    pos2.x  = state.parameters.do_scale(pos2.x)  + state.offset.x / 1000.0;
-    pos2.y  = state.parameters.do_scale(pos2.y)  + state.offset.y / 1000.0;
-    ctrl1.x = state.parameters.do_scale(ctrl1.x) + state.offset.x / 1000.0;
-    ctrl1.y = state.parameters.do_scale(ctrl1.y) + state.offset.y / 1000.0;
-    ctrl2.x = state.parameters.do_scale(ctrl2.x) + state.offset.x / 1000.0;
-    ctrl2.y = state.parameters.do_scale(ctrl2.y) + state.offset.y / 1000.0;
+    pos1.x  = state.scale(pos1.x)  + state.offset.x / 1000.0;
+    pos1.y  = state.scale(pos1.y)  + state.offset.y / 1000.0;
+    pos2.x  = state.scale(pos2.x)  + state.offset.x / 1000.0;
+    pos2.y  = state.scale(pos2.y)  + state.offset.y / 1000.0;
+    ctrl1.x = state.scale(ctrl1.x) + state.offset.x / 1000.0;
+    ctrl1.y = state.scale(ctrl1.y) + state.offset.y / 1000.0;
+    ctrl2.x = state.scale(ctrl2.x) + state.offset.x / 1000.0;
+    ctrl2.y = state.scale(ctrl2.y) + state.offset.y / 1000.0;
     
     // render slur
     renderer.bezier_slur(pos1.x, pos1.y, ctrl1.x, ctrl1.y, ctrl2.x, ctrl2.y, pos2.x, pos2.y,
-                         state.parameters.do_scale((thickness1 * state.stem_width) / 1000.0) / 1000.0,
-                         state.parameters.do_scale((thickness2 * state.stem_width) / 1000.0) / 1000.0);
+                         state.scale((thickness1 * state.stem_width) / 1000.0) / 1000.0,
+                         state.scale((thickness2 * state.stem_width) / 1000.0) / 1000.0);
 }
 
 // engraving method (Hairpin)
 void Hairpin::engrave(EngraverState& engraver, DurableInfo& info) const
 {
     // calculate position of the end-node
-    info.target->endPos = engrave_pos(engraver, end);
+    info.target->endPos = engrave_pos(end, engraver);
     
     // calculate the graphical boundary box
     info.target->gphBox.pos = info.target->absolutePos;
@@ -2424,15 +2548,15 @@ void Hairpin::render(Renderer& renderer, const Plate::pAttachable& object, const
     };
     
     // set line-width
-    renderer.set_line_width(state.parameters.do_scale((thickness * state.stem_width) / 1000.0) / 1000.0);
+    renderer.set_line_width(state.scale((thickness * state.stem_width) / 1000.0) / 1000.0);
     
     // render hairpin symbol
-    renderer.move_to((state.parameters.do_scale(posStart.x) + state.offset.x) / 1000.0,
-                     (state.parameters.do_scale(posStart.y) + state.offset.y) / 1000.0);
-    renderer.line_to((state.parameters.do_scale(posPoint.x) + state.offset.x) / 1000.0,
-                     (state.parameters.do_scale(posPoint.y) + state.offset.y) / 1000.0);
-    renderer.line_to((state.parameters.do_scale(posEnd.x)   + state.offset.x) / 1000.0,
-                     (state.parameters.do_scale(posEnd.y)   + state.offset.y) / 1000.0);
+    renderer.move_to((state.scale(posStart.x) + state.offset.x) / 1000.0,
+                     (state.scale(posStart.y) + state.offset.y) / 1000.0);
+    renderer.line_to((state.scale(posPoint.x) + state.offset.x) / 1000.0,
+                     (state.scale(posPoint.y) + state.offset.y) / 1000.0);
+    renderer.line_to((state.scale(posEnd.x)   + state.offset.x) / 1000.0,
+                     (state.scale(posEnd.y)   + state.offset.y) / 1000.0);
     renderer.stroke();
 }
 

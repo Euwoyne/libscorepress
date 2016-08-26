@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -82,12 +82,11 @@ class SCOREPRESS_LOCAL BeamInfo
                const StemInfo*          stem_info,  // stem-info for current note (saved to plate or erased from plate)
                const bool               has_beam,   // does the note have a beam?
                const unsigned int       exp,        // effective value exponent
-               const unsigned int       time);      // time stamp
+               const unsigned long      time);      // time stamp
     
  public:
     // constructor
     BeamInfo(Plate::pVoice& voice);
-    BeamInfo() __attribute__((noreturn)) {throw MissingDefaultConstructor("BeamInfo");}
     
     // create beam information (first pass; only top beam; expecting the "object" to correspond to the last note in the "voice")
     void apply1(const Chord& object, const unsigned char beam_group, const StemInfo& info);

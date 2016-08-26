@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -25,12 +25,12 @@
 
 using namespace ScorePress;
 
-static void add(Staff& voice, unsigned char exp, int tone, int stem_length, Chord::BeamType beam = Chord::NO_BEAM);
-static void add(SubVoice& voice, unsigned char exp, int tone, int stem_length, Chord::BeamType beam = Chord::NO_BEAM);
+static void add(Staff& voice, unsigned char exp, int tone, int stem_length, Chord::BeamType beam = Chord::BEAM_NONE);
+static void add(SubVoice& voice, unsigned char exp, int tone, int stem_length, Chord::BeamType beam = Chord::BEAM_NONE);
 static void add(Staff& voice, unsigned char exp, int tone, int stem_length,
-                int x1, int y1, int cx1, int cy1, int cx2, int cy2, int x2, int y2, Chord::BeamType beam = Chord::NO_BEAM);
+                int x1, int y1, int cx1, int cy1, int cx2, int cy2, int x2, int y2, Chord::BeamType beam = Chord::BEAM_NONE);
 //static void add(SubVoice& voice, unsigned char exp, int tone, int stem_length,
-//                int x1, int y1, int cx1, int cy1, int cx2, int cy2, int x2, int y2, Chord::BeamType beam = Chord::NO_BEAM);
+//                int x1, int y1, int cx1, int cy1, int cx2, int cy2, int x2, int y2, Chord::BeamType beam = Chord::BEAM_NONE);
 //static void addr(Staff& voice, unsigned char exp, int offset_y = 0);
 static void addr(SubVoice& voice, unsigned char exp, int offset_y = 0);
 static void add_head(Staff& voice, int tone);
@@ -52,7 +52,7 @@ static void add(Staff& voice, unsigned char exp, int tone, int stem_length, Chor
     static_cast<Chord&>(*voice.notes.back()).val.exp = exp & 0x0F;
     static_cast<Chord&>(*voice.notes.back()).heads.push_back(HeadPtr(new Head()));
     static_cast<Chord&>(*voice.notes.back()).heads.back()->tone = static_cast<tone_t>(tone);
-    static_cast<Chord&>(*voice.notes.back()).stem_length = stem_length * 500;
+    static_cast<Chord&>(*voice.notes.back()).stem.length = stem_length * 500;
     static_cast<Chord&>(*voice.notes.back()).beam = beam;
 }
 
@@ -62,7 +62,7 @@ static void add(SubVoice& voice, unsigned char exp, int tone, int stem_length, C
     static_cast<Chord&>(*voice.notes.back()).val.exp = exp & 0x0F;
     static_cast<Chord&>(*voice.notes.back()).heads.push_back(HeadPtr(new Head()));
     static_cast<Chord&>(*voice.notes.back()).heads.back()->tone = static_cast<tone_t>(tone);
-    static_cast<Chord&>(*voice.notes.back()).stem_length = stem_length * 500;
+    static_cast<Chord&>(*voice.notes.back()).stem.length = stem_length * 500;
     static_cast<Chord&>(*voice.notes.back()).beam = beam;
 }
 
@@ -81,7 +81,7 @@ static void add(Staff& voice, unsigned char exp, int tone, int stem_length,
     static_cast<TiedHead&>(*static_cast<Chord&>(*voice.notes.back()).heads.back()).control2.y = cy2;
     static_cast<TiedHead&>(*static_cast<Chord&>(*voice.notes.back()).heads.back()).offset2.x = x2;
     static_cast<TiedHead&>(*static_cast<Chord&>(*voice.notes.back()).heads.back()).offset2.y = y2;
-    static_cast<Chord&>(*voice.notes.back()).stem_length = stem_length * 500;
+    static_cast<Chord&>(*voice.notes.back()).stem.length = stem_length * 500;
     static_cast<Chord&>(*voice.notes.back()).beam = beam;
 }
 /*
@@ -161,21 +161,21 @@ static void add_articulation(SubVoice& voice, const SpriteId& sprite, int offset
 static void add_newline(Staff& voice, unsigned int distance, int indent, int right_margin, bool justify, bool force)
 {
     voice.notes.push_back(StaffObjectPtr(new Newline()));
-    static_cast<Newline&>(*voice.notes.back()).distance = distance;
-    static_cast<Newline&>(*voice.notes.back()).indent = indent;
-    static_cast<Newline&>(*voice.notes.back()).right_margin = right_margin;
-    static_cast<Newline&>(*voice.notes.back()).justify = justify;
-    static_cast<Newline&>(*voice.notes.back()).forced_justification = force;
+    static_cast<Newline&>(*voice.notes.back()).layout.distance = distance;
+    static_cast<Newline&>(*voice.notes.back()).layout.indent = indent;
+    static_cast<Newline&>(*voice.notes.back()).layout.right_margin = right_margin;
+    static_cast<Newline&>(*voice.notes.back()).layout.justify = justify;
+    static_cast<Newline&>(*voice.notes.back()).layout.forced_justification = force;
 }
 
 static void add_newline(SubVoice& voice, unsigned int distance, int indent, int right_margin, bool justify, bool force)
 {
     voice.notes.push_back(VoiceObjectPtr(new Newline()));
-    static_cast<Newline&>(*voice.notes.back()).distance = distance;
-    static_cast<Newline&>(*voice.notes.back()).indent = indent;
-    static_cast<Newline&>(*voice.notes.back()).right_margin = right_margin;
-    static_cast<Newline&>(*voice.notes.back()).justify = justify;
-    static_cast<Newline&>(*voice.notes.back()).forced_justification = force;
+    static_cast<Newline&>(*voice.notes.back()).layout.distance = distance;
+    static_cast<Newline&>(*voice.notes.back()).layout.indent = indent;
+    static_cast<Newline&>(*voice.notes.back()).layout.right_margin = right_margin;
+    static_cast<Newline&>(*voice.notes.back()).layout.justify = justify;
+    static_cast<Newline&>(*voice.notes.back()).layout.forced_justification = force;
 }
 /*
 static void add_pagebreak(Staff& voice, unsigned int distance, int indent, int right_margin, bool justify, bool force)
@@ -206,10 +206,10 @@ static void add1(Staff& staff, const Sprites& sprites, int toneoffset)
     subvoice.stem_direction = Voice::STEM_DOWN;
     static_cast<Chord&>(*staff.notes.back()).attached.push_back(MovablePtr(new Slur()));
     static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).duration = 1u << VALUE_BASE;
-    static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).position.orig.x = UnitPosition<>::NOTE;
-    static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).position.orig.y = UnitPosition<>::STAFF;
-    static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).position.unit.x = UnitPosition<>::HEAD;
-    static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).position.unit.y = UnitPosition<>::HEAD;
+    static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).position.orig.x = UnitPosition::NOTE;
+    static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).position.orig.y = UnitPosition::STAFF;
+    static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).position.unit.x = UnitPosition::HEAD;
+    static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).position.unit.y = UnitPosition::HEAD;
     static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).position.co.x = 0;
     static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).position.co.y = 0;
     static_cast<Slur&>(*static_cast<Chord&>(*staff.notes.back()).attached.front()).control1
@@ -227,7 +227,7 @@ static void add1(Staff& staff, const Sprites& sprites, int toneoffset)
     add(staff, VALUE_BASE-2, 70 + toneoffset, 6, 100, -700, 1500, -600, -1500, -600, -100, -700);
     add_accidental(staff, Accidental::flat, 0);
     add_articulation(staff, SpriteId(0, sprites.front().index("articulation.tenuto")), 0, true);
-    add(staff, VALUE_BASE-3, 70 + toneoffset, 6, Chord::NO_BEAM);
+    add(staff, VALUE_BASE-3, 70 + toneoffset, 6, Chord::BEAM_NONE);
     add_accidental(staff, Accidental::flat, 0);
     /**/add(staff, VALUE_BASE-3, 69 + toneoffset, 6);
     add(staff, VALUE_BASE-2, 72 + toneoffset, 6);
@@ -238,7 +238,7 @@ static void add1(Staff& staff, const Sprites& sprites, int toneoffset)
     add(subvoice, VALUE_BASE-2, 63 + toneoffset, -6);
     add_accidental(subvoice, Accidental::flat, 500);
     add(subvoice, VALUE_BASE-2, 67 + toneoffset, -6);
-    add(subvoice, VALUE_BASE-2, 67 + toneoffset, -6, Chord::NO_BEAM);
+    add(subvoice, VALUE_BASE-2, 67 + toneoffset, -6, Chord::BEAM_NONE);
     add_articulation(subvoice, SpriteId(0, sprites.front().index("articulation.marcato")), 0, true);
 }
 
@@ -265,14 +265,15 @@ static void add2(Staff& staff, const Sprites& sprites, int toneoffset, int staff
     
     // sub-voice notes
     addr(subvoice, VALUE_BASE-2, 3000);
-    add(subvoice, VALUE_BASE-3, 65 + toneoffset, -6, Chord::FORCE_BEAM);
+    add(subvoice, VALUE_BASE-3, 65 + toneoffset, -6, Chord::BEAM_FORCED
+    );
     /**/static_cast<Chord&>(*subvoice.notes.back()).val.dots = 1;
     static_cast<Chord&>(*subvoice.notes.back()).attached.push_back(MovablePtr(new Hairpin()));
     static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).duration = 3u << (VALUE_BASE-2);
-    static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).position.orig.x = UnitPosition<>::NOTE;
-    static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).position.orig.y = UnitPosition<>::STAFF;
-    static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).position.unit.x = UnitPosition<>::HEAD;
-    static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).position.unit.y = UnitPosition<>::HEAD;
+    static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).position.orig.x = UnitPosition::NOTE;
+    static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).position.orig.y = UnitPosition::STAFF;
+    static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).position.unit.x = UnitPosition::HEAD;
+    static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).position.unit.y = UnitPosition::HEAD;
     static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).position.co.x = 0;
     static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).position.co.y = 8500;
     static_cast<Hairpin&>(*static_cast<Chord&>(*subvoice.notes.back()).attached.back()).end
@@ -356,6 +357,7 @@ static void set_test(Document& document, const Sprites& sprites)
     //score.staves.back().layout.auto_clef = false;
     //score.staves.back().layout.auto_key = false;
     //score.staves.back().layout.auto_timesig = false;
+    score.staves.back().stem_direction = Voice::STEM_UP;
     
     score.staves.back().notes.push_back(StaffObjectPtr(new Clef()));
     static_cast<Clef&>(*score.staves.back().notes.back()).sprite = SpriteId(0, sprites.front().index("clef.treble"));
@@ -378,7 +380,9 @@ static void set_test(Document& document, const Sprites& sprites)
     add2(score.staves.back(), sprites, 0, 3000);
     add1(score.staves.back(), sprites);
     add2(score.staves.back(), sprites, 0, 3000);
+    add(score.staves.back(), VALUE_BASE-2, 69, 6);
     //*/
+    
     score.staves.push_back(Staff());
     score.staves.back().offset_y = 6000;        // pohh
     score.staves.back().line_count = 5;
@@ -390,6 +394,7 @@ static void set_test(Document& document, const Sprites& sprites)
     //score.staves.back().layout.auto_clef = false;
     //score.staves.back().layout.auto_key = false;
     //score.staves.back().layout.auto_timesig = false;
+    score.staves.back().stem_direction = Voice::STEM_UP;
     
     score.staves.back().notes.push_back(StaffObjectPtr(new Clef()));
     static_cast<Clef&>(*score.staves.back().notes.back()).sprite = SpriteId(0, sprites.front().index("clef.bass"));
@@ -411,6 +416,7 @@ static void set_test(Document& document, const Sprites& sprites)
     add2(score.staves.back(), sprites, -24);
     add1(score.staves.back(), sprites, -24);
     add2(score.staves.back(), sprites, -24);
+    add(score.staves.back(), VALUE_BASE-2, 69 + -24, 6);
     //*/
 }
 
@@ -421,3 +427,4 @@ const Document& Test::get_document(const Sprites& sprites)
         set_test(document, sprites);
     return document;
 }
+

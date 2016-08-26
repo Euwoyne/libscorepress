@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -59,18 +59,13 @@ void BeamInfo::start(unsigned int exp, Plate::pVoice::Iterator pnote)
     };
 }
 
-// helper function, checking if the two notes have stems in equal directions
-inline static bool equal_dir(const Plate::pNote& n1, const Plate::pNote& n2)
-{
-    return !((n1.stem.top < n1.stem.base) ^ (n2.stem.top < n2.stem.base));
-}
-
 // helper for "set", "stop" and "cut"
 void BeamInfo::calculate_beam(size_t i, Plate::pNote& pnote, const Plate::pNote& end, size_t& s, ShortDir short_dir)
 {
     if (beam[i] != voice->notes.end())  // ...if it exists
     {                                   //   let the beam go up to the given end-note
-        if (equal_dir(*beam[i], end))
+        // set the beam
+        if (beam[i]->stem.is_up() == end.stem.is_up())
             set(i, VALUE_BASE - 3 - i + s, *beam[i], end, pnote); 
         else
             set(i, (i < VALUE_BASE - 3) ? s++ : s, *beam[i], end, pnote);
@@ -104,7 +99,7 @@ void BeamInfo::calculate_beam(size_t i, Plate::pNote& pnote, const Plate::pNote&
                         throw Error("Beam does not start at a chord.");
                     
                     // let the beam face left (if the previous note did not cut the beam)
-                    if (static_cast<const Chord&>(*short_end->note).beam != Chord::CUT_BEAM || short_dir == FORCE_LEFT)
+                    if (static_cast<const Chord&>(*short_end->note).beam != Chord::BEAM_CUT || short_dir == FORCE_LEFT)
                     {
                         beam[i]->beam[i]->short_left = true;
                         if (beam[i] != beam[VALUE_BASE - 3])
@@ -142,7 +137,7 @@ void BeamInfo::set(unsigned int exp, Plate::pVoice::Iterator pnote, ShortDir sho
     {
         if (beam[i] != voice->notes.end())  // if the beam exists...
         {                                   // ...increment counter on unequal stem direction
-            if (!equal_dir(*beam[i], *end))
+            if (beam[i]->stem.is_up() != end->stem.is_up())
                 ++s;                        
         };
     };
@@ -182,27 +177,29 @@ void BeamInfo::apply(const Chord&             chord,      // current chord
                      const StemInfo*          stem_info,  // stem-info for current note (saved to plate or erased from plate)
                      const bool               has_beam,   // does the note have a beam?
                      const unsigned int       exp,        // effective value exponent
-                     const unsigned int       time)       // time stamp
+                     const unsigned long      time)       // time stamp
 {
     // short beam direction
     const ShortDir left = // FORCED LEFT, if last note had the beam cut
-                          (last_chord && last_chord->beam == Chord::CUT_BEAM) ? FORCE_LEFT : 
+                          (last_chord && last_chord->beam == Chord::BEAM_CUT) ? FORCE_LEFT : 
                           
                           // LEFT, at the beginning of the corresponding beat
                           (time % (2u << exp) != 0  ? LEFT : RIGHT);
+    
+    // add stem-info, if present (i.e. during the first pass; used by "EngraverState::engrave_stems")
+    if (stem_info)
+        pnote->stem_info = Plate::pNote::StemInfoPtr(new StemInfo(*stem_info));
+    
+    // delete stem-info, if not present (i.e. during the second pass; see "apply2")
+    else
+        free(pnote->stem_info);
     
     // calculate beam
     if (has_beam && exp < VALUE_BASE - 2)   // if the note has got a beam
     {
         // if the previous note cut all beams
-        if (last_chord && last_chord->beam == Chord::CUT_BEAM)
+        if (last_chord && last_chord->beam == Chord::BEAM_CUT)
             set(VALUE_BASE - 3, pnote, FORCE_LEFT); // end all beams but one on the previous
-        
-        // add stem-info, if present
-        if (stem_info)
-            pnote->stem_info = Plate::pNote::StemInfoPtr(new StemInfo(*stem_info));
-        else    // delete stem-info, if not present
-            free(pnote->stem_info);
         
         // calculate beams
         if (beam[exp] == voice->notes.end())    // if there are not sufficient beams attached already
@@ -255,14 +252,14 @@ void BeamInfo::apply1(const Chord& object, const unsigned char beam_group, const
     if (voice->notes.empty()) return;
     apply(object, --voice->notes.end(), &info,
     // has_beam =
-              object.beam == Chord::FORCE_BEAM              // forced beam
-          ||  object.beam == Chord::CUT_BEAM                // cut beam
-          || (object.beam == Chord::AUTO_BEAM               // automatic beam
+              object.beam == Chord::BEAM_FORCED             // forced beam
+          ||  object.beam == Chord::BEAM_CUT                // cut beam
+          || (object.beam == Chord::BEAM_AUTO               // automatic beam
               &&    voice->end_time.i() / (1 << beam_group) //   if, this and the next note are in the same group
                  == (voice->end_time - object.value()).i() / (1 << beam_group)
              ),
     // exp =
-          (   object.beam == Chord::CUT_BEAM        // if the beam is cut
+          (   object.beam == Chord::BEAM_CUT        // if the beam is cut
            && object.val.exp < VALUE_BASE - 3) ?    //  (and there even is a beam)
                  (VALUE_BASE - 3) :                 // do, as if this was an 8th note
                  object.val.exp,                    // otherwise pass the correct value
@@ -276,9 +273,9 @@ void BeamInfo::apply2(const Chord& object, Plate::pVoice::Iterator pnote, const 
 {
     apply(object, pnote, NULL,
     // has_beam =
-              object.beam == Chord::FORCE_BEAM      // forced beam
-          ||  object.beam == Chord::CUT_BEAM        // cut beam
-          || (object.beam == Chord::AUTO_BEAM       // automatic beam
+              object.beam == Chord::BEAM_FORCED     // forced beam
+          ||  object.beam == Chord::BEAM_CUT        // cut beam
+          || (object.beam == Chord::BEAM_AUTO       // automatic beam
               &&    time.i() / (1 << beam_group)    //   if, this and the next note are in the same group
                  == (time - object.value()).i() / (1 << beam_group)
              ),

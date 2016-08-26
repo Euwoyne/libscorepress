@@ -1,8 +1,10 @@
-# Code::Blocks files
-libscorepress.depend
-libscorepress.layout
+# Eclipse Project files
+.cproject
+.project
+.settings/
 
 # Configure Output
+autom4te.cache
 config.status
 *.log
 config.hh

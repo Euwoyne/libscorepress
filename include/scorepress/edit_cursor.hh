@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -44,6 +44,10 @@ class ObjectCursor;     // object-cursor prototype (see "object_cursor.hh")
 class SCOREPRESS_API EditCursor : public UserCursor
 {
  public:
+    // exception classes
+    class SCOREPRESS_API RemoveMainException : public UserCursor::Error // thrown, if the main voice is deleted
+        {public: RemoveMainException();};
+    
     // note-name enumeration type
     enum SCOREPRESS_API NoteName {C, D, E, F, G, A, B};
     
@@ -63,7 +67,6 @@ class SCOREPRESS_API EditCursor : public UserCursor
  private:
     // interface parameters
     const InterfaceParam& param;
-    const StyleParam&     style;
     const ViewportParam&  viewport;
     
     // calculate tone from note-name (regarding input method, ignoring accidentals)
@@ -72,24 +75,26 @@ class SCOREPRESS_API EditCursor : public UserCursor
     // create the head instance (according to "relative_accidentals" parameter)
     SCOREPRESS_LOCAL HeadPtr create_head(const InputNote& note) const throw(NotValidException);
     
-    // calculates the automatic stem-length (uses staff reference)
-    SCOREPRESS_LOCAL void set_auto_stem_length(Chord& chord) const throw(NotValidException);
-    
-    // sets the stem-length, so that the stem alignes with the second note (uses staff reference)
-    SCOREPRESS_LOCAL void set_stem_aligned(Chord& chord, const Chord& chord2) const throw(NotValidException);
-    SCOREPRESS_LOCAL void set_stem_aligned(Chord& chord, Chord& chord2, bool shorten) const throw(NotValidException);
-    
     // execute the given function for each chord in the beam-group defined by the cursor
-    SCOREPRESS_LOCAL
-    static bool for_each_chord_in_beam_do(VoiceCursor&, void (*)(Chord&, const int, int*), const int arg, int* out = NULL);
+    typedef void (*callback_t)(Chord&, const VoiceCursor&, const int, int*);
+    SCOREPRESS_LOCAL static bool for_each_chord_in_beam_do(VoiceCursor&, callback_t, const int arg, int* out = NULL);
+    
+    // callbacks for different tasks
+    SCOREPRESS_LOCAL static void _add_stem_length(Chord&, const VoiceCursor&, const int pohh, int*);
+    SCOREPRESS_LOCAL static void _set_stem_length(Chord&, const VoiceCursor&, const int pohh, int*);
+    SCOREPRESS_LOCAL static void _set_stem_dir(   Chord&, const VoiceCursor&, const int dir,  int*);
+    SCOREPRESS_LOCAL static void _set_stem_type(  Chord&, const VoiceCursor&, const int type, int*);
+    
+    // set the given cursor "beam_begin" to the first note within the current beam-group
+    SCOREPRESS_LOCAL bool get_beam_begin(VoiceCursor& beam_begin) const;
     
  public:
     // constructors
     EditCursor(      Document&       document,
                      Pageset&        pageset,
                const InterfaceParam& param,
-               const StyleParam&     style,
                const ViewportParam&  viewport);
+    
     virtual ~EditCursor();
     
     // access methods (constant; from UserCursor)
@@ -110,6 +115,12 @@ class SCOREPRESS_API EditCursor : public UserCursor
     using UserCursor::get_pvoice;
     using UserCursor::get_platenote;
     
+    // layout access (constant; from UserCursor)
+    using UserCursor::get_style;
+    using UserCursor::get_layout;
+    using UserCursor::get_dimension;
+    using UserCursor::get_page_attached;
+    
     // access methods (non-constant)
     Document&       get_document();                             // return the document
     Score&          get_score();                                // return the score-object
@@ -118,23 +129,19 @@ class SCOREPRESS_API EditCursor : public UserCursor
     Cursor&         get_cursor()    throw(NotValidException);   // return the score-cursor
     MovableList&    get_attached()  throw(NotValidException);   // return objects attached to the note
     
-    unsigned int    get_pageno();                               // return the page-number
-    unsigned int    get_start_page();                           // return the start-page of the score
-    unsigned int    get_score_page();                           // return the page-number within the score
+    size_t          get_pageno();                               // return the page-number
+    size_t          get_start_page();                           // return the start-page of the score
+    size_t          get_score_page();                           // return the page-number within the score
     Pageset&        get_pageset();                              // return the pageset
     Pageset::pPage& get_page();                                 // return the page
     Plate&          get_plate();                                // return the plate-object
     Plate::pLine&   get_line();                                 // return the on-plate line
     Plate::pVoice&  get_pvoice()     throw(NotValidException);  // return the on-plate voice
     Plate::pNote&   get_platenote()  throw(NotValidException);  // return the on-plate note
-
-    // layout access (constant; redeclared from UserCursor)
-    const Newline&        get_layout()        const throw(NotValidException);   // return the line layout
-    const ScoreDimension& get_dimension()     const throw(NotValidException);   // return the score dimension
-    const MovableList&    get_page_attached() const throw(NotValidException);   // return objects attached to the page
     
     // layout access (non-constant)
-    Newline&        get_layout()        throw(NotValidException);   // return the line layout
+    StyleParam&     get_style()         throw(NotValidException);   // return the style parameters
+    LayoutParam&    get_layout()        throw(NotValidException);   // return the line layout
     ScoreDimension& get_dimension()     throw(NotValidException);   // return the score dimension
     MovableList&    get_page_attached() throw(NotValidException);   // return objects attached to the page
     
@@ -147,24 +154,21 @@ class SCOREPRESS_API EditCursor : public UserCursor
     void insert_pagebreak() throw(NotValidException, NoScoreException, Error);
     
     // remove an object
-    void remove()           throw(NotValidException);           // remove a note
-    void remove_voice()     throw(NotValidException, Cursor::IllegalObjectTypeException);   // remove a voice
-    void remove_newline()   throw(NotValidException);           // remove newline/pagebreak
-    void remove_pagebreak() throw(NotValidException);           // convert pagebreak to newline
-    void remove_break()     throw(NotValidException);           // remove newlines, convert pagebreak
-    
-    // voice control
-    void add_voice() throw(NotValidException, Cursor::IllegalObjectTypeException);  // add empty voice
+    void remove()           throw(NotValidException);                       // remove a note
+    void remove_voice()     throw(NotValidException, RemoveMainException);  // remove a voice
+    void remove_newline()   throw(NotValidException);                       // remove newline/pagebreak
+    void remove_pagebreak() throw(NotValidException);                       // convert pagebreak to newline
+    void remove_break()     throw(NotValidException);                       // remove newlines, convert pagebreak
     
     // stem control
-    void add_stem_length(int pohh) throw(Cursor::IllegalObjectTypeException);
-    void set_stem_length(int pohh) throw(Cursor::IllegalObjectTypeException);
-    void add_stem_slope(int pohh)  throw(Cursor::IllegalObjectTypeException);
-    void set_stem_slope(int pohh)  throw(Cursor::IllegalObjectTypeException);
-    void set_stem_dir(bool down)   throw(Cursor::IllegalObjectTypeException);
+    void add_stem_length(spohh_t pohh) throw(Cursor::IllegalObjectTypeException);
+    void set_stem_length(spohh_t pohh) throw(Cursor::IllegalObjectTypeException);
+    void add_stem_slope(spohh_t pohh)  throw(Cursor::IllegalObjectTypeException);
+    void set_stem_slope(spohh_t pohh)  throw(Cursor::IllegalObjectTypeException);
+    void set_stem_dir(bool down)       throw(Cursor::IllegalObjectTypeException);
     
-    void set_stem_length_auto()    throw(Cursor::IllegalObjectTypeException);
-    void set_stem_dir_auto()       throw(Cursor::IllegalObjectTypeException);
+    void set_stem_type(const Chord::StemType)   throw(Cursor::IllegalObjectTypeException);
+    void set_slope_type(const Chord::SlopeType) throw(Cursor::IllegalObjectTypeException);
     
     // accidental control
     void set_accidental_auto() throw(Cursor::IllegalObjectTypeException);
@@ -176,9 +180,9 @@ inline EditCursor::InputNote::InputNote(NoteName n, signed char o, unsigned char
 
 inline Document&       EditCursor::get_document()   {return *document;}
 inline Score&          EditCursor::get_score()      {return *score;}
-inline unsigned int    EditCursor::get_pageno()     {return page->pageno;}
-inline unsigned int    EditCursor::get_start_page() {return plateinfo->start_page;}
-inline unsigned int    EditCursor::get_score_page() {return plateinfo->pageno;}
+inline size_t          EditCursor::get_pageno()     {return page->pageno;}
+inline size_t          EditCursor::get_start_page() {return plateinfo->start_page;}
+inline size_t          EditCursor::get_score_page() {return plateinfo->pageno;}
 inline Pageset&        EditCursor::get_pageset()    {return *pageset;}
 inline Pageset::pPage& EditCursor::get_page()       {return *page;}
 inline Plate&          EditCursor::get_plate()      {return *plateinfo->plate;}

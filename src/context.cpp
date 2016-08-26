@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -80,7 +80,7 @@ void VoiceContext::modify(const ContextChanging& changer, bool vol)
 // set new time-signature
 void VoiceContext::modify(const TimeSig& timesig, value_t time)
 {
-    _time_bar += ((time - _time_time) / value_t(_time_sig)).i();   // calculate current bar
+    _time_bar += ((time - _time_time) / _time_sig.beat_length()).i();   // calculate current bar
     _time_sig = timesig;   // save new time-signature
     _time_time = time;     // save current time
 }

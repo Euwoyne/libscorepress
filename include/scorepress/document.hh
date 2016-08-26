@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -60,32 +60,34 @@ class SCOREPRESS_API Document
     class Score
     {
      public:
-        unsigned int start_page;    // document-page number of the first score-page
-        ScorePress::Score score;    // score object
+        size_t            start_page;   // document-page number of the first score-page
+        ScorePress::Score score;        // score object
         
-        Score(unsigned int _page) : start_page(_page) {}
+        Score(size_t _page) : start_page(_page) {}
     };
     
     // list typedefs
-    typedef std::map<unsigned int, MovableList> AttachedMap;
-    typedef std::list<Score>                    ScoreList;
+    typedef std::map<size_t, MovableList> AttachedMap;
+    typedef std::list<Score>              ScoreList;
     
  public:
     AttachedMap    attached;        // objects attached to the document
     PageDimension  page_layout;     // page layout
     ScoreList      scores;          // scores within the document
     DocumentMeta   meta;            // meta information
+    StyleParam     style;           // default style parameters (may be overwritten by scores and staves)
+    EngraverParam  param;           // default engraver parameters (may be overwritten by scores)
     
     // on-page object parameters
-    unsigned int head_height;       // default head-height (in micrometer)
-    unsigned int stem_width;        // default stem-width  (in micrometer)
+    uum_t head_height;              // default head-height
+    uum_t stem_width;               // default stem-width
     
  public:
     // attached object interface
-    void add_attached(Movable* object, unsigned int page);  // adds attachable (ownership transferred to this instance)
+    void add_attached(Movable* object, size_t page);    // adds attachable (ownership transferred to this instance)
 };
 
-inline void Document::add_attached(Movable* object, unsigned int page) {
+inline void Document::add_attached(Movable* object, size_t page) {
     attached[page].push_back(MovablePtr(object));}
 
 } // end namespace
