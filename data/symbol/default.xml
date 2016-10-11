@@ -99,7 +99,7 @@
         <movables>
             <group id="dynamic">
                 <name lang="en">Dynamic Symbols</name>
-                <name lang="en">Dynamik Symbole</name>
+                <name lang="de">Dynamik Symbole</name>
                 <typeface id="dynamic" ascent="33" descent="-14" general-use="yes" custom-use="yes">
                     <glyph char="f"  path="forte"            bearing-x="-13"  bearing-y="33"   advance="21"/>
                     <glyph char="p"  path="piano"            bearing-x="-6"   bearing-y="21"   advance="30"/>
@@ -117,7 +117,7 @@
                 <symbol id="mp"  type="string" path="mP"> <name>mezzo piano</name></symbol>
                 <symbol id="pp"  type="string" path="pp"> <name>pianissimo</name></symbol>
                 <symbol id="ppp" type="string" path="ppp"><name>piano pianissimo</name></symbol>
-                <symbol id="fp"  type="string" path="fp"> <name>fortepiano</name></symbol>
+                <symbol id="fp"  type="string" path="fP"> <name>fortepiano</name></symbol>
                 <symbol id="sf"  type="string" path="sf"> <name>sforzato</name></symbol>
                 <symbol id="sfz" type="string" path="sfz"><name>sforzando</name></symbol>
                 <symbol id="fz"  type="string" path="fz"> <name>forzando</name></symbol>
