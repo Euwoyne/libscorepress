@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -303,14 +303,14 @@ Cursor UserCursor::prepare_note(VoiceCursor& newvoice, Plate::pVoice& pvoice)
                  const_cast<SubVoice&>(static_cast<const SubVoice&>(pvoice.begin.voice())));
     
     // search for the front note
-    newvoice.line_layout.reset();
-    newvoice.page_layout.reset();
+    newvoice.newline.reset();
+    newvoice.pagebreak.reset();
     while (!note.at_end() && note != pvoice.begin)
     {
         if (note->is(Class::PAGEBREAK))     // search for page layout
-            newvoice.page_layout = note;
+            newvoice.pagebreak = note;
         if (note->is(Class::NEWLINE))       // search for line layout
-            newvoice.line_layout = note;
+            newvoice.newline = note;
         ++note;
     };
     
@@ -343,7 +343,7 @@ bool UserCursor::prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice)
 void UserCursor::prepare_layout(VoiceCursor& newvoice)
 {
     // check for default-layout
-    if (newvoice.page_layout.ready() && newvoice.line_layout.ready())
+    if (newvoice.pagebreak.ready() && newvoice.newline.ready())
         return;                 // if layout is already there, abort
     if (newvoice.note.is_main())
         return;                 // if the main-voice has got default layout, abort
@@ -368,87 +368,12 @@ void UserCursor::prepare_layout(VoiceCursor& newvoice)
     prepare_layout(*parent);
     
     // copy layout from parent
-    if (!newvoice.page_layout.ready())              // if no page-layout is given
-        newvoice.page_layout = parent->page_layout; //     inherit from parent
-    if (!newvoice.line_layout.ready())              // if no line-layout is given
-        newvoice.line_layout = parent->line_layout; //     inherit from parent
+    if (!newvoice.pagebreak.ready())            // if no page-layout is given
+        newvoice.pagebreak = parent->pagebreak; //     inherit from parent
+    if (!newvoice.newline.ready())              // if no line-layout is given
+        newvoice.newline = parent->newline;     //     inherit from parent
 }
 
-/*
-// prepare voice-cursor of a given sub-voice (called recursively to ensure that parents are prepared)
-std::list<UserCursor::VoiceCursor>::iterator UserCursor::prepare_subvoice(const Voice& voice, Plate::pVoice& pvoice)
-{
-    std::cout << "subvoice (" << &voice << ")...";
-    // voice cursor iterators
-    std::list<VoiceCursor>::iterator newvoice;      // the prepared voice
-    std::list<VoiceCursor>::iterator parent;        // the parent voice
-    
-    // check voice
-    newvoice = find(voice);             // try to find the voice
-    if (newvoice != vcursors.end())     // if the voice does exist already...
-    {
-        std::cout << " already there\n";
-        return newvoice;                //  ...ignore
-    }
-    
-    if (!voice.is(Class::SUBVOICE))     // if the voice is not a sub-voice...
-    {                                   //  ...something is wrong
-        std::cout << " FAIL! (is main voice)\n";
-        log_warn("Unable to add a misplaced MainVoice to cursor. (class: UserCursor)");
-        return vcursors.end();
-    };
-    
-    // prepare the parent voice
-    std::cout << "parent->";
-    parent = find(static_cast<const SubVoice&>(voice).get_parent()); // find parent
-    
-    if (parent == vcursors.end())                               // if there is no parent, prepare it
-    {
-        std::cout << "not ready\n\t";
-        parent = prepare_subvoice(static_cast<const SubVoice&>(voice).get_parent(),
-                                  *line->get_voice(static_cast<const SubVoice&>(voice).get_parent()));
-        std::cout << "\t";
-    };
-    
-    if (parent == vcursors.end())                               // if the parent can not be prepared
-    {                                                           //     abort!
-        std::cout << " FAIL! (unknown parent)\n";
-        log_warn("Unable to add a SubVoice, which has no parent, to cursor. (class: UserCursor)");
-        return vcursors.end();
-    };
-    
-    // add new voice (at the correct position)
-    if (static_cast<const SubVoice&>(voice).on_top)              // if on top
-        newvoice = vcursors.insert(parent, VoiceCursor());       //     insert new voice above parent
-    else                                                         // otherwise
-        newvoice = vcursors.insert((++parent)--, VoiceCursor()); //     insert below the parent
-    
-    // prepare the voice cursor
-    if (!prepare_voice(*newvoice, pvoice))              // if preparation fails,
-    {
-        std::cout << " FAIL! (prepare_voice() failed)\n";
-        vcursors.erase(newvoice);                       //     remove the voice
-        return vcursors.end();                          //     abort
-    };
-    
-    // inherit layouts (if neccessary)
-    if (!newvoice->page_layout.ready())                 // if no page-layout is given
-        newvoice->page_layout = parent->page_layout;    //     inherit from parent
-    if (!newvoice->line_layout.ready())                 // if no line-layout is given
-        newvoice->line_layout = parent->line_layout;    //     inherit from parent
-    
-    // set active state
-    if (cursor != vcursors.end())                           // if we got a main-voice
-        newvoice->active = newvoice->is_during(*cursor);    //     choose active state
-    else
-        cursor = newvoice;
-    
-    // return new voice-cursor
-    assert(newvoice->pnote->at_end() || !newvoice->note.at_end());
-    std::cout << " SUCCESS!\n";
-    return newvoice;
-}
-*/
 // set all voice-cursors to the beginning of the current line
 void UserCursor::prepare_voices()
 {
@@ -474,30 +399,6 @@ void UserCursor::prepare_voices()
         prepare_layout(*i);                 // prepare layouts
         i->active = i->is_during(*cursor);  // set active state
     };
-    
-    /*
-    // prepare all main-voices of the current line
-    for (std::list<Staff>::iterator staff = score->staves.begin(); staff != score->staves.end(); ++staff)
-    {
-        // prepare voice
-        std::list<Plate::pVoice>::iterator pvoice = line->get_voice(*staff);    // get staff on the plate
-        if (pvoice == line->voices.end()) {std::cout << "NO staff\n"; continue;}                             // if the staff is not on the plate, we do not need a cursor
-        std::cout << "Staff... ";
-        vcursors.push_back(VoiceCursor());                                      // add cursor
-        
-        if (!prepare_voice(vcursors.back(), *pvoice))   // prepare the voice cursor
-        {
-            std::cout << "FAIL!\n";
-            vcursors.pop_back();                        //     if this fails, remove the voice
-        };
-        std::cout << "OK (" << &static_cast<Voice&>(*staff) << ")\n";
-    };
-    cursor = vcursors.begin();  // initialize cursor to first main-voice
-    
-    // prepare all sub-voices of the current line (expecting all main-voices to exist)
-    for (std::list<Plate::pVoice>::iterator i = line->voices.begin(); i != line->voices.end(); ++i)
-        static_cast<void>(prepare_subvoice(i->begin.voice(), *i));
-    */
 }
 
 // move the voice-cursors to the corresponding position within the currently referenced voice
@@ -683,7 +584,7 @@ UserCursor::UserCursor(const UserCursor& _cursor) : document(_cursor.document), 
 UserCursor::~UserCursor() {}
 
 // initialize the cursor at the beginning of a given score
-void UserCursor::set_score(Score& _score, unsigned int start_page) throw(Error)
+void UserCursor::set_score(Score& _score, size_t start_page) throw(Error)
 {
     // try to find score in the document
     for (Document::ScoreList::const_iterator s = document->scores.begin(); s != document->scores.end(); ++s)
@@ -825,30 +726,6 @@ const Plate::pNote& UserCursor::get_platenote() const throw(NotValidException)
     return *cursor->pnote;
 }
 
-// return the line layout
-const Newline& UserCursor::get_layout() const throw(NotValidException)
-{
-    if (cursor == vcursors.end()) throw NotValidException();
-    return cursor->line_layout.ready() ? static_cast<Newline&>(*cursor->line_layout)
-                                       : cursor->note.staff().layout;
-}
-
-// return the score dimension
-const ScoreDimension& UserCursor::get_dimension() const throw(NotValidException)
-{
-    if (cursor == vcursors.end()) throw NotValidException();
-    return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).dimension
-                                       : score->layout.dimension;
-}
-
-// return objects attached to the page
-const MovableList& UserCursor::get_page_attached() const throw(NotValidException)
-{
-    if (cursor == vcursors.end()) throw NotValidException();
-    return cursor->page_layout.ready() ? static_cast<Pagebreak&>(*cursor->page_layout).attached
-                                       : score->layout.attached;
-}
-
 // return the current time-stamp
 value_t UserCursor::get_time() const throw(NotValidException)
 {
@@ -899,6 +776,43 @@ size_t UserCursor::staff_voice_count() const throw(NotValidException)
         if (&i->pvoice->begin.staff() == &cursor->pvoice->begin.staff() && i->active) ++cnt;
     };
     return cnt;
+}
+
+
+//  layout access
+// ---------------
+
+// return the style parameters
+const StyleParam& UserCursor::get_style() const throw(NotValidException)
+{
+    if (!ready()) throw NotValidException();
+    if (!!cursor->note.staff().style) return *cursor->note.staff().style;
+    if (!!score->style) return *score->style;
+    return document->style;
+}
+
+// return the line layout
+const LayoutParam& UserCursor::get_layout() const throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    if (cursor->newline.ready()) return static_cast<Newline&>(*cursor->newline).layout;
+    return cursor->note.staff().layout;
+}
+
+// return the score dimension
+const ScoreDimension& UserCursor::get_dimension() const throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    if (cursor->pagebreak.ready()) return static_cast<Pagebreak&>(*cursor->pagebreak).dimension;
+    return score->layout.dimension;
+}
+
+// return objects attached to the page
+const MovableList& UserCursor::get_page_attached() const throw(NotValidException)
+{
+    if (cursor == vcursors.end()) throw NotValidException();
+    return cursor->pagebreak.ready() ? static_cast<Pagebreak&>(*cursor->pagebreak).attached
+                                     : score->layout.attached;
 }
 
 

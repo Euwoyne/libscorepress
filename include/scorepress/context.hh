@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -56,7 +56,7 @@ class SCOREPRESS_API VoiceContext
     // measure context
     TimeSig _time_sig;              // current time-signature
     value_t _time_time;             // time-position of that signature
-    unsigned int _time_bar;         // bar index of the time-signature
+    unsigned long _time_bar;        // bar index of the time-signature
     
     // last objects buffer (double buffer)
     struct SCOREPRESS_LOCAL Buffer
@@ -71,7 +71,7 @@ class SCOREPRESS_API VoiceContext
     VoiceContext(const VoiceContext& context);      // copy constructor
     
     // accessors
-    unsigned int bar(const value_t time) const;     // calculate the index of the bar, containing the given time
+    unsigned long bar(const value_t time) const;    // calculate the index of the bar, containing the given time
     value_t beat(const value_t time) const;         // calculate the beat inside the bar (modulo operation)
     value_t restbar(const value_t time) const;      // calculate the value of the remaining bar
     const TimeSig& last_timesig() const;            // return the last time-signature
@@ -95,19 +95,19 @@ class SCOREPRESS_API VoiceContext
 };
 
 // inline method implementations
-inline       unsigned int VoiceContext::bar(const value_t time)         const {return _time_bar + ((time - _time_time) / static_cast<value_t>(_time_sig)).i_abs();}
-inline       value_t      VoiceContext::beat(const value_t time)        const {return (time - _time_time) % static_cast<value_t>(_time_sig);}
-inline       value_t      VoiceContext::restbar(const value_t time)     const {return _time_sig - beat(time);}
-inline const TimeSig&     VoiceContext::last_timesig()                  const {return _time_sig;}
-inline       bool         VoiceContext::has_buffer()                    const {return _buffer.object != NULL;}
-inline       bool         VoiceContext::has_buffer2()                   const {return _buffer2.object != NULL;}
-inline       void         VoiceContext::reset_buffer()                        {_buffer = _buffer2; _buffer2.object = NULL;}
-inline       void         VoiceContext::set_buffer(const StaffObject* object) {_buffer2 = _buffer; _buffer.object = object;}
-inline const StaffObject* VoiceContext::get_buffer()                    const {return _buffer.object;}
-inline const StaffObject* VoiceContext::get_buffer2()                   const {return _buffer2.object;}
-inline       void         VoiceContext::set_buffer_xpos(const mpx_t xpos)     {_buffer.xpos = xpos;}
-inline       mpx_t        VoiceContext::get_buffer_xpos()               const {return _buffer.xpos;}
-inline       mpx_t        VoiceContext::get_buffer2_xpos()              const {return _buffer2.xpos;}
+inline       unsigned long VoiceContext::bar(const value_t time)         const {return _time_bar + ((time - _time_time) / _time_sig.beat_length()).i_abs();}
+inline       value_t       VoiceContext::beat(const value_t time)        const {return (time - _time_time) % _time_sig.beat_length();}
+inline       value_t       VoiceContext::restbar(const value_t time)     const {return _time_sig.beat_length() - beat(time);}
+inline const TimeSig&      VoiceContext::last_timesig()                  const {return _time_sig;}
+inline       bool          VoiceContext::has_buffer()                    const {return _buffer.object != NULL;}
+inline       bool          VoiceContext::has_buffer2()                   const {return _buffer2.object != NULL;}
+inline       void          VoiceContext::reset_buffer()                        {_buffer = _buffer2; _buffer2.object = NULL;}
+inline       void          VoiceContext::set_buffer(const StaffObject* object) {_buffer2 = _buffer; _buffer.object = object;}
+inline const StaffObject*  VoiceContext::get_buffer()                    const {return _buffer.object;}
+inline const StaffObject*  VoiceContext::get_buffer2()                   const {return _buffer2.object;}
+inline       void          VoiceContext::set_buffer_xpos(const mpx_t xpos)     {_buffer.xpos = xpos;}
+inline       mpx_t         VoiceContext::get_buffer_xpos()               const {return _buffer.xpos;}
+inline       mpx_t         VoiceContext::get_buffer2_xpos()              const {return _buffer2.xpos;}
 
 
 //

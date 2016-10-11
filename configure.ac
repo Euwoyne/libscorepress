@@ -101,7 +101,7 @@ gcc | g++ )
     AC_SUBST([C_RELEASE_SO], ["-fvisibility=hidden -fvisibility-inlines-hidden"])
     
     # linker flags
-    AC_SUBST([LD_FLAGS], ["-shared -lc -Wl,-soname,\${soname}"])
+    AC_SUBST([LD_FLAGS], ["-fPIC -shared -lc -Wl,-soname,\${soname}"])
     AC_SUBST([LD_DEBUG], [])
     AC_SUBST([LD_PROFILE], [])
     AC_SUBST([LD_RELEASE], [])
@@ -126,7 +126,8 @@ gcc | g++ )
              -Wundef              \\
              -Wunreachable-code   \\
              -Wwrite-strings      \\
-             -Wno-unknown-pragmas"])
+             -Wno-unknown-pragmas \\
+             -Wno-conversion"])
     
     # set compiler-version specific flags
     AS_IF([gcc_version=`$CXX -dumpversion 2> /dev/null`],[
@@ -176,7 +177,8 @@ clang )
              -Wno-documentation          \\
              -Wno-global-constructors    \\
              -Wno-exit-time-destructors  \\
-             -Wno-sign-conversion"])
+             -Wno-sign-conversion        \\
+             -Wno-conversion"])
     ;;
 *)
     echo "WARNING: Unknown Compiler!"

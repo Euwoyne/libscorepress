@@ -3024,7 +3024,7 @@ fi
 
 
     # linker flags
-    LD_FLAGS="-shared -lc -Wl,-soname,\${soname}"
+    LD_FLAGS="-fPIC -shared -lc -Wl,-soname,\${soname}"
 
 
 
@@ -3054,7 +3054,8 @@ fi
              -Wundef              \\
              -Wunreachable-code   \\
              -Wwrite-strings      \\
-             -Wno-unknown-pragmas"
+             -Wno-unknown-pragmas \\
+             -Wno-conversion"
 
 
     # set compiler-version specific flags
@@ -3120,7 +3121,8 @@ fi
              -Wno-documentation          \\
              -Wno-global-constructors    \\
              -Wno-exit-time-destructors  \\
-             -Wno-sign-conversion"
+             -Wno-sign-conversion        \\
+             -Wno-conversion"
 
     ;;
 *)
@@ -3750,7 +3752,6 @@ if test -z "$LIBXML_LIBS"; then
     fi
 fi
 CXXFLAGS="$CXXFLAGS_ORI $LIBXML_CFLAGS"
-LDFLAGS="$LDFLAGS_ORI $LIBXML_LIBS"
 LIBS="$LIBS_ORI $LIBXML_LIBS"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmlReaderForFile in -lxml2" >&5

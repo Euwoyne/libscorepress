@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -106,6 +106,8 @@ class SCOREPRESS_API Logging
     
  public:
     inline Logging() : logging_log(NULL) {}
+    virtual ~Logging();
+
     virtual void log_set(Log& log);
     inline  void log_set(Logging& log);
     virtual void log_unset();

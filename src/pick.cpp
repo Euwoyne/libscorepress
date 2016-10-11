@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -53,7 +53,7 @@ Pick::LineLayout::VoiceNotFoundException::VoiceNotFoundException()
     : ScorePress::Error("Cannot find layout of requested voice. (class Pick::LineLayout)") {}
 
 // associate a voice with its newline object
-void Pick::LineLayout::set(const Voice& voice, const Newline& layout)
+void Pick::LineLayout::set(const Voice& voice, const LayoutParam& layout)
 {
     data[&voice] = &layout;
 }
@@ -61,12 +61,12 @@ void Pick::LineLayout::set(const Voice& voice, const Newline& layout)
 // check, if the voice has a newline object
 bool Pick::LineLayout::exist(const Voice& voice) const
 {
-    std::map<const Voice*, const Newline*>::const_iterator i = data.find(&voice);
+    std::map<const Voice*, const LayoutParam*>::const_iterator i = data.find(&voice);
     return (i != data.end() && i->second);
 }
 
 // get arbitrary newline object (for line-properties)
-const Newline& Pick::LineLayout::get() const throw(VoiceNotFoundException)
+const LayoutParam& Pick::LineLayout::get() const throw(VoiceNotFoundException)
 {
     if (first_voice) return get(*first_voice);
     if (data.empty()) throw VoiceNotFoundException();
@@ -74,9 +74,9 @@ const Newline& Pick::LineLayout::get() const throw(VoiceNotFoundException)
 }
 
 // get the newline object of the given voice
-const Newline& Pick::LineLayout::get(const Voice& voice) const throw(VoiceNotFoundException)
+const LayoutParam& Pick::LineLayout::get(const Voice& voice) const throw(VoiceNotFoundException)
 {
-    std::map<const Voice*, const Newline*>::const_iterator i = data.find(&voice);
+    std::map<const Voice*, const LayoutParam*>::const_iterator i = data.find(&voice);
     if (i == data.end() || !i->second) throw VoiceNotFoundException();
     return *i->second;
 }
@@ -111,7 +111,7 @@ void Pick::VoiceOrder::add_above(const Voice& voice, const Voice& parent)
 {
     iterator i = find(&parent);
     if (i == end()) throw VoiceNotFoundException();
-    const unsigned int idx = i->second;
+    const size_t idx = i->second;
     for (i = begin(); i != end(); ++i)
         if (i->second >= idx)
             ++i->second;
@@ -123,7 +123,7 @@ void Pick::VoiceOrder::add_below(const Voice& voice, const Voice& parent)
 {
     iterator i = find(&parent);
     if (i == end()) throw VoiceNotFoundException();
-    const unsigned int idx = i->second + 1;
+    const size_t idx = i->second + 1;
     for (i = begin(); i != end(); ++i)
         if (i->second >= idx)
             ++i->second;
@@ -449,20 +449,16 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         }
         else if (engravedNote->is(Class::CHORD))    // if it was a virtually tied note
         {
-            Chord* nchord = new Chord(static_cast<const Chord&>(engravedNote.original()));
+            Chord* nchord = new Chord(static_cast<const Chord&>(engravedNote.original()), true);
             nchord->set_value(engravedNote.remaining_duration);
-            nchord->attached.clear();
-            nchord->subvoices.clear();                      // TODO: make initial copy without subvoices!!!
             nextNote.virtual_obj = StaffObjectPtr(nchord);
             nextNote.inserted = true;
             nextNote.remaining_duration = 0;
         }
         else if (engravedNote->is(Class::REST)) // if it was a broken rest
         {
-            Rest* nrest = new Rest(static_cast<const Rest&>(engravedNote.original()));
+            Rest* nrest = new Rest(static_cast<const Rest&>(engravedNote.original()), true);
             nrest->set_value(engravedNote.remaining_duration);
-            nrest->attached.clear();
-            nrest->subvoices.clear();                       // TODO: make initial copy without subvoices!!!
             nextNote.virtual_obj = StaffObjectPtr(nrest);
             nextNote.inserted = true;
             nextNote.remaining_duration = 0;
@@ -495,12 +491,12 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         const Pagebreak& obj = static_cast<const Pagebreak&>(*engravedNote);
         if (obj.dimension.width && obj.dimension.height)    // set new score dimension
             _dimension = &obj.dimension;
-        _next_layout.set(engravedNote.voice(), obj);        // set new line layout
+        _next_layout.set(engravedNote.voice(), obj.layout); // set new line layout
         _next_layout.set_first_voice(engravedNote.voice());
         
         // reset "pos" and "ypos"
-        nextNote.pos = viewport->umtopx_h(param->min_distance + obj.indent);
-        if (param->newline_time_reset || !obj.visible)
+        nextNote.pos = viewport->umtopx_h(param->min_distance + obj.layout.indent);
+        if (param->newline_time_reset || !obj.layout.visible)
             nextNote.ntime = _newline_time;
         
         if (!(++nextNote).at_end()) calculate_npos(nextNote);
@@ -531,15 +527,15 @@ void Pick::insert_next(const VoiceCursor& engravedNote)
         
         // copy new line layout
         const Newline& obj = static_cast<const Newline&>(*engravedNote);
-        _next_layout.set(engravedNote.voice(), obj);        // set new line layout
+        _next_layout.set(engravedNote.voice(), obj.layout); // set new line layout
         _next_layout.set_first_voice(engravedNote.voice());
         
         if (!(++nextNote).at_end())     // if there is a next note
         {
             // reset "pos" and add newline-distance to "ypos"
-            nextNote.pos = viewport->umtopx_h(param->min_distance + obj.indent);
+            nextNote.pos = viewport->umtopx_h(param->min_distance + obj.layout.indent);
             nextNote.ypos += _line_height;
-            if (param->newline_time_reset || !obj.visible)
+            if (param->newline_time_reset || !obj.layout.visible)
                 nextNote.ntime = _newline_time;
             
             calculate_npos(nextNote);
@@ -788,12 +784,12 @@ void Pick::insert(const StaffObject& obj)
     
     if (cur->is(Class::PAGEBREAK))
     {
-        cur.pos = viewport->umtopx_h(param->min_distance + static_cast<const Pagebreak&>(*cur).indent);
+        cur.pos = viewport->umtopx_h(param->min_distance + static_cast<const Pagebreak&>(*cur).layout.indent);
     }
     else if (cur->is(Class::NEWLINE))
     {
         if (!_newline) _line_height = viewport->umtopx_v(line_height());
-        cur.pos = viewport->umtopx_h(param->min_distance + static_cast<const Newline&>(*cur).indent);
+        cur.pos = viewport->umtopx_h(param->min_distance + static_cast<const Newline&>(*cur).layout.indent);
         cur.ypos += _line_height;
     }
     else cur.pos = cur.npos;
@@ -858,12 +854,10 @@ void Pick::cut(value_t duration)
     {
         // create first part of virtually tied note
         const Chord& chord = static_cast<const Chord&>(**cursors.top());
-        Chord* nchord = new Chord(static_cast<const Chord&>(cursors.top()->original()));
-        nchord->subvoices.clear();          // TODO: make initial copy without subvoices!!!
+        Chord* nchord = new Chord(static_cast<const Chord&>(cursors.top()->original()), true);
         nchord->set_value(duration);
-        nchord->attached.clear();
         nchord->heads.clear();
-        nchord->beam = Chord::NO_BEAM;
+        nchord->beam = Chord::BEAM_NONE;
         for (HeadList::const_iterator i = chord.heads.begin(); i != chord.heads.end(); ++i)
         {
             nchord->heads.push_back(HeadPtr(new TiedHead(**i)));
@@ -884,10 +878,8 @@ void Pick::cut(value_t duration)
     else if ((*cursors.top())->is(Class::REST))
     {
         // create first part of virtually tied note
-        Rest* nrest = new Rest(static_cast<const Rest&>(cursors.top()->original()));
-        nrest->subvoices.clear();       // TODO: make initial copy without subvoices!!!
+        Rest* nrest = new Rest(static_cast<const Rest&>(cursors.top()->original()), true);
         nrest->set_value(duration);
-        nrest->attached.clear();
         cursors.top()->remaining_duration = cursors.top()->ntime - cursors.top()->time - duration;
         cursors.top()->ntime = cursors.top()->time + duration;
         cursors.top()->virtual_obj = StaffObjectPtr(nrest); // inserted status stays ("false" for first, "true" for following)
@@ -914,7 +906,7 @@ const Staff& Pick::get_staff(int idx_shift) const
     };
     if (idx_shift < 0) idx_shift = 0;
     
-    // iterate until given staff is found (or we run out of staffs)
+    // iterate until given staff is found (or we run out of staves)
     while ((idx_shift || &*i != &staff) && i != score->staves.end())
     {
         if (idx_shift < 0 && _layout.get(*j).visible) ++idx_shift;
@@ -946,7 +938,7 @@ int Pick::staff_offset(int idx_shift) const
     };
     if (idx_shift < 0) idx_shift = 0;
     
-    // iterate until given staff is found (or we run out of staffs)
+    // iterate until given staff is found (or we run out of staves)
     while ((idx_shift || &*i != &staff) && i != score->staves.end())
     {
         if (_layout.get(*j).visible)
@@ -976,7 +968,7 @@ int Pick::staff_offset(const Staff& staff) const
     int out = 0;                                                // staff offset
     std::list<Staff>::const_iterator i = score->staves.begin(); // iterator
     
-    while (i != score->staves.end() && &*i != &staff)   // iterate until given staff is found (or we run out of staffs)
+    while (i != score->staves.end() && &*i != &staff)   // iterate until given staff is found (or we run out of staves)
     {
         if (_layout.get(*i).visible)
             out += ((i->offset_y + _layout.get(*i).distance) * HEAD_HEIGHT(*i)) / 1000  // add staff offset

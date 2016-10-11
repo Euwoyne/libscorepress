@@ -12,11 +12,11 @@
 <!ATTLIST symbols id        CDATA                            #REQUIRED>
 
 <!ELEMENT info              (author|copyright|license|description|date)*>
-<!ELEMENT author            CDATA>
-<!ELEMENT copyright         CDATA>
-<!ELEMENT license           CDATA>
-<!ELEMENT description       CDATA>
-<!ELEMENT date              CDATA>
+<!ELEMENT author            (#PCDATA)>
+<!ELEMENT copyright         (#PCDATA)>
+<!ELEMENT license           (#PCDATA)>
+<!ELEMENT description       (#PCDATA)>
+<!ELEMENT date              (#PCDATA)>
 
 <!ELEMENT sprites           (base|movables)*>
 <!ATTLIST sprites unit      CDATA                            #REQUIRED>
@@ -54,8 +54,7 @@
                stem-slope   CDATA                             #IMPLIED>
 
 <!ELEMENT dot               (name)*>
-<!ATTLIST flag type         (note|rest)                       #REQUIRED
-               path         CDATA                             #REQUIRED
+<!ATTLIST dot  path         CDATA                             #REQUIRED
                anchor-x     CDATA                             "0"
                anchor-y     CDATA                             "0"
                distance     CDATA                             #IMPLIED
@@ -74,13 +73,13 @@
                offset       CDATA                             #IMPLIED>
 
 <!ELEMENT brace             (name)*>
-<!ATTLIST flag path         CDATA                             #REQUIRED
-               anchor-x     CDATA                             "0"
-               anchor-y     CDATA                             "0"
-               hmin         CDATA                             #IMPLIED
-               hmax         CDATA                             #IMPLIED
-               low          CDATA                             #IMPLIED
-               high         CDATA                             #IMPLIED>
+<!ATTLIST brace path        CDATA                             #REQUIRED
+                anchor-x    CDATA                             "0"
+                anchor-y    CDATA                             "0"
+                hmin        CDATA                             #IMPLIED
+                hmax        CDATA                             #IMPLIED
+                low         CDATA                             #IMPLIED
+                high        CDATA                             #IMPLIED>
 
 <!ELEMENT bracket           (name)*>
 <!ATTLIST bracket
@@ -118,7 +117,7 @@
                anchor-x     CDATA                             "0"
                anchor-y     CDATA                             "0">
 
-<!ELEMENT name              PCDATA>
+<!ELEMENT name              (#PCDATA)>
 <!ATTLIST name lang         CDATA                             "en">
 
 <!ELEMENT movables          (group|typeface)*>
@@ -130,8 +129,8 @@
                id           CDATA                             #REQUIRED
                ascent       CDATA                             #REQUIRED
                descent      CDATA                             #REQUIRED
-               general-use  (true|false)                      #IMPLIED
-               custom-use   (true|false)                      #IMPLIED>
+               general-use  (yes|no)                          #IMPLIED
+               custom-use   (yes|no)                          #IMPLIED>
 
 <!ELEMENT symbol            (name)*>
 <!ATTLIST symbol
@@ -142,16 +141,16 @@
                anchor-x     CDATA                             "0"
                anchor-y     CDATA                             "0"
                tempo-type   (none|abs|absolute
-                                 |rel|relative|promille       "none"
+                                 |rel|relative|promille)      "none"
                tempo        CDATA                             #IMPLIED
                volume-type  (none|abs|absolute
-                                 |rel|relative|promille       "none"
+                                 |rel|relative|promille)      "none"
                volume-scope (voice|staff|instrument
                                   |group|score)               #IMPLIED
-               volume       CDATA
+               volume       CDATA                             #IMPLIED
                value-scope  (voice|staff|instrument
                                   |group|score)               #IMPLIED
-               value        CDATA>
+               value        CDATA                             #IMPLIED>
 
 <!ELEMENT glyph             (name)*>
 <!ATTLIST glyph char        CDATA                             #REQUIRED

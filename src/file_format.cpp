@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -24,6 +24,7 @@
 #include <cstdlib>              // atoi, strtof
 #include <cstring>              // strlen, sprintf
 #include <cmath>                // log10
+#include <limits>               // numeric_limits
 #include <libxml/xmlreader.h>   // xmlReaderForFile, ...
 
 #define STR_CAST(str)    reinterpret_cast<const xmlChar*>(str)
@@ -210,7 +211,7 @@ void XMLFileReader::open(const char* data, const std::string& _filename)
     
     // create parser
     filename = _filename;
-    parser = xmlReaderForMemory(data, strlen(data), filename.c_str(), NULL, XML_PARSE_NOBLANKS | XML_PARSE_NOENT | XML_PARSE_NONET);
+    parser = xmlReaderForMemory(data, static_cast<int>(strlen(data)), filename.c_str(), NULL, XML_PARSE_NOBLANKS | XML_PARSE_NOENT | XML_PARSE_NONET);
     
     // report failed parser instanciation
     if (parser == NULL) mythrow("Unable to open file \"%s\"", filename);
@@ -1340,13 +1341,14 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
                     attr = xmlTextReaderGetAttribute(parser, STR_CAST("time"));
                     if (attr == NULL) mythrow("Missing \"time\"-attribute for <timesig> of symbol type (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     char* ptr;
-                    spriteset.back().integer["number"] = strtol(XML_CAST(attr), &ptr, 0);
-                    if (*ptr != '/' || *++ptr == 0)
+                    const long tmp = strtol(XML_CAST(attr), &ptr, 0);
+                    if (*ptr != '/' || *++ptr == 0 || tmp > std::numeric_limits<int>::max() || tmp < 0)
                     {
                         xmlFree(attr);
                         mythrow("Syntax error in \"time\"-attribute for <timesig> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     };
-                    spriteset.back().integer["beat"] = strtol(ptr, NULL, 0);
+                    spriteset.back().integer["number"] = static_cast<int>(tmp);
+                    spriteset.back().integer["beat"] = atoi(ptr);
                     xmlFree(attr);
                     
                     // compose class name
@@ -1579,7 +1581,13 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
                 if (attr != NULL)
                 {
                     char* end;
-                    spriteset.back().integer["tempo"] = strtol(XML_CAST(attr), &end, 0);
+                    const long tmp = strtol(XML_CAST(attr), &end, 0);
+                    if ((*end != '\0' && *end != '%') || tmp > std::numeric_limits<int>::max() || tmp < std::numeric_limits<int>::min())
+                    {
+                        xmlFree(attr);
+                        mythrow("Illegal value of \"tempo\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    };
+                    spriteset.back().integer["tempo"] = static_cast<int>(tmp);
                     if (*end == '%')
                     {
                         xmlFree(attr);
@@ -1589,11 +1597,6 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
                             mythrow("Unexpected percent sign in \"tempo\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                         spriteset.back().integer["tempo"] *= 10;
                     }
-                    else if (*end != '\0')
-                    {
-                        xmlFree(attr);
-                        mythrow("Illegal value of \"tempo\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
-                    };
                 };
                 
                 // read "volume-type" attribute
@@ -1624,7 +1627,13 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
                 if (attr != NULL)
                 {
                     char* end;
-                    spriteset.back().integer["volume"] = strtol(XML_CAST(attr), &end, 0);
+                    const long tmp = strtol(XML_CAST(attr), &end, 0);
+                    if ((*end != '\0' && *end != '%') || tmp > std::numeric_limits<int>::max() || tmp < std::numeric_limits<int>::min())
+                    {
+                        xmlFree(attr);
+                        mythrow("Illegal value of \"volume\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
+                    };
+                    spriteset.back().integer["volume"] = static_cast<int>(tmp);
                     if (*end == '%')
                     {
                         xmlFree(attr);
@@ -1633,11 +1642,6 @@ void XMLSpritesetReader::parse_spriteset(SpriteSet& spriteset, Renderer& rendere
                         else if (spriteset.back().integer["volume.type"] != static_cast<int>(ContextChanging::PROMILLE))
                             mythrow("Unexpected percent sign in \"volume\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                         spriteset.back().integer["volume"] *= 10;
-                    }
-                    else if (*end != '\0')
-                    {
-                        xmlFree(attr);
-                        mythrow("Illegal value of \"volume\"-attribute for <symbol> (in file \"%s\", at line %i:%i)", err_file, xmlTextReaderGetParserLineNumber(parser), xmlTextReaderGetParserColumnNumber(parser));
                     }
                     else
                     {

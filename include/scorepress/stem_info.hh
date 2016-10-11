@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -21,7 +21,7 @@
 #ifndef SCOREPRESS_STEMINFO_HH
 #define SCOREPRESS_STEMINFO_HH
 
-#include "classes.hh"   // mpx_t
+#include "basetypes.hh" // mpx_t
 #include "export.hh"
 
 namespace ScorePress

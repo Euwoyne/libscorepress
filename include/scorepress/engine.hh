@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -70,14 +70,14 @@ class SCOREPRESS_API Engine : public Logging
     class SCOREPRESS_API Page
     {
      private:
-        unsigned int      idx;
+        size_t            idx;
         Pageset::Iterator it;
         
         friend class Engine;
-        Page(unsigned int idx, Pageset::Iterator it);
+        Page(size_t idx, Pageset::Iterator it);
         
      public:
-        inline unsigned int          get_index() const {return idx;}
+        inline size_t                get_index() const {return idx;}
         inline const Pageset::pPage& get_data()  const {return *it;}
     };
     
@@ -91,14 +91,13 @@ class SCOREPRESS_API Engine : public Logging
     Pageset        pageset;     // target pageset
     Engraver       engraver;    // engraver instance
     Press          press;       // press instance
-    StyleParam     style;       // default style parameters (usually overwritten by document)
     ViewportParam  viewport;    // viewport parameters
     InterfaceParam interface;   // interface parameters
     CursorList     cursors;     // cursors (registered for reengrave)
     
  protected:
     // calculate page base position for the given multipage-layout
-    const Position<mpx_t> page_pos(const unsigned int pageno, const MultipageLayout layout) const;
+    const Position<mpx_t> page_pos(const size_t pageno, const MultipageLayout layout) const;
     
     Pageset::PlateInfo& select_plate(const Position<mpx_t>& pos, Page& page);                   // get plateinfo by position (on page)
     Pageset::PlateInfo& select_plate(const Position<mpx_t>& pos, const MultipageLayout layout); // get plateinfo by position (muti-page)
@@ -108,35 +107,35 @@ class SCOREPRESS_API Engine : public Logging
     Engine(Document& document, const Sprites& sprites);
     
     // setup
-    void set_document(Document& document);                              // change the associated document
-    void set_resolution(unsigned int hppm, unsigned int vppm);          // change screen resolution (viewport parameters)
-    void engrave();                                                     // engrave document (calculates pageset, invalidates cursors)
-    void reengrave();                                                   // engrave document (recalculate cursors)
-    void reengrave(UserCursor& cursor);                                 // reengrave score  (recalculate cursors)
+    void set_document(Document& document);                      // change the associated document
+    void set_resolution(unsigned int hppm, unsigned int vppm);  // change screen resolution (viewport parameters)
+    void engrave();                                             // engrave document (calculates pageset, invalidates cursors)
+    void reengrave();                                           // engrave document (recalculate cursors)
+    void reengrave(UserCursor& cursor);                         // reengrave score  (recalculate cursors)
     
     // internal data access
-    Document&              get_document();                              // the document this engine operates on
-    EngraverParam&         get_engraver_parameters();                   // default engraver parameters
-    PressParam&            get_press_parameters();                      // press parameters
-    StyleParam&            get_style_parameters();                      // default style parameters
-    InterfaceParam&        get_interface_parameters();                  // interface parameters
-    ViewportParam&         get_viewport();                              // viewport parameters
+    Document&              get_document();                      // the document this engine operates on
+    EngraverParam&         get_engraver_parameters();           // default engraver parameters
+    PressParam&            get_press_parameters();              // press parameters
+    StyleParam&            get_style_parameters();              // default style parameters
+    InterfaceParam&        get_interface_parameters();          // interface parameters
+    ViewportParam&         get_viewport();                      // viewport parameters
     
-    const Document&        get_document()             const;            // the document this engine operates on
-    const EngraverParam&   get_engraver_parameters()  const;            // default engraver parameters
-    const PressParam&      get_press_parameters()     const;            // press parameters
-    const StyleParam&      get_style_parameters()     const;            // default style parameters
-    const InterfaceParam&  get_interface_parameters() const;            // interface parameters
-    const ViewportParam&   get_viewport()             const;            // viewport parameters
+    const Document&        get_document()             const;    // the document this engine operates on
+    const EngraverParam&   get_engraver_parameters()  const;    // default engraver parameters
+    const PressParam&      get_press_parameters()     const;    // press parameters
+    const StyleParam&      get_style_parameters()     const;    // default style parameters
+    const InterfaceParam&  get_interface_parameters() const;    // interface parameters
+    const ViewportParam&   get_viewport()             const;    // viewport parameters
     
-    void plate_dump() const;                                            // write plate-content to stdout
+    void plate_dump() const;                                    // write plate-content to stdout
     
     // dimension information
-    mpx_t            page_width()  const;                               // graphical page width
-    mpx_t            page_height() const;                               // graphical page height
-    unsigned int     page_count()  const;                               // page count
-    mpx_t            layout_width(const MultipageLayout layout)  const; // width of complete layout
-    mpx_t            layout_height(const MultipageLayout layout) const; // height of complete layout
+    mpx_t  page_width()  const;                                 // graphical page width
+    mpx_t  page_height() const;                                 // graphical page height
+    size_t page_count()  const;                                 // page count
+    mpx_t  layout_width(const MultipageLayout layout)  const;   // width of complete layout
+    mpx_t  layout_height(const MultipageLayout layout) const;   // height of complete layout
     
     // rendering
     void render_page(Renderer& renderer, const Page page,              const Position<mpx_t>& offset, bool decor = false);          // single page (at pos)
@@ -150,7 +149,7 @@ class SCOREPRESS_API Engine : public Logging
     void render_object(Renderer& renderer, const ObjectCursor& cursor, const MultipageLayout layout, const Position<mpx_t>& off);   // selected object (with layout)
     
     // cursor interface
-    const Page select_page(const unsigned int     page);                                    // calculate page-iterator by index
+    const Page select_page(const size_t           page);                                    // calculate page-iterator by index
     const Page select_page(      Position<mpx_t>& pos, const MultipageLayout layout);       // calculate page-iterator by position (transform pos to on-page pos)
     const Page select_page(const Position<mpx_t>& pos, const MultipageLayout layout);       // calculate page-iterator by position
     
@@ -188,30 +187,28 @@ class SCOREPRESS_API Engine : public Logging
 // inline method implementations
 inline MultipageLayout::MultipageLayout(MultipageJoin _join, MultipageOrientation _ori, mpx_t _dist) : join(_join), orientation(_ori), distance(_dist) {}
 
-inline Engine::Page::Page(unsigned int _idx, Pageset::Iterator _it) : idx(_idx), it(_it) {}
+inline Engine::Page::Page(size_t _idx, Pageset::Iterator _it) : idx(_idx), it(_it) {}
 
 inline Document&       Engine::get_document()             {return *document;}
 inline EngraverParam&  Engine::get_engraver_parameters()  {return engraver.parameters;}
 inline PressParam&     Engine::get_press_parameters()     {return press.parameters;}
-inline StyleParam&     Engine::get_style_parameters()     {return style;}
 inline InterfaceParam& Engine::get_interface_parameters() {return interface;}
 inline ViewportParam&  Engine::get_viewport()             {return viewport;}
 
 inline const Document&       Engine::get_document()             const {return *document;}
 inline const EngraverParam&  Engine::get_engraver_parameters()  const {return engraver.parameters;}
 inline const PressParam&     Engine::get_press_parameters()     const {return press.parameters;}
-inline const StyleParam&     Engine::get_style_parameters()     const {return style;}
 inline const InterfaceParam& Engine::get_interface_parameters() const {return interface;}
 inline const ViewportParam&  Engine::get_viewport()             const {return viewport;}
 
 inline void Engine::set_document(Document& _document)              {document = &_document; pageset.clear(); cursors.clear();}
 inline void Engine::set_resolution(unsigned int h, unsigned int v) {viewport.hppm = h; viewport.vppm = v;}
 
-inline mpx_t           Engine::page_width()  const        {return (viewport.umtopx_h(document->page_layout.width)  * press.parameters.scale) / 1000;}
-inline mpx_t           Engine::page_height() const        {return (viewport.umtopx_v(document->page_layout.height) * press.parameters.scale) / 1000;}
-inline size_t          Engine::page_count()  const        {return pageset.pages.size();}
+inline mpx_t  Engine::page_width()  const {return (viewport.umtopx_h(document->page_layout.width)  * press.parameters.scale) / 1000;}
+inline mpx_t  Engine::page_height() const {return (viewport.umtopx_v(document->page_layout.height) * press.parameters.scale) / 1000;}
+inline size_t Engine::page_count()  const {return pageset.pages.size();}
 
-inline const Engine::Page Engine::select_page(const unsigned int page) {return Page(page, pageset.get_page(page));}
+inline const Engine::Page Engine::select_page(const size_t page) {return Page(page, pageset.get_page(page));}
 
 } // end namespace
 

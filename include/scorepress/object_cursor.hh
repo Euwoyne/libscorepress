@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -91,7 +91,7 @@ class SCOREPRESS_API ObjectCursor : public CursorBase
     Document*                document;  // document
     Pageset*                 pageset;   // page-set
     Score*                   score;     // score        (if not on-page)
-    unsigned int             pageno;    // page number
+    size_t                   pageno;    // page number
     
     Plate::pLine*            pline;     // parent line  (if not on-page)
     Plate::pVoice*           pvoice;    // parent voice (if not on-page)
@@ -114,7 +114,6 @@ class SCOREPRESS_API ObjectCursor : public CursorBase
  public:
     // constructors
     ObjectCursor(Document& document, Pageset& pageset);
-    ObjectCursor() __attribute__((noreturn)) {throw MissingDefaultConstructor("ObjectCursor");}
     virtual ~ObjectCursor();
     
     // set parent note
@@ -141,7 +140,7 @@ class SCOREPRESS_API ObjectCursor : public CursorBase
     const Plate::pLine& get_line()     const;   // return parent line
     const Plate::pNote& get_parent()   const;   // return parent note
     
-    unsigned int        get_pageno()   const;   // return target page number
+    size_t              get_pageno()   const;   // return target page number
     Movable&            get_object()   const;   // return referenced object
     Plate::pAttachable& get_pobject()  const;   // return on-plate object
     
@@ -174,7 +173,7 @@ inline const Staff&        ObjectCursor::get_staff()    const {return pnote->not
 inline const Plate::pLine& ObjectCursor::get_line()     const {return *pline;}
 inline const Plate::pNote& ObjectCursor::get_parent()   const {return *pnote;}
 
-inline unsigned int        ObjectCursor::get_pageno()   const {return pageno;}
+inline size_t              ObjectCursor::get_pageno()   const {return pageno;}
 
 //inline void                ObjectCursor::abort_move()          {move_offset.x = move_offset.y = 0;}
 //inline bool                ObjectCursor::prepared_move() const {return (move_offset.x || move_offset.y);}

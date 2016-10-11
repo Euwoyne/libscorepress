@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -28,7 +28,6 @@
 #include "stem_info.hh" // StemInfo
 #include "context.hh"   // VoiceContext, StaffContext
 #include "sprite_id.hh" // SpriteId
-#include "error.hh"     // Error
 #include "export.hh"
 
 namespace ScorePress
@@ -111,11 +110,9 @@ class SCOREPRESS_API Plate_pAttachable : public Plate_pGraphical
     struct {unsigned x : 1; unsigned y : 1;} flipped;   // flipped flags
     
     Plate_pAttachable(const AttachedObject& obj, const Plate_Pos& pos); // constructor
-    Plate_pAttachable() __attribute__((noreturn));                      // default constructor
     bool is_durable();
 };
 
-inline Plate_pAttachable::Plate_pAttachable() : object(NULL) {throw MissingDefaultConstructor("Plate::pAttachable");}
 inline bool Plate_pAttachable::is_durable() {return object->is(Class::DURABLE);}
 
 
@@ -126,10 +123,7 @@ class SCOREPRESS_API Plate_pDurable : public Plate_pAttachable
     Plate_Pos endPos;
     
     Plate_pDurable(const AttachedObject& obj, const Plate_Pos& pos);    // constructor
-    Plate_pDurable() __attribute__((noreturn));                         // default constructor
 };
-
-inline Plate_pDurable::Plate_pDurable() {throw MissingDefaultConstructor("Plate::pDurable");}
 
 
 // note object (with attachables, stem and optional barline)
@@ -175,6 +169,8 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
         mpx_t base;         // bottom vertial position (i.e. where it touches the head)
         
         size_t beam_off;    // stem length correction (internal, temporary)
+        
+        inline bool is_up() const {return top < base;};
     };
     
     // beam information structure
@@ -219,7 +215,6 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     
  public:
     Plate_pNote(const Plate_Pos& pos, const const_Cursor& note);    // constructor
-    Plate_pNote() __attribute__((noreturn));                        // default constructor
     
     void add_offset(mpx_t offset);          // add offset to all positions (except to the tie-end)
     void add_tieend_offset(mpx_t offset);   // add offset to tie-end positions
@@ -233,7 +228,6 @@ class SCOREPRESS_API Plate_pNote : public Plate_pGraphical
     void dump() const;
 };
 
-inline                    Plate_pNote::Plate_pNote() {throw MissingDefaultConstructor("Plate::pNote");}
 inline const StaffObject& Plate_pNote::get_note()    const {return (virtual_obj ? *virtual_obj->object : *note);}
 inline       bool         Plate_pNote::is_virtual()  const {return (virtual_obj != NULL);}
 inline       bool         Plate_pNote::is_inserted() const {return (virtual_obj && virtual_obj->inserted);}
@@ -262,7 +256,7 @@ class SCOREPRESS_API Plate_pVoice
     
  public:
     Plate_Pos     basePos;      // top-right corner of the staff
-    umpx_t        head_height;  // the staffs head-height (in millipixel)
+    umpx_t        head_height;  // the staff's head-height (in millipixel)
     NoteList      notes;        // notes of the voice
     const_Cursor  begin;        // cursor at the beginning of this voice (in the score object)
     const_Cursor  parent;       // cursor to the voice's parent note (in the score object)
@@ -273,12 +267,9 @@ class SCOREPRESS_API Plate_pVoice
     Bracket       bracket;      // bracket starting here
     
     Plate_pVoice(const const_Cursor& cursor);       // constructor
-    Plate_pVoice() __attribute__((noreturn));       // default constructor
     
     Iterator append(const Plate_Pos& pos, const const_Cursor& note);    // append new note
 };
-
-inline Plate_pVoice::Plate_pVoice() {throw MissingDefaultConstructor("Plate::pVoice");} 
 
 
 // on-plate line object (list of voices)

@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -19,6 +19,7 @@
 */
 
 #include <iostream>
+#include <limits>
 
 #include "engine.hh"
 #include "log.hh"               // Log
@@ -32,13 +33,16 @@ inline int _round(const double d) {return static_cast<mpx_t>(d + 0.5);}
 Engine::Error::Error(const std::string& msg) : ScorePress::Error(msg) {}
 
 // calculate page base position for the given multipage-layout
-const Position<mpx_t> Engine::page_pos(const unsigned int pageno, const MultipageLayout layout) const
+const Position<mpx_t> Engine::page_pos(const size_t _pageno, const MultipageLayout layout) const
 {
+    const int pageno = (_pageno < static_cast<size_t>(std::numeric_limits<int>::max()))
+                           ? static_cast<int>(_pageno)
+                           : std::numeric_limits<int>::max();
     switch (layout.join)
     {
     case MultipageLayout::DOUBLE:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? Position<mpx_t>((pageno % 2) ? page_width() + layout.distance : 0, (pageno >> 1) * (page_height() + layout.distance))
+            ? Position<mpx_t>((pageno % 2) ? page_width() + layout.distance : 0, (pageno >> 1u) * (page_height() + layout.distance))
             : Position<mpx_t>(pageno * (page_width() + layout.distance), 0);
     case MultipageLayout::JOINED:
         return (layout.orientation == MultipageLayout::VERTICAL)
@@ -87,8 +91,8 @@ Pageset::PlateInfo& Engine::select_plate(const Position<mpx_t>& pos, const Multi
 
 // constructor (specifying the document the engine will operate on)
 Engine::Engine(Document& _document, const Sprites& sprites) : document(&_document),
-                                                              engraver(pageset, sprites, style, viewport),
-                                                              press(style, viewport) {}
+                                                              engraver(pageset, sprites, viewport),
+                                                              press(_document.style, viewport) {}
 
 // engrave document (calculates pageset)
 void Engine::engrave()
@@ -142,7 +146,7 @@ void Engine::reengrave(UserCursor& cursor)
     };
     
     // reengrave
-    engraver.engrave(cursor.get_score(), cursor.get_start_page(), document->head_height, info);
+    engraver.engrave(cursor.get_score(), document->style, cursor.get_start_page(), document->head_height, info);
     info.finish();
     if (!info.is_empty())
         log_error("Some cursors could not be updated. (class: Engine)");
@@ -236,24 +240,27 @@ void Engine::render_object(Renderer& renderer, const ObjectCursor& cursor, const
 mpx_t Engine::layout_width(const MultipageLayout layout) const
 {
     if (pageset.pages.empty()) return 0;
+    const int pagecnt = (pageset.pages.size() < static_cast<size_t>(std::numeric_limits<int>::max()))
+                           ? static_cast<int>(pageset.pages.size())
+                           : std::numeric_limits<int>::max();
     switch (layout.join)
     {
     case MultipageLayout::DOUBLE:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? ((pageset.pages.size() > 1) ? 2 * page_width() + layout.distance : page_width())
-            : pageset.pages.size() * page_width() + (pageset.pages.size() - 1) * layout.distance;
+            ? ((pagecnt > 1) ? 2 * page_width() + layout.distance : page_width())
+            : pagecnt * page_width() + (pagecnt - 1) * layout.distance;
     case MultipageLayout::JOINED:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? ((pageset.pages.size() > 1) ? 2 * page_width() : page_width())
-            : pageset.pages.size() * page_width() + ((pageset.pages.size() - 1) >> 1) * layout.distance;
+            ? ((pagecnt > 1) ? 2 * page_width() : page_width())
+            : pagecnt * page_width() + ((pagecnt - 1) / 2) * layout.distance;
     case MultipageLayout::FIRSTOFF:
         return (layout.orientation == MultipageLayout::VERTICAL)
             ? 2 * page_width()
-            : pageset.pages.size() * page_width() + (pageset.pages.size() >> 1) * layout.distance;
+            : pagecnt * page_width() + (pagecnt / 2) * layout.distance;
     default:
         return (layout.orientation == MultipageLayout::VERTICAL)
             ? page_width()
-            : pageset.pages.size() * page_width() + (pageset.pages.size() - 1) * layout.distance;
+            : pagecnt * page_width() + (pagecnt - 1) * layout.distance;
     };
 }
 
@@ -261,20 +268,23 @@ mpx_t Engine::layout_width(const MultipageLayout layout) const
 mpx_t Engine::layout_height(const MultipageLayout layout) const
 {
     if (pageset.pages.empty()) return 0;
+    const int pagecnt = (pageset.pages.size() < static_cast<size_t>(std::numeric_limits<int>::max()))
+                           ? static_cast<int>(pageset.pages.size())
+                           : std::numeric_limits<int>::max();
     switch (layout.join)
     {
     case MultipageLayout::DOUBLE:
     case MultipageLayout::JOINED:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? ((pageset.pages.size() + 1) >> 1) * page_height() + ((pageset.pages.size() - 1) >> 1) * layout.distance
+            ? ((pagecnt + 1) >> 1) * page_height() + ((pagecnt - 1) / 2) * layout.distance
             : page_height();
     case MultipageLayout::FIRSTOFF:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? ((pageset.pages.size() + 2) >> 1) * page_height() + (pageset.pages.size() >> 1) * layout.distance
+            ? ((pagecnt + 2) >> 1) * page_height() + (pagecnt / 2) * layout.distance
             : page_height();
     default:
         return (layout.orientation == MultipageLayout::VERTICAL)
-            ? pageset.pages.size() * page_height() + (pageset.pages.size() - 1) * layout.distance
+            ? pagecnt * page_height() + (pagecnt - 1) * layout.distance
             : page_height();
     };
 }
@@ -357,7 +367,7 @@ RefPtr<EditCursor> Engine::get_cursor()
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
-    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, style, viewport));
+    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, viewport));
     cursor->set_score(document->scores.front());
     cursor->log_set(*this);
     cursors.push_back(cursor);
@@ -369,7 +379,7 @@ RefPtr<EditCursor> Engine::get_cursor(Document::Score& score)
 {
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
-    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, style, viewport));
+    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, viewport));
     cursor->set_score(score);
     cursor->log_set(*this);
     cursors.push_back(cursor);
@@ -382,7 +392,7 @@ RefPtr<EditCursor> Engine::get_cursor(Position<mpx_t> pos, const Page& page)
     if (document->scores.empty()) throw Error("Cannot create a cursor for an empty document.");
     if (pageset.pages.empty()) engrave();
     Document::Score* const score(&select_score(pos, page));
-    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, style, viewport));
+    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, viewport));
     cursor->set_score(*score);
     cursor->log_set(*this);
     cursor->set_pos((pos * 1000) / static_cast<int>(press.parameters.scale), page.it, viewport);
@@ -397,7 +407,7 @@ RefPtr<EditCursor> Engine::get_cursor(Position<mpx_t> pos, const MultipageLayout
     if (pageset.pages.empty()) engrave();
     const Page page(select_page(pos, layout));
     Document::Score* const score(&select_score(pos, page));
-    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, style, viewport));
+    RefPtr<EditCursor> cursor(new EditCursor(*document, pageset, interface, viewport));
     cursor->set_score(*score);
     cursor->log_set(*this);
     cursor->set_pos((pos * 1000) / static_cast<int>(press.parameters.scale), page.it, viewport);

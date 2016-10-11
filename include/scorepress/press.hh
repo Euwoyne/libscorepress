@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -58,7 +58,7 @@ class SCOREPRESS_LOCAL Press : public Logging
  private:
     // parameters
     PressState        state;            // current state
-    const StyleParam& default_style;    // default style
+    const StyleParam* default_style;    // default style
     
     // scales the given coordinates
     double scale(const double coord) const;
@@ -82,6 +82,9 @@ class SCOREPRESS_LOCAL Press : public Logging
     // constructor (providing viewport parameters)
     Press(const StyleParam& style, const ViewportParam& viewport);
     
+    void              set_style(const StyleParam& style);
+    const StyleParam& get_style();
+    
     // draw the boundary box of a graphical object
     void draw_boundaries(Renderer& renderer, const Plate::GphBox&     gphBox, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException);
     void draw_boundaries(Renderer& renderer, const Plate::GphBox&     gphBox, const Color& color, const Position<mpx_t> offset) throw(InvalidRendererException);
@@ -100,11 +103,11 @@ class SCOREPRESS_LOCAL Press : public Logging
     void render(Renderer& renderer, const CursorBase& cursor, const Position<mpx_t> offset) throw (InvalidRendererException, UserCursor::NotValidException);
 };
 
-inline double Press::scale(const double coord) const {
-    return (parameters.scale * coord) / 1000.0;}
+inline double Press::scale(const double coord) const               {return (parameters.scale * coord) / 1000.0;}
+inline void   Press::set_color(Renderer& renderer, const Color& c) {renderer.set_color(c.r, c.g, c.b, c.a);}
 
-inline void Press::set_color(Renderer& renderer, const Color& color) {
-    renderer.set_color(color.r, color.g, color.b, color.a);}
+inline void              Press::set_style(const StyleParam& style) {default_style = &style;}
+inline const StyleParam& Press::get_style()                        {return *default_style;}
 
 inline void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException) {
     draw_boundaries(renderer, object.gphBox, color, offset);}

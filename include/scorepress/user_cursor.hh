@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -66,8 +66,8 @@ class SCOREPRESS_API UserCursor : public CursorBase, public Logging
     {
      public:
         Cursor note;                        // score-cursor
-        Cursor line_layout;                 // line layout
-        Cursor page_layout;                 // page layout
+        Cursor newline;                     // last newline (hosts layout)
+        Cursor pagebreak;                   // last pagebreak (hosts score-dimension)
         
         Plate::pVoice::Iterator pnote;      // plate-cursor
         Plate::pVoice*          pvoice;     // on-plate voice
@@ -83,7 +83,8 @@ class SCOREPRESS_API UserCursor : public CursorBase, public Logging
         void prev() throw(InvalidMovement, Error);  // to the previous note (fails, if "!has_prev()")
         void next() throw(InvalidMovement, Error);  // to the next note     (fails, if "at_end()")
         
-        const Newline& get_layout() const;          // return the line layout
+        const LayoutParam& get_layout() const;      // return the line layout
+        const StyleParam&  get_style()  const;      // return style parameters
         
         // engraving time check (corresponding to "cPick::insert")
         bool is_simultaneous(const VoiceCursor& cur) const; // are the objects simultaneous (and equal type)
@@ -116,12 +117,11 @@ class SCOREPRESS_API UserCursor : public CursorBase, public Logging
     SCOREPRESS_LOCAL std::list<VoiceCursor>::const_iterator find(const Voice& voice) const;
     
     // set all voice-cursors to the beginning of the current line
-    SCOREPRESS_LOCAL void                             prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice);
-    SCOREPRESS_LOCAL Cursor                           prepare_note(VoiceCursor& newvoice, Plate::pVoice& pvoice);
-    SCOREPRESS_LOCAL bool                             prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice);
-    SCOREPRESS_LOCAL void                             prepare_layout(VoiceCursor& newvoice);
-    //SCOREPRESS_LOCAL std::list<VoiceCursor>::iterator prepare_subvoice(const Voice& voice, Plate::pVoice& pvoice);
-    SCOREPRESS_LOCAL void                             prepare_voices();
+    SCOREPRESS_LOCAL void   prepare_plate(VoiceCursor& newvoice, Plate::pVoice& pvoice);
+    SCOREPRESS_LOCAL Cursor prepare_note(VoiceCursor& newvoice, Plate::pVoice& pvoice);
+    SCOREPRESS_LOCAL bool   prepare_voice(VoiceCursor& newvoice, Plate::pVoice& pvoice);
+    SCOREPRESS_LOCAL void   prepare_layout(VoiceCursor& newvoice);
+    SCOREPRESS_LOCAL void   prepare_voices();
     
     // move the voice-cursors to the corresponding position within the currently referenced voice
     SCOREPRESS_LOCAL void update_cursors();
@@ -144,11 +144,10 @@ class SCOREPRESS_API UserCursor : public CursorBase, public Logging
     // initialization methods
     UserCursor(Document& document, Pageset& pageset);                       // constructor
     UserCursor(const UserCursor& cursor);                                   // copy constructor
-    UserCursor() __attribute__((noreturn));                                 // default constructor
     virtual ~UserCursor();
     
     void set_score(Document::Score& score) throw(Error);                    // initialize the cursor at the beginning of a given score
-    void set_score(Score& score, unsigned int start_page) throw(Error);     // initialize the cursor at the beginning of a given score
+    void set_score(Score& score, size_t start_page) throw(Error);     // initialize the cursor at the beginning of a given score
     
     void set_pos(Position<mpx_t>, const ViewportParam&);                    // set cursor to graphical position (on current page, at 100% Zoom)
     void set_pos(Position<mpx_t>, Pageset::Iterator, const ViewportParam&); // set cursor to graphical position (on given page, at 100% Zoom)
@@ -161,9 +160,9 @@ class SCOREPRESS_API UserCursor : public CursorBase, public Logging
     const Cursor&         get_cursor()     const throw(NotValidException);  // return the score-cursor
     const MovableList&    get_attached()   const throw(NotValidException);  // return objects attached to the note
     
-          unsigned int    get_pageno()     const;                           // return the page-number
-          unsigned int    get_start_page() const;                           // return the start-page of the score
-          unsigned int    get_score_page() const;                           // return the page-number within the score
+          size_t          get_pageno()     const;                           // return the page-number
+          size_t          get_start_page() const;                           // return the start-page of the score
+          size_t          get_score_page() const;                           // return the page-number within the score
     const Pageset&        get_pageset()    const;                           // return the pageset
     const Pageset::pPage& get_page()       const;                           // return the page
     const Plate&          get_plate()      const;                           // return the plate-object
@@ -180,7 +179,8 @@ class SCOREPRESS_API UserCursor : public CursorBase, public Logging
     size_t staff_voice_count() const throw(NotValidException);  // return the number of voices (in staff)
     
     // layout access
-    const Newline&        get_layout()        const throw(NotValidException);   // return the line layout
+    const StyleParam&     get_style()         const throw(NotValidException);   // return the style parameters
+    const LayoutParam&    get_layout()        const throw(NotValidException);   // return the line layout
     const ScoreDimension& get_dimension()     const throw(NotValidException);   // return the score dimension
     const MovableList&    get_page_attached() const throw(NotValidException);   // return objects attached to the page
     
@@ -236,19 +236,17 @@ inline bool UserCursor::VoiceCursor::has_prev() const {return (note != pvoice->b
 inline bool UserCursor::VoiceCursor::has_next() const {return (!pnote->at_end() && !note->is(Class::NEWLINE));}
 inline bool UserCursor::VoiceCursor::at_end()   const {return (pnote->at_end() || note->is(Class::NEWLINE));}
 
-inline const Newline& UserCursor::VoiceCursor::get_layout() const
-    {return line_layout.ready() ? static_cast<Newline&>(*line_layout) : note.staff().layout;}
-
-inline UserCursor::UserCursor() {throw MissingDefaultConstructor("UserCursor");}
+inline const LayoutParam& UserCursor::VoiceCursor::get_layout() const
+    {return newline.ready() ? static_cast<Newline&>(*newline).layout : note.staff().layout;}
 
 inline void UserCursor::set_score(Document::Score& _score) throw (Error)            {set_score(_score.score, _score.start_page);}
 inline void UserCursor::set_pos(Position<mpx_t> pos, const ViewportParam& viewport) {set_pos(pos, page, viewport);}
 
 inline const Document&       UserCursor::get_document()   const {return *document;}
 inline const Score&          UserCursor::get_score()      const {return *score;}
-inline       unsigned int    UserCursor::get_pageno()     const {return page->pageno;}
-inline       unsigned int    UserCursor::get_start_page() const {return plateinfo->start_page;}
-inline       unsigned int    UserCursor::get_score_page() const {return plateinfo->pageno;}
+inline       size_t          UserCursor::get_pageno()     const {return page->pageno;}
+inline       size_t          UserCursor::get_start_page() const {return plateinfo->start_page;}
+inline       size_t          UserCursor::get_score_page() const {return plateinfo->pageno;}
 inline const Pageset&        UserCursor::get_pageset()    const {return *pageset;}
 inline const Pageset::pPage& UserCursor::get_page()       const {return *page;}
 inline const Plate&          UserCursor::get_plate()      const {return *plateinfo->plate;}

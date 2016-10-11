@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -43,7 +43,8 @@ class SCOREPRESS_API UI;   // abstact user-interface base-class
 class SCOREPRESS_API UI
 {
  public:
-    virtual void register_open_format(DocumentReader& reader) = 0;
+    virtual ~UI() {};
+	virtual void register_open_format(DocumentReader& reader) = 0;
     virtual void register_save_format(DocumentWriter& writer) = 0;
     virtual void register_import_format(DocumentReader& reader) = 0;
     virtual void register_export_format(DocumentWriter& writer) = 0;

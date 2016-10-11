@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -45,7 +45,10 @@ EngraverParam::EngraverParam() : min_distance(1200),
                                  tiedown_control2(-1500, 600) {}
 
 // style parameters
-StyleParam::StyleParam() : stem_width(250),
+StyleParam::StyleParam() : stem_length(3000),
+                           stem_length_min(3000),
+                           stem_width(250),
+                           beam_slope_max(1000),
                            ledger_length(1400),
                            flag_distance(1000),
                            beam_distance(200),
@@ -56,6 +59,17 @@ StyleParam::StyleParam() : stem_width(250),
                            bar_thickness(400),
                            tie_thickness(300),
                            ledger_thickness(300) {}
+
+// layout parameters
+LayoutParam::LayoutParam() : indent(0),
+                             justify(false),
+                             forced_justification(false),
+                             right_margin(0),
+                             distance(0),
+                             auto_clef(true),
+                             auto_key(true),
+                             auto_timesig(false),
+                             visible(true) {}
 
 // press parameters
 PressParam::PressParam() : scale(1000),

@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -19,6 +19,22 @@
 */
 
 #include "config.hh"
+
+#ifndef PREFIX
+#   define PREFIX     "/usr/local"
+#endif
+#ifndef LIBDIR 
+#   define LIBDIR     PREFIX "/lib"
+#endif
+#ifndef INCLUDEDIR
+#   define INCLUDEDIR PREFIX "/include/" LIBSCOREPRESS_PACKAGE_NAME "-" LIBSCOREPRESS_VERSION_STRING
+#endif
+#ifndef DATADIR
+#   define DATADIR    PREFIX "/share/libscorepress"
+#endif
+#ifndef DESTDIR
+#   define DESTDIR    ""
+#endif
 
 const struct ScorePress_Config scorepress_config =
 {

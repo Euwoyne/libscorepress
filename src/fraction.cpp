@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -506,7 +506,7 @@ bool Fraction::operator > (const Fraction& fract) const {return ((Fraction(*this
 bool Fraction::operator > (const long      fract) const {return ((Fraction(*this) -= fract).enumerator > 0l);}
 
 // cast operators
-Fraction::operator double() const {return static_cast<double>(enumerator) / denominator;}
+Fraction::operator double() const {return static_cast<double>(enumerator) / static_cast<double>(denominator);}
 
 // setting methods
 void Fraction::set(const long enu, const long deno)

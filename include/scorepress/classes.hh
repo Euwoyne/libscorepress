@@ -1,7 +1,7 @@
 
 /*
   ScorePress - Music Engraving Software  (libscorepress)
-  Copyright (C) 2014 Dominik Lehmann
+  Copyright (C) 2016 Dominik Lehmann
   
   Licensed under the EUPL, Version 1.1 or - as soon they
   will be approved by the European Commission - subsequent
@@ -29,7 +29,7 @@
 #include "refptr.hh"       // RefPtr
 #include "fraction.hh"     // Fraction
 #include "sprite_id.hh"    // SpriteId
-#include "parameters.hh"   // StyleParam
+#include "parameters.hh"   // LayoutParam, StyleParam, ViewportParam
 #include "export.hh"
 
 namespace ScorePress
@@ -39,6 +39,7 @@ namespace ScorePress
 
 // PROTOTYPES
 class  EngraverState;       // engraver state class prototype (see "engraver_state.hh")
+class  StaffContext;        // staff-context class prototype (see "context.hh")
 class  PressState;          // press state class prototype (see "press.hh")
 class  Renderer;            // renderer class prototype (see "renderer.hh")
 class  ObjectCursor;        // object cursor prototype (see "object_cursor.hh")
@@ -182,7 +183,15 @@ class SCOREPRESS_API VisibleObject : virtual public Class
     spohw_t     offset_x;       // horizontal offset
     Appearance  appearance;     // graphical appearance properties
     
- protected: VisibleObject() : offset_x(0) {}
+ protected:
+    VisibleObject() : offset_x(0) {}
+    VisibleObject(const VisibleObject& vo, bool no_attached) :
+        offset_x  (vo.offset_x),
+        appearance(vo.appearance) {
+        if (!no_attached)
+            attached = vo.attached;
+    }
+    
  public:
     virtual bool is(classType type) const;
     virtual classType classtype() const;
@@ -278,8 +287,8 @@ class SCOREPRESS_API TimeSig : public MusicObject
     virtual classType classtype() const;
     virtual TimeSig* clone() const;
     
-    inline operator value_t() const {return value_t(static_cast<long>(number) << VALUE_BASE,
-                                                    static_cast<long>(beat));}
+    inline const value_t beat_length() const {return value_t(static_cast<long>(number) << VALUE_BASE,
+                                                             static_cast<long>(beat));}
 };
 
 // a time signature with a custom sprite
@@ -335,18 +344,11 @@ class SCOREPRESS_API VoiceObject : public StaffObject
 class SCOREPRESS_API Newline : public VoiceObject
 {
  public:
-    um_t   indent;                // LINE:  line indentation (vertical)
-    bool   justify;               // LINE:  width justification for this line?
-    bool   forced_justification;  // LINE:  use forced justification (do not preserve min-distance)?
-    um_t   right_margin;          // LINE:  distance from right page margin (only for justified lines)
-    pohh_t distance;              // STAFF: in promille of head-height
-    bool   auto_clef;             // STAFF: insert clef at the line front
-    bool   auto_key;              // STAFF: insert key at the line front
-    bool   auto_timesig;          // STAFF: insert time-signature at the line front
-    bool   visible;               // VOICE: voice visible in this line?
+    LayoutParam layout; // staff layout
     
  public:
-    Newline() : indent(0), justify(false), forced_justification(false), right_margin(0), distance(0), auto_clef(true), auto_key(true), auto_timesig(false), visible(true) {}
+    Newline() {}
+    Newline(const LayoutParam& _layout) : layout(_layout) {}
     virtual VisibleObject& get_visible() {return *static_cast<VisibleObject*>(NULL);}
     virtual const VisibleObject& get_visible() const {return *static_cast<VisibleObject*>(NULL);}
     virtual void engrave(EngraverState&) const;
@@ -389,9 +391,8 @@ class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
     // value structure
     struct Value
     {
-        unsigned exp  : 4;
-        unsigned dots : 3;
-        unsigned mute : 1;
+        unsigned exp  : 4;  // in [0, VALUE_BASE+2]
+        unsigned dots : 4;  // in [0, exp]
     };
     
     // list of sub-voices attached to this note
@@ -404,10 +405,14 @@ class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
         SubVoices();                    // default constructor
         SubVoices(const SubVoices&);    // copy constructor (iterator initializing)
         
+        SubVoices& operator = (const SubVoices&);
+        
         SubVoicePtr& add_top();         // create new sub-voice atop all sub-voices
         SubVoicePtr& add_above();       // create new sub-voice above this voice
         SubVoicePtr& add_below();       // create new sub-voice below this voice
         SubVoicePtr& add_bottom();      // create new sub-voice below all sub-voices
+        
+        void remove(const Voice&);      // remove sub-voice
         
         // iterator checking
         inline bool is_first_below(const SubVoiceList::const_iterator it) const {return it == below;};
@@ -421,8 +426,10 @@ class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
     int           staff_shift;  // note in different staff (if neq 0)
     SubVoices     subvoices;    // sub-voices attached to this note
     
- protected: NoteObject() : irr_enum(0), irr_denom(0), staff_shift(0) {val.exp = 5; val.dots = 0; val.mute = 0;}
+ protected: NoteObject() : irr_enum(0), irr_denom(0), staff_shift(0) {val.exp = 5; val.dots = 0;}
  public:
+    NoteObject(const NoteObject&, bool no_sub);
+    
     virtual VisibleObject& get_visible() {return *this;}
     virtual const VisibleObject& get_visible() const {return *this;}
     virtual void engrave(EngraverState& engraver) const = 0;
@@ -431,9 +438,8 @@ class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
     virtual NoteObject* clone() const = 0;
      
     inline unsigned int base() const      {return 1u << val.exp;}   // 2^exp
-    inline void set_exp(unsigned char e)  {val.exp = e & 0x0F;}
-    inline void set_dots(unsigned char d) {val.dots = d & 0x07;}
-    inline void set_mute(bool m)          {val.mute = m;}
+    inline void set_exp(unsigned char e)  {val.exp  = e & 0x0F;}    // in [0, VALUE_BASE+2]
+    inline void set_dots(unsigned char d) {val.dots = d & 0x0F;}    // in [0, exp]
     
     value_t set_value(value_t v);   // create note object from length (return error factor)
     const value_t value() const;    // calculate the note-object's value
@@ -443,24 +449,53 @@ class SCOREPRESS_API NoteObject : public VoiceObject, public VisibleObject
 class SCOREPRESS_API Chord : public NoteObject
 {
  public:
-    enum BeamType      {NO_BEAM, AUTO_BEAM, FORCE_BEAM, CUT_BEAM};
-    enum StemDirection {STEM_AUTO, STEM_UP, STEM_DOWN};
+    // type enums
+    enum StemType {STEM_CUSTOM,     // given by "stem.length"
+                   STEM_UP,         // automatical (force upwards)
+                   STEM_DOWN,       // automatical (force downwards)
+                   STEM_VOICE,      // automatical (force direction as given by voice)
+                   STEM_AUTO};      // automatical direction and length
+    
+    enum SlopeType {SLOPE_CUSTOM,   // given by "stem.slope"
+                    SLOPE_STEM,     // given solely by the stems' lengths
+                    SLOPE_BOUNDED,  // bounded by "stem.slope"
+                    SLOPE_AUTO};    // bounded by style (see "StyleParam")
+    
+    enum BeamType {BEAM_NONE,       // no beam
+                   BEAM_AUTO,       // beam according to "beam_group" (see "EngraverParam")
+                   BEAM_FORCED,     // force beam
+                   BEAM_CUT};       // force beam and cut all but the top one
+    
+    // stem information
+    struct Stem
+    {
+        StemType    type;           // type (direction and length)
+        spohh_t     length;         // length (for "STEM_CUSTOM" type)
+        SlopeType   slope_type;     // slope calculation method
+        spohh_t     slope;          // slope parameter (explicit or bound)
+        Color       color;          // stem / beam color
+        
+        Stem() : type(STEM_VOICE), length(0), slope_type(SLOPE_AUTO), slope(0) {
+            color.r = color.g = color.b = 0; color.a = 255;}
+    };
     
  public:
     // TODO: sprite per head, not per chord
     HeadList         heads;             // heads of the chord (in ascending order)
     ArticulationList articulation;      // articulation symbols
     SpriteId         sprite;            // head sprite id
-    StemDirection    stem_direction;    // stem direction (AUTO means 'dictated by VoiceRef')
-    spohh_t          stem_length;       // stem length
-    Color            stem_color;        // stem color
-    unsigned char    stem_tremolo;      // tremolo stem count
-    bool             invisible_flag;    // should the flag be rendered (ignored on notes with stem)
-    Color            flag_color;        // flag color
+    Stem             stem;              // stem information
     BeamType         beam;              // type of the beam to the next note
+    unsigned char    tremolo;           // tremolo beam count
+    Color            flag_color;        // flag color
+    
+ private:
+    spohh_t calculate_stem_length(const Staff&, const Voice&, const StaffContext&, const StyleParam&) const;
     
  public:
-    Chord() : stem_direction(STEM_AUTO), stem_length(3000), stem_tremolo(0), invisible_flag(false), beam(AUTO_BEAM) {stem_color.r = stem_color.g = stem_color.b = 0; stem_color.a = 255;}
+    Chord() : beam(BEAM_AUTO), tremolo(0) {}
+    Chord(const Chord& c, bool no_sub);
+    
     virtual SpriteId get_sprite(const Sprites&) const;
     virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
@@ -481,6 +516,8 @@ class SCOREPRESS_API Rest : public NoteObject
     
  public:
     Rest() : offset_y(0) {}
+    Rest(const Rest&, bool no_sub);
+    
     virtual SpriteId get_sprite(const Sprites&) const;
     virtual void engrave(EngraverState& engraver) const;
     virtual void render(Renderer& renderer, const Plate_pNote&, const PressState&) const;
@@ -649,7 +686,7 @@ class SCOREPRESS_API Staff : public Voice
     uum_t         brace_pos;        // distance of the brace to the staff 
     uum_t         bracket_pos;      // distance of the bracket to the staff
     StyleParamPtr style;            // optional staff specific style parameters
-    Newline       layout;           // staff layout on the first page
+    LayoutParam   layout;           // initial staff layout
     
     Staff() : offset_y(0), head_height(1875), line_count(5), long_barlines(false), curlybrace(false), bracket(false), brace_pos(500), bracket_pos(1000), style(NULL) {}
     virtual bool is(classType type) const;
@@ -688,11 +725,11 @@ class SCOREPRESS_API NamedVoice : public SubVoice
 //
 
 // position with unit class
-template <typename T = int> class UnitPosition
+class UnitPosition
 {
  public:
     // position coordinates (in micrometer or promille of head-height)
-    Position<T> co;
+    Position<int> co;
     
     // position unit (micrometer or promille of head-height)
     enum Unit {METRIC, HEAD};
@@ -719,7 +756,7 @@ template <typename T = int> class UnitPosition
 class SCOREPRESS_API Movable : public AttachedObject
 {
  public:
-    UnitPosition<> position;    // position data
+    UnitPosition position;      // position data
     
  public:
     virtual void engrave(EngraverState& engraver) const;
@@ -728,7 +765,8 @@ class SCOREPRESS_API Movable : public AttachedObject
     virtual classType classtype() const;
     virtual Movable* clone() const = 0;
     
-    static Position<mpx_t> engrave_pos(const EngraverState& engraver, const UnitPosition<>& pos);
+    static Position<mpx_t> engrave_pos(const UnitPosition& pos, const EngraverState& engraver);
+    static Position<mpx_t> engrave_pos(const UnitPosition& pos, const ViewportParam& viewport, umpx_t head_height);
     
     virtual void register_nodes(ObjectCursor&);
     virtual ContextChanging* ctxchange();
@@ -837,10 +875,9 @@ class SCOREPRESS_API PluginInfo : public Movable
         
  public:
     PluginInfo() : data(NULL) {}
-    void reserve(const size_t size) {delete[] data; data = new char[size];}
-    void free()                     {delete[] data; data = NULL;}
-    operator const char* () const {return data;}
-    operator       char* ()       {return data;}
+    void  reserve(const size_t size) {delete[] data; data = new char[size];}
+    void  free()                     {delete[] data; data = NULL;}
+    char* get_data()                 {return data;}
     virtual void render(Renderer& renderer, const Plate_pAttachable&, const PressState&) const = 0;
     virtual bool is(classType type) const;
     virtual classType classtype() const;
@@ -879,8 +916,8 @@ class SCOREPRESS_API CustomSymbol : public Symbol
 class SCOREPRESS_API Durable : public Symbol
 {
  public:
-    value_t        duration;    // duration of the symbol
-    UnitPosition<> end;         // position of the end-node
+    value_t      duration;      // duration of the symbol
+    UnitPosition end;           // position of the end-node
     
  public:
     Durable() : duration(1) {}
@@ -896,10 +933,10 @@ class SCOREPRESS_API Durable : public Symbol
 class SCOREPRESS_API Slur : public Durable
 {
  public:
-    UnitPosition<> control1;    // first control point
-    UnitPosition<> control2;    // second control point
-    promille_t     thickness1;  // line-width at the ends     (in promille of stem-width)
-    promille_t     thickness2;  // line-width at the center   (in promille of stem-width)
+    UnitPosition control1;      // first control point
+    UnitPosition control2;      // second control point
+    promille_t   thickness1;    // line-width at the ends     (in promille of stem-width)
+    promille_t   thickness2;    // line-width at the center   (in promille of stem-width)
     
  public:
     Slur() : thickness1(500), thickness2(2000) {}
