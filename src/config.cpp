@@ -20,6 +20,12 @@
 
 #include "config.hh"
 
+#define PREFIX     "/usr/local"
+#define LIBDIR     PREFIX "/lib"
+#define INCLUDEDIR PREFIX "/include/" LIBSCOREPRESS_PACKAGE_NAME "-" LIBSCOREPRESS_VERSION_STRING
+#define DATADIR    PREFIX "/share/libscorepress"
+#define DESTDIR    ""
+
 const struct ScorePress_Config scorepress_config =
 {
     PREFIX,

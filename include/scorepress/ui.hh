@@ -43,7 +43,8 @@ class SCOREPRESS_API UI;   // abstact user-interface base-class
 class SCOREPRESS_API UI
 {
  public:
-    virtual void register_open_format(DocumentReader& reader) = 0;
+    virtual ~UI() {};
+	virtual void register_open_format(DocumentReader& reader) = 0;
     virtual void register_save_format(DocumentWriter& writer) = 0;
     virtual void register_import_format(DocumentReader& reader) = 0;
     virtual void register_export_format(DocumentWriter& writer) = 0;
