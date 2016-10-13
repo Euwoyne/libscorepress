@@ -1,7 +1,8 @@
-# Eclipse Project files
+# IDE Project files
 .cproject
 .project
 .settings/
+libscorepress.*
 
 # Configure Output
 autom4te.cache
@@ -28,3 +29,7 @@ obj/*
 *.lai
 *.la
 *.a
+
+# Temporarily unused
+lib
+lib/*
