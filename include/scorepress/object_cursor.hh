@@ -57,31 +57,34 @@ class SCOREPRESS_API ObjectCursor : public CursorBase
     // positioning mode
     class Grid
     {
+     public:
+        // metric grids (um, mm, cm)
+        enum Metric {NO_GRID = 0, CENTI = 1, MILLI = 2, MICRO = 3};
+        
+        // relative grids (head-height, half head-height)
+        enum Head   {NO_SNAP = 0, FULL  = 1, HALF = 2};
+        
      private:
-        unsigned char data;     // grid flags
+        Metric metric;
+        Head   head;
         
      public:
-        enum Metric {MICRO = 0, MILLI = 1, CENTI = 2};  // metric grids (um, mm, cm)
-        enum Head   {HALF  = 3, FULL  = 4};             // relative grids (head-height, half head-height)
-        
         // constructors
-        Grid()                   : data(0) {}
-        Grid(Metric m)           : data(0) {set(m);}
-        Grid(Metric m, Head   h) : data(0) {set(m, h);}
-        Grid(Head   h)           : data(0) {set(h);}
-        Grid(Head   h, Metric m) : data(0) {set(h, m);}
+        inline Grid()                   : metric(NO_GRID), head(NO_SNAP) {}
+        inline Grid(Metric m)           : metric(m),       head(NO_SNAP) {}
+        inline Grid(Metric m, Head   h) : metric(m),       head(h)       {}
+        inline Grid(Head   h)           : metric(NO_GRID), head(h)       {}
+        inline Grid(Head   h, Metric m) : metric(m),       head(h)       {}
         
         // grid manipulation
-        inline void set(Metric m)           {data = 0; add(m);}
-        inline void add(Metric m)           {unsigned char n(m); do data |= static_cast<unsigned char>(1 << n); while(n--);}
-        inline void set(Metric m, Head   h) {data = 0; add(m); add(h);}
-        inline void set(Head   h)           {data = 0; add(h);}
-        inline void add(Head   h)           {unsigned char g(h); do data |= static_cast<unsigned char>(1 << g); while(--g > 2);}
-        inline void set(Head   h, Metric m) {data = 0; add(m); add(h);}
+        inline void set(Metric m)           {metric = m;}
+        inline void set(Metric m, Head   h) {metric = m; head = h;}
+        inline void set(Head   h)           {head = h;}
+        inline void set(Head   h, Metric m) {head = h; metric = m;}
         
         // grid check
-        inline bool has(Metric m) const     {return (data & (1 << m));}
-        inline bool has(Head   h) const     {return (data & (1 << h));}
+        inline bool has(Metric m) const     {return metric >= m;}
+        inline bool has(Head   h) const     {return head   >= h;}
     };
     
  protected:
