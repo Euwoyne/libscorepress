@@ -49,6 +49,8 @@ class SCOREPRESS_API Cursor
  public:
     // exception classes
     class SCOREPRESS_API Error : public ScorePress::Error {public: Error(const std::string& msg);};
+    class SCOREPRESS_API UninitializedCursorException : public Error
+        {public: UninitializedCursorException();};  // thrown, if we use an uninitialized cursor
     class SCOREPRESS_API IllegalObjectTypeException : public Error
         {public: IllegalObjectTypeException();};    // thrown, if we insert a staff-object into a sub-voice
     
@@ -82,16 +84,16 @@ class SCOREPRESS_API Cursor
     Cursor  operator ++ (int);          // increment operator; move cursor to the next note (postfix)
     Cursor  operator -- (int);          // decrement operator; move cursor to the previous note (postfix)
     
-    void reset();                   // reset the cursor to undefined state
+    void reset() noexcept;          // reset the cursor to undefined state
     void to_end();                  // set cursor to the voice's end
     size_t index() const;           // return the note index within the voice
     size_t voice_length() const;    // return the length of the voice
     
     // equality operators
-    bool operator == (const Cursor& cursor) const;
-    bool operator != (const Cursor& cursor) const;
-    bool operator == (const const_Cursor& cursor) const;
-    bool operator != (const const_Cursor& cursor) const;
+    bool operator == (const Cursor&)       const noexcept;
+    bool operator != (const Cursor&)       const noexcept;
+    bool operator == (const const_Cursor&) const noexcept;
+    bool operator != (const const_Cursor&) const noexcept;
     
     // state reporters
     bool has_next() const;          // check, whether cursor can be incremented
@@ -106,11 +108,11 @@ class SCOREPRESS_API Cursor
     inline Staff& staff() const {return *_staff;}       // return the staff
     inline Voice& voice() const {return *_voice;}       // return the voice the cursor points to
     
-    void set(Staff& staff);
-    void set(Staff& staff, SubVoice& voice);
+    void set(Staff& staff)                  noexcept;
+    void set(Staff& staff, SubVoice& voice) noexcept;
     
     // modification methods (ownership of inserted object is with the voice object thereafter!)
-    void insert(StaffObject* const object) throw(IllegalObjectTypeException);
+    void insert(StaffObject* const object);
     void remove();
 };
 
@@ -163,10 +165,10 @@ class SCOREPRESS_API const_Cursor
     size_t voice_length() const;    // return the length of the voice
     
     // equality operators
-    bool operator == (const Cursor& cursor) const;
-    bool operator != (const Cursor& cursor) const;
-    bool operator == (const const_Cursor& cursor) const;
-    bool operator != (const const_Cursor& cursor) const;
+    bool operator == (const Cursor&)       const noexcept;
+    bool operator != (const Cursor&)       const noexcept;
+    bool operator == (const const_Cursor&) const noexcept;
+    bool operator != (const const_Cursor&) const noexcept;
     
     // state reporters
     bool has_next() const;      // check, whether cursor can be incremented
@@ -181,8 +183,8 @@ class SCOREPRESS_API const_Cursor
     inline const Staff& staff() const {return *_staff;}     // return the staff
     inline const Voice& voice() const {return *_voice;}     // return the voice the cursor points to
     
-    void set(const Staff& staff);
-    void set(const Staff& staff, const SubVoice& voice);
+    void set(const Staff& staff)                        noexcept;
+    void set(const Staff& staff, const SubVoice& voice) noexcept;
 };
 
 } // end namespace

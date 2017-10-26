@@ -148,7 +148,7 @@ void StaffContext::modify(const Key& key)
 }
 
 // set new base-note as specified by the clef
-void StaffContext::modify(const Clef& clef) throw(IllegalBasenoteException)
+void StaffContext::modify(const Clef& clef)
 {
     if (clef.sprite.setid > 10000) throw IllegalBasenoteException();
     if (wholetone[clef.base_note % 12] != clef.base_note % 12) // check if the base note is a whole tone
@@ -173,7 +173,7 @@ void StaffContext::remember_acc(const Head& head)
 }
 
 // calculate the vertical offset for the given note according to the current clef
-mpx_t StaffContext::note_offset(const Head& head, mpx_t head_height) const throw(IllegalAccidentalException)
+mpx_t StaffContext::note_offset(const Head& head, mpx_t head_height) const
 {
     // get the note name and octave
     int tone_name = (static_cast<int>(head.tone) - Accidental::note_modifier[head.accidental.type]) % 12;
@@ -188,7 +188,7 @@ mpx_t StaffContext::note_offset(const Head& head, mpx_t head_height) const throw
 }
 
 // calculate the offset for the idx-th symbol of the given key-signature
-mpx_t StaffContext::key_offset(Key::Type type, char idx, mpx_t head_height) const throw(IllegalKeyException)
+mpx_t StaffContext::key_offset(Key::Type type, char idx, mpx_t head_height) const
 {
     // local variables
     tone_t bound = (type == Key::SHARP) ? _clef.keybnd_sharp : _clef.keybnd_flat;    // key-signature bound
@@ -217,7 +217,7 @@ mpx_t StaffContext::key_offset(Key::Type type, char idx, mpx_t head_height) cons
 }
 
 // calculate ledger line count (for a one-line staff)
-int StaffContext::ledger_count(const Head& head) const throw(IllegalAccidentalException)
+int StaffContext::ledger_count(const Head& head) const
 {
     // get the note name and octave
     int tone_name = (static_cast<int>(head.tone) - Accidental::note_modifier[head.accidental.type]) % 12;

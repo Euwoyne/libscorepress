@@ -43,7 +43,7 @@ using namespace ScorePress;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
 // throwing function (general file error)
-void XMLFileReader::mythrow(const char* trns, const std::string& filename) throw(IOException)
+void XMLFileReader::mythrow(const char* trns, const std::string& filename)
 {
     char* msg = new char[strlen(trns) + filename.size() + 1];   // allocate memory
     sprintf(msg, trns, filename.c_str());                       // assemble message
@@ -53,7 +53,7 @@ void XMLFileReader::mythrow(const char* trns, const std::string& filename) throw
 }
 
 // throwing function (symbol related error)
-void XMLFileReader::mythrow(const char* trns, const std::string& symbol, const std::string& filename, const int line, const int column) throw(FormatError)
+void XMLFileReader::mythrow(const char* trns, const std::string& symbol, const std::string& filename, const int line, const int column)
 {
     char* msg = new char[strlen(trns) + symbol.size() + filename.size() +   // allocate memory
                          static_cast<int>(log10(line) + log10(column)) + 3];
@@ -64,7 +64,7 @@ void XMLFileReader::mythrow(const char* trns, const std::string& symbol, const s
 }
 
 // throwing function (error with file position)
-void XMLFileReader::mythrow(const char* trns, const std::string& filename, const int line, const int column) throw(FormatError)
+void XMLFileReader::mythrow(const char* trns, const std::string& filename, const int line, const int column)
 {
     char* msg = new char[strlen(trns) + filename.size() +   // allocate memory
                          static_cast<int>(log10(line) + log10(column)) + 3];
@@ -75,7 +75,7 @@ void XMLFileReader::mythrow(const char* trns, const std::string& filename, const
 }
 
 // throwing function (expected eof error with file position)
-void XMLFileReader::mythrow_eof(const char* trns, const std::string& filename, const int line, const int column) throw(ExpectedEOF)
+void XMLFileReader::mythrow_eof(const char* trns, const std::string& filename, const int line, const int column)
 {
     char* msg = new char[strlen(trns) + filename.size() +   // allocate memory
                          static_cast<int>(log10(line) + log10(column)) + 3];

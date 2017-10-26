@@ -34,6 +34,8 @@ using namespace ScorePress;
 
 // exception classes
 Cursor::Error::Error(const std::string& msg) : ScorePress::Error(msg) {}
+Cursor::UninitializedCursorException::UninitializedCursorException()
+      : Error("Try to use uninitialized cursor.") {}
 Cursor::IllegalObjectTypeException::IllegalObjectTypeException()
       : Error("You cannot insert a Staff-Object into a sub-voice.") {}
 
@@ -45,6 +47,7 @@ Cursor::Cursor(Staff& s, SubVoice& v) : _staff(&s), _voice(&v), _sub(v.notes.beg
 // increment operator; move cursor to the next note (prefix)
 Cursor& Cursor::operator ++ ()
 {
+    if (!_voice) throw UninitializedCursorException();
     if (_staff == _voice) ++_main; else ++_sub;
     return *this;
 }
@@ -52,6 +55,7 @@ Cursor& Cursor::operator ++ ()
 // decrement operator; move cursor to the previous note (prefix)
 Cursor& Cursor::operator -- ()
 {
+    if (!_voice) throw UninitializedCursorException();
     if (_staff == _voice) --_main; else --_sub;
     return *this;
 }
@@ -59,6 +63,7 @@ Cursor& Cursor::operator -- ()
 // increment operator; move cursor to the next note (postfix)
 Cursor Cursor::operator ++ (int)
 {
+    if (!_voice) throw UninitializedCursorException();
     Cursor out(*this);
     if (_staff == _voice) ++_main; else ++_sub;
     return out;
@@ -67,13 +72,14 @@ Cursor Cursor::operator ++ (int)
 // decrement operator; move cursor to the previous note (postfix)
 Cursor Cursor::operator -- (int)
 {
+    if (!_voice) throw UninitializedCursorException();
     Cursor out(*this);
     if (_staff == _voice) --_main; else --_sub;
     return out;
 }
 
 // reset the cursor to undefined state
-void Cursor::reset()
+void Cursor::reset() noexcept
 {
     _staff = NULL;
     _voice = NULL;
@@ -82,14 +88,16 @@ void Cursor::reset()
 // set cursor to the voice's end
 void Cursor::to_end()
 {
+    if (!_voice) throw UninitializedCursorException();
     if (_staff == _voice) _main = static_cast<Staff*>(_voice)->notes.end();
-                          _sub  = static_cast<SubVoice*>(_voice)->notes.end();
+    else                  _sub  = static_cast<SubVoice*>(_voice)->notes.end();
 }
 
 // return the note index within the voice
 size_t Cursor::index() const
 {
     size_t out = 0;
+    if (!_voice) throw UninitializedCursorException();
     if (_staff == _voice)
     {
         for (StaffObjectList::const_iterator i  = static_cast<Staff*>(_voice)->notes.begin();
@@ -111,33 +119,34 @@ size_t Cursor::index() const
 // return the length of the voice
 size_t Cursor::voice_length() const
 {
+    if (!_voice) throw UninitializedCursorException();
     if (_staff == _voice) return static_cast<Staff*>(_voice)->notes.size();
     else                  return static_cast<SubVoice*>(_voice)->notes.size();
 }
 
 // equality operators
-bool Cursor::operator == (const Cursor& cursor) const
+bool Cursor::operator == (const Cursor& cursor) const noexcept
 {
     return    cursor._staff == _staff
            && cursor._voice == _voice
            && ((_staff == _voice) ? _main == cursor._main : _sub == cursor._sub);
 }
 
-bool Cursor::operator != (const Cursor& cursor) const
+bool Cursor::operator != (const Cursor& cursor) const noexcept
 {
     return    cursor._staff != _staff
            || cursor._voice != _voice
            || ((_staff == _voice) ? _main != cursor._main : _sub != cursor._sub);
 }
 
-bool Cursor::operator == (const const_Cursor& cursor) const
+bool Cursor::operator == (const const_Cursor& cursor) const noexcept
 {
     return    cursor._staff == _staff
            && cursor._voice == _voice
            && ((_staff == _voice) ? _main == cursor._main : _sub == cursor._sub);
 }
 
-bool Cursor::operator != (const const_Cursor& cursor) const
+bool Cursor::operator != (const const_Cursor& cursor) const noexcept
 {
     return    cursor._staff != _staff
            || cursor._voice != _voice
@@ -147,6 +156,7 @@ bool Cursor::operator != (const const_Cursor& cursor) const
 // check, whether cursor can be incremented
 bool Cursor::has_next() const
 {
+    if (!_voice) throw UninitializedCursorException();
     return (_staff == _voice) ? _main != --static_cast<Staff*>(_voice)->notes.end()
                               : _sub  != --static_cast<SubVoice*>(_voice)->notes.end();
 }
@@ -154,6 +164,7 @@ bool Cursor::has_next() const
 // check, whether cursor can be decremented
 bool Cursor::has_prev() const
 {
+    if (!_voice) throw UninitializedCursorException();
     return (_staff == _voice) ? _main != static_cast<Staff*>(_voice)->notes.begin()
                               : _sub  != static_cast<SubVoice*>(_voice)->notes.begin();
 }
@@ -161,19 +172,20 @@ bool Cursor::has_prev() const
 // check, if the cursor is at the end
 bool Cursor::at_end() const
 {
+    if (!_voice) throw UninitializedCursorException();
     return (_staff == _voice) ? _main == static_cast<Staff*>(_voice)->notes.end()
                               : _sub  == static_cast<SubVoice*>(_voice)->notes.end();
 }
 
 // set functions
-void Cursor::set(Staff& s)
+void Cursor::set(Staff& s) noexcept
 {
     _main = s.notes.begin();
     _staff = &s;
     _voice = &s;
 }
 
-void Cursor::set(Staff& s, SubVoice& v)
+void Cursor::set(Staff& s, SubVoice& v) noexcept
 {
     _sub = v.notes.begin();
     _staff = &s;
@@ -181,8 +193,9 @@ void Cursor::set(Staff& s, SubVoice& v)
 }
 
 // insert object before the referenced one
-void Cursor::insert(StaffObject* const object) throw(IllegalObjectTypeException)
+void Cursor::insert(StaffObject* const object)
 {
+    if (!_voice) throw UninitializedCursorException();
     if (_voice->is(Class::STAFF))
     {
         _main = static_cast<Staff*>(_voice)->notes.insert(_main, StaffObjectPtr(object));
@@ -222,6 +235,7 @@ const_Cursor::const_Cursor(const Cursor& c) : _staff(c._staff), _voice(c._voice)
 // increment operator; move cursor to the next note (prefix)
 const_Cursor& const_Cursor::operator ++ ()
 {
+    if (!_voice) throw UninitializedCursorException();
     if (_staff == _voice) ++_main; else ++_sub;
     return *this;
 }
@@ -229,6 +243,7 @@ const_Cursor& const_Cursor::operator ++ ()
 // decrement operator; move cursor to the previous note (prefix)
 const_Cursor& const_Cursor::operator -- ()
 {
+    if (!_voice) throw UninitializedCursorException();
     if (_staff == _voice) --_main; else --_sub;
     return *this;
 }
@@ -236,6 +251,7 @@ const_Cursor& const_Cursor::operator -- ()
 // increment operator; move cursor to the next note (postfix)
 const_Cursor const_Cursor::operator ++ (int)
 {
+    if (!_voice) throw UninitializedCursorException();
     const_Cursor out(*this);
     if (_staff == _voice) ++_main; else ++_sub;
     return out;
@@ -244,6 +260,7 @@ const_Cursor const_Cursor::operator ++ (int)
 // decrement operator; move cursor to the previous note (postfix)
 const_Cursor const_Cursor::operator -- (int)
 {
+    if (!_voice) throw UninitializedCursorException();
     const_Cursor out(*this);
     if (_staff == _voice) --_main; else --_sub;
     return out;
@@ -259,13 +276,15 @@ void const_Cursor::reset()
 // set cursor to the voice's end
 void const_Cursor::to_end()
 {
+    if (!_voice) throw UninitializedCursorException();
     if (_staff == _voice) _main = static_cast<const Staff*>(_voice)->notes.end();
-                          _sub  = static_cast<const SubVoice*>(_voice)->notes.end();
+    else                  _sub  = static_cast<const SubVoice*>(_voice)->notes.end();
 }
 
 // return the note index within the voice
 size_t const_Cursor::index() const
 {
+    if (!_voice) throw UninitializedCursorException();
     size_t out = 0;
     if (_staff == _voice)
     {
@@ -286,33 +305,34 @@ size_t const_Cursor::index() const
 // return the length of the voice
 size_t const_Cursor::voice_length() const
 {
+    if (!_voice) throw UninitializedCursorException();
     if (_staff == _voice) return static_cast<const Staff*>(_voice)->notes.size();
     else                  return static_cast<const SubVoice*>(_voice)->notes.size();
 }
 
 // equality operators
-bool const_Cursor::operator == (const Cursor& cursor) const
+bool const_Cursor::operator == (const Cursor& cursor) const noexcept
 {
     return    cursor._staff == _staff
            && cursor._voice == _voice
            && ((_staff == _voice) ? _main == cursor._main : _sub == cursor._sub);
 }
 
-bool const_Cursor::operator != (const Cursor& cursor) const
+bool const_Cursor::operator != (const Cursor& cursor) const noexcept
 {
     return    cursor._staff != _staff
            || cursor._voice != _voice
            || ((_staff == _voice) ? _main != cursor._main : _sub != cursor._sub);
 }
 
-bool const_Cursor::operator == (const const_Cursor& cursor) const
+bool const_Cursor::operator == (const const_Cursor& cursor) const noexcept
 {
     return    cursor._staff == _staff
            && cursor._voice == _voice
            && ((_staff == _voice) ? _main == cursor._main : _sub == cursor._sub);
 }
 
-bool const_Cursor::operator != (const const_Cursor& cursor) const
+bool const_Cursor::operator != (const const_Cursor& cursor) const noexcept
 {
     return    cursor._staff != _staff
            || cursor._voice != _voice
@@ -322,6 +342,7 @@ bool const_Cursor::operator != (const const_Cursor& cursor) const
 // check, whether cursor can be incremented
 bool const_Cursor::has_next() const
 {
+    if (!_voice) throw UninitializedCursorException();
     return (_staff == _voice) ? (_main != --static_cast<const Staff*>(_voice)->notes.end() &&
                                  _main !=   static_cast<const Staff*>(_voice)->notes.end())
                               : (_sub  != --static_cast<const SubVoice*>(_voice)->notes.end()  &&
@@ -331,6 +352,7 @@ bool const_Cursor::has_next() const
 // check, whether cursor can be decremented
 bool const_Cursor::has_prev() const
 {
+    if (!_voice) throw UninitializedCursorException();
     return (_staff == _voice) ? _main != static_cast<const Staff*>(_voice)->notes.begin()
                               : _sub  != static_cast<const SubVoice*>(_voice)->notes.begin();
 }
@@ -338,19 +360,20 @@ bool const_Cursor::has_prev() const
 // check, if the cursor is at the end
 bool const_Cursor::at_end() const
 {
+    if (!_voice) throw UninitializedCursorException();
     return (_staff == _voice) ? _main == static_cast<const Staff*>(_voice)->notes.end()
                               : _sub  == static_cast<const SubVoice*>(_voice)->notes.end();
 }
 
 // set functions
-void const_Cursor::set(const Staff& s)
+void const_Cursor::set(const Staff& s) noexcept
 {
     _main = s.notes.begin();
     _staff = &s;
     _voice = &s;
 }
 
-void const_Cursor::set(const Staff& s, const SubVoice& v)
+void const_Cursor::set(const Staff& s, const SubVoice& v) noexcept
 {
     _sub = v.notes.begin();
     _staff = &s;

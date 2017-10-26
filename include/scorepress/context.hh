@@ -77,8 +77,8 @@ class SCOREPRESS_API VoiceContext
     const TimeSig& last_timesig() const;            // return the last time-signature
     
     // modifiers
-    void modify(const ContextChanging& changer, bool vol);  // let the context-changing instance change this context
-    void modify(const TimeSig& timesig, value_t time);      // set new time-signature
+    void modify(const ContextChanging&, bool vol);  // let the context-changing instance change this context
+    void modify(const TimeSig&, value_t);           // set new time-signature
     
     // last object access
     bool has_buffer() const;                        // has last engraved object?
@@ -150,40 +150,41 @@ class SCOREPRESS_API StaffContext
     StaffContext(const StaffContext& context);      // copy constructor
     
     // member access
-    const Clef&    last_clef()    const;
-    const Key&     last_key()     const;
-    const tone_t&  base_note()    const;
-    const tone_t&  keybnd_sharp() const;
-    const tone_t&  keybnd_flat()  const;
+    const Clef&    last_clef()    const noexcept;
+    const Key&     last_key()     const noexcept;
+    const tone_t&  base_note()    const noexcept;
+    const tone_t&  keybnd_sharp() const noexcept;
+    const tone_t&  keybnd_flat()  const noexcept;
     
     // modifiers
-    void modify(const Key& key);                    // set new key
-    void modify(const Clef& clef) throw(IllegalBasenoteException);  // set new base-note as specified by the clef
+    void modify(const Key&);        // set new key
+    void modify(const Clef&);       // set new base-note as specified by clef
     
-    void remember_acc(const Head& head);            // remember accidental
-    void reset_acc();                               // reset memorized accidentals
+    void remember_acc(const Head&); // remember accidental
+    void reset_acc() noexcept;      // reset memorized accidentals
     
     // modificators
-    mpx_t note_offset(const Head& head, mpx_t head_height)        const throw(IllegalAccidentalException);  // calculate the offset for the note
-    mpx_t key_offset(Key::Type type, char idx, mpx_t head_height) const throw(IllegalKeyException);         // calculate the offset for the key
-    int   ledger_count(const Head& head)                          const throw(IllegalAccidentalException);  // calculate ledger line count
+    mpx_t note_offset(const Head&, mpx_t head_height)        const; // calculate the offset for the note
+    mpx_t key_offset(Key::Type, char idx, mpx_t head_height) const; // calculate the offset for the key
+    int   ledger_count(const Head&)                          const; // calculate ledger line count
     
     // state checkers
-    bool             on_line(const Head& head)                          const;          // check if the head lies on a line
-    bool             acc_visible(const Head& head)                      const;          // check if the accidental is visible
-    static bool      check_accidental(const tone_t tone, const Accidental::Type type);  // check if the accidental is OK
-    Accidental::Type get_key_accidental(const tone_t tone)              const;          // check if the tone got a key accidental
-    Accidental::Type guess_accidental(const tone_t tone, bool pref_nat) const;          // calculate a nice accidental for the tone
+    bool             on_line(const Head&)                          const;   // check if the head lies on a line
+    bool             acc_visible(const Head&)                      const;   // check if the accidental is visible
+    static bool      check_accidental(const tone_t, const Accidental::Type);// check if the accidental is OK
+    Accidental::Type get_key_accidental(const tone_t)              const;   // check if the tone got a key accidental
+    Accidental::Type guess_accidental(const tone_t, bool pref_nat) const;   // calculate a nice accidental for the tone
 };
 
 // inline method implementations
-inline const Clef&    StaffContext::last_clef()                   const {return _clef;}
-inline const Key&     StaffContext::last_key()                    const {return _key;}
-inline const tone_t&  StaffContext::base_note()                   const {return _clef.base_note;}
-inline const tone_t&  StaffContext::keybnd_sharp()                const {return _clef.keybnd_sharp;}
-inline const tone_t&  StaffContext::keybnd_flat()                 const {return _clef.keybnd_flat;}
-inline       void     StaffContext::reset_acc()                         {_accidentals.clear();}
-inline       bool     StaffContext::on_line(const Head& head)     const {return (note_offset(head, 2) % 2 == 1);}
+inline const Clef&    StaffContext::last_clef()    const noexcept {return _clef;}
+inline const Key&     StaffContext::last_key()     const noexcept {return _key;}
+inline const tone_t&  StaffContext::base_note()    const noexcept {return _clef.base_note;}
+inline const tone_t&  StaffContext::keybnd_sharp() const noexcept {return _clef.keybnd_sharp;}
+inline const tone_t&  StaffContext::keybnd_flat()  const noexcept {return _clef.keybnd_flat;}
+inline       void     StaffContext::reset_acc()          noexcept {_accidentals.clear();}
+
+inline       bool     StaffContext::on_line(const Head& head) const {return (note_offset(head, 2) % 2 == 1);}
 
 
 //

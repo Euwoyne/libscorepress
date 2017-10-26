@@ -58,7 +58,7 @@ UserCursor::InvalidMovement::InvalidMovement(const std::string& dir)
 //    -----------------------
 
 // to the previous note (fails, if "!has_prev()")
-void UserCursor::VoiceCursor::prev() throw(InvalidMovement, Error)
+void UserCursor::VoiceCursor::prev()
 {
     // check validity of movement
     if (!has_prev()) throw InvalidMovement("prev");
@@ -80,7 +80,7 @@ void UserCursor::VoiceCursor::prev() throw(InvalidMovement, Error)
 }
 
 // to the next note (fails, if "at_end()")
-void UserCursor::VoiceCursor::next() throw(InvalidMovement, Error)
+void UserCursor::VoiceCursor::next()
 {
     // check validity of movement
     if (at_end()) throw InvalidMovement("next");
@@ -433,7 +433,7 @@ void UserCursor::update_cursors()
 }
 
 // calculate the horizontal position for the given cursor (position right of the referenced object; fast)
-mpx_t UserCursor::fast_x(const VoiceCursor& cur) const throw(NotValidException)
+mpx_t UserCursor::fast_x(const VoiceCursor& cur) const
 {
     assert(cur.pnote->at_end() || !cur.note.at_end());
     
@@ -443,7 +443,7 @@ mpx_t UserCursor::fast_x(const VoiceCursor& cur) const throw(NotValidException)
 }
 
 // calculate the horizontal position for the given cursor (graphical cursor position, regarding simultaneous notes)
-mpx_t UserCursor::graphical_x(const VoiceCursor& cur) const throw(NotValidException)
+mpx_t UserCursor::graphical_x(const VoiceCursor& cur) const
 {
     assert(cur.pnote->at_end() || !cur.note.at_end());
     
@@ -510,7 +510,7 @@ void UserCursor::set_x_voice(const mpx_t x)
 }
 
 // select previous line (update line, page and plateinfo)
-void UserCursor::select_prev_line() throw(InvalidMovement)
+void UserCursor::select_prev_line()
 {
     if (line == plateinfo->plate->lines.begin())    // if it is on the previous page
     {
@@ -538,7 +538,7 @@ void UserCursor::select_prev_line() throw(InvalidMovement)
 }
 
 // select next line (update line, page and plateinfo)
-void UserCursor::select_next_line() throw(InvalidMovement)
+void UserCursor::select_next_line()
 {
     if (++line == plateinfo->plate->lines.end())    // if it is on the next page
     {
@@ -584,7 +584,7 @@ UserCursor::UserCursor(const UserCursor& _cursor) : document(_cursor.document), 
 UserCursor::~UserCursor() {}
 
 // initialize the cursor at the beginning of a given score
-void UserCursor::set_score(Score& _score, size_t start_page) throw(Error)
+void UserCursor::set_score(Score& _score, size_t start_page)
 {
     // try to find score in the document
     for (Document::ScoreList::const_iterator s = document->scores.begin(); s != document->scores.end(); ++s)
@@ -685,63 +685,63 @@ void UserCursor::set_pos(Position<mpx_t> pos, Pageset::Iterator new_page, const 
 // ----------------
 
 // return the staff
-const Staff& UserCursor::get_staff() const throw(NotValidException)
+const Staff& UserCursor::get_staff() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->note.staff();
 }
 
 // return the voice
-const Voice& UserCursor::get_voice() const throw(NotValidException)
+const Voice& UserCursor::get_voice() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->note.voice();
 }
 
 // return the score-cursor
-const Cursor& UserCursor::get_cursor() const throw(NotValidException)
+const Cursor& UserCursor::get_cursor() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->note;
 }
 
 // return objects attached to the note
-const MovableList& UserCursor::get_attached() const throw(NotValidException)
+const MovableList& UserCursor::get_attached() const
 {
     if (cursor == vcursors.end())     throw NotValidException();
     return cursor->note->get_visible().attached;
 }
 
 // return the on-plate voice
-const Plate::pVoice& UserCursor::get_pvoice() const throw(NotValidException)
+const Plate::pVoice& UserCursor::get_pvoice() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return *cursor->pvoice;
 }
 
 // return the on-plate note
-const Plate::pNote& UserCursor::get_platenote() const throw(NotValidException)
+const Plate::pNote& UserCursor::get_platenote() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return *cursor->pnote;
 }
 
 // return the current time-stamp
-value_t UserCursor::get_time() const throw(NotValidException)
+value_t UserCursor::get_time() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->time;
 }
 
 // check, if the cursor is at the end of the voice
-bool UserCursor::at_end() const throw(NotValidException)
+bool UserCursor::at_end() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->at_end();
 }
 
 // return the index of the current voice
-size_t UserCursor::voice_index() const throw (NotValidException)
+size_t UserCursor::voice_index() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     size_t idx = 0;
@@ -754,7 +754,7 @@ size_t UserCursor::voice_index() const throw (NotValidException)
 }
 
 // return the index of the current voice (in staff)
-size_t UserCursor::staff_voice_index() const throw(NotValidException)
+size_t UserCursor::staff_voice_index() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     size_t idx = 0;
@@ -767,7 +767,7 @@ size_t UserCursor::staff_voice_index() const throw(NotValidException)
 }
 
 // return the number of voices (in staff)
-size_t UserCursor::staff_voice_count() const throw(NotValidException)
+size_t UserCursor::staff_voice_count() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     size_t cnt = 0;
@@ -783,7 +783,7 @@ size_t UserCursor::staff_voice_count() const throw(NotValidException)
 // ---------------
 
 // return the style parameters
-const StyleParam& UserCursor::get_style() const throw(NotValidException)
+const StyleParam& UserCursor::get_style() const
 {
     if (!ready()) throw NotValidException();
     if (!!cursor->note.staff().style) return *cursor->note.staff().style;
@@ -792,7 +792,7 @@ const StyleParam& UserCursor::get_style() const throw(NotValidException)
 }
 
 // return the line layout
-const LayoutParam& UserCursor::get_layout() const throw(NotValidException)
+const LayoutParam& UserCursor::get_layout() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     if (cursor->newline.ready()) return static_cast<Newline&>(*cursor->newline).layout;
@@ -800,7 +800,7 @@ const LayoutParam& UserCursor::get_layout() const throw(NotValidException)
 }
 
 // return the score dimension
-const ScoreDimension& UserCursor::get_dimension() const throw(NotValidException)
+const ScoreDimension& UserCursor::get_dimension() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     if (cursor->pagebreak.ready()) return static_cast<Pagebreak&>(*cursor->pagebreak).dimension;
@@ -808,7 +808,7 @@ const ScoreDimension& UserCursor::get_dimension() const throw(NotValidException)
 }
 
 // return objects attached to the page
-const MovableList& UserCursor::get_page_attached() const throw(NotValidException)
+const MovableList& UserCursor::get_page_attached() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->pagebreak.ready() ? static_cast<Pagebreak&>(*cursor->pagebreak).attached
@@ -820,21 +820,21 @@ const MovableList& UserCursor::get_page_attached() const throw(NotValidException
 // --------------------
 
 // check, if the cursor can be decremented
-bool UserCursor::has_prev() const throw(NotValidException)
+bool UserCursor::has_prev() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->has_prev();
 }
 
 // check, if the cursor can be incremented
-bool UserCursor::has_next() const throw(NotValidException)
+bool UserCursor::has_next() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->has_next();
 }
 
 // check, if the voice-cursor can be decremented
-bool UserCursor::has_prev_voice() const throw(NotValidException)
+bool UserCursor::has_prev_voice() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     if (cursor == vcursors.begin()) return false;   // first voice has no previous
@@ -847,7 +847,7 @@ bool UserCursor::has_prev_voice() const throw(NotValidException)
 }
 
 // check, if the voice-cursor can be incremented
-bool UserCursor::has_next_voice() const throw(NotValidException)
+bool UserCursor::has_next_voice() const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     std::list<VoiceCursor>::iterator i = cursor;    // search active voice after the current one
@@ -859,7 +859,7 @@ bool UserCursor::has_next_voice() const throw(NotValidException)
 }
 
 // check, if there is a previous line
-bool UserCursor::has_prev_line() const throw(NotValidException)
+bool UserCursor::has_prev_line() const
 {
     if (!ready()) throw NotValidException();
     if (line != plateinfo->plate->lines.begin())    // if there is a previous line on the page
@@ -875,7 +875,7 @@ bool UserCursor::has_prev_line() const throw(NotValidException)
 }
 
 // check, if there is a next line
-bool UserCursor::has_next_line() const throw(NotValidException)
+bool UserCursor::has_next_line() const
 {
     if (!ready()) throw NotValidException();
     if (line != --plateinfo->plate->lines.end())    // if there is a next line on the page
@@ -894,7 +894,7 @@ bool UserCursor::has_next_line() const throw(NotValidException)
 // ------------------
 
 // to the previous note
-void UserCursor::prev() throw(NotValidException, InvalidMovement)
+void UserCursor::prev()
 {
     if (!has_prev()) throw InvalidMovement("prev");
     cursor->prev();
@@ -902,7 +902,7 @@ void UserCursor::prev() throw(NotValidException, InvalidMovement)
 }
 
 // to the next note
-void UserCursor::next() throw(NotValidException, InvalidMovement)
+void UserCursor::next()
 {
     if (at_end()) throw InvalidMovement("next");
     cursor->next();
@@ -910,7 +910,7 @@ void UserCursor::next() throw(NotValidException, InvalidMovement)
 }
 
 // to the previous voice
-void UserCursor::prev_voice() throw(NotValidException, InvalidMovement)
+void UserCursor::prev_voice()
 {
     // validity check
     if (!ready()) throw NotValidException();
@@ -937,7 +937,7 @@ void UserCursor::prev_voice() throw(NotValidException, InvalidMovement)
 }
 
 // to the next voice
-void UserCursor::next_voice() throw(NotValidException, InvalidMovement)
+void UserCursor::next_voice()
 {
     // validity check
     if (!ready()) throw NotValidException();
@@ -956,7 +956,7 @@ void UserCursor::next_voice() throw(NotValidException, InvalidMovement)
 }
 
 // to the previous line
-void UserCursor::prev_line() throw(NotValidException, InvalidMovement)
+void UserCursor::prev_line()
 {
     if (!ready()) throw NotValidException();    // validity check
     mpx_t x = fast_x();                         // save current position
@@ -972,7 +972,7 @@ void UserCursor::prev_line() throw(NotValidException, InvalidMovement)
 }
 
 // to the beginning of the previous line
-void UserCursor::prev_line_home() throw(NotValidException, InvalidMovement)
+void UserCursor::prev_line_home()
 {
     if (!ready()) throw NotValidException();    // validity check
     
@@ -981,7 +981,7 @@ void UserCursor::prev_line_home() throw(NotValidException, InvalidMovement)
 }
 
 // to the next line
-void UserCursor::next_line() throw(NotValidException, InvalidMovement)
+void UserCursor::next_line()
 {
     if (!ready()) throw NotValidException();    // validity check
     mpx_t x = fast_x();                         // save current position
@@ -997,7 +997,7 @@ void UserCursor::next_line() throw(NotValidException, InvalidMovement)
 }
 
 // to the beginning of the next line
-void UserCursor::next_line_home() throw(NotValidException, InvalidMovement)
+void UserCursor::next_line_home()
 {
     if (!ready()) throw NotValidException();    // validity check
     
@@ -1006,7 +1006,7 @@ void UserCursor::next_line_home() throw(NotValidException, InvalidMovement)
 }
 
 // to the beginning of the line
-void UserCursor::home() throw(NotValidException)
+void UserCursor::home()
 {
     if (!ready()) throw NotValidException();
     Voice& voice = cursor->note.voice();    // save voice
@@ -1032,14 +1032,14 @@ void UserCursor::home() throw(NotValidException)
 }
 
 // to the beginning of the voice (in line)    
-void UserCursor::home_voice() throw(NotValidException)
+void UserCursor::home_voice()
 {
     if (!ready()) throw NotValidException();
     while (cursor->has_prev()) prev();
 }
 
 // to the end of the line
-void UserCursor::end() throw(NotValidException)
+void UserCursor::end()
 {
     if (!ready()) throw NotValidException();
     
@@ -1068,14 +1068,14 @@ void UserCursor::end() throw(NotValidException)
 }
 
 // to the end of the voice (in line)
-void UserCursor::end_voice() throw(NotValidException)
+void UserCursor::end_voice()
 {
     if (!ready()) throw NotValidException();
     while (!cursor->at_end()) next();
 }
 
 // calculate current staff context (without local accidentals)
-StaffContext UserCursor::get_staff_context() const throw(NotValidException)
+StaffContext UserCursor::get_staff_context() const
 {
     if (!ready()) throw NotValidException();
     
@@ -1136,7 +1136,7 @@ StaffContext UserCursor::get_staff_context() const throw(NotValidException)
 }
 
 // invalidate the cursor
-void UserCursor::reset()
+void UserCursor::reset() noexcept
 {
     score = NULL;
     plateinfo = NULL;
@@ -1149,7 +1149,7 @@ void UserCursor::reset()
 // --------------------------
 
 // vertical position
-mpx_t UserCursor::graphical_y(const ViewportParam& viewport) const throw(NotValidException)
+mpx_t UserCursor::graphical_y(const ViewportParam& viewport) const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     
@@ -1173,7 +1173,7 @@ mpx_t UserCursor::graphical_y(const ViewportParam& viewport) const throw(NotVali
 }
 
 // height of the cursor
-mpx_t UserCursor::graphical_height(const ViewportParam& viewport) const throw(NotValidException)
+mpx_t UserCursor::graphical_height(const ViewportParam& viewport) const
 {
     if (cursor == vcursors.end()) throw NotValidException();
     

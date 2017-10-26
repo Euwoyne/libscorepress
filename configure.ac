@@ -107,7 +107,7 @@ gcc | g++ )
     AC_SUBST([LD_RELEASE], [])
     
     # general flags
-    AC_SUBST([CTRLFLAGS],  ["-ansi -pedantic -fno-nonansi-builtins"])
+    AC_SUBST([CTRLFLAGS],  ["-ansi -std=c++11 -pedantic -fno-nonansi-builtins"])
     AS_IF([test "x$enable_rpath" = "xyes"],
         [AC_SUBST([RPATHFLAG],  [])],
         [AC_SUBST([RPATHFLAG],  ["-Wl,-rpath,"])])

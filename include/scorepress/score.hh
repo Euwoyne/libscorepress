@@ -71,11 +71,11 @@ class SCOREPRESS_API Score
     Score() : head_height(0) {}
     
     // get an iterator for a given staff
-    std::list<Staff>::const_iterator get_staff(const Staff& staff) const throw(StaffNotFound);
+    std::list<Staff>::const_iterator get_staff(const Staff&) const;
     
     // check, whether the given staves belong to one instrument or instrument-group respectively
-    bool same_instrument(const Staff& staff1, const Staff& staff2) const throw(StaffNotFound);
-    bool same_group(const Staff& staff1, const Staff& staff2) const throw(StaffNotFound);
+    bool same_instrument(const Staff&, const Staff&) const;
+    bool same_group     (const Staff&, const Staff&) const;
 };
 
 } // end namespace

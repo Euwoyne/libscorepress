@@ -37,6 +37,7 @@ void ReengraveInfo::update(const StaffObject& note, EngraverState& state)
         {
             case Reengraveable::RETRY:  ++it; break;                    // do nothing, retry one more time
             case Reengraveable::FINISH: on_finish.insert(it->second);   // if requested, mark for finish
+                                        // fallthrough
             case Reengraveable::DONE:   on_create_note.erase(it++);     // if done, remove from the map
         };
     };
@@ -55,6 +56,7 @@ void ReengraveInfo::update(const Voice& voice, EngraverState& state)
         {
             case Reengraveable::RETRY:  ++it; break;                    // do nothing, retry one more time
             case Reengraveable::FINISH: on_finish.insert(it->second);   // if requested, mark for finish
+                                        // fallthrough
             case Reengraveable::DONE:   on_create_voice.erase(it++);    // if done, remove from the map
         };
     };
@@ -73,6 +75,7 @@ void ReengraveInfo::update(const Movable& object, EngraverState& state)
         {
             case Reengraveable::RETRY:  ++it; break;                    // do nothing, retry one more time
             case Reengraveable::FINISH: on_finish.insert(it->second);   // if requested, mark for finish
+                                        // fallthrough
             case Reengraveable::DONE:   on_create_movable.erase(it++);  // if done, remove from the map
         };
     };

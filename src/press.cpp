@@ -218,7 +218,7 @@ Press::Press(const StyleParam& style, const ViewportParam& viewport) : state(par
                                                                        default_style(&style) {}
 
 // draw the boundary box of a graphical object
-void Press::draw_boundaries(Renderer& renderer, const Plate::GphBox& gphBox, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::draw_boundaries(Renderer& renderer, const Plate::GphBox& gphBox, unsigned int color, const Position<mpx_t> offset)
 {
     // check if the renderer is ready
     if (!renderer.ready()) throw InvalidRendererException();
@@ -238,7 +238,7 @@ void Press::draw_boundaries(Renderer& renderer, const Plate::GphBox& gphBox, uns
 }
 
 // draw the boundary box of a graphical object (customized color)
-void Press::draw_boundaries(Renderer& renderer, const Plate::GphBox& gphBox, const Color& color, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::draw_boundaries(Renderer& renderer, const Plate::GphBox& gphBox, const Color& color, const Position<mpx_t> offset)
 {
     // check if the renderer is ready
     if (!renderer.ready()) throw InvalidRendererException();
@@ -255,7 +255,7 @@ void Press::draw_boundaries(Renderer& renderer, const Plate::GphBox& gphBox, con
 }
 
 // render a plate through the given renderer
-void Press::render(Renderer& renderer, const Plate& plate, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::render(Renderer& renderer, const Plate& plate, const Position<mpx_t> offset)
 {
     // check if the renderer is ready
     if (!renderer.ready()) throw InvalidRendererException();
@@ -306,7 +306,7 @@ void Press::render(Renderer& renderer, const Plate& plate, const Position<mpx_t>
 }
 
 // render a page through the given renderer
-void Press::render(Renderer& renderer, const Pageset::pPage& page, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::render(Renderer& renderer, const Pageset::pPage& page, const Pageset& pageset, const Position<mpx_t> offset)
 {
     // render scores
     for (std::list<Pageset::PlateInfo>::const_iterator i = page.plates.begin(); i != page.plates.end(); ++i)
@@ -328,7 +328,7 @@ void Press::render(Renderer& renderer, const Pageset::pPage& page, const Pageset
 }
 
 // render an attachable through the given renderer
-void Press::render(Renderer& renderer, const Plate::pAttachable& object, const Staff& staff, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::render(Renderer& renderer, const Plate::pAttachable& object, const Staff& staff, const Position<mpx_t> offset)
 {
     // check if the renderer is ready
     if (!renderer.ready()) throw InvalidRendererException();
@@ -344,7 +344,7 @@ void Press::render(Renderer& renderer, const Plate::pAttachable& object, const S
 }
 
 // render page decoration
-void Press::render_decor(Renderer& renderer, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException)
+void Press::render_decor(Renderer& renderer, const Pageset& pageset, const Position<mpx_t> offset)
 {
     // check if the renderer is ready
     if (!renderer.ready()) throw InvalidRendererException();
@@ -402,7 +402,7 @@ void Press::render_decor(Renderer& renderer, const Pageset& pageset, const Posit
 }
 
 // render a cursor through the given renderer
-void Press::render(Renderer& renderer, const CursorBase& cursor, const Position<mpx_t> offset) throw (InvalidRendererException, UserCursor::NotValidException)
+void Press::render(Renderer& renderer, const CursorBase& cursor, const Position<mpx_t> offset)
 {
     if (!renderer.ready()) throw InvalidRendererException();
     state.offset = offset;

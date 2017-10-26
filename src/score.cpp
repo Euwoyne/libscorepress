@@ -22,7 +22,7 @@
 using namespace ScorePress;
 
 // get an iterator for a given staff
-std::list<Staff>::const_iterator Score::get_staff(const Staff& staff) const throw(StaffNotFound)
+std::list<Staff>::const_iterator Score::get_staff(const Staff& staff) const
 {
     std::list<Staff>::const_iterator out = staves.begin();  // initialize iterator
     while (out != staves.end() && &*out != &staff) ++out;   // iterate until we find the staff
@@ -34,7 +34,7 @@ std::list<Staff>::const_iterator Score::get_staff(const Staff& staff) const thro
 Score::StaffNotFound::StaffNotFound() : ScorePress::Error("Unable to find requested staff within score.") {}
 
 // check, whether the given staves belong to one instrument
-bool Score::same_instrument(const Staff& staff1, const Staff& staff2) const throw(StaffNotFound)
+bool Score::same_instrument(const Staff& staff1, const Staff& staff2) const
 {
     char state = 0; // algorithm state (0: wait for one of the given staves
                     //                  1: got "staff1", wait for second one
@@ -65,7 +65,7 @@ bool Score::same_instrument(const Staff& staff1, const Staff& staff2) const thro
 }
 
 // check, whether the given staves belong to one instrument-group
-bool Score::same_group(const Staff& staff1, const Staff& staff2) const throw(StaffNotFound)
+bool Score::same_group(const Staff& staff1, const Staff& staff2) const
 {
     char state = 0; // algorithm state (0: wait for one of the given staves
                     //                  1: got "staff1", wait for second one

@@ -38,7 +38,7 @@ EditCursor::RemoveMainException::RemoveMainException()
         : UserCursor::Error("You cannot delete the staff's main-voice.") {}
 
 // calculate tone from note-name (regarding input method, ignoring accidentals)
-tone_t EditCursor::get_tone(const InputNote& note) const throw(NotValidException)
+tone_t EditCursor::get_tone(const InputNote& note) const
 {
     const tone_t& clef_base = get_staff_context().base_note();  // get clef-base note
 
@@ -67,7 +67,7 @@ tone_t EditCursor::get_tone(const InputNote& note) const throw(NotValidException
 }
 
 // create the head instance (according to "relative_accidentals" parameter)
-HeadPtr EditCursor::create_head(const InputNote& note) const throw(NotValidException)
+HeadPtr EditCursor::create_head(const InputNote& note) const
 {
     Head* out = new Head;                   // create head instance
     out->tone = get_tone(note);             // calculate whole tone
@@ -197,49 +197,49 @@ EditCursor::~EditCursor() {}
 // ----------------
 
 // return the staff
-Staff& EditCursor::get_staff() throw(NotValidException)
+Staff& EditCursor::get_staff()
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->note.staff();
 }
 
 // return the voice
-Voice& EditCursor::get_voice() throw(NotValidException)
+Voice& EditCursor::get_voice()
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->note.voice();
 }
 
 // return the score-cursor
-Cursor& EditCursor::get_cursor() throw(NotValidException)
+Cursor& EditCursor::get_cursor()
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->note;
 }
 
 // return objects attached to the note
-MovableList& EditCursor::get_attached() throw(NotValidException)
+MovableList& EditCursor::get_attached()
 {
     if (cursor == vcursors.end())     throw NotValidException();
     return cursor->note->get_visible().attached;
 }
 
 // return the on-plate voice
-Plate::pVoice& EditCursor::get_pvoice() throw(NotValidException)
+Plate::pVoice& EditCursor::get_pvoice()
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return *cursor->pvoice;
 }
 
 // return the on-plate note
-Plate::pNote& EditCursor::get_platenote() throw(NotValidException)
+Plate::pNote& EditCursor::get_platenote()
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return *cursor->pnote;
 }
 
 // return the style parameters
-StyleParam& EditCursor::get_style() throw(NotValidException)
+StyleParam& EditCursor::get_style()
 {
     if (!ready()) throw NotValidException();
     if (!!cursor->note.staff().style) return *cursor->note.staff().style;
@@ -248,7 +248,7 @@ StyleParam& EditCursor::get_style() throw(NotValidException)
 }
 
 // return the line layout
-LayoutParam& EditCursor::get_layout() throw(NotValidException)
+LayoutParam& EditCursor::get_layout()
 {
     if (cursor == vcursors.end()) throw NotValidException();
     if (cursor->newline.ready()) return static_cast<Newline&>(*cursor->newline).layout;
@@ -256,7 +256,7 @@ LayoutParam& EditCursor::get_layout() throw(NotValidException)
 }
 
 // return the score dimension
-ScoreDimension& EditCursor::get_dimension() throw(NotValidException)
+ScoreDimension& EditCursor::get_dimension()
 {
     if (cursor == vcursors.end()) throw NotValidException();
     if (cursor->pagebreak.ready()) return static_cast<Pagebreak&>(*cursor->pagebreak).dimension;
@@ -264,7 +264,7 @@ ScoreDimension& EditCursor::get_dimension() throw(NotValidException)
 }
 
 // return objects attached to the page
-MovableList& EditCursor::get_page_attached() throw(NotValidException)
+MovableList& EditCursor::get_page_attached()
 {
     if (cursor == vcursors.end()) throw NotValidException();
     return cursor->pagebreak.ready() ? static_cast<Pagebreak&>(*cursor->pagebreak).attached
@@ -275,7 +275,7 @@ MovableList& EditCursor::get_page_attached() throw(NotValidException)
 // ---------------------
 
 // insert an object (inserting transfers the objects ownership to the voice-object within the score)
-void EditCursor::insert(StaffObject* const object) throw(NotValidException, Cursor::IllegalObjectTypeException)
+void EditCursor::insert(StaffObject* const object)
 {
     if (!ready()) throw NotValidException();
     if (!cursor->has_prev())                    // if the object was inserted at the front...
@@ -287,7 +287,7 @@ void EditCursor::insert(StaffObject* const object) throw(NotValidException, Curs
 }
 
 // insert a note
-void EditCursor::insert(const InputNote& note) throw(NotValidException, NoScoreException, Error)
+void EditCursor::insert(const InputNote& note)
 {
     if (!ready()) throw NotValidException();                        // check cursor
     Chord* chord = new Chord();                                     // create new chord
@@ -298,7 +298,7 @@ void EditCursor::insert(const InputNote& note) throw(NotValidException, NoScoreE
 }
 
 // insert a head
-void EditCursor::insert_head(const InputNote& note) throw(NotValidException, Cursor::IllegalObjectTypeException, NoScoreException, Error)
+void EditCursor::insert_head(const InputNote& note)
 {
     if (!ready()) throw NotValidException();            // check cursor
     if (at_end() || !cursor->note->is(Class::CHORD))    // check current object type
@@ -330,7 +330,7 @@ void EditCursor::insert_head(const InputNote& note) throw(NotValidException, Cur
 }
 
 // insert a rest
-void EditCursor::insert_rest(const unsigned char exp, const unsigned char dots) throw(NotValidException, NoScoreException, Error)
+void EditCursor::insert_rest(const unsigned char exp, const unsigned char dots)
 {
     if (!ready()) throw NotValidException();    // check cursor
     Rest* rest = new Rest();                    // create new rest
@@ -340,7 +340,7 @@ void EditCursor::insert_rest(const unsigned char exp, const unsigned char dots) 
 }
 
 // insert newline objects into all active voices
-void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Error)
+void EditCursor::insert_newline()
 {
     // check if this is a newline completion (i.e. add newline only to those voices without one)
     bool complete = true;
@@ -382,7 +382,7 @@ void EditCursor::insert_newline() throw(NotValidException, NoScoreException, Err
 }
 
 // insert pagebreak objects into all active voices
-void EditCursor::insert_pagebreak() throw(NotValidException, NoScoreException, Error)
+void EditCursor::insert_pagebreak()
 {
     // check if this is a newline completion (i.e. add newline only to those voices without one)
     bool complete = true;
@@ -433,7 +433,7 @@ void EditCursor::insert_pagebreak() throw(NotValidException, NoScoreException, E
 // --------------------
 
 // remove a note
-void EditCursor::remove() throw(NotValidException)
+void EditCursor::remove()
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) return;                           // no note at end
@@ -487,7 +487,7 @@ void EditCursor::remove() throw(NotValidException)
 }
 
 // remove a voice
-void EditCursor::remove_voice() throw(NotValidException, RemoveMainException)
+void EditCursor::remove_voice()
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) return;                           // no note at end
@@ -509,7 +509,7 @@ void EditCursor::remove_voice() throw(NotValidException, RemoveMainException)
 }
 
 // remove newline/pagebreak
-void EditCursor::remove_newline() throw(NotValidException)
+void EditCursor::remove_newline()
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (   line == plateinfo->plate->lines.begin()  // if we are at the scores front
@@ -540,7 +540,7 @@ void EditCursor::remove_newline() throw(NotValidException)
 }
 
 // convert pagebreak to newline
-void EditCursor::remove_pagebreak() throw(NotValidException)
+void EditCursor::remove_pagebreak()
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (page == pageset->pages.begin())             // if we are at the scores front
@@ -565,7 +565,7 @@ void EditCursor::remove_pagebreak() throw(NotValidException)
 }
 
 // remove newline, convert pagebreak
-void EditCursor::remove_break() throw(NotValidException)
+void EditCursor::remove_break()
 {
     if (!plateinfo) throw NotValidException();      // check cursor
     if (line != plateinfo->plate->lines.begin())    // if we are not at the page front
@@ -578,25 +578,25 @@ void EditCursor::remove_break() throw(NotValidException)
 // --------------
 
 // edit the current stem-length (setting type to STEM_CUSTOM)
-void EditCursor::_add_stem_length(Chord& chord, const VoiceCursor&, const int pohh, int*)
+void EditCursor::_add_stem_length(Chord& chord, const VoiceCursor&, const int pohh, int*) noexcept
 {
     chord.stem.length += pohh;
 }
 
-void EditCursor::add_stem_length(spohh_t pohh) throw(Cursor::IllegalObjectTypeException)
+void EditCursor::add_stem_length(spohh_t pohh)
 {
     set_stem_type(Chord::STEM_CUSTOM);      // checks cursor
     for_each_chord_in_beam_do(*cursor, &_add_stem_length, pohh);
 }
 
 // set the current stem-length (setting type to STEM_CUSTOM)
-void EditCursor::_set_stem_length(Chord& chord, const VoiceCursor&, const int pohh, int*)
+void EditCursor::_set_stem_length(Chord& chord, const VoiceCursor&, const int pohh, int*) noexcept
 {
     chord.stem.type = Chord::STEM_CUSTOM;
     chord.stem.length = pohh;
 }
 
-void EditCursor::set_stem_length(spohh_t pohh) throw(Cursor::IllegalObjectTypeException)
+void EditCursor::set_stem_length(spohh_t pohh)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) throw Cursor::IllegalObjectTypeException();
@@ -605,7 +605,7 @@ void EditCursor::set_stem_length(spohh_t pohh) throw(Cursor::IllegalObjectTypeEx
 }
 
 // edit the current stem-slope (setting type to SLOPE_CUSTOM)
-void EditCursor::add_stem_slope(spohh_t pohh) throw(Cursor::IllegalObjectTypeException)
+void EditCursor::add_stem_slope(spohh_t pohh)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) throw Cursor::IllegalObjectTypeException();
@@ -621,7 +621,7 @@ void EditCursor::add_stem_slope(spohh_t pohh) throw(Cursor::IllegalObjectTypeExc
 }
 
 // set the current stem-slope (setting type to SLOPE_CUSTOM)
-void EditCursor::set_stem_slope(int pohh) throw(Cursor::IllegalObjectTypeException)
+void EditCursor::set_stem_slope(int pohh)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) throw Cursor::IllegalObjectTypeException();
@@ -652,7 +652,7 @@ void EditCursor::_set_stem_dir(Chord& chord, const VoiceCursor&, const int dir, 
     }
 }
 
-void EditCursor::set_stem_dir(bool down) throw(Cursor::IllegalObjectTypeException)
+void EditCursor::set_stem_dir(bool down)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) throw Cursor::IllegalObjectTypeException();
@@ -688,7 +688,7 @@ void EditCursor::_set_stem_type(Chord& chord, const VoiceCursor& cursor, const i
     };
 }
 
-void EditCursor::set_stem_type(const Chord::StemType type) throw(Cursor::IllegalObjectTypeException)
+void EditCursor::set_stem_type(const Chord::StemType type)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) throw Cursor::IllegalObjectTypeException();
@@ -697,7 +697,7 @@ void EditCursor::set_stem_type(const Chord::StemType type) throw(Cursor::Illegal
 }
 
 // set the slope-type of the current beam group
-void EditCursor::set_slope_type(const Chord::SlopeType type) throw(Cursor::IllegalObjectTypeException)
+void EditCursor::set_slope_type(const Chord::SlopeType type)
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end()) throw Cursor::IllegalObjectTypeException();
@@ -725,7 +725,7 @@ void EditCursor::set_slope_type(const Chord::SlopeType type) throw(Cursor::Illeg
 // --------------------
 
 // set auto accidental to current object
-void EditCursor::set_accidental_auto()  throw(Cursor::IllegalObjectTypeException)
+void EditCursor::set_accidental_auto()
 {
     if (!ready()) throw NotValidException();        // check cursor
     if (at_end() || !cursor->note->is(Class::CHORD))

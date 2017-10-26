@@ -90,14 +90,14 @@ class SCOREPRESS_LOCAL Pick : public Logging
         const Voice* first_voice;                           // voice with line-properties
         
      public:
-        void set(const Voice&, const LayoutParam& layout);                        // associate a voice with its newline object
-        bool exist(const Voice&) const;                                           // check, if the voice has a newline object
-        const LayoutParam& get() const throw(VoiceNotFoundException);             // get first newline object (for line-properties)
-        const LayoutParam& get(const Voice&) const throw(VoiceNotFoundException); // get the newline object
-        void remove(const Voice&);                                                // remove a voice's layout
-        void set_first_voice(const Voice&) throw(VoiceNotFoundException);         // set the voice for line-properties
-        void swap(LineLayout&);                                                   // swap contents
-        void clear();                                                             // clear data
+        void set(const Voice&, const LayoutParam&); // associate a voice with its newline object
+        bool exist(const Voice&) const;             // check, if the voice has a newline object
+        const LayoutParam& get() const;             // get first newline object (for line-properties)
+        const LayoutParam& get(const Voice&) const; // get the newline object
+        void remove(const Voice&);                  // remove a voice's layout
+        void set_first_voice(const Voice&);         // set the voice for line-properties
+        void swap(LineLayout&);                     // swap contents
+        void clear();                               // clear data
     };
     
     // maps voices to their index thus providing an order comparison for voices

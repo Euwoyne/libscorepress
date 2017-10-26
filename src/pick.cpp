@@ -66,7 +66,7 @@ bool Pick::LineLayout::exist(const Voice& voice) const
 }
 
 // get arbitrary newline object (for line-properties)
-const LayoutParam& Pick::LineLayout::get() const throw(VoiceNotFoundException)
+const LayoutParam& Pick::LineLayout::get() const
 {
     if (first_voice) return get(*first_voice);
     if (data.empty()) throw VoiceNotFoundException();
@@ -74,7 +74,7 @@ const LayoutParam& Pick::LineLayout::get() const throw(VoiceNotFoundException)
 }
 
 // get the newline object of the given voice
-const LayoutParam& Pick::LineLayout::get(const Voice& voice) const throw(VoiceNotFoundException)
+const LayoutParam& Pick::LineLayout::get(const Voice& voice) const
 {
     std::map<const Voice*, const LayoutParam*>::const_iterator i = data.find(&voice);
     if (i == data.end() || !i->second) throw VoiceNotFoundException();
@@ -89,7 +89,7 @@ void Pick::LineLayout::remove(const Voice& voice)
 }
 
 // set the voice for line-properties
-void Pick::LineLayout::set_first_voice(const Voice& voice) throw(VoiceNotFoundException)
+void Pick::LineLayout::set_first_voice(const Voice& voice)
 {
     if (data.find(&voice) == data.end()) throw VoiceNotFoundException();
     first_voice = &voice;

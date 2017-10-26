@@ -51,10 +51,10 @@ class SCOREPRESS_API XMLFileReader : virtual public FileReader
     
  protected:
     // throwing functions (combining the given data to a error message, which is then thrown)
-    static void mythrow(const char* trns, const std::string& filename) throw(IOException) __attribute__((noreturn));
-    static void mythrow(const char* trns, const std::string& symbol, const std::string& filename, const int line, const int column) throw(FormatError) __attribute__((noreturn));
-    static void mythrow(const char* trns, const std::string& filename, const int line, const int column) throw(FormatError) __attribute__((noreturn));
-    static void mythrow_eof(const char* trns, const std::string& filename, const int line, const int column) throw(ExpectedEOF) __attribute__((noreturn));
+    static void mythrow(const char* trns, const std::string& filename) __attribute__((noreturn));
+    static void mythrow(const char* trns, const std::string& symbol, const std::string& filename, const int line, const int column) __attribute__((noreturn));
+    static void mythrow(const char* trns, const std::string& filename, const int line, const int column) __attribute__((noreturn));
+    static void mythrow_eof(const char* trns, const std::string& filename, const int line, const int column) __attribute__((noreturn));
     
     // reading helper
     void read_int(int& target, const char* tag);

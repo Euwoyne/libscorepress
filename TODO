@@ -1,6 +1,12 @@
 libscorepress - TODO List
 =========================
 
+BUGS:
+  cumulative offset doesn't affect simultaneous but previously engraved notes
+  negative cumulative offset wraps around
+  sometimes wrong stem anchor side?
+  flip some accent marks on downward stems
+
 INCOMPLETE:
   file_format.cpp   parse <movable> section
   file_format.cpp   document parsing

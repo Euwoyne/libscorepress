@@ -64,16 +64,16 @@ class SCOREPRESS_LOCAL Press : public Logging
     double scale(const double coord) const;
     
     // set the renderer's foreground color
-    static void set_color(Renderer& renderer, const Color& color);
+    static void set_color(Renderer&, const Color&);
     
     // rendering method (for on-plate note objects)
-    void render(Renderer& renderer, const Plate::pNote& note);
+    void render(Renderer&, const Plate::pNote&);
     
     // render the (empty) staff for a plate
-    void render_staff(Renderer& renderer, const Plate& plate, const Position<mpx_t> offset);
+    void render_staff(Renderer&, const Plate&, const Position<mpx_t> offset);
     
     // draw a little red cross
-    void draw_cross(Renderer& renderer, const Position<mpx_t>& pos, const Position<mpx_t> offset);
+    void draw_cross(Renderer&, const Position<mpx_t>& pos, const Position<mpx_t> offset);
     
  public:
     // rendering parameters
@@ -86,21 +86,21 @@ class SCOREPRESS_LOCAL Press : public Logging
     const StyleParam& get_style();
     
     // draw the boundary box of a graphical object
-    void draw_boundaries(Renderer& renderer, const Plate::GphBox&     gphBox, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException);
-    void draw_boundaries(Renderer& renderer, const Plate::GphBox&     gphBox, const Color& color, const Position<mpx_t> offset) throw(InvalidRendererException);
-    void draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException);
-    void draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, const Color& color, const Position<mpx_t> offset) throw(InvalidRendererException);
+    void draw_boundaries(Renderer&, const Plate::GphBox&,     unsigned int color, const Position<mpx_t> offset);
+    void draw_boundaries(Renderer&, const Plate::GphBox&,     const Color& color, const Position<mpx_t> offset);
+    void draw_boundaries(Renderer&, const Plate::pGraphical&, unsigned int color, const Position<mpx_t> offset);
+    void draw_boundaries(Renderer&, const Plate::pGraphical&, const Color& color, const Position<mpx_t> offset);
     
     // render a plate/page/attachable through the given renderer
-    void render(Renderer& renderer, const Plate&              plate,                          const Position<mpx_t> offset) throw(InvalidRendererException);
-    void render(Renderer& renderer, const Pageset::pPage&     page,   const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException);
-    void render(Renderer& renderer, const Plate::pAttachable& object, const Staff&   staff,   const Position<mpx_t> offset) throw(InvalidRendererException);
+    void render(Renderer&, const Plate&,                              const Position<mpx_t> offset);
+    void render(Renderer&, const Pageset::pPage&,     const Pageset&, const Position<mpx_t> offset);
+    void render(Renderer&, const Plate::pAttachable&, const Staff&,   const Position<mpx_t> offset);
     
     // render page decoration
-    void render_decor(Renderer& renderer, const Pageset& pageset, const Position<mpx_t> offset) throw(InvalidRendererException);
+    void render_decor(Renderer&, const Pageset&, const Position<mpx_t> offset);
     
     // render a cursor through the given renderer
-    void render(Renderer& renderer, const CursorBase& cursor, const Position<mpx_t> offset) throw (InvalidRendererException, UserCursor::NotValidException);
+    void render(Renderer&, const CursorBase&, const Position<mpx_t> offset);
 };
 
 inline double Press::scale(const double coord) const               {return (parameters.scale * coord) / 1000.0;}
@@ -109,10 +109,10 @@ inline void   Press::set_color(Renderer& renderer, const Color& c) {renderer.set
 inline void              Press::set_style(const StyleParam& style) {default_style = &style;}
 inline const StyleParam& Press::get_style()                        {return *default_style;}
 
-inline void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, unsigned int color, const Position<mpx_t> offset) throw(InvalidRendererException) {
+inline void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, unsigned int color, const Position<mpx_t> offset) {
     draw_boundaries(renderer, object.gphBox, color, offset);}
 
-inline void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, const Color& color, const Position<mpx_t> offset) throw(InvalidRendererException) {
+inline void Press::draw_boundaries(Renderer& renderer, const Plate::pGraphical& object, const Color& color, const Position<mpx_t> offset) {
     draw_boundaries(renderer, object.gphBox, color, offset);}
 
 } // end namespace
